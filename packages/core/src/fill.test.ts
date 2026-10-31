@@ -215,6 +215,24 @@ describe("fase A: shapeMaskCss", () => {
     expect((shapeMaskCss("heart") as any).maskImage).toMatch(/^url\("data:image\/svg\+xml,/);
     expect(shapeMaskCss("rectangle")).toEqual({});
   });
+
+  // An image fill keeps its colour under the photo; without a mask that colour
+  // painted the whole box around an arch (the shape list stopped at 9 shapes).
+  it("masks every closed catalogue shape, not only the pattern ones", () => {
+    const closed = Object.entries(GEO_SHAPES)
+      .filter(([, d]) => d.tipo === "polygon" || d.rellenable)
+      .map(([name]) => name);
+    expect(closed).toContain("arch");
+    for (const name of closed) {
+      expect((shapeMaskCss(name) as any).maskImage, name).toMatch(/^url\("data:image\/svg\+xml,/);
+    }
+  });
+
+  it("leaves open strokes and unknown names unmasked", () => {
+    expect(shapeMaskCss("line")).toEqual({});
+    expect(shapeMaskCss("scribble")).toEqual({});
+    expect(shapeMaskCss("no-such-shape")).toEqual({});
+  });
 });
 
 describe("fase B: el relleno de patron pasa sus figuras", () => {

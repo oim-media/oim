@@ -1,0 +1,47 @@
+{
+  "description": "Volteo de capa (contrato 1.14.0): `flipX` en una forma y `flipY` en otra rotada; se voltea en sus propios ejes.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "horizontal",
+      "type": "geo",
+      "position": [
+        10,
+        25
+      ],
+      "name": "Horizontal",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "35.0cqw",
+        "height": "22.5cqw",
+        "fillColor": "#e76f51",
+        "flipX": true
+      }
+    },
+    {
+      "id": "vertical",
+      "type": "geo",
+      "position": [
+        55,
+        25
+      ],
+      "name": "Vertical",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "35.0cqw",
+        "height": "22.5cqw",
+        "fillColor": "#264653",
+        "flipY": true
+      }
+    }
+  ]
+}

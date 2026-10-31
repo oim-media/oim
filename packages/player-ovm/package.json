@@ -1,0 +1,12 @@
+{
+  "name": "@oim-media/player-ovm",
+  "license": "Apache-2.0",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OvmPlayer Web Component for Interactive Video",
+  "type": "module",
+  "main": "./src/index.js",
+  "scripts": {
+    "build": "echo \"No build needed for vanilla OVM player\""
+  }
+}

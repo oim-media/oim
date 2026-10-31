@@ -1,0 +1,178 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import fs from 'fs';
+import path from 'path';
+
+// Configure happy-dom environment for the test file
+/**
+ * @vitest-environment happy-dom
+ */
+
+// Read the actual example_image.oim file to return in mock fetch requests
+const oimFilePath = path.resolve(__dirname, '../test/fixtures/flyer_festival.oim.png');
+const oimBuffer = fs.readFileSync(oimFilePath);
+
+// Ignore Node.js DecompressionStream unhandled rejection warnings for raw deflate fallback
+process.on('unhandledRejection', (reason) => {
+  if (reason && (reason.code === 'Z_DATA_ERROR' || (reason.cause && reason.cause.code === 'Z_DATA_ERROR'))) {
+    return;
+  }
+});
+
+// Mock window.fetch globally to return the real binary data of example_image.oim
+global.fetch = vi.fn().mockImplementation((url, init) => {
+  return Promise.resolve({
+    ok: true,
+    status: 200,
+    headers: {
+      get: (header) => {
+        if (header.toLowerCase() === 'content-length') {
+          return oimBuffer.length.toString();
+        }
+        return null;
+      }
+    },
+    arrayBuffer: () => Promise.resolve(oimBuffer.buffer.slice(oimBuffer.byteOffset, oimBuffer.byteOffset + oimBuffer.byteLength)),
+    blob: () => Promise.resolve(new Blob([oimBuffer], { type: 'image/png' }))
+  });
+});
+
+describe('oim-player Web Component', () => {
+  beforeEach(async () => {
+    // Un IntersectionObserver que reporta al observar, como hace el navegador
+    // de verdad con un elemento que se ve.
+    //
+    // Hace falta desde que la carga es perezosa: el de happy-dom existe pero
+    // NUNCA dispara, asi que sin esto el player se queda dormido y estas cinco
+    // pruebas medirian un elemento vacio. No es un apaño para pasar: es la
+    // condicion "este player se ve", que antes se cumplia por accidente porque
+    // el `src` cargaba a la fuerza.
+    window.IntersectionObserver = class {
+      constructor(cb) { this._cb = cb; }
+      observe(el) {
+        this._cb([{
+          target: el,
+          isIntersecting: true,
+          intersectionRatio: 1,
+          boundingClientRect: { bottom: 100, top: 0, left: 0, right: 100 },
+        }], this);
+      }
+      unobserve() {}
+      disconnect() {}
+    };
+    // Dynamically load the component script (runs the IIFE and registers oim-player)
+    await import('../dist/oim-player.js');
+  });
+
+  it('should define the oim-player custom element', () => {
+    expect(customElements.get('oim-player')).toBeDefined();
+  });
+
+  it('should attach an open shadow root when connected to the DOM', async () => {
+    const player = document.createElement('oim-player');
+    document.body.appendChild(player);
+
+    player.setAttribute('src', 'example.oim');
+    
+    // Wait a brief moment for the async load() method inside oim-player to run
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    expect(player.shadowRoot).not.toBeNull();
+    expect(player.shadowRoot.mode).toBe('open');
+
+    document.body.removeChild(player);
+  });
+
+  it('should contain the custom :host rules styling host as flex box', async () => {
+    const player = document.createElement('oim-player');
+    document.body.appendChild(player);
+
+    player.setAttribute('src', 'example.oim');
+    
+    // Wait for the async load() to fetch the mock data and inject elements/styles
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const styleEl = player.shadowRoot.getElementById('oim-player-styles');
+    expect(styleEl).not.toBeNull();
+
+    const cssText = styleEl.textContent;
+    
+    expect(cssText).toContain(':host {');
+    expect(cssText).toContain('display: flex !important');
+    expect(cssText).toContain('overflow: hidden');
+
+    document.body.removeChild(player);
+  });
+
+  it('should style slots with user-select: none to prevent selectability', async () => {
+    const player = document.createElement('oim-player');
+    document.body.appendChild(player);
+
+    player.setAttribute('src', 'example.oim');
+    
+    // Wait for load and rendering
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const styleEl = player.shadowRoot.getElementById('oim-player-styles');
+    const cssText = styleEl.textContent;
+
+    expect(cssText).toContain('.oim-slot {');
+    expect(cssText).toContain('user-select: none');
+    expect(cssText).toContain('-webkit-user-select: none');
+
+    expect(cssText).toContain('.oim-slot:hover {');
+    // El hover MULTIPLICA por `--oim-scale` desde el 21 de agosto: si lo
+    // reemplazara, pasar el raton por encima de una capa sobredimensionada la
+    // devolveria de golpe a su tamaño y asomaria el recorte del parallax.
+    expect(cssText).toContain('scale(calc(var(--oim-scale, 1) * var(--oim-slot-hover-scale, 1)))');
+
+    document.body.removeChild(player);
+  });
+
+  it('should auto-rotate languages when auto-rotate-lang attribute is set', async () => {
+    const player = document.createElement('oim-player');
+    player.setAttribute('auto-rotate-lang', '50'); // 50ms interval for testing
+    document.body.appendChild(player);
+
+    player.setAttribute('src', 'example.oim');
+    player.setAttribute('lang', 'es');
+    
+    // The language should change from 'es' to the next available one. Polled,
+    // not a fixed 150 ms sleep: on a loaded CI runner loading took longer
+    // and the test failed (22 Oct 2026).
+    await vi.waitFor(() => expect(player.getAttribute('lang')).not.toBe('es'), { timeout: 3000, interval: 25 });
+
+    document.body.removeChild(player);
+  });
+
+  it('should support programmatic properties languages, currentLang, and lang', async () => {
+    const player = document.createElement('oim-player');
+    document.body.appendChild(player);
+
+    player.setAttribute('src', 'example.oim');
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    expect(player.languages).toContain('es');
+    expect(player.languages).toContain('en');
+    expect(player.currentLang).toBe('es');
+
+    player.lang = 'en';
+    expect(player.getAttribute('lang')).toBe('en');
+
+    document.body.removeChild(player);
+  });
+
+  it('should restrict lottie rendering if allow-lottie attribute is false', async () => {
+    const player = document.createElement('oim-player');
+    player.setAttribute('allow-lottie', 'false');
+    document.body.appendChild(player);
+
+    player.setAttribute('src', 'example.oim');
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const engine = player.getEngine();
+    expect(engine.allowLottie).toBe(false);
+
+    document.body.removeChild(player);
+  });
+});
+

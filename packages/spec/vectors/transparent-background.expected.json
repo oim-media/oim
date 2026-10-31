@@ -1,0 +1,30 @@
+{
+  "description": "Capa con fondo transparente estricto según la regla de color normativo.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "caja_transparente",
+      "type": "geo",
+      "position": [
+        18.75,
+        25
+      ],
+      "name": "Caja Transparente",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "37.5cqw",
+        "height": "25.0cqw",
+        "fillColor": "transparent",
+        "borderWidth": 2,
+        "borderColor": "#0284c7"
+      }
+    }
+  ]
+}

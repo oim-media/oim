@@ -1,0 +1,46 @@
+{
+  "description": "Estructura precalculada de líneas de texto para renderizadores nativos y embebidos.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "texto_precalculado",
+      "type": "text",
+      "position": [
+        7.5,
+        10
+      ],
+      "name": "Párrafo Precalculado",
+      "content": {
+        "es": "Primera línea\nSegunda línea"
+      },
+      "style": {
+        "width": "43.75cqw",
+        "height": "15.0cqw",
+        "fontSize": "3.0cqw",
+        "textRuns": {
+          "es": {
+            "fontSize": 24,
+            "lineHeight": 30,
+            "lines": [
+              {
+                "text": "Primera línea",
+                "width": 140,
+                "yOffset": 0
+              },
+              {
+                "text": "Segunda línea",
+                "width": 152,
+                "yOffset": 30
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

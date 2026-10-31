@@ -1,0 +1,33 @@
+{
+  "description": "Filtros visuales CSS: desenfoque, brillo, contraste, saturación y rotación de tono.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "capa_filtrada",
+      "type": "geo",
+      "position": [
+        15,
+        13.3333
+      ],
+      "name": "Capa con Filtros",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "37.5cqw",
+        "height": "25.0cqw",
+        "fillColor": "#059669",
+        "filterBlur": 3,
+        "filterBrightness": 115,
+        "filterContrast": 125,
+        "filterSaturate": 140,
+        "filterHueRotate": 30
+      }
+    }
+  ]
+}

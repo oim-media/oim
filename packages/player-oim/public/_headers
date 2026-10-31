@@ -1,0 +1,8 @@
+# cdn.oim.media: the player keeps one URL across versions, so browsers must
+# revalidate it (a 304 when unchanged) or a fix reaches them hours late.
+/oim-player.js
+  Cache-Control: public, max-age=0, must-revalidate
+/player/*
+  Cache-Control: public, max-age=0, must-revalidate
+/vendor/*
+  Cache-Control: public, max-age=0, must-revalidate

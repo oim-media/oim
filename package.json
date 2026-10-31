@@ -1,0 +1,13 @@
+{
+  "name": "oim",
+  "private": true,
+  "description": "OIM — open format for interactive images: contract, core library and web players.",
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@11.0.8",
+  "scripts": {
+    "build": "pnpm -r --filter ./packages/core --filter ./packages/player-oim --filter ./packages/player-ovm build",
+    "test": "pnpm -r --filter ./packages/core --filter ./packages/player-oim test",
+    "typecheck": "pnpm -r typecheck",
+    "conformance": "pnpm --filter @oim-media/core exec vitest run conformance"
+  }
+}

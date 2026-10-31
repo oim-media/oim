@@ -1,0 +1,77 @@
+{
+  "description": "Acciones interactivas múltiples y encadenadas al activar capa.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "alerta",
+      "type": "geo",
+      "position": [
+        12.5,
+        8.3333
+      ],
+      "name": "Alerta",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "25.0cqw",
+        "height": "7.5cqw",
+        "fillColor": "#f59e0b"
+      }
+    },
+    {
+      "id": "panel",
+      "type": "geo",
+      "position": [
+        12.5,
+        21.6667
+      ],
+      "name": "Panel Ocultable",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "37.5cqw",
+        "height": "22.5cqw",
+        "fillColor": "#6b7280"
+      }
+    },
+    {
+      "id": "interruptor",
+      "type": "text",
+      "position": [
+        12.5,
+        56.6667
+      ],
+      "name": "Interruptor",
+      "content": {
+        "es": "Alternar"
+      },
+      "style": {
+        "width": "22.5cqw",
+        "height": "6.25cqw",
+        "fontSize": "2.5cqw",
+        "isInteractive": true,
+        "states": {
+          "active": {
+            "actions": [
+              {
+                "target": "panel",
+                "type": "toggle"
+              },
+              {
+                "target": "alerta",
+                "type": "hide"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

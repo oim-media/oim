@@ -1,0 +1,32 @@
+{
+  "description": "Recorte de imagen (contrato 1.15.0): `imageCrop` encuadra sobre «cubrir» en x 20 %, y 70 % y zoom 2.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "foto",
+      "type": "image",
+      "position": [
+        12.5,
+        16.6667
+      ],
+      "name": "Foto",
+      "content": {
+        "*": "https://cdn.oim.media/demos/crop.png"
+      },
+      "style": {
+        "width": "37.5cqw",
+        "height": "25.0cqw",
+        "imageCrop": {
+          "x": 20,
+          "y": 70,
+          "zoom": 2
+        }
+      }
+    }
+  ]
+}

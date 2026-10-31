@@ -1,0 +1,60 @@
+import { defineConfig } from 'vite';
+import { resolve } from 'path';
+import { mkdirSync, copyFileSync, readFileSync } from 'fs';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const LOTTIE_PKG = require.resolve('lottie-web/package.json');
+const LOTTIE_VERSION: string = JSON.parse(readFileSync(LOTTIE_PKG, 'utf8')).version;
+const LOTTIE_LIGHT = resolve(LOTTIE_PKG, '..', 'build/player/lottie_light.min.js');
+
+// The oim-cdn Cloudflare Pages project builds ONLY this package (`pnpm run
+// build --filter @oim-media/player-oim`) and serves `dist/` directly as its site
+// root — it never runs apps/studio's build, so that app's own copy-to-public
+// plugin (which mirrors this same file to /player/v1/) never executes here.
+// Mirroring the versioned copy in this package's own build is what actually
+// makes cdn.oim.media/player/v1/oim-player.js exist. Lottie is published next
+// to both copies, because the player resolves vendor/ against its own URL.
+function versionedCopyPlugin() {
+  return {
+    name: 'copy-versioned-player',
+    closeBundle() {
+      const src = resolve(__dirname, 'dist/oim-player.js');
+      const versionedDir = resolve(__dirname, 'dist/player/v1');
+      mkdirSync(versionedDir, { recursive: true });
+      copyFileSync(src, resolve(versionedDir, 'oim-player.js'));
+      for (const dir of ['dist/vendor', 'dist/player/v1/vendor']) {
+        const out = resolve(__dirname, dir);
+        mkdirSync(out, { recursive: true });
+        copyFileSync(LOTTIE_LIGHT, resolve(out, `lottie_light-${LOTTIE_VERSION}.js`));
+      }
+    }
+  };
+}
+
+export default defineConfig(({ command }) => ({
+  plugins: [versionedCopyPlugin()],
+  define: {
+    __OIM_LOTTIE_VERSION__: JSON.stringify(LOTTIE_VERSION)
+  },
+  // Only in `vite build`: an `iife` inlines every import(), so the real
+  // lottie_light would land in the bundle. vitest runs as `serve` and keeps
+  // the real library, and apps/studio does not use this config at all.
+  resolve: command === 'build'
+    ? { alias: { 'lottie-web/build/player/lottie_light': resolve(__dirname, 'src/core/lottie-external.ts') } }
+    : {},
+  build: {
+    lib: {
+      entry: resolve(__dirname, 'src/index.ts'),
+      name: 'OimPlayer',
+      fileName: () => 'oim-player.js',
+      formats: ['iife']
+    },
+    outDir: 'dist',
+    emptyOutDir: true,
+    minify: true
+  },
+  worker: {
+    format: 'es'
+  }
+}));

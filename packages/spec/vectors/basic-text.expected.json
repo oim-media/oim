@@ -1,0 +1,29 @@
+{
+  "description": "Un solo texto en dos idiomas. El caso minimo: contenedor, zTXt, zlib y cqw.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "titulo",
+      "type": "text",
+      "position": [
+        10,
+        10
+      ],
+      "name": "Titulo",
+      "content": {
+        "en": "Hello",
+        "es": "Hola"
+      },
+      "style": {
+        "width": "50.0cqw",
+        "height": "11.25cqw",
+        "fontSize": "5.0cqw"
+      }
+    }
+  ]
+}

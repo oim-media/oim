@@ -1,0 +1,36 @@
+{
+  "description": "Interactividad de puntero: escala y rotación dinámica al hacer hover.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "tarjeta_hover",
+      "type": "geo",
+      "position": [
+        12.5,
+        16.6667
+      ],
+      "name": "Tarjeta Hover",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "30.0cqw",
+        "height": "17.5cqw",
+        "fillColor": "#4f46e5",
+        "isInteractive": true,
+        "states": {
+          "hover": {
+            "opacity": 95,
+            "rotation": 3,
+            "scale": 108
+          }
+        }
+      }
+    }
+  ]
+}

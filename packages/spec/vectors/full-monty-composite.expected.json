@@ -1,0 +1,96 @@
+{
+  "description": "Documento maestro que integra interactividad, multilingüe, sombras, parallax y jerarquía.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "comp_grupo",
+      "type": "group",
+      "position": [
+        6.25,
+        8.3333
+      ],
+      "name": "Grupo Compuesto",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "87.5cqw",
+        "height": "62.5cqw",
+        "childIds": [
+          "comp_tarjeta",
+          "comp_boton"
+        ]
+      }
+    },
+    {
+      "id": "comp_tarjeta",
+      "type": "geo",
+      "position": [
+        7.5,
+        10
+      ],
+      "name": "Tarjeta Compuesta",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "50.0cqw",
+        "height": "31.25cqw",
+        "borderRadius": "16px",
+        "fillColor": "#047857",
+        "groupId": "comp_grupo",
+        "parallax": {
+          "axis": "both",
+          "depth": 0.6,
+          "enabled": true,
+          "mode": "mouse"
+        },
+        "shadowEnabled": true,
+        "shadowColor": "#000000",
+        "shadowBlur": 15,
+        "shadowOffsetY": 8,
+        "shadowOpacity": 40
+      }
+    },
+    {
+      "id": "comp_boton",
+      "type": "text",
+      "position": [
+        10,
+        58.3333
+      ],
+      "name": "Botón Compuesto",
+      "content": {
+        "en": "Action",
+        "es": "Acción"
+      },
+      "style": {
+        "width": "30.0cqw",
+        "height": "7.5cqw",
+        "fontSize": "3.0cqw",
+        "fillColor": "#d97706",
+        "groupId": "comp_grupo",
+        "isInteractive": true,
+        "states": {
+          "active": {
+            "actions": [
+              {
+                "target": "comp_tarjeta",
+                "type": "toggle"
+              }
+            ]
+          },
+          "hover": {
+            "opacity": 90,
+            "scale": 104
+          }
+        }
+      }
+    }
+  ]
+}

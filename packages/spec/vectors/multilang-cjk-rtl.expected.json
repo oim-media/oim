@@ -1,0 +1,30 @@
+{
+  "description": "Soporte multilingüe CJK y RTL con español, japonés y árabe.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "texto_internacional",
+      "type": "text",
+      "position": [
+        6.25,
+        8.3333
+      ],
+      "name": "Texto Multilingüe",
+      "content": {
+        "ar": "مرحبا بالعالم",
+        "es": "Hola mundo",
+        "ja": "こんにちは世界"
+      },
+      "style": {
+        "width": "50.0cqw",
+        "height": "12.5cqw",
+        "fontSize": "4.0cqw"
+      }
+    }
+  ]
+}

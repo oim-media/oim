@@ -1,0 +1,46 @@
+{
+  "name": "@oim-media/core",
+  "license": "Apache-2.0",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./api": {
+      "types": "./dist/api.d.ts",
+      "default": "./dist/api.js"
+    },
+    "./generative": {
+      "types": "./dist/generative/index.d.ts",
+      "default": "./dist/generative/index.js"
+    },
+    "./generative/catalog": {
+      "types": "./dist/generative/catalog.d.ts",
+      "default": "./dist/generative/catalog.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.4",
+    "ajv": "^8.20.0",
+    "typescript": "~6.0.3",
+    "vitest": "^4.1.0"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "keys": [
+    {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "9KBU68BqMoCNw-3-puoT2z4MQtwaUGVUtYLUpRXo2C4",
+      "y": "E-wEktY6MhuvI8OVV1n0-oAtV7OnzsPsWsQFPj81sw4",
+      "kid": "ensayo-nueva"
+    },
+    {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "KJX08q0BN4huUhXOyqQqti0Mz_Yg2JY9kRcVTmBELQ4",
+      "y": "4S7tj60Uq4rkpoSUK3129ZUGEg3TnwRsZCfw77xw3oE",
+      "kid": "ensayo-vieja",
+      "not_after": "2026-09-17T12:00:00+00:00"
+    }
+  ],
+  "jwk_vieja": {
+    "kty": "EC",
+    "crv": "P-256",
+    "x": "KJX08q0BN4huUhXOyqQqti0Mz_Yg2JY9kRcVTmBELQ4",
+    "y": "4S7tj60Uq4rkpoSUK3129ZUGEg3TnwRsZCfw77xw3oE",
+    "kid": "ensayo-vieja"
+  },
+  "not_after": "2026-09-17T12:00:00+00:00",
+  "firmado_con_la_vieja_antes": {
+    "oim_id": null,
+    "signed_at": "2026-06-01T00:00:00+00:00",
+    "slots": [],
+    "signature": "Akeph1PcV9MFF8Il2m4wC81whMcKsai5F8iD8A9P7zHdHuoYhJeclBfjOYX3Ruo1wM8QgZUaIfb7EoXVGII9wg==",
+    "key_version": "ensayo-vieja",
+    "timestamp": "2026-09-17T20:24:18.404885+00:00"
+  },
+  "firmado_con_la_vieja_despues": {
+    "oim_id": null,
+    "signed_at": "2026-12-01T00:00:00+00:00",
+    "slots": [],
+    "signature": "zXZbGwpJ3asQn/ryPFJuTtmuuKbsEhiOdAIvFK8iioUyCk1g9EGofIH+v1wqZQ8LEuv+lgFbnZkymiW3P9JfGw==",
+    "key_version": "ensayo-vieja",
+    "timestamp": "2026-09-17T20:24:18.405960+00:00"
+  },
+  "firmado_con_la_nueva": {
+    "oim_id": null,
+    "signed_at": "2026-09-17T20:24:18.406002+00:00",
+    "slots": [],
+    "signature": "7gjWDZYFl79vSkGYwXtU+CuFG6V6O8b7UeznmAq2LbAe63QLqvsWLrN/f/bK4ookp5cKOuaXTKt7auc6zPhGyA==",
+    "key_version": "ensayo-nueva",
+    "timestamp": "2026-09-17T20:24:18.407009+00:00"
+  }
+}

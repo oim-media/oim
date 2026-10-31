@@ -1,0 +1,52 @@
+{
+  "description": "Grano por capa (contrato 1.10.0): intensidad, tamaño y mezcla en el estilo de un texto y de una forma.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "titulo",
+      "type": "text",
+      "position": [
+        10,
+        10
+      ],
+      "name": "Titulo",
+      "content": {
+        "en": "Grain",
+        "es": "Grano"
+      },
+      "style": {
+        "width": "50.0cqw",
+        "height": "11.25cqw",
+        "fontSize": "5.0cqw",
+        "grain": true,
+        "grainIntensity": 30,
+        "grainSize": 70,
+        "grainBlend": "soft-light"
+      }
+    },
+    {
+      "id": "circulo",
+      "type": "geo",
+      "position": [
+        65,
+        33.3333
+      ],
+      "name": "Circulo",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "25.0cqw",
+        "height": "25.0cqw",
+        "fillColor": "#3366cc",
+        "grain": true,
+        "grainIntensity": 20
+      }
+    }
+  ]
+}

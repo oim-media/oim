@@ -1,0 +1,47 @@
+{
+  "description": "Opacidad de capa y modos de fusión de mezcla visual.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "fondo_base",
+      "type": "geo",
+      "position": [
+        6.25,
+        8.3333
+      ],
+      "name": "Fondo Base",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "37.5cqw",
+        "height": "25.0cqw",
+        "fillColor": "#ef4444"
+      }
+    },
+    {
+      "id": "capa_blend",
+      "type": "geo",
+      "position": [
+        18.75,
+        16.6667
+      ],
+      "name": "Capa Blend",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "37.5cqw",
+        "height": "25.0cqw",
+        "fillColor": "#3b82f6",
+        "blendMode": "multiply",
+        "opacity": 70
+      }
+    }
+  ]
+}

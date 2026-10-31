@@ -1,0 +1,68 @@
+{
+  "description": "Roles de color en patrones (contrato 1.21.0): fondo de patron con accent y surface, una capa de patron con accent y una sombra con accent al 30%.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "palettes": {
+    "dark": {
+      "accent": "#a3e635",
+      "surface": "#18181b"
+    },
+    "light": {
+      "accent": "#4d7c0f",
+      "surface": "#fafafa"
+    }
+  },
+  "defaultPalette": "dark",
+  "slots": [
+    {
+      "id": "background-pattern-slot",
+      "type": "geo",
+      "position": [
+        0,
+        0
+      ],
+      "name": "Fondo",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "100.0cqw",
+        "height": "75.0cqw",
+        "backgroundType": "pattern",
+        "backgroundPatternType": "dots",
+        "backgroundPatternColor": "#a3e635",
+        "backgroundPatternColorRole": "accent",
+        "backgroundPatternBgColor": "#18181b",
+        "backgroundPatternBgColorRole": "surface"
+      }
+    },
+    {
+      "id": "patron",
+      "type": "pattern",
+      "position": [
+        12.5,
+        16.6667
+      ],
+      "name": "Patron",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "37.5cqw",
+        "height": "37.5cqw",
+        "shadowEnabled": true,
+        "shadowColor": "#000000",
+        "shadowBlur": 12,
+        "shadowOpacity": 30,
+        "fillPatternType": "dots",
+        "fillPatternColor": "#a3e635",
+        "fillPatternColorRole": "accent",
+        "shadowColorRole": "accent"
+      }
+    }
+  ]
+}

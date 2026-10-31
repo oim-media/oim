@@ -1,0 +1,57 @@
+{
+  "description": "Paletas con nombre (contrato 1.20.0): dark y light, defaultPalette=dark, una capa de texto con text-primary y una superficie con surface.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "palettes": {
+    "dark": {
+      "surface": "#18181b",
+      "text-primary": "#f4f4f5"
+    },
+    "light": {
+      "surface": "#fafafa",
+      "text-primary": "#18181b"
+    }
+  },
+  "defaultPalette": "dark",
+  "slots": [
+    {
+      "id": "superficie",
+      "type": "geo",
+      "position": [
+        5,
+        6.6667
+      ],
+      "name": "Superficie",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "90.0cqw",
+        "height": "65.0cqw",
+        "fillColor": "#71717a"
+      }
+    },
+    {
+      "id": "titular",
+      "type": "text",
+      "position": [
+        10,
+        33.3333
+      ],
+      "name": "Titular",
+      "content": {
+        "es": "Paleta"
+      },
+      "style": {
+        "width": "80.0cqw",
+        "height": "15.0cqw",
+        "fontSize": "8.0cqw",
+        "fillColor": "#3f3f46"
+      }
+    }
+  ]
+}

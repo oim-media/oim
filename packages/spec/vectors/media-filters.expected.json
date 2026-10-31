@@ -1,0 +1,50 @@
+{
+  "description": "Filtros de medios (contrato 1.18.0): una foto en blanco y negro y un marco circular con desenfoque y trazo; el filtro solo toca la foto.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "foto-bn",
+      "type": "image",
+      "position": [
+        10,
+        25
+      ],
+      "name": "Foto en blanco y negro",
+      "content": {
+        "*": "https://cdn.oim.media/demos/crop.png"
+      },
+      "style": {
+        "width": "37.5cqw",
+        "height": "25.0cqw",
+        "filterPreset": "grayscale"
+      }
+    },
+    {
+      "id": "marco-blur",
+      "type": "geo",
+      "position": [
+        55,
+        25
+      ],
+      "name": "Marco con desenfoque",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "35.0cqw",
+        "height": "35.0cqw",
+        "fillColor": "#d4d4d8",
+        "borderWidth": 4,
+        "borderColor": "#111111",
+        "filterBlur": 6,
+        "fillImage": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGN4nh8IRwzEcQC5Ehpxr683xgAAAABJRU5ErkJggg==",
+        "fillType": "image"
+      }
+    }
+  ]
+}

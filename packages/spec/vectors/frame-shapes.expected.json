@@ -1,0 +1,73 @@
+{
+  "description": "Formas de marco (contrato 1.19.0): una nube con foto, un trazado SVG propio con foto (viewBox 24) y una estrella con la foto volteada.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "marco-nube",
+      "type": "geo",
+      "position": [
+        10,
+        25
+      ],
+      "name": "Marco nube",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "35.0cqw",
+        "height": "35.0cqw",
+        "fillColor": "#d4d4d8",
+        "fillImage": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGN4nh8IRwzEcQC5Ehpxr683xgAAAABJRU5ErkJggg==",
+        "fillType": "image",
+        "geoShape": "cloud"
+      }
+    },
+    {
+      "id": "marco-svg",
+      "type": "geo",
+      "position": [
+        55,
+        25
+      ],
+      "name": "Marco SVG propio",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "35.0cqw",
+        "height": "35.0cqw",
+        "fillColor": "#d4d4d8",
+        "fillImage": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGN4nh8IRwzEcQC5Ehpxr683xgAAAABJRU5ErkJggg==",
+        "fillType": "image",
+        "svgPath": "M12 2L22 22H2Z",
+        "svgViewBox": "0 0 24 24"
+      }
+    },
+    {
+      "id": "marco-estrella",
+      "type": "geo",
+      "position": [
+        10,
+        63.3333
+      ],
+      "name": "Marco estrella volteado",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "25.0cqw",
+        "height": "25.0cqw",
+        "fillColor": "#d4d4d8",
+        "fillImage": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGN4nh8IRwzEcQC5Ehpxr683xgAAAABJRU5ErkJggg==",
+        "fillType": "image",
+        "geoShape": "star",
+        "fillImageFlipX": true
+      }
+    }
+  ]
+}

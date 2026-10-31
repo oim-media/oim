@@ -1,0 +1,48 @@
+{
+  "description": "Desenfoque de capa: `layerBlur` en el estilo de un texto y de una forma.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "titulo",
+      "type": "text",
+      "position": [
+        10,
+        10
+      ],
+      "name": "Titulo",
+      "content": {
+        "en": "Blurred",
+        "es": "Borroso"
+      },
+      "style": {
+        "width": "50.0cqw",
+        "height": "11.25cqw",
+        "fontSize": "5.0cqw",
+        "layerBlur": 4
+      }
+    },
+    {
+      "id": "fondo",
+      "type": "geo",
+      "position": [
+        50,
+        33.3333
+      ],
+      "name": "Fondo",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "37.5cqw",
+        "height": "37.5cqw",
+        "fillColor": "#3366cc",
+        "layerBlur": 12
+      }
+    }
+  ]
+}

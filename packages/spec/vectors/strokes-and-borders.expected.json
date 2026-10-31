@@ -1,0 +1,31 @@
+{
+  "description": "Contorno vectorial y bordes con estilo dashed y ancho personalizado.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "rect_trazo",
+      "type": "geo",
+      "position": [
+        7.5,
+        10
+      ],
+      "name": "Rectángulo con Trazo",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "35.0cqw",
+        "height": "20.0cqw",
+        "fillColor": "#f3f4f6",
+        "borderWidth": 4,
+        "borderColor": "#8b5cf6",
+        "strokeStyle": "dashed"
+      }
+    }
+  ]
+}

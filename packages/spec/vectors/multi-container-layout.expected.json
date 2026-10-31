@@ -1,0 +1,45 @@
+{
+  "description": "Disposición con slots de tipo contenedor organizando el espacio de lienzo.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "sidebar",
+      "type": "container",
+      "position": [
+        0,
+        0
+      ],
+      "name": "Sidebar",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "30.0cqw",
+        "height": "75.0cqw",
+        "fillColor": "#1e293b"
+      }
+    },
+    {
+      "id": "contenido_principal",
+      "type": "container",
+      "position": [
+        31.25,
+        3.3333
+      ],
+      "name": "Área Principal",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "66.25cqw",
+        "height": "70.0cqw",
+        "fillColor": "#f8fafc"
+      }
+    }
+  ]
+}

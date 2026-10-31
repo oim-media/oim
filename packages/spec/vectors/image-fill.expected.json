@@ -1,0 +1,54 @@
+{
+  "description": "Relleno de imagen (contrato 1.17.0): un circulo y una estrella rellenos con una foto incrustada, uno con `fillImageCrop`.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "marco-circulo",
+      "type": "geo",
+      "position": [
+        10,
+        25
+      ],
+      "name": "Marco circulo",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "35.0cqw",
+        "height": "35.0cqw",
+        "fillColor": "#d4d4d8",
+        "fillImage": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGN4nh8IRwzEcQC5Ehpxr683xgAAAABJRU5ErkJggg==",
+        "fillType": "image"
+      }
+    },
+    {
+      "id": "marco-estrella",
+      "type": "geo",
+      "position": [
+        55,
+        25
+      ],
+      "name": "Marco estrella",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "35.0cqw",
+        "height": "35.0cqw",
+        "fillColor": "#d4d4d8",
+        "fillImage": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGN4nh8IRwzEcQC5Ehpxr683xgAAAABJRU5ErkJggg==",
+        "fillImageCrop": {
+          "x": 20,
+          "y": 70,
+          "zoom": 2
+        },
+        "fillType": "image"
+      }
+    }
+  ]
+}

@@ -1,0 +1,2702 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oim.media/spec/1.22.0/ovm.schema.json",
+  "title": "OVM document metadata",
+  "specVersion": "1.22.0",
+  "type": "object",
+  "properties": {
+    "ovm_version": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "ovm_id": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "image_hash": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "immutable_lock": {
+      "type": "boolean"
+    },
+    "redirect_membership_verified": {
+      "type": "boolean",
+      "deprecated": true,
+      "description": "Retired in 1.1.0 with allow_external_urls. A new reader must not write it."
+    },
+    "terms_accepted": {
+      "type": "boolean",
+      "deprecated": true,
+      "description": "Retired in 1.1.0 with allow_external_urls. A new reader must not write it."
+    },
+    "allowed_domains": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 253
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "fps": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 120
+        },
+        "resolution": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "minItems": 2,
+          "items": false
+        }
+      }
+    },
+    "zones": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/zone"
+      }
+    },
+    "slots": {
+      "maxItems": 150,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/slot"
+      }
+    },
+    "elements": {
+      "maxItems": 150,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/slot"
+      },
+      "deprecated": true,
+      "description": "Retired in 1.12.0 (contract audit, 10 Oct 2026): slots is the one name; readers still accept it."
+    },
+    "layers": {
+      "maxItems": 150,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/slot"
+      },
+      "deprecated": true,
+      "description": "Retired in 1.12.0 (contract audit, 10 Oct 2026): slots is the one name; readers still accept it."
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "vector_parallax",
+          "infinite_parallax",
+          "text_marks",
+          "image_fill",
+          "media_filters",
+          "frame_shapes"
+        ]
+      }
+    },
+    "capabilities_required": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "vector_parallax",
+          "infinite_parallax",
+          "text_marks",
+          "image_fill",
+          "media_filters",
+          "frame_shapes"
+        ]
+      }
+    },
+    "signature": {
+      "type": "string"
+    },
+    "key_version": {
+      "type": "string"
+    },
+    "signed_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+    }
+  },
+  "required": [
+    "slots"
+  ],
+  "additionalProperties": {},
+  "$defs": {
+    "zone": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "position": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            }
+          ],
+          "minItems": 2,
+          "items": false
+        },
+        "size": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            }
+          ],
+          "minItems": 2,
+          "items": false
+        },
+        "style": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "id",
+        "position",
+        "size"
+      ]
+    },
+    "slot": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "text",
+            "image",
+            "lottie",
+            "zone",
+            "geo",
+            "shape",
+            "draw",
+            "filter",
+            "container",
+            "group",
+            "component",
+            "mask",
+            "svg",
+            "pattern",
+            "artistic-text"
+          ]
+        },
+        "languages": {
+          "default": [
+            "*"
+          ],
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/__schema0"
+          }
+        },
+        "pendingTranslation": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/__schema0"
+          }
+        },
+        "align": {
+          "type": "string",
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ]
+        },
+        "content": {
+          "$ref": "#/$defs/content"
+        },
+        "style": {
+          "$ref": "#/$defs/style"
+        },
+        "position": {
+          "$ref": "#/$defs/position"
+        },
+        "parallax": {
+          "$ref": "#/$defs/parallax"
+        },
+        "tracking_data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/trackingKeyframe"
+          }
+        },
+        "width_px": {
+          "type": "number"
+        },
+        "height_px": {
+          "type": "number"
+        },
+        "zone_id": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "interaction": {
+          "$ref": "#/$defs/interaction"
+        },
+        "p": {
+          "deprecated": true,
+          "description": "Retired in 1.12.0 (contract audit, 10 Oct 2026): use position.",
+          "$ref": "#/$defs/position"
+        },
+        "s": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "deprecated": true,
+          "description": "Retired in 1.12.0 (contract audit, 10 Oct 2026): no writer emits it.",
+          "minItems": 2,
+          "items": false
+        },
+        "st": {
+          "deprecated": true,
+          "description": "Retired in 1.12.0 (contract audit, 10 Oct 2026): use style.",
+          "$ref": "#/$defs/style"
+        },
+        "c": {
+          "deprecated": true,
+          "description": "Retired in 1.12.0 (contract audit, 10 Oct 2026): use content.",
+          "$ref": "#/$defs/content"
+        },
+        "t": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/trackingKeyframe"
+          },
+          "deprecated": true,
+          "description": "Retired in 1.12.0 (contract audit, 10 Oct 2026): use tracking_data."
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "__schema0": {
+      "type": "string",
+      "maxLength": 10
+    },
+    "content": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/__schema2"
+      }
+    },
+    "__schema2": {
+      "type": "string",
+      "maxLength": 10000000
+    },
+    "style": {
+      "type": "object",
+      "properties": {
+        "effects": {
+          "$ref": "#/$defs/__schema3"
+        },
+        "lineHeight": {
+          "$ref": "#/$defs/__schema5"
+        },
+        "fontSize": {
+          "$ref": "#/$defs/__schema6"
+        },
+        "fontWeight": {
+          "$ref": "#/$defs/__schema7"
+        },
+        "fontStyle": {
+          "$ref": "#/$defs/__schema8"
+        },
+        "textDecoration": {
+          "$ref": "#/$defs/__schema9"
+        },
+        "textTransform": {
+          "$ref": "#/$defs/__schema10"
+        },
+        "fontSizes": {
+          "$ref": "#/$defs/__schema11"
+        },
+        "maxWidths": {
+          "$ref": "#/$defs/__schema12"
+        },
+        "textRuns": {
+          "$ref": "#/$defs/__schema13"
+        },
+        "outline": {
+          "$ref": "#/$defs/__schema15"
+        },
+        "objectFit": {
+          "$ref": "#/$defs/__schema16"
+        },
+        "imageCrop": {
+          "$ref": "#/$defs/__schema17"
+        },
+        "alt": {
+          "$ref": "#/$defs/__schema18"
+        },
+        "decorative": {
+          "type": "boolean"
+        },
+        "verticalAlign": {
+          "$ref": "#/$defs/__schema20"
+        },
+        "animation": {
+          "$ref": "#/$defs/__schema21"
+        },
+        "reveal": {
+          "$ref": "#/$defs/__schema23"
+        },
+        "shader_fx": {
+          "$ref": "#/$defs/__schema24"
+        },
+        "isInteractive": {
+          "type": "boolean"
+        },
+        "states": {
+          "$ref": "#/$defs/__schema29"
+        },
+        "grain": {
+          "$ref": "#/$defs/__schema32"
+        },
+        "grainIntensity": {
+          "$ref": "#/$defs/__schema33"
+        },
+        "grainSize": {
+          "$ref": "#/$defs/__schema34"
+        },
+        "grainBlend": {
+          "$ref": "#/$defs/__schema35"
+        },
+        "effect": {
+          "$ref": "#/$defs/__schema36"
+        },
+        "effectColor": {
+          "$ref": "#/$defs/__schema37"
+        },
+        "effectRadius": {
+          "$ref": "#/$defs/__schema38"
+        },
+        "textAlign": {
+          "$ref": "#/$defs/__schema39"
+        },
+        "fontFamily": {
+          "$ref": "#/$defs/__schema40"
+        },
+        "width": {
+          "$ref": "#/$defs/__schema41"
+        },
+        "height": {
+          "$ref": "#/$defs/__schema42"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/__schema43"
+        },
+        "borderRadius": {
+          "$ref": "#/$defs/__schema44"
+        },
+        "fillColor": {
+          "$ref": "#/$defs/__schema45"
+        },
+        "strokeStyle": {
+          "$ref": "#/$defs/__schema46"
+        },
+        "textStrokeColor": {
+          "$ref": "#/$defs/__schema47"
+        },
+        "shadowEnabled": {
+          "type": "boolean"
+        },
+        "shadowColor": {
+          "$ref": "#/$defs/__schema49"
+        },
+        "shadowColorRole": {
+          "$ref": "#/$defs/__schema50"
+        },
+        "shadowBlur": {
+          "$ref": "#/$defs/__schema51"
+        },
+        "shadowOffsetX": {
+          "$ref": "#/$defs/__schema52"
+        },
+        "shadowOffsetY": {
+          "$ref": "#/$defs/__schema53"
+        },
+        "shadowOpacity": {
+          "$ref": "#/$defs/__schema54"
+        },
+        "blendMode": {
+          "$ref": "#/$defs/__schema55"
+        },
+        "layerBlur": {
+          "$ref": "#/$defs/__schema56"
+        },
+        "maskCoverage": {
+          "$ref": "#/$defs/__schema57"
+        },
+        "maskInvert": {
+          "type": "boolean"
+        },
+        "strokeColor": {
+          "$ref": "#/$defs/__schema59"
+        },
+        "strokeWidth": {
+          "$ref": "#/$defs/__schema60"
+        },
+        "textStrokeWidth": {
+          "$ref": "#/$defs/__schema61"
+        },
+        "geoShape": {
+          "$ref": "#/$defs/__schema62"
+        },
+        "svgPath": {
+          "$ref": "#/$defs/__schema63"
+        },
+        "svgViewBox": {
+          "$ref": "#/$defs/__schema64"
+        },
+        "svgRawXml": {
+          "type": "string"
+        },
+        "artisticPreset": {
+          "$ref": "#/$defs/__schema66"
+        },
+        "curveAmount": {
+          "$ref": "#/$defs/__schema67"
+        },
+        "curveType": {
+          "$ref": "#/$defs/__schema68"
+        },
+        "extrusionDepth": {
+          "$ref": "#/$defs/__schema69"
+        },
+        "extrusionAngle": {
+          "$ref": "#/$defs/__schema70"
+        },
+        "extrusionColor": {
+          "$ref": "#/$defs/__schema71"
+        },
+        "extrusionShading": {
+          "type": "boolean"
+        },
+        "outerStrokeColor": {
+          "$ref": "#/$defs/__schema73"
+        },
+        "outerStrokeWidth": {
+          "$ref": "#/$defs/__schema74"
+        },
+        "innerStrokeColor": {
+          "$ref": "#/$defs/__schema75"
+        },
+        "innerStrokeWidth": {
+          "$ref": "#/$defs/__schema76"
+        },
+        "maskMode": {
+          "$ref": "#/$defs/__schema77"
+        },
+        "maskShape": {
+          "$ref": "#/$defs/__schema78"
+        },
+        "maskBgColor": {
+          "$ref": "#/$defs/__schema79"
+        },
+        "maskStrokeColor": {
+          "$ref": "#/$defs/__schema80"
+        },
+        "maskStrokeWidth": {
+          "$ref": "#/$defs/__schema81"
+        },
+        "filterPreset": {
+          "$ref": "#/$defs/__schema82"
+        },
+        "cssAnimation": {
+          "$ref": "#/$defs/__schema83"
+        },
+        "filterBlur": {
+          "$ref": "#/$defs/__schema84"
+        },
+        "filterBrightness": {
+          "$ref": "#/$defs/__schema85"
+        },
+        "filterContrast": {
+          "$ref": "#/$defs/__schema86"
+        },
+        "filterSaturate": {
+          "$ref": "#/$defs/__schema87"
+        },
+        "filterHueRotate": {
+          "$ref": "#/$defs/__schema88"
+        },
+        "textAnimationType": {
+          "$ref": "#/$defs/__schema89"
+        },
+        "textAnimationSpeed": {
+          "$ref": "#/$defs/__schema90"
+        },
+        "textAnimationDelay": {
+          "$ref": "#/$defs/__schema91"
+        },
+        "textAnimationIntensity": {
+          "$ref": "#/$defs/__schema92"
+        },
+        "typewriterCursor": {
+          "type": "boolean"
+        },
+        "textHighlight": {
+          "$ref": "#/$defs/__schema94"
+        },
+        "dropCap": {
+          "$ref": "#/$defs/__schema95"
+        },
+        "marks": {
+          "$ref": "#/$defs/__schema96"
+        },
+        "customBlobPath": {
+          "type": "string"
+        },
+        "maskFeather": {
+          "$ref": "#/$defs/__schema100"
+        },
+        "maskSvgPath": {
+          "type": "string"
+        },
+        "cuts": {
+          "$ref": "#/$defs/__schema102"
+        },
+        "trimStart": {
+          "$ref": "#/$defs/__schema103"
+        },
+        "trimEnd": {
+          "$ref": "#/$defs/__schema104"
+        },
+        "trimDuration": {
+          "$ref": "#/$defs/__schema105"
+        },
+        "groupId": {
+          "$ref": "#/$defs/__schema106"
+        },
+        "rotation": {
+          "type": "number"
+        },
+        "flipX": {
+          "type": "boolean"
+        },
+        "flipY": {
+          "type": "boolean"
+        },
+        "opacity": {
+          "$ref": "#/$defs/__schema110"
+        },
+        "isVisible": {
+          "type": "boolean"
+        },
+        "textGradientType": {
+          "$ref": "#/$defs/__schema112"
+        },
+        "fillColorRole": {
+          "$ref": "#/$defs/__schema113"
+        },
+        "strokeColorRole": {
+          "$ref": "#/$defs/__schema114"
+        },
+        "colorRole": {
+          "$ref": "#/$defs/__schema115"
+        },
+        "textStrokeColorRole": {
+          "$ref": "#/$defs/__schema116"
+        },
+        "effectColorRole": {
+          "$ref": "#/$defs/__schema117"
+        },
+        "maskBgColorRole": {
+          "$ref": "#/$defs/__schema118"
+        },
+        "maskStrokeColorRole": {
+          "$ref": "#/$defs/__schema119"
+        },
+        "fillGenerative": {
+          "$ref": "#/$defs/__schema120"
+        },
+        "fillGradient": {
+          "$ref": "#/$defs/__schema121"
+        },
+        "fillPatternType": {
+          "$ref": "#/$defs/__schema122"
+        },
+        "fillPatternColor": {
+          "$ref": "#/$defs/__schema123"
+        },
+        "fillPatternColorRole": {
+          "$ref": "#/$defs/__schema124"
+        },
+        "fillPatternBgColor": {
+          "$ref": "#/$defs/__schema125"
+        },
+        "fillPatternBgColorRole": {
+          "$ref": "#/$defs/__schema126"
+        },
+        "fillPatternSpeed": {
+          "type": "number"
+        },
+        "fillPatternScale": {
+          "type": "number"
+        },
+        "fillPatternDirection": {
+          "$ref": "#/$defs/__schema129"
+        },
+        "fillPatternSvgs": {
+          "$ref": "#/$defs/__schema130"
+        },
+        "fillPatternColors": {
+          "$ref": "#/$defs/__schema132"
+        },
+        "fillPatternSizes": {
+          "$ref": "#/$defs/__schema133"
+        },
+        "fillPatternCounts": {
+          "$ref": "#/$defs/__schema135"
+        },
+        "fillPatternDispersions": {
+          "$ref": "#/$defs/__schema137"
+        },
+        "backgroundType": {
+          "$ref": "#/$defs/__schema139"
+        },
+        "backgroundPatternColor": {
+          "$ref": "#/$defs/__schema140"
+        },
+        "backgroundPatternColorRole": {
+          "$ref": "#/$defs/__schema141"
+        },
+        "backgroundPatternBgColor": {
+          "$ref": "#/$defs/__schema142"
+        },
+        "backgroundPatternBgColorRole": {
+          "$ref": "#/$defs/__schema143"
+        },
+        "backgroundPatternColors": {
+          "$ref": "#/$defs/__schema144"
+        },
+        "fillType": {
+          "$ref": "#/$defs/__schema145"
+        },
+        "fillImage": {
+          "$ref": "#/$defs/__schema146"
+        },
+        "fillImageCrop": {
+          "$ref": "#/$defs/__schema147"
+        },
+        "fillImageFlipX": {
+          "type": "boolean"
+        },
+        "fillImageFlipY": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/__schema150"
+      }
+    },
+    "__schema3": {
+      "maxItems": 8,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/__schema4"
+      }
+    },
+    "__schema4": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "texture"
+            },
+            "preset": {
+              "type": "string",
+              "enum": [
+                "film-grain-35mm",
+                "fine-noise",
+                "dust-scratches",
+                "vintage-paper",
+                "rough-canvas",
+                "halftone-dots",
+                "scanlines",
+                "concentric-rings"
+              ]
+            },
+            "intensity": {
+              "default": 30,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "blend": {
+              "default": "overlay",
+              "type": "string",
+              "enum": [
+                "normal",
+                "overlay",
+                "soft-light",
+                "multiply",
+                "screen",
+                "color-dodge",
+                "darken",
+                "lighten"
+              ]
+            },
+            "scale": {
+              "default": 1,
+              "type": "number",
+              "minimum": 0.2,
+              "maximum": 5
+            },
+            "color": {
+              "$ref": "#/$defs/cssColor"
+            },
+            "colorRole": {
+              "type": "string",
+              "enum": [
+                "primary",
+                "on-primary",
+                "secondary",
+                "on-secondary",
+                "surface",
+                "on-surface",
+                "outline",
+                "accent",
+                "text-primary",
+                "text-secondary",
+                "text-muted",
+                "text-on-accent"
+              ]
+            },
+            "enabled": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "type",
+            "preset"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "drop-shadow"
+            },
+            "x": {
+              "default": 0,
+              "type": "number"
+            },
+            "y": {
+              "default": 4,
+              "type": "number"
+            },
+            "blur": {
+              "default": 12,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 200
+            },
+            "spread": {
+              "default": 0,
+              "type": "number"
+            },
+            "color": {
+              "default": "rgba(0, 0, 0, 0.35)",
+              "$ref": "#/$defs/cssColor"
+            },
+            "colorRole": {
+              "type": "string",
+              "enum": [
+                "primary",
+                "on-primary",
+                "secondary",
+                "on-secondary",
+                "surface",
+                "on-surface",
+                "outline",
+                "accent",
+                "text-primary",
+                "text-secondary",
+                "text-muted",
+                "text-on-accent"
+              ]
+            },
+            "enabled": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "type"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "blur"
+            },
+            "radius": {
+              "default": 8,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "enabled": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "type"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "glow"
+            },
+            "color": {
+              "default": "#f59e0b",
+              "$ref": "#/$defs/cssColor"
+            },
+            "colorRole": {
+              "type": "string",
+              "enum": [
+                "primary",
+                "on-primary",
+                "secondary",
+                "on-secondary",
+                "surface",
+                "on-surface",
+                "outline",
+                "accent",
+                "text-primary",
+                "text-secondary",
+                "text-muted",
+                "text-on-accent"
+              ]
+            },
+            "radius": {
+              "default": 16,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "intensity": {
+              "default": 50,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "enabled": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "type"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "color-grade"
+            },
+            "preset": {
+              "type": "string",
+              "enum": [
+                "warm-vintage",
+                "cool-cinema",
+                "cyberpunk",
+                "monochrome-contrast"
+              ]
+            },
+            "intensity": {
+              "default": 50,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "enabled": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "type",
+            "preset"
+          ]
+        }
+      ]
+    },
+    "cssColor": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^(?:(?:#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|(?:rgb|rgba|hsl|hsla)\\(\\s*[0-9a-zA-Z.,%/\\s+-]*\\)|(?:transparent|currentColor|currentcolor|none|inherit))|var\\(\\s*--[A-Za-z0-9_-]+\\s*\\)|var\\(\\s*--[A-Za-z0-9_-]+\\s*,\\s*(?:(?:#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|(?:rgb|rgba|hsl|hsla)\\(\\s*[0-9a-zA-Z.,%/\\s+-]*\\)|(?:transparent|currentColor|currentcolor|none|inherit))|var\\(\\s*--[A-Za-z0-9_-]+\\s*\\))\\s*\\)|var\\(\\s*--[A-Za-z0-9_-]+\\s*,\\s*(?:(?:#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|(?:rgb|rgba|hsl|hsla)\\(\\s*[0-9a-zA-Z.,%/\\s+-]*\\)|(?:transparent|currentColor|currentcolor|none|inherit))|var\\(\\s*--[A-Za-z0-9_-]+\\s*\\)|var\\(\\s*--[A-Za-z0-9_-]+\\s*,\\s*(?:(?:#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|(?:rgb|rgba|hsl|hsla)\\(\\s*[0-9a-zA-Z.,%/\\s+-]*\\)|(?:transparent|currentColor|currentcolor|none|inherit))|var\\(\\s*--[A-Za-z0-9_-]+\\s*\\))\\s*\\))\\s*\\))$"
+    },
+    "__schema5": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "string",
+          "maxLength": 16
+        }
+      ]
+    },
+    "__schema6": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 16
+        },
+        {
+          "type": "number",
+          "minimum": 0
+        }
+      ]
+    },
+    "__schema7": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        }
+      ]
+    },
+    "__schema8": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "italic",
+        "oblique"
+      ]
+    },
+    "__schema9": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "__schema10": {
+      "type": "string",
+      "enum": [
+        "none",
+        "uppercase",
+        "lowercase",
+        "capitalize"
+      ],
+      "deprecated": true,
+      "description": "Retired in 1.12.0 (contract audit, 10 Oct 2026): no renderer applied it; the case is written into the text."
+    },
+    "__schema11": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "__schema12": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "__schema13": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "fontSize": {
+            "type": "number",
+            "minimum": 0
+          },
+          "lineHeight": {
+            "type": "number",
+            "minimum": 0
+          },
+          "lines": {
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/__schema14"
+            }
+          }
+        },
+        "required": [
+          "lines"
+        ],
+        "additionalProperties": {}
+      }
+    },
+    "__schema14": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "width": {
+          "type": "number",
+          "minimum": 0
+        },
+        "yOffset": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "text",
+        "width",
+        "yOffset"
+      ],
+      "additionalProperties": {}
+    },
+    "__schema15": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "__schema16": {
+      "type": "string",
+      "enum": [
+        "contain",
+        "cover",
+        "fill",
+        "none",
+        "scale-down"
+      ]
+    },
+    "__schema17": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "zoom": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 10
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "zoom"
+      ]
+    },
+    "__schema18": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/__schema0"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 300
+      }
+    },
+    "__schema20": {
+      "type": "string",
+      "enum": [
+        "top",
+        "center",
+        "bottom",
+        "mixed",
+        "justify"
+      ],
+      "deprecated": true,
+      "description": "Retired in 1.12.0 (contract audit, 10 Oct 2026): no writer and no reader."
+    },
+    "__schema21": {
+      "type": "object",
+      "properties": {
+        "loop": {
+          "type": "string",
+          "enum": [
+            "none",
+            "pulse",
+            "float",
+            "bounce",
+            "spin",
+            "glow",
+            "custom"
+          ]
+        },
+        "hover": {
+          "type": "string",
+          "enum": [
+            "none",
+            "grow",
+            "shrink",
+            "lift",
+            "glow",
+            "custom"
+          ]
+        },
+        "custom_loop_css": {
+          "type": "string",
+          "maxLength": 500,
+          "deprecated": true,
+          "description": "Retired in 1.9.0: players do not apply raw CSS. A new writer must not write it."
+        },
+        "custom_keyframes": {
+          "type": "string",
+          "maxLength": 2000,
+          "deprecated": true,
+          "description": "Retired in 1.9.0: players do not apply raw CSS. A new writer must not write it."
+        },
+        "custom_hover_css": {
+          "type": "string",
+          "maxLength": 500,
+          "deprecated": true,
+          "description": "Retired in 1.9.0: players do not apply raw CSS. A new writer must not write it."
+        },
+        "duration": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 20
+        },
+        "delay": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "keyframes": {
+          "maxItems": 240,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/keyframe"
+          }
+        },
+        "trigger": {
+          "type": "string",
+          "enum": [
+            "load",
+            "action"
+          ]
+        }
+      }
+    },
+    "keyframe": {
+      "type": "object",
+      "properties": {
+        "t": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 60
+        },
+        "o": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "s": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "r": {
+          "type": "number",
+          "minimum": -3600,
+          "maximum": 3600
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "b": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 50
+        },
+        "e": {
+          "$ref": "#/$defs/__schema22"
+        }
+      },
+      "required": [
+        "t"
+      ]
+    },
+    "__schema22": {
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "linear",
+            "ease-in",
+            "ease-out",
+            "ease-in-out",
+            "steps(1, end)"
+          ]
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "minItems": 4,
+          "items": false
+        }
+      ]
+    },
+    "__schema23": {
+      "type": "object",
+      "properties": {
+        "effect": {
+          "type": "string",
+          "enum": [
+            "fade",
+            "slide-up",
+            "slide-down",
+            "slide-left",
+            "slide-right",
+            "scale"
+          ]
+        },
+        "duration": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2000
+        },
+        "easing": {
+          "$ref": "#/$defs/__schema22"
+        }
+      },
+      "required": [
+        "effect",
+        "duration"
+      ]
+    },
+    "__schema24": {
+      "type": "object",
+      "properties": {
+        "blur": {
+          "$ref": "#/$defs/__schema25"
+        },
+        "grain": {
+          "$ref": "#/$defs/__schema26"
+        },
+        "crt_curve": {
+          "type": "boolean"
+        }
+      },
+      "deprecated": true,
+      "description": "Retired in 1.12.0 (contract audit, 10 Oct 2026): no writer and no reader."
+    },
+    "__schema25": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "__schema26": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "__schema29": {
+      "type": "object",
+      "properties": {
+        "hover": {
+          "$ref": "#/$defs/__schema30"
+        },
+        "active": {
+          "$ref": "#/$defs/__schema30"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "__schema30": {
+      "type": "object",
+      "properties": {
+        "scale": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "rotation": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "transitionDuration": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "actions": {
+          "maxItems": 64,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/__schema31"
+          }
+        }
+      },
+      "additionalProperties": {}
+    },
+    "__schema31": {
+      "type": "object",
+      "properties": {
+        "target": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "show",
+            "hide",
+            "toggle",
+            "setText",
+            "play"
+          ]
+        },
+        "value": {
+          "type": "string",
+          "maxLength": 10000
+        }
+      },
+      "required": [
+        "target",
+        "type"
+      ]
+    },
+    "__schema32": {
+      "type": "boolean",
+      "deprecated": true,
+      "description": "Retired in 1.12.0 (contract audit, 10 Oct 2026): a layer's grain is a texture in style.effects."
+    },
+    "__schema33": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 100,
+      "deprecated": true,
+      "description": "Retired in 1.12.0 (contract audit, 10 Oct 2026): see grain."
+    },
+    "__schema34": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 100,
+      "deprecated": true,
+      "description": "Retired in 1.12.0 (contract audit, 10 Oct 2026): see grain."
+    },
+    "__schema35": {
+      "type": "string",
+      "enum": [
+        "overlay",
+        "soft-light",
+        "multiply"
+      ],
+      "deprecated": true,
+      "description": "Retired in 1.12.0 (contract audit, 10 Oct 2026): see grain."
+    },
+    "__schema36": {
+      "type": "string",
+      "enum": [
+        "none",
+        "neon",
+        "shadow"
+      ]
+    },
+    "__schema37": {
+      "$ref": "#/$defs/cssColor"
+    },
+    "__schema38": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "__schema39": {
+      "type": "string",
+      "enum": [
+        "left",
+        "center",
+        "right",
+        "justify"
+      ]
+    },
+    "__schema40": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "__schema41": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 32
+        },
+        {
+          "type": "number",
+          "minimum": 0
+        }
+      ]
+    },
+    "__schema42": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 32
+        },
+        {
+          "type": "number",
+          "minimum": 0
+        }
+      ]
+    },
+    "__schema43": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 32
+        },
+        {
+          "type": "number",
+          "minimum": 0
+        }
+      ]
+    },
+    "__schema44": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 128
+        },
+        {
+          "type": "number",
+          "minimum": 0
+        }
+      ]
+    },
+    "__schema45": {
+      "$ref": "#/$defs/cssColor"
+    },
+    "__schema46": {
+      "type": "string",
+      "enum": [
+        "solid",
+        "dashed",
+        "dotted"
+      ]
+    },
+    "__schema47": {
+      "$ref": "#/$defs/cssColor"
+    },
+    "__schema49": {
+      "$ref": "#/$defs/cssColor"
+    },
+    "__schema50": {
+      "type": "string",
+      "enum": [
+        "primary",
+        "on-primary",
+        "secondary",
+        "on-secondary",
+        "surface",
+        "on-surface",
+        "outline",
+        "accent",
+        "text-primary",
+        "text-secondary",
+        "text-muted",
+        "text-on-accent"
+      ]
+    },
+    "__schema51": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 200
+    },
+    "__schema52": {
+      "type": "number",
+      "minimum": -500,
+      "maximum": 500
+    },
+    "__schema53": {
+      "type": "number",
+      "minimum": -500,
+      "maximum": 500
+    },
+    "__schema54": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "__schema55": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "multiply",
+        "screen",
+        "overlay",
+        "darken",
+        "lighten",
+        "color-dodge",
+        "color-burn",
+        "difference"
+      ],
+      "deprecated": true,
+      "description": "Retired in 1.12.0 (contract audit, 10 Oct 2026): layer blend did not show in the editor or the player; readers draw the layer as normal."
+    },
+    "__schema56": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "__schema57": {
+      "type": "string",
+      "maxLength": 32
+    },
+    "__schema59": {
+      "$ref": "#/$defs/cssColor"
+    },
+    "__schema60": {
+      "type": "number",
+      "minimum": 0
+    },
+    "__schema61": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "__schema62": {
+      "type": "string",
+      "enum": [
+        "rectangle",
+        "circle",
+        "triangle",
+        "star",
+        "line",
+        "arrow",
+        "diamond",
+        "hexagon",
+        "heart",
+        "blob",
+        "scribble",
+        "custom",
+        "pill",
+        "octagon",
+        "pentagon",
+        "cross",
+        "moon",
+        "cloud",
+        "drop",
+        "bolt",
+        "bubble",
+        "flower",
+        "burst",
+        "arch"
+      ]
+    },
+    "__schema63": {
+      "type": "string",
+      "maxLength": 20000,
+      "pattern": "^[MmLlHhVvCcSsQqTtAaZz0-9eE.,\\s+-]*$"
+    },
+    "__schema64": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^-?\\d+(\\.\\d+)?([\\s,]+-?\\d+(\\.\\d+)?){3}$"
+    },
+    "__schema66": {
+      "type": "string",
+      "enum": [
+        "neon-cyberpunk",
+        "retro-wave-3d",
+        "comic-pop-extrusion",
+        "vintage-emboss",
+        "chrome-metallic",
+        "arcade-80s",
+        "custom"
+      ]
+    },
+    "__schema67": {
+      "type": "number",
+      "minimum": -100,
+      "maximum": 100
+    },
+    "__schema68": {
+      "type": "string",
+      "enum": [
+        "arc",
+        "wave",
+        "arch"
+      ]
+    },
+    "__schema69": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "__schema70": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 360
+    },
+    "__schema71": {
+      "$ref": "#/$defs/cssColor"
+    },
+    "__schema73": {
+      "$ref": "#/$defs/cssColor"
+    },
+    "__schema74": {
+      "type": "number",
+      "minimum": 0
+    },
+    "__schema75": {
+      "$ref": "#/$defs/cssColor"
+    },
+    "__schema76": {
+      "type": "number",
+      "minimum": 0
+    },
+    "__schema77": {
+      "type": "string",
+      "enum": [
+        "window",
+        "cutout"
+      ]
+    },
+    "__schema78": {
+      "type": "string",
+      "enum": [
+        "circle",
+        "rectangle",
+        "triangle",
+        "star",
+        "line",
+        "arrow",
+        "diamond",
+        "hexagon",
+        "heart",
+        "blob",
+        "custom"
+      ]
+    },
+    "__schema79": {
+      "$ref": "#/$defs/cssColor"
+    },
+    "__schema80": {
+      "$ref": "#/$defs/cssColor"
+    },
+    "__schema81": {
+      "type": "number",
+      "minimum": 0
+    },
+    "__schema82": {
+      "type": "string",
+      "enum": [
+        "none",
+        "duotone",
+        "grayscale",
+        "sepia",
+        "high-contrast",
+        "vintage",
+        "cool",
+        "warm",
+        "faded",
+        "cinema",
+        "nordic",
+        "sunset",
+        "noir",
+        "dramatic",
+        "cyberpunk",
+        "pastel",
+        "vhs"
+      ]
+    },
+    "__schema83": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^background-animation-(?:right|left|up|down|zoom-in|zoom-out|pulse|none) \\d+(?:\\.\\d+)?s linear infinite$"
+    },
+    "__schema84": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "__schema85": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 500
+    },
+    "__schema86": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 500
+    },
+    "__schema87": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 500
+    },
+    "__schema88": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 360
+    },
+    "__schema89": {
+      "type": "string",
+      "enum": [
+        "none",
+        "typewriter",
+        "fade-chars",
+        "slide-up",
+        "blur-chars",
+        "bounce-chars",
+        "wave-chars",
+        "glitch-cyberpunk",
+        "glitch-slice",
+        "reveal-mask",
+        "scale-in",
+        "rise-words"
+      ]
+    },
+    "__schema90": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 200
+    },
+    "__schema91": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "__schema92": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "__schema94": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "type": "boolean"
+        },
+        "color": {
+          "default": "rgba(245, 158, 11, 0.35)",
+          "$ref": "#/$defs/cssColor"
+        },
+        "style": {
+          "default": "marker",
+          "type": "string",
+          "enum": [
+            "marker",
+            "box",
+            "pill",
+            "underline-thick"
+          ]
+        },
+        "paddingX": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 64
+        },
+        "paddingY": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 64
+        },
+        "borderRadius": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 64
+        }
+      }
+    },
+    "__schema95": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "type": "boolean"
+        },
+        "lines": {
+          "default": 2,
+          "anyOf": [
+            {
+              "type": "number",
+              "const": 2
+            },
+            {
+              "type": "number",
+              "const": 3
+            }
+          ]
+        },
+        "fontFamily": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "color": {
+          "$ref": "#/$defs/cssColor"
+        },
+        "marginRight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 64
+        }
+      }
+    },
+    "__schema96": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/__schema97"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/__schema98"
+      }
+    },
+    "__schema97": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,23}$"
+    },
+    "__schema98": {
+      "type": "object",
+      "properties": {
+        "color": {
+          "$ref": "#/$defs/cssColor"
+        },
+        "colorRole": {
+          "type": "string",
+          "enum": [
+            "primary",
+            "on-primary",
+            "secondary",
+            "on-secondary",
+            "surface",
+            "on-surface",
+            "outline",
+            "accent",
+            "text-primary",
+            "text-secondary",
+            "text-muted",
+            "text-on-accent"
+          ]
+        },
+        "bold": {
+          "type": "boolean"
+        },
+        "italic": {
+          "type": "boolean"
+        },
+        "underline": {
+          "type": "boolean"
+        },
+        "highlight": {
+          "type": "object",
+          "properties": {
+            "style": {
+              "type": "string",
+              "enum": [
+                "marker",
+                "box",
+                "pill",
+                "underline-thick"
+              ]
+            },
+            "color": {
+              "$ref": "#/$defs/cssColor"
+            },
+            "colorRole": {
+              "type": "string",
+              "enum": [
+                "primary",
+                "on-primary",
+                "secondary",
+                "on-secondary",
+                "surface",
+                "on-surface",
+                "outline",
+                "accent",
+                "text-primary",
+                "text-secondary",
+                "text-muted",
+                "text-on-accent"
+              ]
+            },
+            "paddingX": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 64
+            },
+            "paddingY": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 64
+            },
+            "borderRadius": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 64
+            }
+          }
+        }
+      }
+    },
+    "__schema100": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "__schema102": {
+      "maxItems": 32,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/maskCut"
+      }
+    },
+    "maskCut": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number",
+          "minimum": 0
+        },
+        "height": {
+          "type": "number",
+          "minimum": 0
+        },
+        "shape": {
+          "type": "string",
+          "enum": [
+            "heart",
+            "star",
+            "circle",
+            "rectangle",
+            "hexagon",
+            "blob",
+            "custom"
+          ]
+        },
+        "svgPath": {
+          "type": "string",
+          "maxLength": 20000
+        },
+        "feather": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "strokeColor": {
+          "$ref": "#/$defs/cssColor"
+        },
+        "strokeWidth": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "id",
+        "x",
+        "y",
+        "width",
+        "height",
+        "shape"
+      ],
+      "additionalProperties": {}
+    },
+    "__schema103": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "__schema104": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "__schema105": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "__schema106": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "__schema110": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "__schema112": {
+      "type": "string",
+      "enum": [
+        "none",
+        "linear",
+        "metallic-chrome",
+        "sunset-gold",
+        "neon-glow"
+      ]
+    },
+    "__schema113": {
+      "type": "string",
+      "enum": [
+        "primary",
+        "on-primary",
+        "secondary",
+        "on-secondary",
+        "surface",
+        "on-surface",
+        "outline",
+        "accent",
+        "text-primary",
+        "text-secondary",
+        "text-muted",
+        "text-on-accent"
+      ]
+    },
+    "__schema114": {
+      "type": "string",
+      "enum": [
+        "primary",
+        "on-primary",
+        "secondary",
+        "on-secondary",
+        "surface",
+        "on-surface",
+        "outline",
+        "accent",
+        "text-primary",
+        "text-secondary",
+        "text-muted",
+        "text-on-accent"
+      ]
+    },
+    "__schema115": {
+      "type": "string",
+      "enum": [
+        "primary",
+        "on-primary",
+        "secondary",
+        "on-secondary",
+        "surface",
+        "on-surface",
+        "outline",
+        "accent",
+        "text-primary",
+        "text-secondary",
+        "text-muted",
+        "text-on-accent"
+      ]
+    },
+    "__schema116": {
+      "type": "string",
+      "enum": [
+        "primary",
+        "on-primary",
+        "secondary",
+        "on-secondary",
+        "surface",
+        "on-surface",
+        "outline",
+        "accent",
+        "text-primary",
+        "text-secondary",
+        "text-muted",
+        "text-on-accent"
+      ]
+    },
+    "__schema117": {
+      "type": "string",
+      "enum": [
+        "primary",
+        "on-primary",
+        "secondary",
+        "on-secondary",
+        "surface",
+        "on-surface",
+        "outline",
+        "accent",
+        "text-primary",
+        "text-secondary",
+        "text-muted",
+        "text-on-accent"
+      ]
+    },
+    "__schema118": {
+      "type": "string",
+      "enum": [
+        "primary",
+        "on-primary",
+        "secondary",
+        "on-secondary",
+        "surface",
+        "on-surface",
+        "outline",
+        "accent",
+        "text-primary",
+        "text-secondary",
+        "text-muted",
+        "text-on-accent"
+      ]
+    },
+    "__schema119": {
+      "type": "string",
+      "enum": [
+        "primary",
+        "on-primary",
+        "secondary",
+        "on-secondary",
+        "surface",
+        "on-surface",
+        "outline",
+        "accent",
+        "text-primary",
+        "text-secondary",
+        "text-muted",
+        "text-on-accent"
+      ]
+    },
+    "__schema120": {
+      "$ref": "#/$defs/generativeFill"
+    },
+    "generativeFill": {
+      "type": "object",
+      "properties": {
+        "generatorId": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "seed": {
+          "type": "number"
+        },
+        "params": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          }
+        },
+        "colors": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "monochrome",
+                "palette"
+              ]
+            },
+            "stops": {
+              "maxItems": 16,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cssColor"
+              }
+            },
+            "direction": {
+              "type": "string",
+              "enum": [
+                "forward",
+                "reverse",
+                "radial"
+              ]
+            },
+            "background": {
+              "$ref": "#/$defs/cssColor"
+            },
+            "backgroundVisible": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "mode",
+            "stops",
+            "direction",
+            "background",
+            "backgroundVisible"
+          ],
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "generatorId",
+        "seed",
+        "params",
+        "colors"
+      ],
+      "additionalProperties": {}
+    },
+    "__schema121": {
+      "type": "string",
+      "maxLength": 2048,
+      "pattern": "^(?:repeating-)?(?:linear|radial|conic)-gradient\\((?:[0-9A-Za-z#.,%/\\s+-]|(?:rgba?|hsla?)\\([0-9A-Za-z.,%/\\s+-]*\\)|var\\(\\s*--[A-Za-z0-9_-]+\\s*(?:,(?:[0-9A-Za-z#.,%/\\s+-]|(?:rgba?|hsla?)\\([0-9A-Za-z.,%/\\s+-]*\\))*)?\\))*\\)$"
+    },
+    "__schema122": {
+      "type": "string",
+      "enum": [
+        "clouds",
+        "bubbles",
+        "grid",
+        "waves",
+        "stars",
+        "stripes",
+        "dots",
+        "zigzags",
+        "bolt",
+        "leaf",
+        "drop",
+        "moon",
+        "crown",
+        "heart"
+      ]
+    },
+    "__schema123": {
+      "$ref": "#/$defs/cssColor"
+    },
+    "__schema124": {
+      "type": "string",
+      "enum": [
+        "primary",
+        "on-primary",
+        "secondary",
+        "on-secondary",
+        "surface",
+        "on-surface",
+        "outline",
+        "accent",
+        "text-primary",
+        "text-secondary",
+        "text-muted",
+        "text-on-accent"
+      ]
+    },
+    "__schema125": {
+      "$ref": "#/$defs/cssColor"
+    },
+    "__schema126": {
+      "type": "string",
+      "enum": [
+        "primary",
+        "on-primary",
+        "secondary",
+        "on-secondary",
+        "surface",
+        "on-surface",
+        "outline",
+        "accent",
+        "text-primary",
+        "text-secondary",
+        "text-muted",
+        "text-on-accent"
+      ]
+    },
+    "__schema129": {
+      "type": "string",
+      "enum": [
+        "right",
+        "left",
+        "up",
+        "down",
+        "zoom-in",
+        "zoom-out",
+        "pulse",
+        "none"
+      ]
+    },
+    "__schema130": {
+      "maxItems": 16,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/__schema131"
+      }
+    },
+    "__schema131": {
+      "type": "string",
+      "maxLength": 8000
+    },
+    "__schema132": {
+      "maxItems": 16,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/cssColor"
+      }
+    },
+    "__schema133": {
+      "maxItems": 16,
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "__schema135": {
+      "maxItems": 16,
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "__schema137": {
+      "maxItems": 16,
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "__schema139": {
+      "type": "string",
+      "enum": [
+        "color",
+        "gradient",
+        "pattern",
+        "generative",
+        "transparent",
+        "image"
+      ]
+    },
+    "__schema140": {
+      "$ref": "#/$defs/cssColor"
+    },
+    "__schema141": {
+      "type": "string",
+      "enum": [
+        "primary",
+        "on-primary",
+        "secondary",
+        "on-secondary",
+        "surface",
+        "on-surface",
+        "outline",
+        "accent",
+        "text-primary",
+        "text-secondary",
+        "text-muted",
+        "text-on-accent"
+      ]
+    },
+    "__schema142": {
+      "$ref": "#/$defs/cssColor"
+    },
+    "__schema143": {
+      "type": "string",
+      "enum": [
+        "primary",
+        "on-primary",
+        "secondary",
+        "on-secondary",
+        "surface",
+        "on-surface",
+        "outline",
+        "accent",
+        "text-primary",
+        "text-secondary",
+        "text-muted",
+        "text-on-accent"
+      ]
+    },
+    "__schema144": {
+      "maxItems": 16,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/cssColor"
+      }
+    },
+    "__schema145": {
+      "type": "string",
+      "enum": [
+        "none",
+        "color",
+        "gradient",
+        "pattern",
+        "generative",
+        "image"
+      ]
+    },
+    "__schema146": {
+      "type": "string",
+      "maxLength": 10000000,
+      "pattern": "^data:image\\/"
+    },
+    "__schema147": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "zoom": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 10
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "zoom"
+      ]
+    },
+    "__schema150": {},
+    "position": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/__schema151"
+        },
+        {
+          "$ref": "#/$defs/__schema152"
+        }
+      ],
+      "minItems": 2,
+      "items": false
+    },
+    "__schema151": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "__schema152": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "parallax": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "type": "boolean"
+        },
+        "depth": {
+          "default": 0.5,
+          "type": "number",
+          "minimum": -2,
+          "maximum": 2
+        },
+        "mode": {
+          "default": "mouse",
+          "type": "string",
+          "enum": [
+            "mouse",
+            "scroll",
+            "infinite_horizontal"
+          ]
+        },
+        "axis": {
+          "default": "both",
+          "type": "string",
+          "enum": [
+            "both",
+            "x_only",
+            "y_only"
+          ]
+        },
+        "infinite": {
+          "$ref": "#/$defs/parallaxInfinite"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "parallaxInfinite": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "type": "boolean"
+        },
+        "speed_px_sec": {
+          "default": 20,
+          "type": "number",
+          "minimum": -500,
+          "maximum": 500
+        },
+        "direction": {
+          "default": "right_to_left",
+          "type": "string",
+          "enum": [
+            "left_to_right",
+            "right_to_left"
+          ]
+        },
+        "seamless_tile": {
+          "default": true,
+          "type": "boolean"
+        },
+        "pause_on_hover": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "trackingKeyframe": {
+      "minItems": 2,
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "interaction": {
+      "type": "object",
+      "properties": {
+        "action_type": {
+          "type": "string",
+          "enum": [
+            "toggle_elements",
+            "none"
+          ]
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "hide_slots": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 128
+              }
+            },
+            "show_slots": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 128
+              }
+            }
+          },
+          "required": [
+            "hide_slots",
+            "show_slots"
+          ]
+        }
+      },
+      "required": [
+        "action_type"
+      ]
+    }
+  }
+}

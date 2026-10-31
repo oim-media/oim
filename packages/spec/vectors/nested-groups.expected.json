@@ -1,0 +1,68 @@
+{
+  "description": "Jerarquía multinivel: grupo raíz conteniendo subgrupo con elementos hijos.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "grupo_padre",
+      "type": "group",
+      "position": [
+        2.5,
+        3.3333
+      ],
+      "name": "Grupo Padre",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "50.0cqw",
+        "height": "37.5cqw",
+        "childIds": [
+          "subgrupo"
+        ]
+      }
+    },
+    {
+      "id": "subgrupo",
+      "type": "group",
+      "position": [
+        3.75,
+        5
+      ],
+      "name": "Subgrupo Hijo",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "43.75cqw",
+        "height": "31.25cqw",
+        "groupId": "grupo_padre",
+        "childIds": [
+          "item_1"
+        ]
+      }
+    },
+    {
+      "id": "item_1",
+      "type": "geo",
+      "position": [
+        5,
+        6.6667
+      ],
+      "name": "Elemento Anidado",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "15.0cqw",
+        "height": "10.0cqw",
+        "fillColor": "#10b981",
+        "groupId": "subgrupo"
+      }
+    }
+  ]
+}

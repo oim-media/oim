@@ -1,0 +1,90 @@
+{
+  "description": "Un grupo con dos hijos y una capa con parallax. Cubre la jerarquia y la profundidad.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "grupo",
+      "type": "group",
+      "position": [
+        5,
+        6.6667
+      ],
+      "name": "Grupo",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "37.5cqw",
+        "height": "25.0cqw",
+        "childIds": [
+          "hijo_a",
+          "hijo_b"
+        ]
+      }
+    },
+    {
+      "id": "hijo_a",
+      "type": "geo",
+      "position": [
+        7.5,
+        10
+      ],
+      "name": "Hijo A",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "12.5cqw",
+        "height": "10.0cqw",
+        "fillColor": "#2563EB",
+        "groupId": "grupo"
+      }
+    },
+    {
+      "id": "hijo_b",
+      "type": "geo",
+      "position": [
+        25,
+        10
+      ],
+      "name": "Hijo B",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "12.5cqw",
+        "height": "10.0cqw",
+        "fillColor": "#0f766e",
+        "groupId": "grupo"
+      }
+    },
+    {
+      "id": "fondo",
+      "type": "geo",
+      "position": [
+        50,
+        50
+      ],
+      "name": "Fondo con profundidad",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "37.5cqw",
+        "height": "25.0cqw",
+        "fillColor": "#b91c1c",
+        "parallax": {
+          "axis": "both",
+          "depth": 0.8,
+          "enabled": true,
+          "mode": "mouse"
+        }
+      }
+    }
+  ]
+}

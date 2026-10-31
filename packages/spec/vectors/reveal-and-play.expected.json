@@ -1,0 +1,107 @@
+{
+  "description": "Revelado por capa y accion play (contrato 1.22.0): un panel oculto que entra deslizando hacia arriba, un icono cuya animacion espera a una accion y un boton que muestra el uno y reproduce el otro.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "panel",
+      "type": "geo",
+      "position": [
+        10,
+        13.3333
+      ],
+      "name": "Panel",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "50.0cqw",
+        "height": "30.0cqw",
+        "fillColor": "#27272a",
+        "isVisible": false,
+        "reveal": {
+          "duration": 400,
+          "easing": [
+            0.22,
+            1,
+            0.36,
+            1
+          ],
+          "effect": "slide-up"
+        }
+      }
+    },
+    {
+      "id": "icon",
+      "type": "geo",
+      "position": [
+        70,
+        20
+      ],
+      "name": "Icono",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "15.0cqw",
+        "height": "15.0cqw",
+        "fillColor": "#f4f4f5",
+        "animation": {
+          "duration": 0.6,
+          "keyframes": [
+            {
+              "s": 1,
+              "t": 0
+            },
+            {
+              "e": "ease-out",
+              "s": 1.2,
+              "t": 0.5
+            },
+            {
+              "s": 1,
+              "t": 1
+            }
+          ],
+          "trigger": "action"
+        }
+      }
+    },
+    {
+      "id": "btn",
+      "type": "text",
+      "position": [
+        10,
+        70
+      ],
+      "name": "Boton",
+      "content": {
+        "es": "Abrir"
+      },
+      "style": {
+        "width": "25.0cqw",
+        "height": "7.5cqw",
+        "fontSize": "3.0cqw",
+        "isInteractive": true,
+        "states": {
+          "active": {
+            "actions": [
+              {
+                "target": "panel",
+                "type": "show"
+              },
+              {
+                "target": "icon",
+                "type": "play"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

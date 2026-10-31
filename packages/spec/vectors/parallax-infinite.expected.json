@@ -1,0 +1,39 @@
+{
+  "description": "Parallax continuo en bucle horizontal infinito.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "cinta_infinita",
+      "type": "geo",
+      "position": [
+        0,
+        66.6667
+      ],
+      "name": "Cinta Infinita",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "100.0cqw",
+        "height": "15.0cqw",
+        "fillColor": "#0f172a",
+        "parallax": {
+          "axis": "both",
+          "depth": 0.5,
+          "enabled": true,
+          "infinite": {
+            "direction": "right_to_left",
+            "enabled": true,
+            "speed_px_sec": 35
+          },
+          "mode": "infinite_horizontal"
+        }
+      }
+    }
+  ]
+}

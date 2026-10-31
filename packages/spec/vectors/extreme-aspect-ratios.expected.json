@@ -1,0 +1,29 @@
+{
+  "description": "Lienzo ultra-ancho panorámico probando consistencia del contenedor.",
+  "canvas": {
+    "natural_height": 400,
+    "natural_width": 1600
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "banner_texto",
+      "type": "text",
+      "position": [
+        5,
+        25
+      ],
+      "name": "Banner Panorámico",
+      "content": {
+        "es": "Panorámica 4:1"
+      },
+      "style": {
+        "width": "75.0cqw",
+        "height": "11.25cqw",
+        "fontSize": "4.0cqw",
+        "fillColor": "#e11d48"
+      }
+    }
+  ]
+}

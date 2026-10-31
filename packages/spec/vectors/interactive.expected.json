@@ -1,0 +1,121 @@
+{
+  "description": "Un boton con accion de clic, esquinas por lado y dos idiomas. Exportado desde el editor, no generado aqui.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "languages": [
+    "es",
+    "en"
+  ],
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "esquinas",
+      "type": "geo",
+      "position": [
+        7.5,
+        10
+      ],
+      "name": "Esquinas asimetricas",
+      "content": {
+        "en": "",
+        "es": ""
+      },
+      "style": {
+        "width": "32.5cqw",
+        "height": "18.75cqw",
+        "fontSize": "1.75cqw",
+        "borderRadius": "0.0cqw 0.0cqw 0.0cqw 6.0cqw",
+        "fillColor": "#2563EB",
+        "isInteractive": false,
+        "fontFamily": "Inter",
+        "shadowEnabled": false,
+        "shadowColor": "#000000",
+        "shadowBlur": 8,
+        "shadowOffsetX": 0,
+        "shadowOffsetY": 4,
+        "shadowOpacity": 30,
+        "blendMode": "normal",
+        "strokeStyle": "solid",
+        "layerBlur": 0,
+        "geoShape": "rectangle"
+      }
+    },
+    {
+      "id": "ficha",
+      "type": "text",
+      "position": [
+        47.5,
+        10
+      ],
+      "name": "Ficha",
+      "content": {
+        "en": "SOY LA FICHA",
+        "es": "SOY LA FICHA"
+      },
+      "style": {
+        "width": "42.5cqw",
+        "height": "18.75cqw",
+        "fontSize": "3.5cqw",
+        "borderRadius": "0.0cqw",
+        "fillColor": "#0f766e",
+        "isInteractive": false,
+        "fontFamily": "Inter",
+        "shadowEnabled": false,
+        "shadowColor": "#000000",
+        "shadowBlur": 8,
+        "shadowOffsetX": 0,
+        "shadowOffsetY": 4,
+        "shadowOpacity": 30,
+        "blendMode": "normal",
+        "strokeStyle": "solid",
+        "layerBlur": 0,
+        "geoShape": "rectangle"
+      }
+    },
+    {
+      "id": "boton",
+      "type": "text",
+      "position": [
+        7.5,
+        53.3333
+      ],
+      "name": "Boton",
+      "content": {
+        "en": "PULSAME",
+        "es": "PULSAME"
+      },
+      "style": {
+        "width": "32.5cqw",
+        "height": "8.75cqw",
+        "fontSize": "2.75cqw",
+        "borderRadius": "0.0cqw",
+        "fillColor": "#b91c1c",
+        "isInteractive": true,
+        "states": {
+          "active": {
+            "actions": [
+              {
+                "target": "ficha",
+                "type": "toggle"
+              }
+            ]
+          }
+        },
+        "fontFamily": "Inter",
+        "shadowEnabled": false,
+        "shadowColor": "#000000",
+        "shadowBlur": 8,
+        "shadowOffsetX": 0,
+        "shadowOffsetY": 4,
+        "shadowOpacity": 30,
+        "blendMode": "normal",
+        "strokeStyle": "solid",
+        "layerBlur": 0,
+        "geoShape": "rectangle"
+      }
+    }
+  ]
+}

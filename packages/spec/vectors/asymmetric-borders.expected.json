@@ -1,0 +1,29 @@
+{
+  "description": "Radios de curvatura independientes por cada esquina.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "caja_curva",
+      "type": "geo",
+      "position": [
+        12.5,
+        16.6667
+      ],
+      "name": "Caja Asimétrica",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "37.5cqw",
+        "height": "18.75cqw",
+        "borderRadius": "10px 25px 50px 0px",
+        "fillColor": "#3b82f6"
+      }
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "description": "Accesibilidad (contrato 1.16.0): `description` de la obra, `alt` por idioma en una imagen y `decorative` en una forma.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "titulo",
+      "type": "text",
+      "position": [
+        10,
+        6.6667
+      ],
+      "name": "Titulo",
+      "content": {
+        "en": "Hello",
+        "es": "Hola"
+      },
+      "style": {
+        "width": "62.5cqw",
+        "height": "10.0cqw",
+        "fontSize": "5.0cqw"
+      }
+    },
+    {
+      "id": "foto",
+      "type": "image",
+      "position": [
+        12.5,
+        26.6667
+      ],
+      "name": "Foto",
+      "content": {
+        "*": "https://cdn.oim.media/demos/crop.png"
+      },
+      "style": {
+        "width": "37.5cqw",
+        "height": "25.0cqw",
+        "alt": {
+          "en": "A fjord between mountains",
+          "es": "Un fiordo entre montañas"
+        }
+      }
+    },
+    {
+      "id": "adorno",
+      "type": "geo",
+      "position": [
+        65,
+        26.6667
+      ],
+      "name": "Adorno",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "25.0cqw",
+        "height": "25.0cqw",
+        "fillColor": "#264653",
+        "decorative": true
+      }
+    }
+  ]
+}

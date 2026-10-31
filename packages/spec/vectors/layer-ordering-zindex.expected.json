@@ -1,0 +1,62 @@
+{
+  "description": "Pila de capas superpuestas en idénticas coordenadas para verificar orden de pintado.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "slots": [
+    {
+      "id": "capa_fondo",
+      "type": "geo",
+      "position": [
+        12.5,
+        16.6667
+      ],
+      "name": "Capa Fondo (1)",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "25.0cqw",
+        "height": "25.0cqw",
+        "fillColor": "#1e3a8a"
+      }
+    },
+    {
+      "id": "capa_medio",
+      "type": "geo",
+      "position": [
+        15,
+        20
+      ],
+      "name": "Capa Medio (2)",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "25.0cqw",
+        "height": "25.0cqw",
+        "fillColor": "#3b82f6"
+      }
+    },
+    {
+      "id": "capa_frente",
+      "type": "geo",
+      "position": [
+        17.5,
+        23.3333
+      ],
+      "name": "Capa Frente (3)",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "25.0cqw",
+        "height": "25.0cqw",
+        "fillColor": "#93c5fd"
+      }
+    }
+  ]
+}

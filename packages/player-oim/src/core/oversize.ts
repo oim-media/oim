@@ -5,19 +5,19 @@
  */
 
 /**
- * Cuanto agranda el parallax una capa pegada al borde se delega en `@oim-media/core`.
+ * How much the parallax enlarges a layer pinned to the edge is delegated to `@oim-media/core`.
  *
- * Vivia aqui, y el editor tenia una COPIA en `src/lib/parallax/` -con su
- * fichero de bloqueo `parallax.lock`, que registraba el commit de origen y un
- * hash por fichero, y una guardia que los comparaba-. Toda esa maquinaria
- * existia para mantener iguales dos copies que ya no hacen falta.
+ * It used to live here, and the editor had a COPY in `src/lib/parallax/` -with
+ * its lock file `parallax.lock`, which recorded the source commit and a hash per
+ * file, plus a guard that compared them-. All of that machinery existed to keep
+ * two copies identical that are no longer needed.
  *
- * Se reexporta SOLO lo que el player usa. Un reexporte generoso es una puerta
- * por la que entra lo que hay al otro lado: al mover el motor generativo, un
- * `export` «por comodidad» metio el catalogo entero -1,7 KB- en el bundle del
- * CDN.
+ * Only what the player uses is re-exported. A generous re-export is a door
+ * through which whatever is on the other side gets in: when the generative
+ * engine was moved, a "for convenience" `export` pulled the entire catalog
+ * -1.7 KB- into the CDN bundle.
  *
- * Se importa el fichero del modulo y no el indice del paquete, para no
- * arrastrar el esquema ni zod.
+ * The module file is imported, not the package index, to avoid pulling in the
+ * schema or zod.
  */
 export { oversizeScale } from '../../../core/src/oversize.js';

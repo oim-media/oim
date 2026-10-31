@@ -71,12 +71,12 @@ import { buildArtisticTextModelFromSlot, generateArtisticTextSvgString } from '.
 import { readEmbeddedFonts, registerEmbeddedFonts, embeddedFontFamily } from '../core/embeddedFonts.js';
 
 /**
- * Sustituye el content de `hoverWrap` por un <span> por carácter, cada uno
- * con la animación de ola desfasada según su índice.
+ * Replaces the content of `hoverWrap` with one <span> per character, each
+ * with the wave animation offset according to its index.
  *
- * Se declara la animación en CSS y la interpola el navegador — no hay bucle de
- * rAF ni keyframes muestreados. El @keyframes en sí lo inyecta
- * ensureWaveKeyframes() una sola vez por shadow root.
+ * The animation is declared in CSS and interpolated by the browser: there is no
+ * rAF loop nor sampled keyframes. The @keyframes itself is injected by
+ * ensureWaveKeyframes() only once per shadow root.
  */
 export function applyWaveText(
   hoverWrap: HTMLElement,
@@ -93,8 +93,8 @@ export function applyWaveText(
       continue;
     }
     const span = document.createElement('span');
-    // Un espacio normal dentro de un inline-block se colapsa y la letra
-    // siguiente se pega; el no-breaking space conserva el hueco.
+    // A normal space inside an inline-block collapses and the next letter
+    // sticks to it; the no-breaking space keeps the gap.
     span.textContent = ch === ' ' ? '\u00A0' : ch;
     span.style.display = 'inline-block';
     span.style.animationName = WAVE_KEYFRAMES_NAME;
@@ -154,8 +154,8 @@ export function ensureEntranceKeyframes(shadowRoot: ShadowRoot | null, effect: E
   shadowRoot.appendChild(el);
 }
 
-/** Inyecta el @keyframes de la ola una sola vez por shadow root. La regla es
- *  idéntica para todos los slots, así que no se duplica por slot. */
+/** Injects the wave @keyframes only once per shadow root. The rule is
+ *  identical for all slots, so it is not duplicated per slot. */
 export function ensureWaveKeyframes(shadowRoot: ShadowRoot | null): void {
   if (!shadowRoot) return;
   const styleId = 'oim-wave-keyframes';
@@ -325,14 +325,14 @@ function buildWindowMaskSvg(slot: any, artboard: { width: number; height: number
   svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
   svg.setAttribute('preserveAspectRatio', 'none');
 
-  // El marco vive en coordenadas de LIENZO, no en la caja del slot.
+  // The frame lives in CANVAS coordinates, not in the slot's box.
   //
-  // Antes era `width/height: 100%` dentro del slot, que es un container flex
-  // con align-items/justify-content pensados para text: el SVG no llenaba el
-  // slot y quedaba centrado, dejando una franja del lienzo sin cubrir arriba
-  // -medido en el visor real: 22.4px-. Ademas el marco solo podia tapar lo que
-  // media la mascara. Sacarlo del flujo con position:absolute lo desacopla del
-  // layout de text, y anclarlo en (-x, -y) lo pone en el origen del lienzo.
+  // It used to be `width/height: 100%` inside the slot, which is a flex container
+  // with align-items/justify-content meant for text: the SVG did not fill the
+  // slot and ended up centered, leaving a strip of the canvas uncovered at the top
+  // (measured in the real viewer: 22.4px). Also, the frame could only cover what
+  // the mask measured. Taking it out of the flow with position:absolute decouples it
+  // from the text layout, and anchoring it at (-x, -y) puts it at the canvas origin.
   svg.style.position = 'absolute';
   svg.style.left = (-x) + 'px';
   svg.style.top = (-y) + 'px';
@@ -431,8 +431,8 @@ function buildLayerCompositionDefs(
         clip.setAttribute('clipPathUnits', 'userSpaceOnUse');
         const path = document.createElementNS(svgNs, 'path');
         path.setAttribute('d', d);
-        // Siempre evenodd: los tres subtrazados —lienzo, caja y silueta— lo
-        // exigen. Ya no depende de maskInvert ni de maskMode.
+        // Always evenodd: the three subpaths (canvas, box and silhouette) require
+        // it. It no longer depends on maskInvert or maskMode.
         path.setAttribute('clip-rule', 'evenodd');
         clip.appendChild(path);
         defs.appendChild(clip);
@@ -473,16 +473,16 @@ function normalizePosition(position: [number, number]): [number, number] {
 }
 
 /**
- * Decide si el SVG de fondo se pinta como mosaico repetido o como escena a
- * sangre.
+ * Decides whether the background SVG is painted as a repeated tile or as a
+ * full-bleed scene.
  *
- * `tile` es el comportamiento histórico y DEBE seguir siendo el valor por
- * defecto: los .oim exportados antes del motor generativo no llevan
- * `backgroundFit`, y son todos patrones de íconos que se repiten. Cambiar ese
- * default rompería cualquier archivo ya publicado.
+ * `tile` is the historical behaviour and MUST remain the default: .oim files exported
+ * before the generative engine carry no `backgroundFit`, and they are all repeating
+ * icon patterns. Changing the default
+ * would break any file already published.
  *
- * `backgroundType === 'generative'` infiere `cover` como red de seguridad para
- * archivos horneados por una versión del editor que aún no escribía el campo.
+ * `backgroundType === 'generative'` infers `cover` as a safety net for
+ * files baked by an editor version that did not yet write the field.
  */
 export function resolveBackgroundFit(style: any): 'tile' | 'cover' {
   if (!style) return 'tile';
@@ -496,11 +496,11 @@ export function resolveBackgroundFit(style: any): 'tile' | 'cover' {
  * Attaches one composition node (and its subtree) to `target`.
  *
  * Extracted out of `renderSlots` verbatim so the `results` -> `elByCompositionId`
- * -> attach path can be exercised in isolation. The invariant that matters and
- * that has no other guard: for a project using NEITHER masks NOR filters, the
- * children appended to the fragment must match the input slot list one-to-one
- * and in the same order. A restructure once silently dropped zone-less slots
- * from the DOM and only human review caught it.
+ * -> attach path can be exercised in isolation. The invariant that matters, and that has
+ * no other guard: in a project that uses NEITHER masks NOR filters, the children appended
+ * to the fragment must match the input slot list one-to-one and in the same order.
+ * A restructuring once silently dropped zone-less slots from the DOM, and only human
+ * review caught it.
  */
 export function attachCompositionNode(
   node: CompositionNode,
@@ -536,9 +536,9 @@ export class ImageEngine {
   _baseImg: HTMLImageElement | null = null;
   _overlay: HTMLElement | null = null;
   _lottieInstances: Array<{ slotId: string; inst: LottieAnimation }> = [];
-  /** El controlador vivo. Se guarda para poder destruirlo y reapuntarlo. */
+  /** The live controller. It is kept so it can be destroyed and repointed. */
   _parallaxController: ParallaxController | null = null;
-  /** Los listeners de arrastre en `window`, para poder quitarlos al destruir. */
+  /** The drag listeners on `window`, so they can be removed on destroy. */
   _onDragMove: ((e: MouseEvent) => void) | null = null;
   _onDragEnd: (() => void) | null = null;
   _animations: Animation[] = [];
@@ -596,21 +596,21 @@ export class ImageEngine {
     this.showLanguageSelector = options.showLanguageSelector !== false;
     this.showSlots = options.showSlots !== false;
     this.allowLottie = options.allowLottie !== false && host.getAttribute('allow-lottie') !== 'false';
-    // Colores dinamicos. Por defecto ACTIVO, como `allow-lottie`: si una web
-    // se ha molestado en definir `--oim-color-*`, los quiere. Este atributo
-    // sirve para eximir imagenes concretas -- una obra publica de otro autor
-    // no tiene por que adoptar tu paleta.
+    // Dynamic colors. ON by default, like `allow-lottie`: if a site has bothered to define
+    // `--oim-color-*`, it wants them. This attribute exists to exempt specific images --
+    // a public work by another author
+    // need not adopt your palette.
     //
-    // No hace falta apagarlo para el caso comun: la funcion ya es opt-in a
-    // nivel de pagina, porque `var(--oim-color-x, respaldo)` cae al respaldo
-    // del autor si la web no define la variable.
+    // No need to turn it off for the common case: the function is already opt-in at page
+    // level, because `var(--oim-color-x, fallback)` falls back to the author's fallback if the
+    // site does not define the variable.
     this.allowDynamicColors =
       options.allowDynamicColors !== false && host.getAttribute('allow-dynamic-colors') !== 'false';
     
     const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    // Las dos banderas salen de `core/modos.ts`, que es el UNICO sitio donde
-    // se decide. Tenerlo tambien aqui significaria que el player se configura
-    // de una forma al montarse y de otra al cambiarle un atributo en caliente.
+    // The two flags come from `core/modos.ts`, which is the ONLY place where they are decided.
+    // Having it here too would mean the player is configured one way when mounted and another
+    // way when one of its attributes is changed on the fly.
     const mode = resolveMode(host as any, options, prefersReducedMotion);
     this.disableAnimations = mode.disableAnimations;
     this.disableActions = mode.disableActions;
@@ -620,9 +620,9 @@ export class ImageEngine {
   }
 
   /**
-   * Escribe `--oim-palette-<rol>` en el visor con la paleta efectiva: el
-   * atributo `palette`, si no, dark/light segun prefers-color-scheme, si no
-   * defaultPalette. Con allow-dynamic-colors="false" no escribe ninguna.
+   * Writes `--oim-palette-<role>` in the viewer with the effective palette: the
+   * `palette` attribute, otherwise dark/light according to prefers-color-scheme, otherwise
+   * defaultPalette. With allow-dynamic-colors="false" it writes none.
    */
   aplicarPaleta(): void {
     const viewport = this._viewport as HTMLElement | null;
@@ -667,9 +667,9 @@ export class ImageEngine {
       try { a.stop(); } catch (e) {}
     });
     this._textAnimations = [];
-    // El controlador de parallax tiene su propio bucle de rAF y su propio
-    // listener en `window`: sin esto seguian vivos despues de quitar el player
-    // del documento, uno por cada tarjeta de un feed.
+    // The parallax controller has its own rAF loop and its own listener on `window`:
+    // without this they stayed alive after the player was removed from the document,
+    // one for each card in a feed.
     if (this._parallaxController) {
       try { this._parallaxController.destroy(); } catch (e) {}
       this._parallaxController = null;
@@ -718,12 +718,12 @@ export class ImageEngine {
       this._overlay = shadow.querySelector('.oim-layer-overlay');
       this._stage = this.host;
 
-      // Colores dinamicos apagados para ESTA imagen: se neutralizan los ocho
-      // roles en el visor. Poner una propiedad personalizada a `initial` hace
-      // que `var(--x, respaldo)` caiga al respaldo -- comprobado en navegador.
+      // Dynamic colors OFF for THIS image: all eight roles are neutralized in the
+      // viewer. Setting a custom property to `initial` makes `var(--x, fallback)` fall
+      // back to the fallback -- verified in the browser.
       //
-      // Se apaga aqui, en el visor, y no filtrando en cada llamada de color:
-      // asi da igual cuantos sitios pinten color hoy o manana.
+      // It is turned off here, in the viewer, and not by filtering each colour call,
+      // so it does not matter how many places paint colour today or tomorrow.
       if (!this.allowDynamicColors && this._viewport) {
         for (const role of DYNAMIC_COLOR_ROLES) {
           (this._viewport as HTMLElement).style.setProperty('--oim-color-' + role, 'initial');
@@ -731,8 +731,8 @@ export class ImageEngine {
       }
       this.aplicarPaleta();
 
-      // Si el usuario tiene activo 'prefers-reduced-motion: reduce', no se aplica
-      // el desenfoque de 14px sino que se mantiene en 'none' (transicionando solo opacidad).
+      // If the user has 'prefers-reduced-motion: reduce' enabled, the 14px blur is not
+      // applied; it stays at 'none' (transitioning only opacity).
       if ((this._prefersLessMotion() || this._isLowTierOrMobile()) && this._viewport) {
         (this._viewport as HTMLElement).style.filter = 'none';
       }
@@ -850,17 +850,17 @@ export class ImageEngine {
     } else {
       // First, before normalizing anything: announce what is not understood.
       //
-      // The format degrades gracefully — unknown keys survive `passthrough`,
-      // so a newer file does not crash an older player — but it previously
+      // The format degrades gracefully: unknown keys survive `passthrough`,
+      // so a newer file does not crash an older player, but it previously
       // degraded IN SILENCE. The schema declares capabilities that this
       // player does not implement; a file using them would render poorly without
-      // its author being able to distinguish this from their own mistake.
+      // its author being able to tell this apart from their own mistake.
       //
       // Only for ACCEPTED files: if the signature is invalid or the domain is
       // blocked, nothing is rendered, and discussing capabilities there would
       // distract from the real issue.
       announce = true;
-      // Normalize Python backend format AFTER signature validation (mutation before would break sig check).
+      // Normalize the Python backend format AFTER signature validation (mutating it before would break the signature check).
       normalizeRawSlots(extracted.metadata);
       metadata = extracted.metadata;
     }
@@ -976,21 +976,21 @@ export class ImageEngine {
   }
 
   /**
-   * Cuenta lo que este player no puede honrar del archivo.
+   * Counts what this player cannot honour in the file.
    *
-   * NO lanza ni deja de pintar: el formato degrada a PNG por diseno, y un
-   * `.oim` que no se entiende del todo sigue siendo una imagen valida. Esa red
-   * es algo que Rive y Lottie no tienen, y rechazar cambiaria una perdida
-   * parcial por una total.
+   * It does NOT throw nor stop painting: the format degrades to PNG by design, and a
+   * `.oim` that is not fully understood is still a valid image. That safety net is
+   * something Rive and Lottie do not have, and rejecting would turn a partial loss
+   * into a total one.
    *
-   * Se cuenta por tres sitios porque hay tres publicos distintos: la consola
-   * para quien depura, un atributo en el anfitrion para quien inspecciona el
-   * DOM, y un evento para quien incrusta el player y quiere reaccionar.
+   * It is counted in three places because there are three different audiences: the console
+   * for whoever debugs, an attribute on the host for whoever inspects the DOM, and an
+   * event for whoever embeds the player and wants to react.
    *
-   * Y se calla cuando no hay nada que decir. Un actionEvent que salta con los
-   * archivos normales -los que no traen `min_player`, o sea todos los
-   * publicados hasta hoy- se vuelve ruido de fondo, y entonces nadie lo lee el
-   * dia que dice algo.
+   * And it stays silent when there is nothing to say. An actionEvent that fires with normal
+   * files (those without `min_player`, that is, all those published to date) becomes
+   * background noise, and then nobody reads it
+   * on the day it says something.
    */
   _announceUnsupported(metadata: any): void {
     let missing;
@@ -1000,7 +1000,7 @@ export class ImageEngine {
         capabilities: PLAYER_CAPABILITIES,
       });
     } catch (e) {
-      return; // Avisar de una incompatibilidad no puede ser lo que rompa nada.
+      return; // Warning about an incompatibility must never be what breaks anything.
     }
     if (!missing.hayAlgoQueDecir) return;
 
@@ -1038,17 +1038,17 @@ export class ImageEngine {
     const canvasWidth = this.metadata && this.metadata.canvas ? (this.metadata.canvas.natural_width || this.metadata.canvas.width) : 0;
     const designWidth = (this.metadata && (this.metadata.artboardWidth || this.metadata.canvasWidth || this.metadata.canvas_width)) || canvasWidth || (this._baseImg && this._baseImg.naturalWidth) || 1080;
     const scale = untransformedWidth / designWidth;
-    // `--oim-fit`, no `--oim-scale`.
+    // `--oim-fit`, not `--oim-scale`.
     //
-    // Son dos conceptos distintos y compartian nombre: aqui es el factor de
-    // AJUSTE del documento a la caja del anfitrion, y en la linea ~2272 es la
-    // scale PROPIA de una forma. Como esta se pone en el visor, viajaba por
-    // herencia hasta cada `.oim-slot`, cuya regla hace
-    // `scale(var(--oim-scale, 1))` esperando un 1 — y `var(--x, 1)` solo cae
-    // en el 1 si la variable NO EXISTE en toda la cadena, no si nadie se la
-    // dio a esa caja. Resultado: el ajuste se aplicaba dos veces, en el
-    // overlay y otra vez en cada slot, y todo salia un 20 % pequeno. Medido
-    // sobre un .oim real: una forma de 140px se pintaba a 90 en vez de a 112.
+    // These are two different concepts that shared a name: here it is the FIT factor of the
+    // document to the host's box, and at ~line 2272 it is the shape's OWN scale. Since this one
+    // is set on the viewer, it travelled by inheritance down to each `.oim-slot`, whose rule
+    // does `scale(var(--oim-scale, 1))` expecting a 1 (and `var(--x, 1)` only falls back to 1
+    // if the variable does NOT EXIST anywhere in the chain, not if nobody gave it to that box).
+    // Result: the fit was applied twice, once on the overlay
+    // and again on each slot, and everything came out 20% smaller.
+    // Measured on a real .oim, a 140px shape was painted at 90
+    // instead of 112.
     this._viewport.style.setProperty('--oim-fit', scale.toFixed(6));
   }
 
@@ -1114,8 +1114,8 @@ export class ImageEngine {
     if (!this.metadata || !this.host) return;
 
     const allSlots = (this.metadata.slots || this.metadata.elements || []) as any[];
-    // La composicion (mascaras y filtros) se calcula sobre la pila entera, asi
-    // que no admite parches: si la hay, se reconstruye todo.
+    // The composition (masks and filters) is computed over the whole stack, so
+    // it does not admit patches: if there is one, everything is rebuilt.
     const hasComposition = allSlots.some(function (s: any) {
       return s.type === 'mask' || s.type === 'filter';
     });
@@ -1150,7 +1150,7 @@ export class ImageEngine {
     const layer = this._overlay;
     if (!layer) return;
 
-    // Overlay de textura en el lienzo (Spec 2026-10-07 / metadata.effects o metadata.grain)
+    // Texture overlay on the canvas (metadata.effects or metadata.grain)
     const existingGrain = this._viewport ? this._viewport.querySelector('.oim-noise-overlay') : null;
     const canvasTextureEff = Array.isArray(this.metadata?.effects)
       ? this.metadata.effects.find((e: any) => e && e.type === 'texture' && e.enabled !== false)
@@ -1215,8 +1215,8 @@ export class ImageEngine {
 
     const self = this;
     const slots = this.metadata.slots || this.metadata.elements || [];
-    // Normalizacion de parallax: si viaja dentro de style y la raiz no lo tiene, copiarlo a la raiz.
-    // Un solo punto de entrada para que todo el motor y controladores lean de s.parallax.
+    // Parallax normalization: if it travels inside style and the root lacks it, copy it to the root.
+    // A single entry point so that the whole engine and controllers read from s.parallax.
     slots.forEach(function (s: any) {
       if (s && !s.parallax && s.style && s.style.parallax) {
         s.parallax = s.style.parallax;
@@ -1278,9 +1278,9 @@ export class ImageEngine {
       zonesMap[zone.id] = zoneDiv;
     });
 
-    // Que grupos traen hijos EN ESTE archivo. Se calcula antes de construir
-    // ningun elemento porque decide si el grupo llega a existir en el DOM:
-    // un grupo sin hijos no se pinta, igual que hasta ahora.
+    // Which groups have children IN THIS file. It is computed before building
+    // any element because it decides whether the group comes to exist in the DOM:
+    // a group without children is not painted, as is the case today.
     const groupChildren = childrenByGroup(slots);
 
     const slotPromises = slots.map(async (slot: any) => {
@@ -1299,10 +1299,10 @@ export class ImageEngine {
       // injections, lottie instances and image fetches bound to a permanently detached
       // node), so bail before any of that happens. They still reach the composition
       // step, which reads them straight from the raw `slots` metadata array.
-      // `isMaskLayer` desaparecio al convertir la mascara en un tipo propio.
-      // Una mascara en mode troquel solo recorta: no emite nodo visible. La de
-      // mode ventana SI se pinta —es el marco— y por eso queda fuera de esta
-      // guarda.
+      // `isMaskLayer` disappeared when the mask was turned into its own type.
+      // A mask in die-cut mode only clips: it emits no visible node. The one in
+      // window mode IS painted (it is the frame), and that is why it is outside this
+      // guard.
       if (slotType === 'mask' && style.maskMode === 'cutout') {
         // ...but composition only runs over the TOP-LEVEL stack: `compositionSlots`
         // below filters out zone-assigned slots. So a mask/filter placed inside a
@@ -1323,43 +1323,43 @@ export class ImageEngine {
       let rawText = localized.content;
       // Pure geometric shapes and filter layers carry no text content but
       // still render from their style (fillColor, geoShape, width/height, backdropFilter).
-      // La mascara dedicada en mode "ventana" es una capa que se pinta: un
-      // En mode imagen NADA es interactivo, y por eso se corta aqui y no mas
-      // abajo: esta bandera decide tambien el area minima de contacto y el
-      // dimensionado. Un slot que no se puede pulsar no necesita ni lo uno ni
-      // lo otro.
+      // The dedicated mask in "window" mode is a layer that gets painted: a
+      // In image mode NOTHING is interactive, so it is cut off here and not further
+      // down: this flag also decides the minimum contact area and the
+      // sizing. A slot that cannot be clicked needs neither of those
+      // things.
       const isInteractiveSlot = !self.disableActions
         && (slot.isInteractive === true || style.isInteractive === true || Boolean(slot.states || style.states));
       const isWindowMask = slotType === 'mask' && style.maskMode !== 'cutout';
       const isArtisticText = slotType === 'artistic-text';
       const isGeoLike = slotType === 'geo' || slotType === 'shape' || slotType === 'draw' || slotType === 'filter' || slotType === 'container' || isWindowMask || isInteractiveSlot || isArtisticText;
 
-      // Un grupo CON hijos si produce elemento: es el wrapper de la fase 3.
+      // A group WITH children does produce an element: it is the phase 3 wrapper.
       //
-      // Hasta aqui el grupo no llegaba nunca: `group` no esta en `isGeoLike`,
-      // asi que un slot sin text se descartaba en esta linea y el player no
-      // pintaba nada. El peso muerto del grupo estaba en el ARCHIVO firmado,
-      // no en el DOM — el diagnostico del diseno decia lo contrario y se
-      // comprobo aqui.
+      // Until now the group never arrived: `group` is not in `isGeoLike`, so a slot
+      // without text was discarded on this line and the player painted nothing.
+      // The group's dead weight was in the SIGNED FILE, not in the DOM; the design
+      // diagnosis said the opposite,
+      // and this was verified here.
       //
-      // La condicion es «con hijos» y no «es un grupo» porque asi los archivos
-      // anteriores a la fase 3, que no traen `style.groupId` en ningun slot,
-      // producen EXACTAMENTE el mismo DOM que hoy: sin hijos que anidar, el
-      // wrapper no tendria nada dentro y solo seria una capa de mas.
+      // The condition is «has children» and not «is a group», because this way the files
+      // older than phase 3, which carry no `style.groupId` on any slot,
+      // produce EXACTLY the same DOM as today: with no children to nest, the
+      // wrapper would have nothing inside and would just be one extra layer.
       const isBackgroundSlot = slot.is_background_pattern === true || slot.id === 'background-pattern-slot';
       const isWrapperWithChildren = slotType === 'group' && groupChildren.has(String(slot.id));
       if (isWrapperWithChildren) {
-        // Cae directo al armado del elemento, saltandose la guarda de abajo:
-        // un wrapper no tiene content propio que ensenar.
+        // Falls straight into building the element, skipping the guard below:
+        // a wrapper has no content of its own to show.
       } else if (slotType === 'pattern' || isBackgroundSlot) {
-        // Cae directo al armado del elemento: una capa de patron o fondo no trae
-        // `content`, su CSS lo pone `patternLayerCss` o `isBackgroundSlot` mas abajo.
+        // Falls straight into building the element: a pattern or background layer does not
+        // carry `content`; its CSS comes from `patternLayerCss` or `isBackgroundSlot` further down.
       } else if (!rawText && !(isGeoLike && (style.fillColor || style.fillType || style.width || slotType === 'filter' || slotType === 'container' || isWindowMask || isInteractiveSlot || isArtisticText))) return null;
 
       const isImageSlot = isImageContent(slot, rawText);
 
       // Inline <svg> tags in content are always allowed (local shapes);
-      // Las URL externas ya no se cargan: el player solo acepta `data:`.
+      // external URLs are no longer loaded: the player only accepts `data:`.
       let text = rawText;
       let isSvg = false;
 
@@ -1390,7 +1390,7 @@ export class ImageEngine {
             // intrinsic pixel width/height. Keeping an explicit width like
             // "541.52" would render at intrinsic size and get clipped by the
             // slot's overflow:hidden (only a corner shows). The viewBox +
-            // preserveAspectRatio drive proportional scaling — 1:1 with editor.
+            // preserveAspectRatio drive proportional scaling, 1:1 with the editor.
             if (!svgEl.getAttribute('viewBox')) {
               const w0 = svgEl.getAttribute('width');
               const h0 = svgEl.getAttribute('height');
@@ -1406,16 +1406,16 @@ export class ImageEngine {
             if (resolvedStroke) {
               svgEl.style.color = resolvedStroke;
             }
-            // Con `setProperty`, no concatenando el atributo `style`. Ese color
-            // sale del .oim y NO lo valida el esquema, asi que al pegarlo en el
-            // atributo el navegador lo parsea como lista de declaraciones: un
-            // `strokeColor` de "red; background-image: url(https://…)" colaba
-            // una peticion a un tercero al abrir un archivo ajeno. El CSSOM
-            // rechaza el valor entero si no es un color valido -- comprobado en
-            // navegador: por atributo inyecta, por CSSOM no.
+            // With `setProperty`, not by concatenating the `style` attribute. That colour
+            // comes from the .oim and the schema does NOT validate it, so pasted into the
+            // attribute the browser parses it as a list of declarations: a `strokeColor` of
+            // "red; background-image: url(https://…)" let a request to a third party
+            // through when a foreign file was opened. The CSSOM rejects the whole value if
+            // it is not a valid colour -- checked in the browser.
+            // Via the attribute it injects; via CSSOM it does not.
             //
-            // La asignacion de `color` de arriba ya era segura; esta linea la
-            // sobrescribia y reintroducia el agujero.
+            // The `color` assignment above was already safe; this line overwrote it and
+            // reintroduced the hole.
             svgEl.style.setProperty('display', 'block');
             svgEl.style.setProperty('width', '100%');
             svgEl.style.setProperty('height', '100%');
@@ -1467,12 +1467,12 @@ export class ImageEngine {
       slotEl.setAttribute('part', 'slot');
       slotEl.setAttribute('data-slot-id', slot.id);
 
-      // Visibilidad selectiva por idioma (regla languages: ["*"] | ["es", ...])
+      // Selective visibility by language (languages rule: ["*"] | ["es", ...])
       if (Array.isArray(slot.languages) && !slot.languages.includes('*') && !slot.languages.includes(self.lang)) {
         slotEl.style.display = 'none';
       }
 
-      // Efectos visuales de capa (resplandor neón)
+      // Visual layer effects (neon glow)
       if (style.effect === 'neon') {
         const neonColor = resolveCssColor(style.effectColorRole, style.effectColor || '#f59e0b');
         const r = typeof style.effectRadius === 'number' ? style.effectRadius : 16;
@@ -1530,11 +1530,11 @@ export class ImageEngine {
         }
       }
 
-      // Capa `pattern`: tesela y se mueve, con el CSS que calcula el core.
-      // NO es el fondo del lienzo -`isBackgroundSlot`, arriba-: esa marca
-      // estira al 100% del visor, y una capa de patron tiene su propia
-      // posicion y tamano. El player no calcula este CSS por su cuenta: lo
-      // unico que hace es aplicarlo tal cual lo devuelve `patternLayerCss`.
+      // `pattern` layer: tiled and moved, with the CSS computed by the core.
+      // NOT the canvas background (`isBackgroundSlot`, above): that mark
+      // stretches to 100% of the viewer, and a pattern layer has its own
+      // position and size. The player does not compute this CSS on its own: the
+      // only thing it does is apply it exactly as `patternLayerCss` returns it.
       if (slotType === 'pattern') {
         const patternCss = patternLayerCss(style);
         for (const [prop, value] of Object.entries(patternCss)) {
@@ -1612,12 +1612,12 @@ export class ImageEngine {
         imgEl.draggable = false;
         imgEl.style.width = '100%';
         imgEl.style.height = '100%';
-        // 'cover' es el default del EDITOR al crear una figura de imagen. Este
-        // default solo aplica a archivos antiguos: hasta que se corrigio
-        // serializeSlots, `objectFit` no viajaba al .oim, asi que el visor caia
-        // aqui y dibujaba 'contain' donde el editor mostraba 'cover'. Los
-        // archivos nuevos traen el valor explicito y no dependen de esta linea;
-        // igualarla al editor alinea de paso los ya exportados.
+        // 'cover' is the EDITOR's default when creating an image figure. This
+        // default only applies to old files: until `serializeSlots` was fixed,
+        // `objectFit` did not travel to the .oim, so the viewer fell back to
+        // here and drew 'contain' where the editor showed 'cover'. New files carry
+        // the explicit value and do not depend on this line; matching the editor
+        // also aligns the already exported ones.
         imgEl.style.objectFit = style.objectFit || 'cover';
         // Contract 1.15.0: a crop frames and zooms the image over "cover"; its
         // wrapper clips the overflow. Without one, nothing changes.
@@ -1731,10 +1731,10 @@ export class ImageEngine {
           }
         }
       } else {
-        // Ojo: esta rama es el `else` del camino de HTML sanitizado, así que un
-        // slot de text autorado con HTML/SVG rico se renderiza SIN ola aunque
-        // tenga textAnimationType === 'wave-chars' — deliberado: no partimos
-        // HTML arbitrario carácter a carácter.
+        // Careful: this branch is the `else` of the sanitized-HTML path, so a
+        // text slot authored with rich HTML/SVG renders WITHOUT the wave even though
+        // it has textAnimationType === 'wave-chars' (deliberate: we do not split
+        // arbitrary HTML character by character).
         let textTarget: HTMLElement = hoverWrap;
         if (useWrapMask) {
           const textContainer = document.createElement('div');
@@ -1772,26 +1772,26 @@ export class ImageEngine {
  
       loopWrap.appendChild(hoverWrap);
 
-      // Parallax infinito: si la capa se desplaza en bucle, envolver en la pista
-      // con 2 copies segun infiniteLayerPlan. Solo se duplica si se mueve (duplicate: true).
+      // Infinite parallax: if the layer moves in a loop, wrap it in the track
+      // with 2 copies per infiniteLayerPlan. It is only duplicated if it moves (duplicate: true).
       const parallaxCfg = slot.parallax || style.parallax;
       let duplicatedForInfinite = false;
 
       if (parallaxCfg && parallaxCfg.enabled) {
         const inf = parallaxCfg.infinite || {};
 
-        // El bucle APAGADO es velocidad cero, no velocidad por defecto.
+        // A loop that is OFF is zero speed, not the default speed.
         //
-        // `parallaxCfg.enabled` dice que la CAPA tiene parallax; `inf.enabled`
-        // dice si esa capa se desplaza en bucle. Son cosas distintas y hay que
-        // mirar las dos: una capa con parallax y el bucle apagado -la montana y
-        // la cabana quietas delante del cielo en movimiento- llegaba aqui con su
-        // `speedPxSec` intacto y acababa duplicada y desfilando.
+        // `parallaxCfg.enabled` says the LAYER has parallax; `inf.enabled`
+        // says whether that layer moves in a loop. They are different things and both must be
+        // checked: a layer with parallax and the loop off (the mountain and the
+        // cabin still in front of the moving sky) arrived here with its `speedPxSec` intact and
+        // ended up duplicated and scrolling.
         //
-        // Es la regla central del diseno -"solo se duplica lo que se mueve"-
-        // incumplida por el lector. Ninguna prueba podia verla: las del
-        // generador puro reciben la velocidad ya calculada, y nadie cubria el
-        // tramo que traduce la configuracion del archivo a esa velocidad.
+        // It is the central rule of the design ("only what moves is duplicated"),
+        // broken by the reader. No test could see it: the pure generator tests receive the
+        // speed already calculated, and nothing covered the stretch that translates the file's
+        // configuration into that speed.
         const loopDisabled = inf.enabled === false || self._isStill();
 
         const speedPxSec = loopDisabled ? 0 : parallaxCfg.speedPxSec !== undefined
@@ -1828,9 +1828,9 @@ export class ImageEngine {
         };
 
         const slotW = slot.width_px || (slot.widthPercent ? (slot.widthPercent / 100) * baseWidth : (style.width ? (parseFloat(style.width) / 100) * baseWidth : baseWidth));
-        // El ancho del LIENZO va tambien: decide cuantas piezas hacen falta
-        // para que la pista lo cubra durante toda la vuelta. Sin el, una capa
-        // mas estrecha que el lienzo deja bandas vacias a los lados.
+        // The canvas WIDTH goes too: it decides how many pieces are needed so that the
+        // track covers it for the whole loop. Without it, a layer narrower than the canvas
+        // leaves empty bands at the sides.
         const plan = infiniteLayerPlan(layerCfg, slotW || baseWidth, baseWidth);
 
         if (plan.duplicate) {
@@ -1843,15 +1843,15 @@ export class ImageEngine {
             track.style.setProperty(k, v);
           }
 
-          // Cuantas piezas y cuales se reflejan lo decide el PLAN. Con espejo
-          // son cuatro -A, espejo(A), A, espejo(A)- porque el desplazamiento es
-          // de -50% de la pista: con solo dos, al final de la vuelta se ve
-          // espejo(A) donde empezo A y el reinicio SALTA.
+          // How many pieces and which are mirrored is decided by the PLAN. With mirroring
+          // there are four (A, mirror(A), A, mirror(A)) because the offset is
+          // -50% of the track: with only two, at the end of the loop mirror(A) shows where A began
+          // and the reset JUMPS.
           for (let i = 0; i < plan.copies; i++) {
             const piece = (i === 0 ? loopWrap : loopWrap.cloneNode(true)) as HTMLElement;
-            // El ancho lo decide el plan, no este archivo: la pista es
-            // `width: max-content` y una pieza con ancho en porcentaje
-            // colapsaria dejandolas superpuestas.
+            // The width is decided by the plan, not by this file: the track is
+            // `width: max-content` and a piece with a percentage width would
+            // collapse, leaving them overlapping.
             for (const [k, v] of Object.entries(plan.copy)) {
               piece.style.setProperty(k, v);
             }
@@ -1870,11 +1870,11 @@ export class ImageEngine {
         slotEl.appendChild(loopWrap);
       }
 
-      // Trim path: si el slot tiene trimStart/trimEnd, aplicar stroke-dasharray
-      // a los <path> SVG inline una vez montados en el DOM.
-      // `trimDuration` entra en la condicion a proposito: un icono con
-      // trimStart 0 y trimEnd 100 no recorta nada, pero SI se anima, y es el
-      // caso mas habitual — dibujar el icono entero de principio a fin.
+      // Trim path: if the slot has trimStart/trimEnd, apply stroke-dasharray
+      // to the inline SVG <path>s once they are mounted in the DOM.
+      // `trimDuration` goes in the condition on purpose: an icon with
+      // trimStart 0 and trimEnd 100 trims nothing, but IS animated, and it is the
+      // most common case: drawing the whole icon from start to finish.
       if (hasHtmlOrSvg && (style.trimStart || (style.trimEnd != null && style.trimEnd < 100) || style.trimDuration)) {
         if (style.trimDuration) ensureTrimKeyframes(self.host.shadowRoot);
         applyTrimToSvgPaths(hoverWrap, style);
@@ -1901,8 +1901,8 @@ export class ImageEngine {
  
       slotEl.style.maxWidth = maxWidth;
       slotEl.style.fontSize = fontSize;
-      // Sin unidad: se hereda como factor, asi que un hijo con otro size de
-      // fuente calcula SU alto de linea y no arrastra el del padre.
+      // Unitless: it is inherited as a factor, so a child with a different font size
+      // computes ITS line height and does not drag the parent's along.
       slotEl.style.lineHeight = String(resolveLineHeight(style));
 
       if (slotType === 'svg' || isSvg) {
@@ -1911,25 +1911,25 @@ export class ImageEngine {
           slotEl.style.setProperty('color', vectorColor);
         }
       } else if (slotType === 'text' && (style.fillColor || style.fillColorRole || style.colorRole)) {
-        // En un texto `fillColor` ES la letra (contrato 1.5.0: `color` se
-        // retiro y el compilador lo convierte en `fillColor`). Aqui se leia
-        // `style.color`, asi que un texto nuevo del editor -`fillColor` sin
-        // `fillType`- salia firmado sin color. Un relleno con mascara
-        // (degradado, patron) lo pisa despues con `color: transparent`.
+        // In a text, `fillColor` IS the letter (contract 1.5.0: `color` was
+        // removed and the compiler converts it to `fillColor`). Here `style.color` was
+        // being read, so a new text from the editor (`fillColor` with no
+        // `fillType`) came out signed without a colour. A fill with a mask
+        // (gradient, pattern) overrides it afterwards with `color: transparent`.
         const resolvedTextColor = resolveCssColor(style.fillColorRole || style.colorRole, style.fillColor);
         if (resolvedTextColor) {
           slotEl.style.setProperty('color', resolvedTextColor);
         }
       }
 
-      // El RELLENO del text: degradado, patron o fondo generativo.
+      // The text FILL: gradient, pattern or generative background.
       //
-      // `getFillCss` contemplaba el text desde el principio -devuelve
-      // `background-clip: text` para esos tres tipos- pero NADIE lo llamaba
-      // para un slot de text: su unica llamada en todo el monorepo era para
-      // `slotType === 'container'`. La rama existia y era inalcanzable, y por
-      // eso ningun .oim publicado usa text con degradado: no es que el editor
-      // no lo ofreciera, es que nadie lo pintaba.
+      // `getFillCss` already handled text from the start (it returns
+      // `background-clip: text` for those three types), but NOBODY called it
+      // for a text slot: its only call in the whole monorepo was for
+      // `slotType === 'container'`. The branch existed but was unreachable, so no
+      // published .oim uses gradient text: it is not that the editor did not offer it,
+      // it is that nobody painted it.
       //
       // Phase 3: the mask moves to hoverWrap, inside what animates (loopWrap),
       // so the browser composes them as a single layer instead of recomposing
@@ -2046,23 +2046,23 @@ export class ImageEngine {
       // For text, lottie, and image slots, the editor stores a highlight/selection
       // color (rgba(37,99,235,0.15)) that must NOT be rendered — the container
       // background should remain transparent by default.
-      // Una mascara de ventana NO lleva fondo: su color va en el marco SVG y
-      // el hueco debe quedar transparente para que se vea lo de detras.
-      // `isGeoLike` responde a DOS preguntas a la vez —«se pinta fondo?» y
-      // «necesita caja y area de contacto?»— y los slots interactivos entraron
-      // por la segunda. Se llevaron la primera de propina: un TEXTO interactivo
-      // recibia como fondo el color de su propia letra, porque en una capa de
-      // text `fillColor` ES el color de la letra. Salia un bloque liso con el
-      // text dentro, invisible.
+      // A window-mode mask carries NO background: its colour goes on the SVG frame and
+      // the hole must stay transparent so that what is behind shows through.
+      // `isGeoLike` answers TWO questions at once ("is a background painted?" and
+      // "does it need a box and a contact area?"), and the interactive slots came in under the
+      // second. They took the first as a bonus: an interactive TEXT received the colour of its
+      // own letter as background, because on a text layer `fillColor` IS the letter's colour.
+      // It came out as a solid block with the text inside it:
+      // invisible.
       //
-      // Encontrado en un .oim real el 28 de agosto: un boton que en el editor
-      // era text rojo sobre blanco y en el player un rectangulo rojo. Anterior
-      // al enganche del clic —basta `states`, y el hover ya los traia—.
-      // Complex fills of Shapes (12 Sept). Painted on a child layer under the
+      // Found on a real .oim: a button that was red text on white in the editor
+      // and a red rectangle in the player. It predates the click hookup (`states` alone
+      // was enough, and hover already had them).
+      // Complex fills of shapes. Painted on a child layer under the
       // SVG, masked with the shape, so the SVG keeps only the stroke. The mask
       // is on that layer and not on the slot: on the slot it would also cut the
       // outer half of the stroke.
-      // Vector layers too, for pattern and generative (27 Sept): the layer is
+      // Vector layers too, for pattern and generative: the layer is
       // masked with the drawing's silhouette, so the fill follows the icon. A
       // gradient is not here: the editor writes it inside the SVG itself.
       const isVectorFill = (slotType === 'svg' || isSvg) && !isWindowMask && (
@@ -2082,24 +2082,24 @@ export class ImageEngine {
       if (resolvedBgColor && isGeoLike && !isWindowMask && slotType !== 'text' && !isArtisticText && !hasComplexFill) {
         slotEl.style.setProperty('background-color', resolvedBgColor);
       }
-      // Una mascara en mode ventana no lleva borde de caja: su contorno es
-      // `maskStrokeWidth`, trazado sobre la silueta dentro del <svg>. Pintarlo
-      // aqui dibujaba un rectangulo en el limite del slot y, al posicionarse
-      // los elementos absolutos desde la caja de PADDING, empujaba el marco
-      // anclado al lienzo por el ancho del borde: desbordaba por abajo y por la
-      // derecha, y por ninguno de los otros dos lados.
-      // NO en las capas de vector. Un icono no lleva un borde de caja
-      // alrededor: el editor interpreta el trazo como el contorno de los
-      // caminos del SVG, y aqui se dibujaba un rectangulo alrededor del icono
-      // que el editor nunca enseño. Los iconos insertados antes del 21 de
-      // agosto arrastran `strokeWidth: 2` de los valores por defecto de una
-      // forma, asi que el borde salia sin que nadie lo pidiera.
-      // `isSvg` tambien, no solo el tipo: los iconos insertados antes del 21
-      // de agosto se creaban como `geo` con el SVG dentro del content, y esos
-      // tambien tienen que quedar sin borde de caja.
-      // Y tampoco en las formas que se dibujan con SVG: ahi el trazo va en el
-      // `stroke` de la figura y sigue la silueta. Un `border` encima seria el
-      // rectangulo que este trabajo vino a quitar.
+      // A window-mode mask has no box border: its outline is
+      // `maskStrokeWidth`, traced over the silhouette inside the <svg>. Painting it
+      // here drew a rectangle on the slot's edge and, since absolute elements are positioned
+      // from the PADDING box, it pushed the frame anchored to the canvas out by the border
+      // width: it overflowed at the bottom and
+      // on the right, and on neither of the other two sides.
+      // NOT on vector layers. An icon carries no box border around it: the editor reads the
+      // stroke as the outline of the SVG paths, and here a rectangle was drawn around the
+      // icon that the editor never showed. Icons inserted under an older version carry
+      // `strokeWidth: 2` from a shape's default values, so the border came out without
+      // anyone asking for it.
+      // `isSvg` as well, not only the type: icons inserted under an older version were
+      // created as `geo` with the SVG inside the content, and those too must be left without
+      // a box border.
+      // Nor on shapes drawn with SVG: there the stroke goes on the figure's `stroke` and
+      // follows the silhouette.
+      // A `border` on top would be the rectangle this work was meant to remove.
+      // 
       const hasVector = slotType === 'svg' || isSvg || !!style.svgRawXml
         || (isGeoLike && (!!shapeDrawing(style.geoShape) || !!style.svgPath));
       const resolvedStrokeColor = resolveCssColor(style.strokeColorRole, style.strokeColor);
@@ -2107,15 +2107,14 @@ export class ImageEngine {
         const borderStyle = style.strokeStyle || 'solid';
         slotEl.style.setProperty('border', `${style.strokeWidth}px ${borderStyle} ${resolvedStrokeColor}`);
       }
-      // Las formas no rectangulares se dibujan con SVG, como en el editor.
+      // Non-rectangular shapes are drawn with SVG, as in the editor.
       //
-      // Antes eran `clip-path` sobre el <div> mas un `border` de CSS, y de ahi
-      // salian tres fallos a la vez: el borde dibujaba el RECTANGULO del
-      // elemento en vez de la silueta -gemelo del fallo de la sombra-, los
-      // puntos estaban copiados a mano y no coincidian con los del editor, y
-      // las cinco formas que este motor no conocia -corazon, rombo, hexagono,
-      // flecha y linea- caian a un `else` que solo pintaba el fondo y se
-      // publicaban como rectangulos de color.
+      // They used to be `clip-path` on the <div> plus a CSS `border`, and that gave three
+      // failures at once: the border drew the element's RECTANGLE instead of the silhouette
+      // (a twin of the shadow failure), the points were copied by hand and did not match the
+      // editor's, and the five shapes this engine did not know (heart, diamond, hexagon,
+      // arrow and line) fell through to an `else` that only painted the background and
+      // were published as coloured rectangles.
       const drawing = isGeoLike && !isWindowMask ? shapeDrawing(style.geoShape) : undefined;
       // Image fill (contract 1.17.0): the same resolution as an image layer's
       // content. A network URL is refused, as there (the file carries its picture).
@@ -2134,7 +2133,7 @@ export class ImageEngine {
         // Anchored to the slot's box, like the fill layer. As a flex child it
         // came after the empty `oim-slot-loop-wrap` (one line tall), so the
         // drawing sat a few px lower than in the editor; with the fill layer at
-        // the box, the stroke ring and the fill drifted apart (13 Sept).
+        // the box, the stroke ring and the fill drifted apart.
         svg.style.position = 'absolute';
         svg.style.left = '0';
         svg.style.top = '0';
@@ -2147,7 +2146,7 @@ export class ImageEngine {
         if (silhouette.points) figure.setAttribute('points', silhouette.points);
         else figure.setAttribute('d', silhouette.d!);
 
-        // Un trazo abierto -la linea o dibujo libre- con fill se convierte en una barra.
+        // An open stroke (the line or freehand drawing) with fill becomes a bar.
         // A custom svgPath keeps its colour fill off (as before); only a photo may fill it.
         const fillable = drawing && (drawing.tipo === 'polygon' || drawing.rellenable);
         const resolvedSvgFill = resolveCssColor(style.fillColorRole, style.fillColor);
@@ -2156,12 +2155,12 @@ export class ImageEngine {
           'fill',
           fillable && resolvedSvgFill && style.fillType !== 'none' && !hasComplexFill && !imageFill ? resolvedSvgFill : 'none'
         );
-        // El garabato es la unica forma a la que el editor da respaldos de
-        // trazo: sin grosor pinta 2, y sin color de trazo usa el de relleno.
-        // Hay que replicarlos, porque al ser un trazo abierto no lleva relleno
-        // -`rellenable: false`- y sin trazo no queda NADA que ver: el garabato
-        // se veia en el editor y se publicaba invisible. La linea, en cambio,
-        // usa `strokeWidth ?? 0` en el editor, asi que se deja como estaba.
+        // The doodle is the only shape to which the editor gives stroke fallbacks:
+        // without thickness it paints 2, and without a stroke colour it uses the fill colour.
+        // These must be replicated, because being an open stroke it carries no fill
+        // (`rellenable: false`) and without a stroke nothing is left to see: the doodle
+        // was visible in the editor and published invisible. The line, by contrast,
+        // uses `strokeWidth ?? 0` in the editor, so it is left as it was.
         const isScribble = style.geoShape === 'scribble';
         const strokeThickness = style.strokeWidth && style.strokeWidth > 0
           ? style.strokeWidth
@@ -2172,9 +2171,9 @@ export class ImageEngine {
         if (strokeThickness && strokeColor) {
           figure.setAttribute('stroke', strokeColor);
           figure.setAttribute('stroke-width', String(strokeThickness));
-          // Sin esto el trazo se estira con la capa: el `viewBox` va con
-          // `preserveAspectRatio: none`, asi que una forma ancha y baja tendria
-          // el borde grueso arriba y fino a los lados.
+          // Without this the stroke stretches with the layer: the `viewBox` goes with
+          // `preserveAspectRatio: none`, so a wide and short shape would have a thick border on top
+          // and a thin one on the sides.
           figure.setAttribute('vector-effect', 'non-scaling-stroke');
           figure.setAttribute('stroke-linejoin', 'round');
           figure.setAttribute('stroke-linecap', 'round');
@@ -2188,8 +2187,8 @@ export class ImageEngine {
           montarRellenoDeImagen(slotEl, style, { d, viewBox: silhouette.viewBox }, fillImageSrc);
         }
 
-        // El color va en el <path>, no en el container, o se veria la caja
-        // entera pintada por detras de la figura.
+        // The colour goes on the <path>, not on the container, or the whole box would show
+        // painted behind the figure.
         slotEl.style.backgroundColor = 'transparent';
         slotEl.style.padding = '0';
         slotEl.style.overflow = 'visible';
@@ -2197,15 +2196,15 @@ export class ImageEngine {
         const geoShape = style.geoShape;
         if (geoShape === 'circle') {
           slotEl.style.borderRadius = '50%';
-          // Y se borra del objeto de styles para que el bucle generico de mas
-          // abajo no lo pise. `buildRawSlots` escribe SIEMPRE
-          // `border_radius_px: 0` en el .oim, eso llega aqui como
-          // `style.borderRadius = '0px'`, y ese bucle corre DESPUES: el circulo
-          // acababa cuadrado.
+          // And it is deleted from the styles object so the generic loop further down does
+          // not overwrite it. `buildRawSlots` ALWAYS writes `border_radius_px: 0` in the .oim,
+          // which arrives here as
+          // `style.borderRadius = '0px'`, and that loop runs AFTER: the circle
+          // ended up square.
           //
-          // Llevaba asi desde siempre. No se veia porque los circulos de las
-          // plantillas suelen ir bloqueados y horneados en la imagen base;
-          // solo se rompe cuando el circulo es una capa viva.
+          // It had always been like this. It was not seen because the circles in templates
+          // are usually locked and baked into the base image;
+          // it only breaks when the circle is a live layer.
           delete style.borderRadius;
         } else if (geoShape === 'triangle') {
           slotEl.style.clipPath = 'polygon(50% 0%, 0% 100%, 100% 100%)';
@@ -2270,27 +2269,27 @@ export class ImageEngine {
         slotEl.insertBefore(fillLayer, slotEl.firstChild);
       }
 
-      // Marco de la mascara dedicada. Gemelo de CanvasArea.tsx: un <path> con
-      // fill-rule="evenodd" pinta el color y deja la silueta hueca, y un
-      // segundo <path> opcional delinea el troquel.
+      // Frame of the dedicated mask. Twin of CanvasArea.tsx: a <path> with
+      // fill-rule="evenodd" paints the colour and leaves the silhouette hollow, and an
+      // optional second <path> outlines the die-cut.
       if (isWindowMask) {
-        // El marco se ancla al lienzo y desborda la caja del slot a proposito,
-        // asi que este slot no puede recortar ni centrar como uno de text.
+        // The frame is anchored to the canvas and overflows the slot's box on purpose,
+        // so this slot cannot clip or centre like a text one.
         slotEl.style.overflow = 'visible';
         slotEl.style.display = 'block';
         slotEl.style.setProperty('padding', '0', 'important');
         slotEl.appendChild(buildWindowMaskSvg(slot, { width: baseWidth, height: baseHeight }));
       }
 
-      // El padding de `.oim-slot` (`0 0.25em 0 0 !important`) existe para que la
-      // ultima letra de un text en cursiva no se corte. En un slot que NO es
-      // text solo ensancha la caja: con `box-sizing: content-box !important`
-      // no se absorbe, asi que un slot de 800x1200 se media 806.7x1203.2 y todo
-      // quedaba desplazado ~1.6px. Medido en el visor real.
+      // The padding of `.oim-slot` (`0 0.25em 0 0 !important`) exists so that the
+      // last letter of an italic text is not cut. On a slot that is NOT
+      // text it only widens the box: with `box-sizing: content-box !important` it is not
+      // absorbed, so a 800x1200 slot measured 806.7x1203.2 and everything was shifted ~1.6px.
+      // Measured in the real viewer.
       //
-      // `paintsText` and not `!rawText`: for an image `rawText` is its source,
-      // so images kept the padding, and a parallax image showed a strip at the
-      // end of every lap (library, 4 Oct 2026).
+      // `paintsText` and not `!rawText`: for an image `rawText` is its source, so images kept
+      // the padding, and a parallax image showed a strip at the
+      // end of every lap (found in the library).
       if ((!paintsText && !isWindowMask) || duplicatedForInfinite) {
         slotEl.style.setProperty('padding', '0', 'important');
       }
@@ -2367,25 +2366,25 @@ export class ImageEngine {
         slotEl.style.setProperty('--oim-ty', transformY);
         slotEl.style.setProperty('--oim-rot', rotationDeg + 'deg');
 
-        // La caja ya resuelta en pixeles de lienzo. Se guarda porque el
-        // wrapper del grupo, mas abajo, la necesita para su origen de
-        // transformada y `pos`/`wRef`/`hRef` viven solo en este bloque.
+        // The box already resolved in canvas pixels. It is kept because the
+        // group wrapper, further down, needs it for its transform origin;
+        // `pos`/`wRef`/`hRef` live only in this block.
         boxInCanvas = { x: pos[0] * baseWidth, y: pos[1] * baseHeight, width: wRef, height: hRef };
       }
 
-      // Un GRUPO no se pinta: envuelve. Hasta la fase 3 llegaba aqui como un
-      // slot cualquiera y salia como un elemento vacio con la caja del grupo,
-      // encima de sus hijos — peso muerto en un archivo firmado.
+      // A GROUP is not painted: it wraps. Up to phase 3 it arrived here like any
+      // other slot and came out as an empty element with the group's box, on top of its
+      // children (dead weight in a signed file).
       //
-      // Aqui solo se CALCULA. Aplicarlo tiene que esperar a despues del bucle
-      // que vuelca `style` sobre el elemento, porque ese bucle escribe
-      // `style.width` y `style.height` —que el backend emite SIEMPRE, en cqw—
-      // y pisaba el size del wrapper. Los hijos salian a la mitad de
-      // size y fuera de sitio.
+      // Here it is only CALCULATED. Applying it has to wait until after the loop that
+      // dumps `style` onto the element, because that loop writes `style.width` and
+      // `style.height` (which the backend ALWAYS emits, in cqw) and it overwrote the
+      // wrapper's size, so the children came out at half
+      // size and out of place.
       //
-      // No lo vio ninguna prueba: los slots que construyen no traen
-      // `style.width`, asi que el bucle no tenia nada que pisar. Solo aparecio
-      // al abrir un .oim firmado de verdad.
+      // No test saw it: the slots they build carry no `style.width`, so the loop had
+      // nothing to overwrite. It only appeared when a truly signed .oim was
+      // opened.
       const wrapper = (isGroup(slot) && !isBackgroundSlot && boxInCanvas)
         ? wrapperStyle(boxInCanvas, { width: baseWidth, height: baseHeight })
         : null;
@@ -2424,7 +2423,7 @@ export class ImageEngine {
       }
       // style.blendMode retired in 1.12.0: it never showed here (each slot is
       // isolated) nor in the editor; readers draw the layer as normal.
-      // Unified effects stack (Spec 2026-10-07)
+      // Unified effects stack
       if (Array.isArray(style.effects) && style.effects.length > 0) {
         for (const eff of style.effects) {
           if (!eff || eff.enabled === false) continue;
@@ -2520,7 +2519,7 @@ export class ImageEngine {
           }
         }
       } else {
-        // Fallback a campos legacy si style.effects no está presente
+        // Fall back to legacy fields if style.effects is not present
         const layerBlur = typeof style.layerBlur === 'number' ? style.layerBlur : style.blur;
         if (typeof layerBlur === 'number' && layerBlur > 0) {
           slotEl.style.filter = (slotEl.style.filter ? slotEl.style.filter + ' ' : '') + 'blur(' + layerBlur + 'px)';
@@ -2603,9 +2602,9 @@ export class ImageEngine {
             key === 'filterPreset' || key === 'filterBlur' || key === 'filterBrightness' ||
             key === 'filterContrast' || key === 'filterSaturate' || key === 'filterHueRotate' ||
             key === 'isMaskLayer') return;
-        // `lineHeight` sale del volcado crudo y pasa por `resolveLineHeight`: el
-        // valor del archivo llegaba aqui sin validar, asi que un `0` colapsaba
-        // las lineas y un `99` tapaba el resto del documento.
+        // `lineHeight` comes from the raw dump and goes through `resolveLineHeight`: the
+        // file's value arrived here unvalidated, so a `0` collapsed the lines and a `99`
+        // covered the rest of the document.
         if (key === 'maxWidth' || key === 'maxWidths' || key === 'textAlign' ||
             key === 'fontSize' || key === 'fontSizes' ||
             key === 'rotation' || key === 'animation' || key === 'objectFit' ||
@@ -2624,7 +2623,7 @@ export class ImageEngine {
         slotEl.style.setProperty(cssKey, val);
       });
 
-      // Y aqui se APLICA, con `style` ya volcado, para que nada lo pise.
+      // And it is APPLIED here, with `style` already dumped, so nothing overwrites it.
       if (wrapper) {
         slotEl.style.left = wrapper.left;
         slotEl.style.top = wrapper.top;
@@ -2637,23 +2636,23 @@ export class ImageEngine {
         slotEl.style.pointerEvents = wrapper.pointerEvents;
         slotEl.style.setProperty('--oim-tx', '0%');
         slotEl.style.setProperty('--oim-ty', '0%');
-        // Y la scale del visor se NEUTRALIZA aqui.
+        // And the viewer's scale is NEUTRALIZED here.
         //
-        // `--oim-scale` la fija el overlay y CASCADA a todo lo que hay dentro;
-        // `.oim-slot` la aplica en su propia transformada. Para una capa
-        // suelta eso es correcto, pero el wrapper es un `.oim-slot` que
-        // CONTIENE a otros: sus hijos la recibian dos veces —la suya y la del
-        // wrapper— y salian a la mitad de size dentro del grupo.
+        // `--oim-scale` is set by the overlay and CASCADES to everything inside it;
+        // `.oim-slot` applies it on its own transform. For a loose layer that is correct, but
+        // the wrapper is a `.oim-slot` that CONTAINS others: its children received it twice
+        // (their own and the wrapper's)
+        // and came out at half size inside the group.
         //
-        // No se ve en las pruebas de motor: happy-dom no compone
-        // transformadas, asi que hay que mirar el ancho medido en un navegador
-        // de verdad. Aparecio abriendo el .oim en el player del CDN.
+        // Not visible in the engine tests: happy-dom does not compose transforms, so the width
+        // measured in a real browser must be checked. It showed up when opening the .oim in the
+        // player from the CDN.
         slotEl.style.setProperty('--oim-scale', '1');
-        // Un slot normal recorta a su caja; el wrapper de un grupo normal cubre el
-        // lienzo entero, asi que con `overflow: hidden` cualquier sombra o
-        // desenfoque se cortaria. Pero si el grupo es de parallax (sceneLoop,
-        // isParallaxGroup o hijos con parallax infinito), DEBE recortar con `hidden`
-        // para que la pista infinita duplicada no se desborde fuera del marco.
+        // A normal slot clips to its box; the wrapper of a normal group covers the whole
+        // canvas, so with `overflow: hidden` any shadow or blur would be cut off. But if the
+        // group is parallax (sceneLoop, isParallaxGroup or children with infinite parallax),
+        // it MUST clip with `hidden` so that the duplicated infinite track does not overflow
+        // outside the frame.
         const hasParallaxChildren = groupChildren.get(slot.id)?.some((cid) => {
           const cSlot = slots.find((s: any) => s.id === cid);
           return cSlot && ((cSlot.parallax && cSlot.parallax.enabled) || (cSlot.style?.parallax && cSlot.style.parallax.enabled));
@@ -2669,22 +2668,22 @@ export class ImageEngine {
         );
         slotEl.style.overflow = isParallaxGrp ? 'hidden' : 'visible';
 
-        // Los hijos entran en `loopWrap`, no en `slotEl`. Lo marca para el
-        // paso de anidado del final.
+        // The children go into `loopWrap`, not into `slotEl`. It marks this for the
+        // nesting step at the end.
         //
-        // `loopWrap` es donde corre la animacion del slot: las transformadas
-        // se aplican ahi y NUNCA sobre `slotEl`, porque el transform de
-        // `.oim-slot` es su anclaje de posicion. Si los hijos colgaran de
-        // `slotEl` serian HERMANOS de la animacion en vez de estar dentro, y
-        // animar un grupo moveria un wrapper vacio dejandolos quietos.
+        // `loopWrap` is where the slot's animation runs: transforms are applied there and
+        // NEVER on `slotEl`, because the `.oim-slot` transform is its position anchor. If the
+        // children hung from `slotEl` they would be SIBLINGS of the animation instead of inside it,
+        // and animating a group would move an empty wrapper
+        // and leave them still.
         loopWrap.dataset.oimGrupo = String(slot.id);
-        // Y tiene que girar sobre el centro del GRUPO.
-        // `.oim-slot-loop-wrap` trae `center center`, que en un wrapper del
-        // size del lienzo es el centro del LIENZO: rotar desde ahi mandaria
-        // el grupo a la otra punta.
+        // And it has to rotate around the center of the GROUP.
+        // `.oim-slot-loop-wrap` carries `center center`, which on a wrapper of the canvas size is
+        // the center of the CANVAS: rotating from there would send the group
+        // to the other end.
         loopWrap.style.transformOrigin = wrapper.transformOrigin;
-        // Y ocupar el wrapper entero: `.oim-slot-loop-wrap` es
-        // `height: auto`, que sin content propio mide cero.
+        // And it has to fill the whole wrapper: `.oim-slot-loop-wrap` is
+        // `height: auto`, which with no content of its own measures zero.
         loopWrap.style.height = '100%';
         loopWrap.style.overflow = 'visible';
       }
@@ -2692,14 +2691,13 @@ export class ImageEngine {
       if (style.animation && !self.disableAnimations) {
         const anim = style.animation;
         
-        // Keyframes estructurados: el camino nuevo. Se ejecuta sobre loopWrap,
-        // NUNCA sobre slotEl — el transform de .oim-slot es el anclaje de
-        // posicionamiento (translate(var(--oim-tx,-50%), ...)) y animarlo
-        // arrancaría la shape de su sitio.
+        // Structured keyframes: the new path. It runs on loopWrap,
+        // NEVER on slotEl: the .oim-slot transform is the positioning anchor
+        // (translate(var(--oim-tx,-50%), ...)) and animating it
+        // would move the shape out of its place.
         //
-        // La opacidad de loopWrap se multiplica sola con la de slotEl (que
-        // lleva el fade-in de entrada y la opacidad base de la shape) por
-        // composición del DOM, así que no hay conflicto que secuenciar.
+        // loopWrap's opacity multiplies on its own with slotEl's (which carries the entry fade-in
+        // and the shape's base opacity) by DOM composition, so there is no conflict to sequence.
         if (Array.isArray(anim.keyframes) && anim.keyframes.length >= 2 && typeof loopWrap.animate === 'function') {
           const animDuration = anim.duration || 8;
           if (animDuration > 0) {
@@ -2710,8 +2708,8 @@ export class ImageEngine {
             const instance = loopWrap.animate(frames, {
               duration: animDuration * 1000,
               iterations: onAction ? 1 : Infinity,
-              // El easing real vive por keyframe; aquí debe quedar linear para
-              // no aplicarse dos veces.
+              // The real easing lives per keyframe; here it must stay linear so it is not
+              // applied twice.
               easing: 'linear',
               ...(onAction ? { fill: 'both' as const } : {}),
             });
@@ -2728,7 +2726,7 @@ export class ImageEngine {
         }
 
         // `custom` is not applied since contract 1.9.0. It carried raw CSS
-        // -`custom_loop_css`, `custom_keyframes`, `custom_hover_css`- into a
+        // (`custom_loop_css`, `custom_keyframes`, `custom_hover_css`) into a
         // stylesheet, where `@import`, `image-set()` or a `}` breaking out of
         // the rule could ping a third party or restyle the player. The editor
         // never wrote it; only the catalogue classes remain.
@@ -2758,19 +2756,18 @@ export class ImageEngine {
         }
       }
 
-      // Los campos de interaccion viajan dentro de `slot.style`, que es donde los
-      // pone `buildSlotStyle` en el editor. Se acepta tambien la raiz porque los
-      // slots escritos a mano los llevan ahi.
+      // The interaction fields travel inside `slot.style`, which is where
+      // `buildSlotStyle` puts them in the editor. The root is also accepted because
+      // hand-written slots carry them there.
       //
-      // Leerlos SOLO en la raiz es el fallo con el que nacio esta feature: el
-      // archivo estaba bien -isInteractive true, states.hover.actions con su
-      // destino- y el player no enganchaba nada, porque la condicion nunca era
-      // cierta. Ninguna prueba lo vio: todas construyen el slot con la forma que
-      // el codigo espera. Lo enseño el primer .oim real que se abrio.
-      // En mode imagen ni se lee: asi no se engancha nada Y no se avisa por
-      // consola. Ese actionEvent existe para «el archivo lo pide y el player no sabe»;
-      // aqui el player si sabe y ha decidido no hacerlo, asi que mandaria a
-      // buscar un fallo que no existe —y en una galeria de veinte, veinte veces—.
+      // Reading them ONLY from the root was the failure this feature was born with: the file
+      // was fine (isInteractive true, states.hover.actions with its target) and the player hooked
+      // up nothing, because the condition was never true. No test saw it: all of them build the
+      // slot in the shape the code expects. The first real .oim that was opened showed it.
+      // In image mode it is not even read: so nothing is hooked AND no console warning
+      // is raised. That actionEvent exists for "the file asks for it and the player does not know";
+      // here the player does know and has decided not to do it, so it would send people
+      // looking for a failure that does not exist, and in a gallery of twenty, twenty times.
       const { isInteractive, states: slotStates } = self.disableActions
         ? { isInteractive: false, states: undefined }
         : readInteraction({
@@ -2783,9 +2780,9 @@ export class ImageEngine {
         const baseVisibility: Record<string, boolean> = {};
         const baseText: Record<string, string> = {};
 
-        // Destinos que ya se avisaron, para no repetir el actionEvent en cada hover.
-        // Vive aqui -por slot y por carga- y no en la instancia porque su vida
-        // util es exactamente la de estos manejadores.
+        // Targets already warned about, so the actionEvent is not repeated on every hover.
+        // It lives here (per slot and per load) and not on the instance, because its lifetime
+        // is exactly that of these handlers.
         const warnedTargets = new Set<string>();
 
         const actionRunner: ActionRunner = {
@@ -2793,29 +2790,28 @@ export class ImageEngine {
             const shadow = self.host.shadowRoot;
             if (!shadow) return;
 
-            // El player DICE lo que va a hacer; no hace lo que le manden.
+            // The player SAYS what it is going to do; it does not do what it is told.
             //
-            // El .oim no puede provocar nada por su cuenta: no declara handler,
-            // ni URL, ni destino fuera de si mismo. Solo se anuncia, y solo
-            // sirve de algo si la pagina se molesta en escuchar. Esa es la
-            // frontera del consentimiento de quien embebe.
+            // The .oim cannot cause anything on its own: it declares no handler,
+            // no URL, no target outside itself. It is only announced, and it is only
+            // useful if the page bothers to listen. That is the consent boundary of whoever embeds it.
             //
-            // Y es lo que hace INNECESARIO que el player navegue: si una pagina
-            // quiere que pulsar lleve a un producto, escucha y navega ella, con
-            // su URL y sus reglas.
+            // And that is what makes it UNNECESSARY for the player to navigate: if a page
+            // wants a click to lead to a product, it listens and navigates itself, with
+            // its own URL and rules.
             //
-            // El detalle lleva SOLO identificadores que el autor puso en el
-            // archivo. Nada de URLs ni de content: no es un canal hacia
-            // fuera, es el documento hablando de si mismo.
+            // The detail carries ONLY identifiers that the author put in the file. No URLs or
+            // content: it is not a channel to the outside;
+            // it is the document speaking about itself.
             const actionEvent = new CustomEvent('oim:action', {
               cancelable: true,
               detail: {
                 slot: slot.id,
-                // El id lo inventa el editor al azar, asi que nadie puede
-                // escribir `e.detail.slot === "Boton1"`. `name` es lo que el
-                // autor teclea y ve en su lista de capas. El id se queda como
-                // clave estable —los `targets` lo usan—; el nombre, como el
-                // legible. Los nombres NO son unicos: quien escuche lo sabe.
+                // The id is made up at random by the editor, so nobody can
+                // write `e.detail.slot === "Boton1"`. `name` is what the author types and sees in
+                // their layer list. The id stays as the stable key (`targets` use it); the
+                // name is the readable one.
+                // Names are NOT unique: whoever listens must know that.
                 name: slot.name,
                 trigger: trigger || 'unknown',
                 targets: actions.map(function (a) { return a.target; }),
@@ -2823,10 +2819,10 @@ export class ImageEngine {
               },
             });
             self.host.dispatchEvent(actionEvent);
-            // `preventDefault()` veta el efecto local. Con esto una galeria
-            // puede decidir clic a clic sin necesitar siquiera `mode="image"`.
-            // Se sale ANTES de tocar `baseVisibility`, asi que el `revertir` de
-            // un hover vetado tampoco encuentra nada que restaurar.
+            // `preventDefault()` vetoes the local effect. With this a gallery
+            // can decide click by click without even needing `mode="image"`.
+            // It exits BEFORE touching `baseVisibility`, so the `revert` of a vetoed hover
+            // finds nothing to restore either.
             if (actionEvent.defaultPrevented) return;
 
             // `play` runs a timeline; it has no visibility to record or revert.
@@ -2838,9 +2834,9 @@ export class ImageEngine {
               if (!act.target || act.type === 'play') return;
               const targetEl = shadow.querySelector('[data-slot-id="' + act.target + '"]') as HTMLElement | null;
 
-              // Un destino que no existe es el fallo que aparece cuando se borra
-              // una capa que era destino de un revelado: la accion se queda en el
-              // archivo, ya firmado, y no hace nada. Se avisa una sola vez.
+              // A target that does not exist is the failure that appears when a layer that was
+              // the target of a reveal is deleted: the action stays in the file, already signed, and does
+              // nothing. It is warned about once.
               if (!targetEl && !warnedTargets.has(act.target)) {
                 warnedTargets.add(act.target);
                 console.warn(
@@ -3022,9 +3018,9 @@ export class ImageEngine {
     slots.forEach(function (s: any, i: number) {
       const zid = s.zone_id || s.z;
       if (zid && zonesMap[zid]) return;
-      // La geometria viaja tambien: getMaskClipPathD la necesita para situar
-      // la silueta en coordenadas de lienzo. Antes solo se copiaban id, type y
-      // style, asi que la mascara no sabia donde estaba.
+      // The geometry travels too: getMaskClipPathD needs it to place
+      // the silhouette in canvas coordinates. Before, only id, type and
+      // style were copied, so the mask did not know where it was.
       compositionSlots.push({
         id: compositionKeys[i],
         type: s.type,
@@ -3036,9 +3032,9 @@ export class ImageEngine {
     });
     const compositionNodes = computeLayerComposition(compositionSlots);
 
-    // `isMaskLayer` desaparecio al convertir la mascara en un tipo propio.
-    // Comprobarlo aqui hacia que las definiciones no se generaran nunca y el
-    // clipPath apuntara a un id inexistente: no recortaba nada.
+    // `isMaskLayer` disappeared when the mask was turned into its own type.
+    // Checking it here meant the definitions were never generated and the
+    // clipPath pointed at a nonexistent id: it clipped nothing.
     const hasMask = compositionSlots.some(function (s) { return s.type === 'mask'; });
     const hasDuotoneFilter = compositionSlots.some(function (s) { return s.type === 'filter' && !!(s.style && s.style.filterPreset === 'duotone'); });
     if (hasMask || hasDuotoneFilter) {
@@ -3047,41 +3043,41 @@ export class ImageEngine {
 
     compositionNodes.forEach(function (node) { attachCompositionNode(node, fragment, elByCompositionId); });
 
-    // Los hijos entran DENTRO de su grupo. Se hace despues de componer y no
-    // dentro de `computeLayerComposition` a proposito: la composicion decide
-    // que recorta a que en la pila entera —mascaras y filtros— y meter ahi la
-    // jerarquia mezclaria dos problemas que no tienen nada que ver.
+    // The children go INSIDE their group. It is done after composing, and not
+    // inside `computeLayerComposition` on purpose: the composition decides
+    // what clips what across the whole stack (masks and filters), and putting the hierarchy
+    // in there would mix two unrelated problems.
     //
-    // `appendChild` MUEVE el nodo, asi que cada hijo sale de su sitio en la
-    // pila y entra en el grupo conservando el orden relativo entre hermanos.
-    // El grupo ya ocupa la posicion que le toca, y sus hijos venian detras.
+    // `appendChild` MOVES the node, so each child leaves its place in the stack and
+    // enters the group keeping the relative order among siblings.
+    // The group already occupies its position, and its children came after it.
     //
-    // Todo lo que falle aqui degrada a lo de siempre: un archivo sin
-    // `style.groupId` no anida nada, un hijo cuyo grupo no llego se queda
-    // suelto con sus coordenadas de lienzo, y un hijo dentro de una zona ni
-    // siquiera esta en este mapa. Ninguna capa puede desaparecer.
+    // Anything that fails here degrades to the old behaviour: a file without
+    // `style.groupId` nests nothing, a child whose group did not arrive stays
+    // loose with its canvas coordinates, and a child inside a zone is not even in this map.
+    // No layer can disappear.
     if (onlyIds) {
-      // Sustitucion en su sitio: el nodo viejo cede el puesto al nuevo y el
-      // resto del lienzo ni se entera. Conserva orden, animaciones y parallax.
+      // Substitution in place: the old node yields its spot to the new one and the
+      // rest of the canvas does not notice. It keeps order, animations and parallax.
       results.forEach(function (res: any) {
         if (!res) return;
         const slotIdText = res.slotEl.getAttribute('data-slot-id') || '';
         const previous = layer.querySelector('[data-slot-id="' + slotIdText + '"]');
         if (previous && previous.parentNode) {
-          // Un grupo repintado tiene que llevarse a sus hijos al elemento
-          // nuevo. Sin esto, `replaceChild` cambia el wrapper viejo -que
-          // los CONTIENE- por uno vacio, y las capas de dentro desaparecen
-          // del lienzo en cuanto se repinta el grupo, por ejemplo al cambiar
-          // de idioma. Se mueven solo los nodos de slot: lo demas que cuelga
-          // de un elemento -svg, envoltorios de lottie- es suyo y ya viene
-          // rehecho.
+          // A repainted group has to carry its children over to the new element.
+          // Without this, `replaceChild` swaps the old wrapper (which CONTAINS them) for an empty
+          // one, and the layers inside vanish from the canvas as soon as the group is repainted,
+          // for example when switching language. Only the slot nodes move;
+          // anything else hanging from an element (svg, lottie wrappers) belongs to it
+          // and is already rebuilt.
+          // 
           const inside = previous.querySelectorAll('[data-oim-grupo] > [data-slot-id], :scope > [data-slot-id]');
           for (let i = 0; i < inside.length; i++) {
             res.slotEl.appendChild(inside[i]);
           }
           previous.parentNode.replaceChild(res.slotEl, previous);
-          // El controlador guarda el nodo, no el id: si no se reapunta, seguiria
-          // moviendo el nodo viejo y la capa nueva se quedaria quieta.
+          // The controller keeps the node, not the id: if it is not repointed, it would keep
+          // moving the old node and the new layer would stay still.
           if (self._parallaxController) self._parallaxController.retarget(slotIdText, res.slotEl);
         }
       });
@@ -3090,25 +3086,25 @@ export class ImageEngine {
       layer.appendChild(fragment);
     }
 
-    // Los hijos entran DENTRO de su grupo. Se hace sobre el arbol YA montado y
-    // no sobre el fragmento, y despues de la sustitucion parcial y no antes,
-    // por un caso que se escapa si se hace al reves: en un repintado parcial
-    // que toca al grupo Y a un hijo, `replaceChild` mete el hijo nuevo dentro
-    // del elemento VIEJO del grupo y acto seguido sustituye ese grupo entero.
-    // El hijo se iba con el, y la capa desaparecia del lienzo.
+    // The children go INSIDE their group. It is done on the tree ALREADY mounted and
+    // not on the fragment, and after the partial substitution and not before,
+    // because of a case that escapes if done the other way round: in a partial repaint
+    // that touches the group AND a child, `replaceChild` puts the new child inside the
+    // OLD element of the group and then substitutes that whole group.
+    // The child went with it, and the layer vanished from the canvas.
     //
-    // Anidar al final es ademas idempotente: `appendChild` sobre un nodo que
-    // ya esta dentro solo lo reordena al final, y como se recorre en orden de
-    // pila, el orden entre hermanos se conserva.
+    // Nesting at the end is also idempotent: `appendChild` on a node that
+    // is already inside only reorders it to the end, and as it is traversed in stack order,
+    // the order among siblings is kept.
     //
-    // Se hace tambien despues de componer y no dentro de
-    // `computeLayerComposition` a proposito: la composicion decide que recorta
-    // a que en la pila entera —mascaras y filtros— y meter ahi la jerarquia
-    // mezclaria dos problemas que no tienen nada que ver.
+    // It is also done after composing and not inside
+    // `computeLayerComposition` on purpose: the composition decides what clips what
+    // across the whole stack (masks and filters), and putting the hierarchy in there
+    // would mix two unrelated problems.
     //
-    // Todo lo que falle aqui degrada a lo de siempre: un archivo sin
-    // `style.groupId` no anida nada y un hijo cuyo grupo no llego se queda
-    // suelto con sus coordenadas de lienzo. Ninguna capa puede desaparecer.
+    // Anything that fails here degrades to the old behaviour: a file without
+    // `style.groupId` nests nothing, and a child whose group did not arrive stays
+    // loose with its canvas coordinates. No layer can disappear.
     if (groupChildren.size > 0) {
       const inZone = function (el: Element): boolean {
         for (const zoneId in zonesMap) {
@@ -3118,11 +3114,11 @@ export class ImageEngine {
       };
       groupChildren.forEach(function (childIds: string[], groupId: string) {
         const groupSlot = layer.querySelector('[data-slot-id="' + groupId + '"]');
-        // Una zona es un container con su propio flujo: sacar de ahi una capa
-        // para meterla en un grupo la reposicionaria sin que nadie lo pida.
+        // A zone is a container with its own flow: taking a layer out of there to put it
+        // in a group would reposition it without anyone asking.
         if (!groupSlot || inZone(groupSlot)) return;
-        // Dentro del container que ANIMA, no del slot: ver el comentario de
-        // `data-oim-grupo` mas arriba.
+        // Inside the container that ANIMATES, not the slot: see the comment on
+        // `data-oim-grupo` above.
         const groupEl = groupSlot.querySelector('[data-oim-grupo="' + groupId + '"]') || groupSlot;
         childIds.forEach(function (childId: string) {
           const childEl = layer.querySelector('[data-slot-id="' + childId + '"]');
@@ -3138,9 +3134,9 @@ export class ImageEngine {
       }) || (this.metadata && Array.isArray(this.metadata.capabilities) && this.metadata.capabilities.includes('vector_parallax'));
       if (hasParallax) {
         try {
-          // Sin esto se acumulaban: cada render completo creaba un
-          // controlador con su listener de mousemove y su bucle de rAF, y el
-          // anterior seguia corriendo para siempre.
+          // Without this they accumulated: each full render created a
+          // controller with its mousemove listener and its rAF loop, and the
+          // previous one kept running forever.
           if (this._parallaxController) {
             try { this._parallaxController.destroy(); } catch (e) {}
           }
@@ -3163,20 +3159,20 @@ export class ImageEngine {
                 const depth = s.parallax.depth !== undefined ? s.parallax.depth : 0.5;
                 const axis = s.parallax.axis || 'both';
 
-                // Sobredimensionado: una capa pegada al borde descubre el vacio
-                // al desplazarse. Se agranda lo justo para que no se vea, y solo
-                // si llega al borde -si no, separarse un poco es el efecto-.
+                // Oversizing: a layer stuck to the edge uncovers the void when it moves.
+                // It is enlarged just enough so it is not seen, and only if it reaches the edge
+                // (otherwise, moving apart a bit is the effect).
                 //
-                // La caja se recalcula en vez de medir el nodo: `offsetWidth`
-                // aqui es 0 mientras el lienzo no se ha maquetado.
+                // The box is recalculated instead of measuring the node: `offsetWidth`
+                // here is 0 while the canvas has not been laid out.
                 const isBackground = s.is_background_pattern === true || s.id === 'background-pattern-slot';
                 const pos = normalizePosition(s.position || [0.5, 0.5]);
                 const layerWidth = isBackground ? baseWidth
                   : (s.width_px || (s.widthPercent ? (s.widthPercent / 100) * baseWidth : 0));
                 const layerHeight = isBackground ? baseHeight
                   : (s.height_px || (s.heightPercent ? (s.heightPercent / 100) * baseHeight : 0));
-                // Las tres alineaciones se cancelan con su propio `--oim-tx`:
-                // el borde izquierdo acaba en `pos[0] * ancho` en las tres.
+                // The three alignments cancel out with their own `--oim-tx`:
+                // the left edge ends at `pos[0] * width` in all three.
                 const scale = oversizeScale(
                   {
                     left: isBackground ? 0 : pos[0] * baseWidth,
@@ -3187,11 +3183,11 @@ export class ImageEngine {
                   { width: baseWidth, height: baseHeight },
                   depth,
                   axis,
-                  // Se mira el NODO y no se reconstruye la condicion. El player
-                  // monta la pista si la velocidad no es cero -sin mirar el
-                  // mode- y el editor si el mode es infinito o `inf.enabled`:
-                  // son dos condiciones distintas y volver a escribir
-                  // cualquiera de ellas aqui seria una tercera.
+                  // The NODE is checked and the condition is not rebuilt. The player
+                  // mounts the track if the speed is not zero (without looking at the
+                  // mode), and the editor if the mode is infinite or `inf.enabled`:
+                  // these are two different conditions, and rewriting either of them
+                  // here would be a third one.
                   !!el.querySelector('.' + TRACK_CLASS)
                 );
                 if (scale !== 1) el.style.setProperty('--oim-scale', String(scale));
@@ -3308,21 +3304,21 @@ export class ImageEngine {
     return Promise.race([Promise.all(waits), cap]).then(frames);
   }
 
-  // Pipeline de actualizaciones agrupadas para evitar reflujos (style Lottie)
+  // Batched update pipeline to avoid reflows (Lottie style)
   private _pendingDOMUpdates = new Map<HTMLElement, Record<string, string | undefined>>();
   private _isUpdateScheduled = false;
   private _updateCallbacks: (() => void)[] = [];
 
   public queueUpdate(el: HTMLElement, styles: Partial<CSSStyleDeclaration> | Record<string, string | undefined>, callback?: () => void) {
-    // Solo las CADENAS, y no es una formalidad de tipos.
+    // Strings only, and this is not a mere formality of types.
     //
-    // `Partial<CSSStyleDeclaration>` trae ademas `length` -un numero- y una
-    // decena de metodos como `setProperty`. `_flushDOMUpdates` recorre este
-    // mapa con `Object.entries` y asigna cada clave a `el.style[k]`, asi que
-    // un `length` colado acabaria en `el.style.length = 5` y un metodo en
-    // `el.style.setProperty = fn`: ninguno de los dos hace nada, ninguno
-    // protesta, y el style que si venia detras se aplica igual. Un fallo que
-    // solo se ve si lo buscas.
+    // `Partial<CSSStyleDeclaration>` also brings `length` (a number) and a
+    // dozen methods such as `setProperty`. `_flushDOMUpdates` walks this
+    // map with `Object.entries` and assigns each key to `el.style[k]`, so
+    // a `length` that slips in would end up as `el.style.length = 5`, and a method as
+    // `el.style.setProperty = fn`: neither does anything and neither complains, and the style
+    // that comes after it is applied all the same. A failure that
+    // only shows if you go looking for it.
     const stringsOnly: Record<string, string | undefined> = {};
     for (const [key, value] of Object.entries(styles)) {
       if (typeof value === 'string' || value === undefined) stringsOnly[key] = value;
@@ -3360,7 +3356,7 @@ export class ImageEngine {
     this._pendingDOMUpdates.clear();
     this._isUpdateScheduled = false;
 
-    // Ejecutar callbacks de forma segura en el siguiente microtask
+    // Run callbacks safely in the next microtask
     const callbacks = this._updateCallbacks;
     this._updateCallbacks = [];
     callbacks.forEach(cb => {
@@ -3539,16 +3535,16 @@ export class ImageEngine {
     const stage = this._stage;
     if (!stage) return;
 
-    // Tocar fuera en pantallas táctiles desactiva el slot actualmente activo (un único escuchador)
+    // A touch outside the slot on touch screens deactivates the currently active slot (a single listener)
     stage.addEventListener('pointerdown', function (e) {
       if (e.pointerType === 'mouse') return;
       if (!self._activeTouchSlot) return;
-      // `e.target` NO sirve aqui: este escuchador vive en el host, fuera del
-      // shadow root, y al cruzar esa frontera el navegador reescribe el target
-      // al propio host para no filtrar los internos. La comprobacion veia el
-      // host, concluia "fue fuera" y salia del estado justo despues de que el
-      // slot acabara de entrar: el toque se encendia y se apagaba en el mismo
-      // gesto. `composedPath()` si atraviesa la frontera.
+      // `e.target` does NOT work here: this listener lives on the host, outside the
+      // shadow root, and when it crosses that boundary the browser rewrites the target
+      // to the host itself so as not to leak the internals. The check saw the
+      // host, concluded "it was outside", and left the state just after the slot had
+      // just entered: the touch switched on and off in the same gesture.
+      // `composedPath()` does cross the boundary.
       const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
       const hitSlot = path.indexOf(self._activeTouchSlot.el) !== -1;
       if (!hitSlot) {
@@ -3582,10 +3578,10 @@ export class ImageEngine {
       e.preventDefault();
     });
 
-    // Guardados en la instancia y no anonimos: `removeEventListener` necesita
-    // la MISMA referencia, asi que un listener anonimo en `window` no se puede
-    // quitar nunca. Con un player por tarjeta en un feed, eso es un listener
-    // por tarjeta acumulandose para siempre.
+    // Stored on the instance and not anonymous: `removeEventListener` needs
+    // the SAME reference, so an anonymous listener on `window` can never be
+    // removed. With one player per card in a feed, that is one listener
+    // per card piling up forever.
     this._onDragMove = function (e: MouseEvent) {
       if (!isDragging) return;
       const dx = e.clientX - startX;
@@ -3700,8 +3696,8 @@ export class ImageEngine {
     const changes = this._classifyLangChange(previous, lang);
     const hasChange = changes.styleOnly.size > 0 || changes.content.size > 0;
 
-    // Sin cambios no hay transicion: difuminar para mostrar la misma imagen es
-    // un parpadeo que sugiere que paso algo cuando no paso nada.
+    // Without changes there is no transition: fading to show the same image is
+    // a flicker that suggests something happened when nothing did.
     if (!hasChange) {
       this.host.dispatchEvent(new CustomEvent('oim:langchange', { detail: { lang: lang } }));
       return;
@@ -3737,11 +3733,11 @@ export class ImageEngine {
   }
 
   /**
-   * El cambio ocurre en el PICO del desenfoque, no durante la rampa.
+   * The change happens at the PEAK of the blur, not during the ramp.
    *
-   * Aplicarlo durante la rampa es lo que se veia como un estirado de las capas:
-   * estabas viendo COMO se modificaba, medio borroso. En el pico no se distingue
-   * nada, y al volver el foco ya es otra imagen.
+   * Applying it during the ramp is what looked like the layers stretching:
+   * you were watching HOW it changed, half blurred. At the peak nothing is distinguishable,
+   * and when focus returns it is already a different image.
    */
   _switchWithBlur(changes: { styleOnly: Set<string>; content: Set<string> }): void {
     const viewport = this._viewport;
@@ -3753,8 +3749,8 @@ export class ImageEngine {
 
     setTimeout(function () {
       const ready = self._applyLangChange(changes);
-      // No se vuelve a enfocar hasta que las imagenes reconstruidas esten
-      // cargadas: si no, el desenfoque se va y la imagen aparece despues.
+      // Do not refocus until the rebuilt images are loaded: otherwise the blur goes away
+      // and the image appears afterwards.
       const cap = new Promise(function (r) { setTimeout(r, 600); });
       Promise.race([ready || Promise.resolve(), cap]).then(function () {
         viewport.style.transition = 'filter 0.32s ease-in-out';
@@ -3764,11 +3760,11 @@ export class ImageEngine {
   }
 
   /**
-   * Alternativa para quien pidio menos movimiento.
+   * Alternative for whoever asked for less motion.
    *
-   * Un fundido de opacidad NO desplaza nada, asi que cumple la peticion; y evita
-   * el salto seco justo en la zona donde esta mirando el ojo, que es lo que
-   * dejaria quitar la transicion del todo. Solo sobre las capas que cambian.
+   * An opacity fade moves nothing, so it meets the request; and it avoids the abrupt
+   * jump right in the area where the eye is looking, which is what removing the transition
+   * altogether would leave. Only applied to the layers that change.
    */
   _switchWithFade(changes: { styleOnly: Set<string>; content: Set<string> }): void {
     const shadow = this.host.shadowRoot;
@@ -3779,8 +3775,8 @@ export class ImageEngine {
     if (shadow) {
       ids.forEach(function (id) {
         const el = shadow.querySelector('[data-slot-id="' + id + '"]') as HTMLElement | null;
-        // Una capa con animacion propia de opacidad cambia sin fundido: pelearian
-        // entre si y se veria un parpadeo que nadie sabria explicar.
+        // A layer with its own opacity animation changes without a fade: they would fight
+        // each other and a flicker nobody could explain would show.
         if (el && !/opacity/i.test(el.style.animationName || '')) affected.push(el);
       });
     }
@@ -3795,14 +3791,14 @@ export class ImageEngine {
       if (!shadow) return;
       ids.forEach(function (id) {
         const el = shadow.querySelector('[data-slot-id="' + id + '"]') as HTMLElement | null;
-        // A su opacidad real, no a 1: una capa al 40% se quedaria opaca del todo.
-        // El motor ya guarda ese valor en dataset.oimOpacity por este mismo motivo.
+        // At its real opacity, not at 1: a layer at 40% would be left fully opaque.
+        // The engine already stores that value in dataset.oimOpacity for this same reason.
         if (el) el.style.opacity = el.dataset.oimOpacity !== undefined ? el.dataset.oimOpacity : '1';
       });
     }, 120);
   }
 
-  /** Reparte las capas segun lo que el idioma les cambia. */
+  /** Splits the layers according to what the language changes for them. */
   _classifyLangChange(before: string, after: string): { styleOnly: Set<string>; content: Set<string> } {
     const styleOnly = new Set<string>();
     const content = new Set<string>();
@@ -3839,7 +3835,7 @@ export class ImageEngine {
           el.style.display = slot.languages.includes(self.lang) ? '' : 'none';
         }
 
-        // Valores EFECTIVOS: localizedEntries ya aplico la precedencia del fondo.
+        // EFFECTIVE values: localizedEntries already applied the background's precedence.
         const e = localizedEntries(slot, self.lang);
         el.style.fontSize = e.size;
         el.style.maxWidth = e.maxWidthValue;
@@ -3879,7 +3875,7 @@ export class ImageEngine {
     // rule as the infinite loop and the parallax). A card that scrolls into
     // view is "active" and gets play(): it woke the Lottie that
     // `disable-animations` froze on frame 0, and the mobile library spent its
-    // scroll animating cards meant to be still (measured 9 Oct 2026).
+    // scroll animating cards meant to be still (measured in the library).
     if (!this._isStill()) {
       this._animations.forEach(function (a) {
         try { a.play(); } catch (e) { /* the animation died with its node */ }
@@ -3927,7 +3923,7 @@ export class ImageEngine {
     list.push(a);
   }
 
-  /** Destruye solo los Lottie de las capas indicadas, y los saca de la lista. */
+  /** Destroys only the Lottie instances of the given layers, and removes them from the list. */
   _destroyLottiesIn(ids: Set<string>): void {
     if (!this._lottieInstances) return;
     const remaining: Array<{ slotId: string; inst: LottieAnimation }> = [];
@@ -3944,14 +3940,14 @@ export class ImageEngine {
 export default ImageEngine;
 
 /**
- * Traduce los keyframes del .oim a los que espera WAAPI.
+ * Translates the .oim keyframes into the ones WAAPI expects.
  *
- * El transform se compone en el mismo orden que el editor
- * (CanvasArea.tsx:267): translate() rotate() scale(). Cambiar el orden
- * cambia el resultado — no es conmutativo.
+ * The transform is composed in the same order as the editor
+ * (CanvasArea.tsx:267): translate() rotate() scale(). Changing the order
+ * changes the result (it is not commutative).
  *
- * Los offsets van en px de espacio de diseño: el overlay del player YA es
- * espacio de diseño y scale como una unidad, así que escalan solos.
+ * The offsets are in px of design space: the player's overlay IS design space already and
+ * scales as one unit, so they scale on their own.
  */
 export function keyframesToWaapi(keyframes: any[], duration: number): Keyframe[] {
   return keyframes.map(function (kf) {

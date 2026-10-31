@@ -8,17 +8,17 @@
  */
 
 /**
- * Suite de Verificación de Renderizado de Vectores Canónicos (Golden Render).
+ * Golden Render suite for canonical vector rendering.
  *
- * Ejecuta los vectores de conformidad oficiales de `packages/spec/vectors/`
- * directamente contra el motor de referencia `ImageEngine` del reproductor.
+ * Runs the official conformance vectors from the spec's vectors directory directly
+ * against the player's reference engine, `ImageEngine`.
  *
- * Valida que cada archivo `.oim.png` canónico:
- * 1. Extrae sus metadatos limpios y firmados desde el contenedor PNG.
- * 2. Monta el DOM del viewport y renderiza cada slot según su tipo (text, geo, group, interactive).
- * 3. Aplica estilos normalizados: geometría, colores resueltos y jerarquía sin errores.
+ * It checks that each canonical `.oim.png` file:
+ * 1. Extracts its clean, signed metadata from the PNG container.
+ * 2. Mounts the viewport DOM and renders each slot according to its type (text, geo, group, interactive).
+ * 3. Applies normalized styles: geometry, resolved colors and hierarchy without errors.
  *
- * Establece el benchmark visual de referencia para cualquier futuro reproductor nativo (Swift, Kotlin, Skia).
+ * It sets the reference visual benchmark for any future native player (Swift, Kotlin, Skia).
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
@@ -125,7 +125,7 @@ describe("Golden Render — Renderizado canónico de vectores oficiales", () => 
     expect(hijoBEl, "El hijo B debe existir").not.toBeNull();
     expect(fondoEl, "El fondo con parallax debe existir").not.toBeNull();
 
-    // Comprobar que los nodos geométricos hijos tienen su color resuelto
+    // Check that the child geometry nodes have their color resolved
     const polygonA = hijoAEl.querySelector("polygon, rect, path");
     const polygonB = hijoBEl.querySelector("polygon, rect, path");
     expect(polygonA || hijoAEl.style.backgroundColor).toBeTruthy();
@@ -151,7 +151,7 @@ describe("Golden Render — Renderizado canónico de vectores oficiales", () => 
     expect(fichaEl, "La ficha objetivo debe existir").not.toBeNull();
     expect(esquinasEl, "La forma con esquinas asimétricas debe existir").not.toBeNull();
 
-    // Comprobar que el botón está marcado con clase o atributo interactivo
+    // Check that the button is marked with an interactive class or attribute
     expect(botonEl.classList.contains("oim-interactive") || botonEl.style.cursor === "pointer" || botonEl.getAttribute("tabindex") !== null).toBe(true);
   });
 });

@@ -5,11 +5,11 @@
  */
 
 /**
- * El hash de la imagen que el player compara con el sello firmado.
+ * The image hash that the player compares with the signed seal.
  *
- * Es el SHA-256 de los datos de los chunks `IDAT` concatenados, igual que lo
- * calcula el backend al empaquetar. Los chunks de texto -incluido el propio
- * `OIM_Data`- no entran: el sello va dentro de ellos.
+ * It is the SHA-256 of the data of the concatenated `IDAT` chunks, the same as the
+ * backend computes when packaging. Text chunks (including the `OIM_Data` itself) are
+ * not included: the seal lives inside them.
  */
 
 import { describe, it, expect } from "vitest";
@@ -21,7 +21,7 @@ function chunk(type: string, data: Uint8Array): Uint8Array {
   view.setUint32(0, data.length);
   out.set(new TextEncoder().encode(type), 4);
   out.set(data, 8);
-  return out; // CRC a cero: el player no lo comprueba y no afecta al hash
+  return out; // CRC zeroed: the player does not check it and it does not affect the hash
 }
 
 function png(...parts: Uint8Array[]): Uint8Array {

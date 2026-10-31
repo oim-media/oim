@@ -8,17 +8,17 @@
  */
 
 /**
- * El hueco de siempre: que la regla llegue al DOM.
+ * The long-standing gap: making sure the rule reaches the DOM.
  *
- * `tipografia.test.ts` fija el NUMERO; esto fija que el motor lo escribe en el
- * elemento, sin unidad y sobre el slot de text. Sin esta prueba, borrar la
- * linea del motor dejaba las 17 de core en verde mientras el valor del archivo
- * volvia a llegar crudo por el volcado generico de `style`, y la capa que no
- * lo trae volvia al `normal` del navegador.
+ * `tipografia.test.ts` pins the NUMBER; this pins that the engine writes it to
+ * the element, unitless and on the text slot. Without this test, deleting the
+ * engine's line left the 17 core tests green while the file's value reached the
+ * element raw through the generic dump of `style`, and a layer that does not
+ * carry it fell back to the browser's `normal`.
  *
- * El corte medido: el editor pinta a 1.25, el player no leia el campo, y la
- * caja salia mas baja de lo previsto. Con `overflow: hidden` en el slot, los
- * descendentes -«j», «p», «g»- quedaban cortados por abajo.
+ * The measured cut: the editor paints at 1.25, the player did not read the
+ * field, and the box came out lower than expected. With `overflow: hidden` on
+ * the slot, the descenders -"j", "p", "g"- were cut off at the bottom.
  */
 
 import { describe, it, expect } from "vitest";
@@ -57,22 +57,23 @@ describe("el interlineado en el motor", () => {
     expect(await interlineadoDe({ lineHeight: 1.6 })).toBe("1.6");
   });
 
-  /** Lo que traen los .oim publicados: cadena, no numero. */
+  /** What published .oim files carry: a string, not a number. */
   it("lee la cadena de los archivos reales", async () => {
     expect(await interlineadoDe({ lineHeight: "1.2" })).toBe("1.2");
   });
 
   /**
-   * Sin este valor el player usaria el `normal` del navegador -que segun la
-   * fuente ronda 1.15-1.2 y no es fijo- y volveria a discrepar del editor.
+   * Without this value the player would use the browser's `normal` -which
+   * depends on the font, is around 1.15-1.2 and is not fixed- and would again
+   * diverge from the editor.
    */
   it("una capa que no lo dice recibe el mismo valor que pinta el editor", async () => {
     expect(await interlineadoDe()).toBe(String(DEFAULT_LINE_HEIGHT));
   });
 
   /**
-   * SIN UNIDAD. Con `px` o `em` el valor se hereda ya calculado, asi que un
-   * hijo con otro size de fuente recibiria el alto de linea del padre.
+   * UNITLESS. With `px` or `em` the value is inherited already computed, so a
+   * child with a different font size would receive the parent's line height.
    */
   it("va sin unidad, para que se herede como factor", async () => {
     const valor = await interlineadoDe({ lineHeight: 2 });
@@ -83,7 +84,7 @@ describe("el interlineado en el motor", () => {
   it("un valor imposible no llega al DOM", async () => {
     expect(await interlineadoDe({ lineHeight: 0 })).toBe(String(DEFAULT_LINE_HEIGHT));
     expect(await interlineadoDe({ lineHeight: "alto" })).toBe(String(DEFAULT_LINE_HEIGHT));
-    // Acotado al maximo que ofrece el editor, no descartado.
+    // Clamped to the maximum the editor offers, not discarded.
     expect(await interlineadoDe({ lineHeight: 99 })).toBe("3");
   });
 });

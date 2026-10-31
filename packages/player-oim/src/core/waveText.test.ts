@@ -58,9 +58,9 @@ describe("waveCharAnimationDelay", () => {
     expect(waveCharAnimationDelay(0, 0.05, 0)).toBeCloseTo(0, 6);
   });
 
-  // Un retraso de `idx*speed` se expresa en CSS como un adelanto de
-  // `periodo - idx*speed`, porque un animation-delay positivo congela en vez de
-  // desfasar. Con periodo = 2π/6 = 1.0471975511965976:
+  // A delay of `idx*speed` is expressed in CSS as an advance of
+  // `period - idx*speed`, because a positive animation-delay freezes instead of
+  // shifting the phase. With period = 2π/6 = 1.0471975511965976:
   //   idx=3, speed=0.05 -> lag 0.15 -> 0 - (1.0471975511965976 - 0.15)
   it("lags later characters, expressed as a lead of one period minus the lag", () => {
     expect(waveCharAnimationDelay(3, 0.05, 0)).toBeCloseTo(-0.8971975511965976, 6);

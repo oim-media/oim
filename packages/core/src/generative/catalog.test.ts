@@ -55,25 +55,25 @@ describe("Catalog & Engine Router (catalog.ts, index.ts)", () => {
   it.each(GENERATOR_CATALOG.map((g) => g.id))("%s se renderiza y produce contenido", (id) => {
     const svg = renderGenerativeSVG({ generatorId: id, seed: 7 }, { width: 400, height: 300 });
     expect(svg).toContain("data:image/svg+xml");
-    // Un SVG "vacio" es el fallo silencioso de esta familia: no lanza, no pinta.
+    // An "empty" SVG is this family's silent failure: it does not throw, it does not paint.
     expect(svg.length).toBeGreaterThan(400);
   });
 
   it("todos los ids son ASCII en kebab-case", () => {
-    // El id se PERSISTE y se compara con `===` en getGeneratorSpec. Un caracter
-    // acentuado tiene dos formas Unicode distintas -"retícula" ocupa 9 bytes en
-    // NFC y 10 en NFD, y no son iguales como cadena-, asi que una capa que
-    // normalice diferente convierte la busqueda en undefined y el motor cae al
-    // fondo por defecto con un console.warn. Un fondo que cambia solo, sin error
-    // visible: justo el fallo que este trabajo existe para eliminar.
+    // The id is PERSISTED and compared with `===` in getGeneratorSpec. An accented character
+    // has two different Unicode forms ("retícula" takes 9 bytes in NFC and 10 in NFD, and they
+    // are not equal as strings), so a layer that normalizes differently turns the lookup into
+    // undefined, and the engine falls back to the default background with a console.warn.
+    // A background that changes on its own, with no visible error: exactly the failure this
+    // work exists to eliminate.
     for (const g of GENERATOR_CATALOG) {
       expect(g.id, `id no valido: "${g.id}"`).toMatch(/^[a-z0-9-]+$/);
     }
   });
 
   it("no hay ids repetidos", () => {
-    // getGeneratorSpec devuelve el primero; un duplicado deja al segundo
-    // inalcanzable y visible en la galeria.
+    // getGeneratorSpec returns the first one; a duplicate leaves the second
+    // unreachable and visible in the gallery.
     const ids = GENERATOR_CATALOG.map((g) => g.id);
     expect(new Set(ids).size).toBe(ids.length);
   });

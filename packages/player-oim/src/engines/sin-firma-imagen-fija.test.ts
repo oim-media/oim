@@ -56,9 +56,9 @@ describe('sin firma, imagen fija', () => {
     vi.restoreAllMocks();
   });
 
-  // Un .oim sin firmar es un PNG con datos dentro: se ve, pero no se anima ni
-  // responde. Lo interactivo es lo unico que puede tocar la pagina anfitriona,
-  // asi que solo procede de archivos con origen conocido.
+  // An unsigned .oim is a PNG with data inside: it is seen, but it does not animate nor
+  // respond. Interactivity is the only thing that can touch the host page, so it only
+  // proceeds from files of known origin.
   it('con veredicto unsigned no compone ninguna capa', async () => {
     const engine = montarConVeredicto('unsigned');
     createdHosts.push(engine.host);

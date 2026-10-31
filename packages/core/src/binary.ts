@@ -3,7 +3,7 @@
  * Handles extracting and embedding metadata chunks in PNG and OVM files.
  */
 
-const MAX_DECOMPRESSED_METADATA_BYTES = 10 * 1024 * 1024; // 10MB (coincide con el límite del backend en utils.py)
+const MAX_DECOMPRESSED_METADATA_BYTES = 10 * 1024 * 1024; // 10MB (matches the backend limit in utils.py)
 
 export async function decodeAndDecompressJSON(
   base64Str: string,
@@ -310,12 +310,12 @@ export async function fetchMetadataTail(src: string, tailBytes = 65536): Promise
 }
 
 /**
- * Extrae metadatos OIM desde un ReadableStream<Uint8Array> leyendo únicamente
- * los chunks de cabecera y abortando el stream tan pronto como encuentra el
- * chunk OIM_Data o el primer chunk IDAT.
+ * Extracts OIM metadata from a ReadableStream<Uint8Array>, reading only the
+ * header chunks and aborting the stream as soon as it finds the OIM_Data chunk
+ * or the first IDAT chunk.
  *
- * Evita descargar y cargar en memoria imágenes de varios megabytes en dispositivos
- * móviles cuando solo se requiere inicializar la interfaz interactiva.
+ * This avoids downloading and loading images of several megabytes into memory
+ * on mobile devices when only the interactive interface needs to initialize.
  */
 export async function extractOIMMetadataFromStream(
   stream: ReadableStream<Uint8Array>
@@ -331,7 +331,7 @@ export async function extractOIMMetadataFromStream(
   }
 
   try {
-    // 1. Leer al menos la firma de 8 bytes de PNG
+    // 1. Read at least the 8-byte PNG signature
     while (buffer.length < 8) {
       const { done, value } = await reader.read();
       if (done || !value) break;
@@ -343,7 +343,7 @@ export async function extractOIMMetadataFromStream(
 
     let offset = 8;
     while (true) {
-      // Necesitamos al menos 8 bytes para leer length y type del chunk
+      // We need at least 8 bytes to read the chunk's length and type
       while (offset + 8 > buffer.length) {
         const { done, value } = await reader.read();
         if (done || !value) return null;
@@ -359,14 +359,14 @@ export async function extractOIMMetadataFromStream(
       );
       const totalChunkSize = 12 + length;
 
-      // Esperar a que el payload completo del chunk esté disponible en buffer
+      // Wait until the chunk's full payload is available in the buffer
       while (offset + totalChunkSize > buffer.length) {
         const { done, value } = await reader.read();
         if (done || !value) return null;
         appendChunk(value);
       }
 
-      // Procesar chunks de metadatos OIM
+      // Process OIM metadata chunks
       if (typeStr === 'tEXt' || typeStr === 'zTXt') {
         const dataBytes = buffer.subarray(offset + 8, offset + 8 + length);
         const nullIdx = dataBytes.indexOf(0);
@@ -388,7 +388,7 @@ export async function extractOIMMetadataFromStream(
               return JSON.parse(decompressed);
             }
 
-            // Fallback base64 o texto directo
+            // Fallback: base64 or direct text
             const text = new TextDecoder('latin1').decode(rawValueBytes);
             const meta = await decodeAndDecompressJSON(text);
             await reader.cancel();
@@ -397,11 +397,11 @@ export async function extractOIMMetadataFromStream(
         }
       }
 
-      // Si alcanzamos los chunks IDAT y ya pasamos la cabecera sin encontrar tEXt,
-      // no es necesario seguir leyendo megabytes de imagen a ciegas.
+      // If we reach the IDAT chunks and have already passed the header without
+      // finding tEXt, there is no need to keep reading megabytes of image blindly.
       if (typeStr === 'IDAT') {
-        // En OIM el chunk de metadata normalmente precede a IDAT
-        // Si no está, abortamos el stream para ahorrar transferencia.
+        // In OIM the metadata chunk normally precedes IDAT.
+        // If it is absent, abort the stream to save transfer.
         break;
       }
 
@@ -410,7 +410,7 @@ export async function extractOIMMetadataFromStream(
       offset += totalChunkSize;
     }
   } catch (_) {
-    // Si falla la lectura del stream, devuelve null
+    // If reading the stream fails, return null
   } finally {
     try {
       await reader.cancel();

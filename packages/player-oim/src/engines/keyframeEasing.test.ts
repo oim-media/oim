@@ -5,21 +5,21 @@
  */
 
 /**
- * Paridad del easing por keyframe entre el editor y el visor.
+ * Parity of the per-keyframe easing between the editor and the viewer.
  *
- * El editor compila la curva en `compile.ts` (`toEasing`) y la mete en el
- * campo `e` de cada keyframe del `.oim`. El visor la lee aquí y se la pasa a
- * WAAPI. Si una de las dos partes cambia sin la otra, la animación se ve
- * distinta en el visor que en el editor — y nada avisa, porque el archivo es
- * válido y no hay error en consola.
+ * The editor compiles the curve in `compile.ts` (`toEasing`) and puts it in the
+ * `e` field of each keyframe in the `.oim`. The viewer reads it here and passes
+ * it to WAAPI. If one of the two sides changes without the other, the animation
+ * looks different in the viewer than in the editor — and nothing warns, because
+ * the file is valid and there is no console error.
  *
- * Ya ocurrió con la onda senoidal: editor y visor la implementaron por
- * separado y salieron en direcciones opuestas. Las 224 pruebas pasaron porque
- * coincidían en el primer carácter.
+ * It already happened with the sine wave: editor and viewer implemented it
+ * separately and went in opposite directions. The 224 tests passed because they
+ * matched on the first character.
  *
- * Los valores de entrada de estas pruebas son EXACTAMENTE los que emite
- * `toEasing` del editor. Si aquí hay que añadir uno, el cambio va en las dos
- * partes o hay una divergencia.
+ * The input values in these tests are EXACTLY the ones that the editor's
+ * `toEasing` emits. If one has to be added here, the change goes in both sides
+ * or there is a divergence.
  */
 
 import { describe, it, expect } from "vitest";
@@ -65,7 +65,7 @@ describe("keyframesToWaapi — easing por keyframe", () => {
     );
     expect(frames[0].offset).toBe(0);
     expect(frames[1].offset).toBe(0.5);
-    // Un keyframe mas alla de la duracion se recorta en 1, no se sale.
+    // A keyframe beyond the duration is clamped to 1, it does not go outside.
     expect(frames[2].offset).toBe(1);
   });
 });

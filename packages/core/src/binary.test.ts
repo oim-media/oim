@@ -187,9 +187,10 @@ describe('extractOIM', () => {
 
     const pngBytes = new Uint8Array(await mockPng.arrayBuffer());
 
-    // Simular un PNG grande (con datos de imagen/IDAT posteriores)
-    // El stream debe abortar tan pronto se lean los metadatos sin descargar el resto.
-    const trailingBytesCount = 100 * 1024; // 100 KB de imagen simulada
+    // Simulate a large PNG (with image/IDAT data after the metadata).
+    // The stream must abort as soon as the metadata is read, without
+    // downloading the rest.
+    const trailingBytesCount = 100 * 1024; // 100 KB of simulated image data
     let streamCancelled = false;
     let totalBytesEnqueued = 0;
     let cursor = 0;
@@ -219,7 +220,7 @@ describe('extractOIM', () => {
     const meta = await extractOIMMetadataFromStream(stream);
     expect(meta).toEqual(original);
     expect(streamCancelled).toBe(true);
-    // Verificar que no se descargaron los 100 KB posteriores
+    // Verify that the 100 KB of trailing data was not downloaded
     expect(totalBytesEnqueued).toBeLessThan(pngBytes.length + 1024);
   });
 });

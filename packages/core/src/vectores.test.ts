@@ -5,28 +5,28 @@
  */
 
 /**
- * Que el esquema acepte los .oim que el sistema realmente produce.
+ * That the schema accepts the .oim files that the system really produces.
  *
- * Nada validaba un fichero real contra `schema.ts`. Al generar el contrato en
- * JSON Schema se probo por primera vez, y los CUATRO .oim de produccion
- * fallaban:
+ * Nothing validated a real file against `schema.ts`. When the contract was generated as
+ * JSON Schema it was tested for the first time, and all FOUR production .oim files
+ * failed:
  *
- *   - `timestamp` valia `2026-06-12T20:38:40.713579+00:00` -isoformat de
- *     Python- y el esquema exigia la forma con `Z`. Ambas son RFC 3339.
- *   - `style.color` valia `transparent`, que el editor escribe y el regex de
- *     colores no contemplaba.
+ *   - `timestamp` was `2026-06-12T20:38:40.713579+00:00` (Python's isoformat) and the
+ *     schema required the form with `Z`. Both are RFC 3339.
+ *   - `style.color` was `transparent`, which the editor writes and the colour regex did not
+ *     cover.
  *
- * En los dos casos el equivocado era el esquema, no el fichero. Un esquema que
- * nadie ejecuta deriva de la realidad igual que una copy de codigo deriva de
- * su original, y por la misma razon: nada lo contradice.
+ * In both cases the wrong one was the schema, not the file. A schema that nobody runs drifts
+ * from reality the way a code copy drifts from its original, for the same reason: nothing
+ * contradicts it.
  *
- * Esto importa mas ahora que el contrato se publica. Un player en Swift que
- * validara contra el JSON Schema habria rechazado el 100 % de los ficheros
- * reales, y su autor no habria tenido forma de saber quien tenia razon.
+ * This matters more now that the contract is published. A player in Swift that validated
+ * against the JSON Schema would have rejected 100% of the real files, and its author would
+ * have had no way of knowing who was right.
  *
- * Solo se leen ficheros de `public/`, nunca de `dist/`: `dist/` es salida de
- * compilacion y en un clon limpio no existe, asi que la prueba pasaria sin
- * mirar nada.
+ * Only files in `public/` are read, never in `dist/`: `dist/` is build output and in a
+ * clean clone it does not exist, so the test would pass
+ * without checking anything.
  */
 
 import { describe, it, expect } from "vitest";
@@ -42,7 +42,7 @@ function ficherosReales(): string[] {
   for (const dir of DIRECTORIOS) {
     if (!existsSync(dir)) continue;
     for (const f of readdirSync(dir)) {
-      // The landing ships its works as .oim.png since 11 Oct 2026; both are .oim.
+      // The landing ships its works as .oim.png; both are .oim.
       if (/\.oim(\.png)?$/.test(f)) encontrados.push(join(dir, f));
     }
   }
@@ -53,8 +53,8 @@ const FICHEROS = ficherosReales();
 
 describe("los .oim publicados validan contra su propio esquema", () => {
   /**
-   * Sin esto la suite pasaria en verde el dia que alguien mueva o renombre las
-   * carpetas: cero ficheros encontrados, cero comprobaciones, todo correcto.
+   * Without this the suite would pass green the day someone moves or renames the
+   * folders: zero files found, zero checks, everything correct.
    */
   it("encuentra ficheros que comprobar", () => {
     expect(FICHEROS.length).toBeGreaterThanOrEqual(2);
@@ -71,12 +71,12 @@ describe("los .oim publicados validan contra su propio esquema", () => {
 });
 
 describe("los dos formatos que fallaban", () => {
-  /** El backend usa `+00:00`; exigir `Z` rechazaba todo lo firmado. */
+  /** The backend uses `+00:00`; requiring `Z` rejected everything signed. */
   it("admite la marca de tiempo con desplazamiento, no solo con Z", () => {
     const base = { slots: [] };
     expect(OimMetadataSchema.safeParse({ ...base, timestamp: "2026-06-12T20:38:40.713579+00:00" }).success).toBe(true);
     expect(OimMetadataSchema.safeParse({ ...base, timestamp: "2026-06-12T20:38:40Z" }).success).toBe(true);
-    // Y sigue rechazando lo que no es una fecha, que es para lo que existe.
+    // And it still rejects what is not a date, which is what it exists for.
     expect(OimMetadataSchema.safeParse({ ...base, timestamp: "ayer por la tarde" }).success).toBe(false);
   });
 
@@ -85,7 +85,7 @@ describe("los dos formatos que fallaban", () => {
       OimMetadataSchema.safeParse({ slots: [{ id: "a", style: { fillColor: color } }] }).success;
     expect(conColor("transparent")).toBe(true);
     expect(conColor("#ffffff")).toBe(true);
-    // `transparent` es una palabra clave exacta: no debe colar sus vecinas.
+    // `transparent` is an exact keyword: it must not let its neighbours through.
     expect(conColor("transparente")).toBe(false);
     expect(conColor("url(http://malo.io/x)")).toBe(false);
     expect(conColor("red")).toBe(false);

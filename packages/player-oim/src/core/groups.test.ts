@@ -7,17 +7,17 @@
 /**
  * @vitest-environment happy-dom
  *
- * El grupo deja de ser una caja vacía y pasa a envolver.
+ * The group stops being an empty box and starts to wrap.
  *
- * Fase 3 de `docs/superpowers/specs/2026-08-23-el-grupo-como-nodo-design.md`.
- * Medido antes de esto: el player no tenía NI UNA línea que mencionara
- * `group`, así que por cada grupo pintaba un elemento vacío con la caja del
- * grupo encima de sus hijos.
+ * Phase 3 of the group-as-node design spec.
+ * Measured before this: the player had NOT ONE line that mentioned `group`, so
+ * for each group it painted an empty element with the group's box on top of
+ * its children.
  *
- * Lo que más se comprueba aquí no es el caso bueno, es la degradación: un
- * archivo antiguo, un `groupId` roto o un grupo que no llegó no pueden hacer
- * desaparecer una capa. Un player embebido en la página de un tercero que
- * pierde content es peor que uno que ignora un efecto.
+ * What is checked most here is not the good case, it is the degradation: an
+ * old file, a broken `groupId` or a group that never arrived cannot make a
+ * layer disappear. A player embedded in a third party's page that loses content
+ * is worse than one that ignores an effect.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -33,8 +33,8 @@ describe('como se coloca el wrapper', () => {
   const lienzo = { width: 800, height: 600 };
 
   it('cubre el lienzo entero y se ancla en su origen', () => {
-    // Los hijos traen coordenadas de LIENZO, no relativas al grupo. Si el
-    // wrapper se quedara en la caja del grupo, se irian todos de sitio.
+    // The children carry CANVAS coordinates, not coordinates relative to the
+    // group. If the wrapper stayed at the group's box, they would all end up misplaced.
     const env = wrapperStyle({ x: 100, y: 50, width: 200, height: 100 }, lienzo);
     expect(env.left).toBe('0px');
     expect(env.top).toBe('0px');
@@ -48,9 +48,9 @@ describe('como se coloca el wrapper', () => {
   });
 
   it('no se traga los clics del resto del lienzo', () => {
-    // Cubre los 800x600 enteros: sin esto, un grupo de 20x20 bloquearia
-    // cualquier capa interactiva que quedara por debajo en la pila. Los hijos
-    // lo reactivan solos, porque `.oim-slot` ya declara `pointer-events: auto`.
+    // Covers the full 800x600: without this, a 20x20 group would block any
+    // interactive layer beneath it in the stack. The children reactivate it
+    // themselves, because `.oim-slot` already declares `pointer-events: auto`.
     expect(wrapperStyle({ x: 0, y: 0, width: 20, height: 20 }, lienzo).pointerEvents)
       .toBe('none');
   });
@@ -62,7 +62,7 @@ describe('como se coloca el wrapper', () => {
 });
 
 describe('el anidado sobre el DOM, como lo hace el motor', () => {
-  /** Reproduce el paso de reparentado de `renderSlots`. */
+  /** Reproduces the reparenting step of `renderSlots`. */
   const anidar = (slots: any[]) => {
     const fragment = document.createDocumentFragment();
     const elPorId = new Map<string, HTMLElement>();
@@ -98,9 +98,9 @@ describe('el anidado sobre el DOM, como lo hace el motor', () => {
   });
 
   it('NINGUNA capa desaparece del documento, pase lo que pase', () => {
-    // Es el invariante que decide si esto se puede publicar: el player va
-    // embebido en paginas de terceros. Perder content es peor que ignorar
-    // un efecto.
+    // This is the invariant that decides whether this can be published: the
+    // player is embedded in third-party pages. Losing content is worse than
+    // ignoring an effect.
     const slots = [
       grupo('g1'), hijo('a', 'g1'), hijo('b', 'g1'),
       hijo('huerfano', 'g_perdido'), hijo('suelta'),

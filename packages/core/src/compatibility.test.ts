@@ -5,12 +5,12 @@
  */
 
 /**
- * Que el aviso salte cuando toca y CALLE cuando no.
+ * That the warning fires when it should and STAYS SILENT when it should not.
  *
- * Lo segundo importa tanto como lo primero. Un aviso que salta con los
- * archivos normales -los que no traen `min_player`, o sea todos los publicados
- * hasta hoy- se convierte en ruido de fondo, y entonces nadie lo lee el dia
- * que dice algo.
+ * The second matters as much as the first. A warning that fires with the
+ * normal files (the ones without `min_player`, that is, all those published
+ * until today) becomes background noise, and then nobody reads it the day
+ * it says something.
  */
 
 import { describe, it, expect } from "vitest";
@@ -44,8 +44,8 @@ describe("cuando NO hay nada que decir", () => {
   });
 
   /**
-   * Un campo mal escrito no es una incompatibilidad. Si gritara por esto, el
-   * aviso perderia su significado antes de servir para nada.
+   * A badly written field is not an incompatibility. If it shouted about this, the
+   * warning would lose its meaning before it served any purpose.
    */
   it.each(["", "1.2", "proxima", "v2.0.0", 3, null, {}])(
     "un min_player ilegible (%p) no inventa una advertencia",
@@ -69,8 +69,8 @@ describe("cuando SI hay algo que decir", () => {
   });
 
   it("compara por numero, no por texto", () => {
-    // "1.10.0" > "1.9.0" numericamente, pero al reves alfabeticamente. Es el
-    // fallo clasico, y llega el dia que haya diez versiones menores.
+    // "1.10.0" > "1.9.0" numerically, but the other way round alphabetically. It is the
+    // classic bug, and the day comes when there are ten minor versions.
     expect(whatTheReaderCannotDo({ min_player: "1.10.0" }, { version: "1.9.0", capabilities: [] }).versionTooOld).toBe(true);
     expect(whatTheReaderCannotDo({ min_player: "1.9.0" }, { version: "1.10.0", capabilities: [] }).versionTooOld).toBe(false);
   });
@@ -85,8 +85,8 @@ describe("cuando SI hay algo que decir", () => {
   });
 
   /**
-   * Las dos preguntas son independientes: un archivo puede estar bien de
-   * version y aun asi pedir un efecto que este lector no implementa.
+   * The two questions are independent: a file can have the right version and still
+   * ask for an effect that this reader does not implement.
    */
   it("la version correcta no exime de las capabilities", () => {
     const f = mirar({ min_player: "1.0.0", capabilities: ["physics_2d"] });
@@ -136,9 +136,9 @@ describe("como se cuenta", () => {
 
 describe("lo que el player declara implementar", () => {
   /**
-   * `path_morph` y `physics_2d` estan en el enum del esquema y NO en el codigo
-   * del player: cero apariciones, medido. Declararlas seria prometer lo que no
-   * se hace, que es el silencio que todo esto viene a romper.
+   * `path_morph` and `physics_2d` are in the schema's enum and NOT in the player's
+   * code: zero occurrences, measured. Declaring them would promise what is not
+   * done, which is the silence that all of this is meant to break.
    */
   it("no promete path_morph ni physics_2d", () => {
     expect(PLAYER_CAPABILITIES).not.toContain("path_morph");
@@ -152,8 +152,8 @@ describe("lo que el player declara implementar", () => {
 
 describe("minVersionFor", () => {
   /**
-   * Hoy nada exige mas que la base, y eso es lo correcto: las cuatro
-   * capabilities del esquema nacieron con la 1.0.0.
+   * Today nothing requires more than the base, and that is correct: the four
+   * capabilities of the schema were born with 1.0.0.
    */
   it("un documento de hoy exige la version base", () => {
     expect(minVersionFor({ slots: [] })).toBe(BASE_CONTRACT_VERSION);
@@ -161,11 +161,11 @@ describe("minVersionFor", () => {
   });
 
   /**
-   * La trampa que este diseno evita: escribir la version del editor en vez de
-   * la que el documento necesita. Un documento que no usa nada nuevo NO puede
-   * empezar a exigir una version posterior solo porque quien lo escribio era
-   * mas moderno; dejaria fuera a lectores capaces de pintarlo, y el autor no
-   * lo veria porque en su editor se ve bien.
+   * The trap this design avoids: writing the editor's version instead of the one
+   * the document needs. A document that uses nothing new must NOT start to require a
+   * later version just because whoever wrote it was more modern; it would lock out
+   * readers capable of painting it, and the author would not notice because it looks
+   * fine in their editor.
    */
   it("no sube por el mero hecho de que el contrato haya avanzado", () => {
     expect(minVersionFor({ capabilities: ["vector_parallax"] }, { path_morph: "1.4.0" }))

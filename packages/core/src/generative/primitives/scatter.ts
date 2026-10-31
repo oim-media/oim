@@ -59,7 +59,7 @@ export const renderScatter: Primitive = (rawParams, ctx) => {
 
     const r = ctx.rng.range(sizeMin, sizeMax);
 
-    // Muestreo con rechazo respetando minDistance
+    // Rejection sampling that respects minDistance
     let valid = true;
     for (const item of placed) {
       const dist = Math.hypot(x - item.x, y - item.y);

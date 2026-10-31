@@ -5,55 +5,55 @@
  */
 
 /**
- * Quien es hijo de quien. La regla en la que el editor y el player TIENEN que
- * coincidir.
+ * Who is a child of whom. This is the rule where the editor and the player
+ * HAVE to agree.
  *
- * Vive aqui, y no en cada lado, porque es la unica parte de los grupos que si
- * discrepa se ve: si ambos no responden lo mismo a «que layers van dentro de
- * este grupo», el mismo archivo se pinta distinto segun quien lo abra, y su
- * autor no tiene forma de saber cual de los dos tiene razon.
+ * It lives here, and not on each side, because it is the only part of the
+ * groups whose disagreement shows: if both do not answer the same to "which
+ * layers go inside this group", the same file is painted differently depending
+ * on who opens it, and its author has no way of knowing which of the two is right.
  *
- * Lo que NO esta aqui es deliberado. El editor tiene operaciones de edicion
- * -disolver, sacar, duplicate, seleccionar- que el player nunca ejecuta, y cada
- * uno calcula el estilo de su envoltorio con datos distintos: el player recibe
- * la caja ya resuelta en pixeles y el editor arrastra opacidad, mezcla, filtro
- * y estado de vista previa. Son dos funciones distintas que compartian nombre,
- * no una copy que derivo. Unirlas obligaria a una a fingir lo que la otra
- * necesita.
+ * What is NOT here is deliberate. The editor has editing operations -dissolve,
+ * extract, duplicate, select- that the player never runs, and each one computes
+ * its wrapper's style from different data: the player receives the box already
+ * resolved in pixels, while the editor carries opacity, blend, filter and
+ * preview state. They are two different functions that shared a name, not a
+ * copy that drifted. Merging them would force one to pretend to be what the
+ * other needs.
  *
- * ## Por que el padre vive en `style`
+ * ## Why the parent lives in `style`
  *
- * `RawSlot`, en el backend, es un modelo Pydantic con `extra='ignore'`: un
- * campo nuevo en la RAIZ del slot se descarta al firmar, en silencio. Asi se
- * perdio el parallax en todos los `.oim` publicados. Por eso se lee un solo
- * sitio, y ese sitio es `style`.
+ * `RawSlot`, in the backend, is a Pydantic model with `extra='ignore'`: a new
+ * field at the ROOT of the slot is silently discarded when signing. That is how
+ * the parallax was lost in every published `.oim`. So it is read from one single
+ * place, and that place is `style`.
  *
- * ## Por que viaja una sola direccion
+ * ## Why it travels in one direction only
  *
- * El editor mantiene dos representaciones -el grupo lleva `childIds` y cada
- * hijo lleva `groupId`- porque necesita recorrer la jerarquia en ambos
- * sentidos. Al archivo viaja solo la segunda: dos copies de la misma verdad
- * dentro de un fichero firmado es como se rompio el grupo duplicado el 23 de
- * agosto. Al abrir, el editor deriva `childIds` de los `groupId`.
+ * The editor keeps two representations -the group carries `childIds` and each
+ * child carries `groupId`- because it needs to walk the hierarchy in both
+ * directions. Only the second one travels in the file: two copies of the same
+ * truth inside a signed file is how the duplicated group broke in the past.
+ * On opening, the editor derives `childIds` from the `groupId`s.
  *
- * ## Degrada en las dos direcciones
+ * ## Degrades in both directions
  *
- * Un archivo antiguo no trae `style.groupId` en ningun slot: el mapa sale
- * vacio y no se anida nada, el visor pinta lo de siempre. Un player antiguo
- * con un archivo nuevo ignora el campo y pinta los hijos sueltos, con sus
- * coordenadas de lienzo. En ningun caso desaparece una capa.
+ * An old file carries no `style.groupId` in any slot: the map comes out empty,
+ * nothing is nested, and the viewer paints things as always. An old player with
+ * a new file ignores the field and paints the children loose, with their canvas
+ * coordinates. In no case does a layer disappear.
  */
 
-/** ¿Este slot es un grupo? */
+/** Is this slot a group? */
 export function isGroup(slot: any): boolean {
   return !!slot && slot.type === 'group';
 }
 
 /**
- * El padre de un slot, tal y como lo escribe el editor.
+ * A slot's parent, as the editor writes it.
  *
- * Se lee UN solo sitio -`style.groupId`- por lo explicado arriba sobre
- * `extra='ignore'`.
+ * It is read from ONE place only -`style.groupId`- for the reason explained
+ * above about `extra='ignore'`.
  */
 export function slotParent(slot: any): string | null {
   const style = (slot && slot.style) || {};
@@ -62,17 +62,16 @@ export function slotParent(slot: any): string | null {
 }
 
 /**
- * Que slots van dentro de que grupo.
+ * Which slots go inside which group.
  *
- * Se recorre por el `groupId` del hijo, la unica direccion que viaja al
- * archivo. Un `groupId` que apunta a algo que no existe, o que no es un grupo,
- * no anida nada: el hijo se queda suelto donde estaba, que es el
- * comportamiento de siempre y nunca una capa que desaparece.
+ * It is walked by the child's `groupId`, the only direction that travels to the
+ * file. A `groupId` that points to something that does not exist, or that is not
+ * a group, nests nothing: the child stays loose where it was, which is the usual
+ * behavior, and never a layer that disappears.
  *
- * Un grupo no puede ser hijo de si mismo ni de otro grupo -la regla la impone
- * el editor-, pero esto no puede confiar en un archivo que puede venir de
- * cualquier sitio: sin este corte, dos grupos que se apunten mutuamente
- * cuelgan el anidado.
+ * A group cannot be a child of itself or of another group -the editor enforces
+ * that rule-, but this cannot trust a file that may come from anywhere: without
+ * this cut, two groups that point at each other would hang the nesting.
  */
 export function childrenByGroup(slots: any[]): Map<string, string[]> {
   const grupos = new Set<string>();

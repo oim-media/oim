@@ -5,28 +5,28 @@
  */
 
 /**
- * Genera el contrato del formato en JSON Schema, y vigila que no derive.
+ * Generates the format contract as JSON Schema, and guards against it drifting.
  *
- * `schema.ts` define el formato `.oim` en Zod, que solo sirve a TypeScript.
- * Un player en Swift, Kotlin o Rust no puede leerlo: tendria que traducirlo a
- * mano, y esa traduccion es una copy. Las copies derivan -medido en este
- * mismo proyecto: `grupos.ts` acumulo 546 lineas distintas entre el player y
- * el editor, `layerComposition.ts` 775-. Un contrato en JSON Schema es la
- * parte que sobrevive al lenguaje.
+ * `schema.ts` defines the `.oim` format in Zod, which only serves TypeScript.
+ * A player in Swift, Kotlin or Rust cannot read it: it would have to be translated
+ * by hand, and that translation is a copy. Copies drift -measured in this same
+ * project: `grupos.ts` accumulated 546 lines that differed between the player and
+ * the editor, `layerComposition.ts` 775-. A JSON Schema contract is the part that
+ * survives the language.
  *
- * Pero generar un fichero y comprometerlo crea EXACTAMENTE el problema que
- * esto viene a cerrar: otra copy, que puede quedarse vieja. Por eso el
- * generador y la guardia son la misma prueba. Si alguien edita el Zod y no
- * regenera, esto falla; el JSON no puede mentir sobre el TypeScript.
+ * But generating a file and committing it creates EXACTLY the problem this is
+ * meant to close: another copy, which can go stale. That is why the generator and
+ * the guard are the same test. If someone edits the Zod and does not regenerate,
+ * this fails; the JSON cannot lie about the TypeScript.
  *
- * Regenerar tras un cambio deliberado del esquema:
+ * Regenerate after a deliberate change to the schema:
  *
  *     pnpm --filter @oim-media/core test -- -u
  *
- * `io: "input"` porque el esquema describe lo que se LEE de un fichero ya
- * escrito, no lo que produce una transformacion. Hoy ambos coinciden -no hay
- * `.transform()` ni `.default()` en `schema.ts`- y esa coincidencia es una
- * propiedad que conviene no perder por accidente: la prueba la fija.
+ * `io: "input"` because the schema describes what is READ from a file already
+ * written, not what a transformation produces. Today both coincide -there is no
+ * `.transform()` or `.default()` in `schema.ts`- and that coincidence is a
+ * property worth not losing by accident: the test pins it.
  */
 
 import { describe, it, expect } from "vitest";
@@ -52,15 +52,15 @@ import {
 } from "./schema";
 
 /**
- * Nombres de las definiciones compartidas.
+ * Names of the shared definitions.
  *
- * `slot` aparece tres veces en los metadatos -`slots`, `elements`, `layers`-.
- * Sin esto Zod lo inlinea las tres, y el contrato pasa de 668 lineas a 2384
- * con tres copies de la misma definicion: el problema que este directorio
- * viene a cerrar, reproducido dentro del propio fichero.
+ * `slot` appears three times in the metadata -`slots`, `elements`, `layers`-.
+ * Without this, Zod inlines all three, and the contract goes from 668 lines to
+ * 2384 with three copies of the same definition: the problem this directory is
+ * meant to close, reproduced inside the file itself.
  *
- * Con `reused: "ref"` se emite una sola vez, pero Zod la nombra `__schema3`.
- * Un contrato que otro lenguaje va a leer no puede tener nombres asi.
+ * With `reused: "ref"` it is emitted once, but Zod names it `__schema3`. A
+ * contract that another language is going to read cannot have names like that.
  */
 const NOMBRES: [z.ZodType, string][] = [
   [slotSchema, "slot"],
@@ -82,17 +82,17 @@ const NOMBRES: [z.ZodType, string][] = [
 ];
 for (const [esquema, id] of NOMBRES) z.globalRegistry.add(esquema, { id });
 
-// La version sale de `compatibilidad.ts`, que es quien la usa para decidir si
-// un lector puede con un archivo. Tenerla escrita aqui tambien era la misma
-// duplicacion que este directorio existe para cerrar: el JSON y el codigo
-// habrian podido anunciar versiones distintas.
+// The version comes from `compatibility.ts`, which is the one that uses it to
+// decide whether a reader can handle a file. Writing it here too would be the
+// same duplication this directory exists to close: the JSON and the code could
+// have announced different versions.
 
 const BASE = "https://oim.media/spec";
 
 function contrato(esquema: z.ZodType, id: string, titulo: string) {
   const generado = z.toJSONSchema(esquema, { io: "input", reused: "ref" }) as Record<string, unknown>;
-  // El orden importa: `$id` y la version deben leerse antes que las 21
-  // propiedades, para que un humano que abra el fichero sepa que esta mirando.
+  // Order matters: `$id` and the version must be read before the 21
+  // properties, so that a person opening the file knows what they are looking at.
   return cerrarTuplas(inlinarPrimitivos({
     $schema: "https://json-schema.org/draft/2020-12/schema",
     $id: `${BASE}/${CONTRACT_VERSION}/${id}.schema.json`,
@@ -103,12 +103,12 @@ function contrato(esquema: z.ZodType, id: string, titulo: string) {
 }
 
 /**
- * Devuelve al sitio las definiciones que son un primitivo pelado.
+ * Puts back inline the definitions that are a bare primitive.
  *
- * `reused: "ref"` extrae TODO lo que se repite, incluido un `z.number()` suelto
- * que aparecia como `$defs.__schema0 = {"type":"number"}`. Una referencia a un
- * numero no ahorra nada y obliga a quien lea el contrato a saltar a otro sitio
- * para descubrir que era un numero. Solo se comparten las formas con nombre.
+ * `reused: "ref"` extracts EVERYTHING that repeats, including a lone `z.number()`
+ * that appeared as `$defs.__schema0 = {"type":"number"}`. A reference to a number
+ * saves nothing and forces whoever reads the contract to jump elsewhere to find
+ * out it was a number. Only named shapes are shared.
  */
 function inlinarPrimitivos(esquema: any): any {
   const defs = esquema.$defs ?? {};
@@ -126,10 +126,10 @@ function inlinarPrimitivos(esquema: any): any {
     const ref: string | undefined = nodo.$ref;
     if (ref) {
       const nombre = ref.replace("#/$defs/", "");
-      // Las claves HERMANAS del `$ref` se conservan. Devolver solo el
-      // primitivo borraba `deprecated` y `description`: marcar una clave como
-      // retirada no dejaba ni rastro en el contrato publicado, y el fallo era
-      // mudo -el fichero salia bien formado, solo sin la advertencia-.
+      // The SIBLING keys of the `$ref` are kept. Returning only the primitive
+      // dropped `deprecated` and `description`: marking a key as retired left no
+      // trace in the published contract, and the failure was silent -the file
+      // came out well-formed, just without the warning-.
       if (triviales.has(nombre)) {
         const { $ref: _descartado, ...hermanas } = nodo;
         return { ...defs[nombre], ...hermanas };
@@ -145,21 +145,21 @@ function inlinarPrimitivos(esquema: any): any {
 }
 
 /**
- * Cierra las tuplas, que Zod deja abiertas al traducir.
+ * Closes the tuples, which Zod leaves open when translating.
  *
- * `z.tuple([number, number])` exige EXACTAMENTE dos elementos, pero se emite
- * como `prefixItems` sin `minItems` ni `maxItems`, y en JSON Schema eso
- * significa «los dos primeros son asi, los demas lo que sea». Medido: el
- * contrato aceptaba `position: [10]` y `position: [10, 20, 30]`, que Zod
- * rechaza.
+ * `z.tuple([number, number])` requires EXACTLY two elements, but it is emitted
+ * as `prefixItems` without `minItems` or `maxItems`, and in JSON Schema that
+ * means "the first two are like this, the rest can be anything". Measured: the
+ * contract accepted `position: [10]` and `position: [10, 20, 30]`, which Zod
+ * rejects.
  *
- * Es la discrepancia mas cara posible, porque `position` decide donde se pinta
- * cada slot: un player en Swift validando contra el contrato habria aceptado
- * una posicion malformada que el player de TypeScript rechaza, y el resultado
- * habria sido un fichero que se ve distinto segun quien lo abra.
+ * It is the most costly discrepancy possible, because `position` decides where
+ * each slot is painted: a player in Swift validating against the contract would
+ * have accepted a malformed position that the TypeScript player rejects, and the
+ * result would have been a file that looks different depending on who opens it.
  *
- * `items: false` es la forma 2020-12 de prohibir elementos de mas. Si la tupla
- * tuviera resto, Zod ya emitiria `items` y aqui no se toca nada.
+ * `items: false` is the 2020-12 way of forbidding extra elements. If the tuple
+ * had a rest element, Zod would already emit `items` and nothing here is touched.
  */
 function cerrarTuplas(nodo: any): any {
   if (Array.isArray(nodo)) return nodo.map(cerrarTuplas);
@@ -192,8 +192,8 @@ describe("el contrato en JSON Schema", () => {
 
 describe("propiedades que el contrato promete a otros lenguajes", () => {
   /**
-   * `slots` es el unico campo obligatorio del formato. Un player que no lo
-   * exija aceptaria un `.oim` vacio como valido.
+   * `slots` is the only required field of the format. A player that did not
+   * require it would accept an empty `.oim` as valid.
    */
   it("declara slots como obligatorio y nada mas", () => {
     const s = contrato(OimMetadataSchema, "oim", "x") as any;
@@ -201,10 +201,10 @@ describe("propiedades que el contrato promete a otros lenguajes", () => {
   });
 
   /**
-   * `passthrough` es lo que permite que un `.oim` escrito por un editor NUEVO
-   * no reviente en un player VIEJO: las claves que no conoce sobreviven. Es la
-   * mitad amable de la compatibilidad -la otra mitad, avisar de que algo no se
-   * entendio, la cubrira `min_player`-.
+   * `passthrough` is what lets a `.oim` written by a NEW editor avoid crashing an
+   * OLD player: the keys it does not know survive. It is the friendly half of
+   * compatibility -the other half, warning that something was not understood, is
+   * covered by `min_player`-.
    */
   it("admite claves desconocidas, que es como sobrevive a versiones futuras", () => {
     const s = contrato(OimMetadataSchema, "oim", "x") as any;
@@ -212,30 +212,29 @@ describe("propiedades que el contrato promete a otros lenguajes", () => {
   });
 
   /**
-   * La comprobacion que de verdad muerde, y que nacio de un fallo real: la
-   * primera version de esta prueba comparaba `io: "input"` con `io: "output"`
-   * dando por hecho que solo diferian si habia transformaciones. Diferian por
-   * otra cosa.
+   * The check that actually bites, and it was born from a real fault: the first
+   * version of this test compared `io: "input"` with `io: "output"`, assuming they
+   * differed only when there were transformations. They differed for another reason.
    *
-   * Zod emite `additionalProperties: false` en los objetos anidados cuando se
-   * le pide la forma de SALIDA. Pero su comportamiento real al leer no es ese:
-   * medido sobre `canvas`, un `.oim` con una clave desconocida dentro se
-   * ACEPTA -Zod la descarta, no la rechaza-.
+   * Zod emits `additionalProperties: false` on nested objects when asked for the
+   * OUTPUT shape. But its real behaviour when reading is not that: measured on
+   * `canvas`, a `.oim` with an unknown key inside is ACCEPTED -Zod discards it,
+   * it does not reject it-.
    *
-   * Publicar el esquema de salida daria un contrato que miente: un player en
-   * Swift validando contra el rechazaria ficheros que el player de TypeScript
-   * pinta. Y el autor del fichero no tendria forma de saber cual de los dos
-   * tiene razon.
+   * Publishing the output schema would give a contract that lies: a player in
+   * Swift validating against it would reject files that the TypeScript player
+   * paints. And the author of the file would have no way of knowing which of the
+   * two is right.
    */
   it("no prohibe claves desconocidas en ningun objeto, porque Zod tampoco", () => {
     const conCanvasExtendido = {
       slots: [],
       canvas: { natural_width: 100, natural_height: 50, clave_de_una_version_futura: 7 },
     };
-    // La implementacion de referencia lo acepta...
+    // The reference implementation accepts it...
     expect(OimMetadataSchema.safeParse(conCanvasExtendido).success).toBe(true);
 
-    // ...luego el contrato publicado no puede prohibirlo en ninguna parte.
+    // ...so the published contract cannot forbid it anywhere.
     const cerrados: string[] = [];
     (function recorrer(nodo: any, ruta: string) {
       if (!nodo || typeof nodo !== "object") return;
@@ -249,12 +248,12 @@ describe("propiedades que el contrato promete a otros lenguajes", () => {
 
 describe("1.1.0 retira allow_external_urls sin romper lo ya publicado", () => {
   /**
-   * La promesa de esta subida de version: retirar el campo NO invalida un
-   * archivo que lo traiga. Los esquemas son `.passthrough()`, asi que el
-   * campo simplemente deja de significar algo.
+   * The promise of this version bump: retiring the field does NOT invalidate a
+   * file that carries it. The schemas are `.passthrough()`, so the field simply
+   * stops meaning anything.
    *
-   * Sin esta prueba, la promesa vive solo en un comentario.
-   */
+   * Without this test, the promise lives only in a comment.
+ */
   it("un .oim de la era 1.0.0 con el campo sigue validando", () => {
     const antiguo = {
       version: "1.0.0",
@@ -285,9 +284,9 @@ describe("1.2.0: el principal bajo * no cambia el esquema", () => {
 
 describe("1.4.0 cierra la deriva y marca lo retirado", () => {
   it("la raiz declara `reedicion`, y con sus tres valores", () => {
-    // Era el peor hueco del contrato: decide un PERMISO -quien puede reeditar
-    // la obra- y no estaba declarado en ninguna parte. Un player ajeno lo
-    // ignoraba y trataba como reeditable algo que no lo es.
+    // It was the worst gap in the contract: it decides a PERMISSION -who may
+    // re-edit the work- and was not declared anywhere. A foreign player ignored
+    // it and treated as re-editable something that is not.
     const s = contrato(OimMetadataSchema, "oim", "x") as any;
     expect(s.properties.reedicion.enum).toEqual(["publico", "solo_autor", "sellado"]);
   });
@@ -298,24 +297,24 @@ describe("1.4.0 cierra la deriva y marca lo retirado", () => {
   });
 
   it("las dos que `allow_external_urls` dejo atras van marcadas, no borradas", () => {
-    // Marcadas y no borradas a proposito: el backend las sigue honrando si un
-    // archivo trae la clave retirada, asi que quitarlas del contrato lo haria
-    // mentir en el otro sentido.
+    // Marked and not deleted on purpose: the backend still honors them if a file
+    // carries the retired key, so removing them from the contract would make it
+    // lie in the other direction.
     const s = contrato(OimMetadataSchema, "oim", "x") as any;
     expect(s.properties.terms_accepted.deprecated).toBe(true);
     expect(s.properties.redirect_membership_verified.deprecated).toBe(true);
   });
 
   it("inlinar un primitivo no se lleva por delante lo que lo acompana", () => {
-    // `reused: "ref"` saca a `$defs` todo primitivo repetido, y la propiedad
-    // queda como `{ deprecated, description, $ref }`. El inlinador devolvia
-    // SOLO el primitivo, asi que marcar una clave como retirada no dejaba
-    // rastro en el contrato publicado. El fallo era mudo: el fichero salia
-    // bien formado, solo que sin la advertencia.
+    // `reused: "ref"` moves every repeated primitive to `$defs`, and the property
+    // is left as `{ deprecated, description, $ref }`. The inliner returned ONLY
+    // the primitive, so marking a key as retired left no trace in the published
+    // contract. The failure was silent: the file came out well-formed, just
+    // without the warning.
     //
-    // Hoy el esquema real pone la metadata ANTES de `.optional()` y no genera
-    // ese `$ref`, asi que esta prueba es el unico sitio que recorre ese
-    // camino. Sin ella, el arreglo se puede revertir sin que nada proteste.
+    // Today the real schema puts the metadata BEFORE `.optional()` and does not
+    // generate that `$ref`, so this test is the only place that walks that path.
+    // Without it, the fix can be reverted and nothing will complain.
     const conRef = z.object({
       marcada: z.boolean().optional().meta({ deprecated: true, description: "retirada" }),
       otra: z.boolean().optional(),
@@ -327,10 +326,10 @@ describe("1.4.0 cierra la deriva y marca lo retirado", () => {
     expect(s.properties.marcada.type).toBe("boolean");
   });
 
-  // Hasta 1.6.0 aqui se exigia lo contrario («NO va marcada: el player la
-  // aplica de verdad»), porque asi era. En 1.7.0 el player deja de aplicarla
-  // (sandbox, decision de producto del 24 sept 2026) y la prueba cambia con
-  // el hecho: sandbox-sin-red.test.ts, en el player, fija que ya no se aplica.
+  // Up to 1.6.0 the opposite was required here ("NOT marked: the player really
+  // applies it"), because that was the case. In 1.7.0 the player stops applying
+  // it (sandbox, a product decision) and the test changes with the fact:
+  // sandbox-sin-red.test.ts, in the player, pins that it is no longer applied.
   it("`allowed_domains` va marcada desde 1.7.0: el player ya no la aplica", () => {
     const s = contrato(OimMetadataSchema, "oim", "x") as any;
     expect(s.properties.allowed_domains.deprecated).toBe(true);

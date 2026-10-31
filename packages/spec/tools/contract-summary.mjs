@@ -9,12 +9,11 @@
  * where the two disagree.
  *
  * Why this exists: the contract is generated from Zod and a test guards that
- * pair, but nothing compares the contract against real signed files. On
- * 18 September 2026 that gap had already produced four divergences, found by
- * hand. The worst: `reedicion` -- which decides who may re-edit a work -- is
- * written into every file and read by the player, yet is declared nowhere in
- * the schema. A second implementation reading only the contract would not
- * know the field exists.
+ * pair, but nothing compares the contract against real signed files.
+ * That gap had already produced four divergences, found by hand. The worst:
+ * `reedicion` -- which decides who may re-edit a work -- is written into every
+ * file and read by the player, yet is declared nowhere in the schema. A second
+ * implementation reading only the contract would not know the field exists.
  *
  * It reports; it does not fix and it does not fail. Turning the drift into a
  * failing test is the right end state, but the drift has to be resolved
@@ -136,10 +135,10 @@ function build() {
   const carried = [...new Set(vectors.flatMap((v) => v.rootKeys))].sort();
   const undeclared = carried.filter((k) => !declared.includes(k));
   const unused = declared.filter((k) => !carried.includes(k));
-  // `deprecated` en el JSON Schema es la respuesta a «¿esto sigue vigente?».
-  // Antes se preguntaba leyendo los comentarios; ahora lo dice el contrato, y
-  // por eso las retiradas dejan de contarse como huecos sin probar: una clave
-  // marcada NO necesita un vector que la ejerza.
+  // `deprecated` in the JSON Schema answers "is this still in force?".
+  // It used to be asked by reading the comments; now the contract states it, so
+  // retired keys stop counting as untested gaps: a key marked as deprecated
+  // does NOT need a vector that exercises it.
   const retired = declared.filter((k) => schema.properties?.[k]?.deprecated === true);
   const untested = unused.filter((k) => !retired.includes(k));
 

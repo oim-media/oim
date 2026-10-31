@@ -5,14 +5,14 @@
  */
 
 /**
- * El interlineado se delega en `@oim-media/core`, fuente unica para el player y el
- * editor. El fallo que esto cierra ERA que cada uno tenia el suyo: el editor
- * pintaba a 1.25 y el player dejaba el `normal` del navegador a la capa que no
- * traia el campo, asi que la caja salia mas baja de lo previsto. Los descendentes -«j»,
- * «p», «g»- quedaban cortados por el `overflow: hidden` del slot.
+ * The line height is delegated to `@oim-media/core`, the single source for the player and the
+ * editor. The failure this closes WAS that each had its own: the editor
+ * painted at 1.25, and the player left the browser's `normal` to the layer that did not
+ * carry the field, so the box came out lower than expected. The descenders ("j",
+ * "p", "g") were cut off by the slot's `overflow: hidden`.
  *
- * Se importa el fichero del modulo y no el indice del paquete, igual que en
- * `binary.ts` y `grupos.ts`, para no arrastrar el esquema ni zod.
+ * The module file is imported, not the package index, as in `binary.ts` and
+ * `grupos.ts`, so as not to drag in the schema or zod.
  */
 export {
   resolveLineHeight,

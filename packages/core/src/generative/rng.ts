@@ -7,8 +7,8 @@
 import { Rng } from "./types.js";
 
 /**
- * PRNG determinista basado en Mulberry32.
- * Garantiza secuencias idénticas con la misma semilla sin re-sembrar por índice.
+ * Deterministic PRNG based on Mulberry32.
+ * Guarantees identical sequences for the same seed without re-seeding per index.
  */
 export function createRng(seed: number): Rng {
   let state = seed >>> 0;

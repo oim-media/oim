@@ -8,22 +8,22 @@
  */
 
 /**
- * Paridad entre lo que dibuja el editor y lo que publica el player.
+ * Parity between what the editor draws and what the player publishes.
  *
- * Las pruebas del player comprueban que el player hace lo que el player dice,
- * y las del editor lo mismo. La divergencia vive ENTRE los dos, que es justo
- * donde no habia ninguna prueba: el editor encadena respaldos con `||` y el
- * player usaba condiciones que excluyen, asi que una obra podia verse bien al
- * editarla y salir distinta -o invisible- al publicarla.
+ * The player's tests check that the player does what the player says, and the
+ * editor's tests do the same for the editor. The divergence lives BETWEEN the two,
+ * which is exactly where there were no tests: the editor chains fallbacks with `||`
+ * and the player used conditions that exclude each other, so an artwork could look
+ * right when edited and come out different (or invisible) when published.
  *
- * Cada caso de aqui esta copiado del respaldo concreto que aplica
- * `CanvasArea.tsx`, no inventado.
+ * Each case here is copied from the concrete fallback that `CanvasArea.tsx` applies,
+ * not invented.
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
 import ImageEngine from "./ImageEngine";
 
-/** El catalogo oficial, para poder afirmar que NO se cayo en el por defecto. */
+/** The official catalogue, to be able to assert that it did NOT fall back to the default. */
 const BLOB_DEL_CATALOGO =
   "M 50,10 C 75,10 92,25 90,50 C 88,75 75,90 50,90 C 25,90 10,75 10,50 C 10,25 25,10 50,10 Z";
 
@@ -37,7 +37,7 @@ describe("Paridad editor <-> player en las formas geometricas", () => {
     document.body.appendChild(host);
   });
 
-  /** Monta un unico slot y devuelve su <path> ya renderizado. */
+  /** Mounts a single slot and returns its already-rendered <path>. */
   const pintarForma = async (style: Record<string, unknown>): Promise<Element | null> => {
     const motor = new ImageEngine(host as any);
     motor._viewport = document.createElement("div");
@@ -47,9 +47,9 @@ describe("Paridad editor <-> player en las formas geometricas", () => {
     motor._overlay.className = "oim-layer-overlay";
     motor._viewport.appendChild(motor._overlay);
 
-    // Un slot como lo exporta el editor. Sin `width_px`/`fillType` el motor lo
-    // descarta antes de dibujar nada -ImageEngine.ts:1146-, y la prueba mediria
-    // esa criba en vez de lo que viene a medir.
+    // A slot as the editor exports it. Without `width_px`/`fillType` the engine
+    // discards it before drawing anything (-ImageEngine.ts:1146-), and the test would
+    // measure that filter instead of what it is meant to measure.
     motor.metadata = {
       canvas_width: 800,
       canvas_height: 600,
@@ -79,7 +79,7 @@ describe("Paridad editor <-> player en las formas geometricas", () => {
       });
 
       expect(figura?.getAttribute("d")).toBe("M 0,0 L 80,20 L 40,90 Z");
-      // Lo que pasaba antes: se caia al blob generico del catalogo.
+      // What happened before: it fell back to the generic blob in the catalogue.
       expect(figura?.getAttribute("d")).not.toBe(BLOB_DEL_CATALOGO);
     });
 
@@ -100,7 +100,7 @@ describe("Paridad editor <-> player en las formas geometricas", () => {
       expect(figura?.getAttribute("d")).toBe(BLOB_DEL_CATALOGO);
     });
 
-    // El editor NO ofrece svgPath en el garabato: d={customBlobPath || catalogo}
+    // The editor does NOT offer svgPath for the doodle: d={customBlobPath || catalogue}
     it("el garabato ignora svgPath, igual que el editor", async () => {
       const figura = await pintarForma({
         geoShape: "scribble",
@@ -115,8 +115,8 @@ describe("Paridad editor <-> player en las formas geometricas", () => {
   });
 
   describe("respaldos de trazo del garabato", () => {
-    // El garabato es `rellenable: false`, asi que sin trazo no queda NADA
-    // visible. El editor lo tapa con dos respaldos; el player no los tenia.
+    // The doodle is `rellenable: false`, so without a stroke NOTHING is
+    // visible. The editor covers this with two fallbacks; the player did not have them.
 
     // CanvasArea.tsx: strokeWidth={shape.strokeWidth > 0 ? shape.strokeWidth : 2}
     it("un garabato sin grosor se publica con grosor 2, no invisible", async () => {
@@ -142,7 +142,7 @@ describe("Paridad editor <-> player en las formas geometricas", () => {
 
       expect(figura?.getAttribute("stroke")).toBe("#DC2626");
       expect(figura?.getAttribute("stroke-width")).toBe("2");
-      // Sigue sin relleno: es un trazo abierto.
+      // Still no fill: it is an open stroke.
       expect(figura?.getAttribute("fill")).toBe("none");
     });
 
@@ -164,9 +164,9 @@ describe("Paridad editor <-> player en las formas geometricas", () => {
   });
 
   describe("lo que NO debe cambiar", () => {
-    // El editor pinta la linea con `strokeWidth ?? 0`: sin respaldo. Si el
-    // arreglo del garabato se hubiera aplicado a todo trazo abierto, esta
-    // linea se publicaria visible donde el editor no enseña nada.
+    // The editor paints the line with `strokeWidth ?? 0`: no fallback. If the
+    // doodle fix had been applied to every open stroke, this line would be published
+    // visible where the editor shows nothing.
     it("una linea sin grosor sigue sin trazo, como en el editor", async () => {
       const figura = await pintarForma({ geoShape: "line", strokeColor: "#18181B" });
 

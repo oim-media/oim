@@ -70,9 +70,9 @@ describe("cada forma usa el elemento SVG que le toca", () => {
 
 describe("el trazo sigue la silueta", () => {
   it("va en el `stroke` de la figura, no en un `border` de caja", async () => {
-    // El fallo original: `border` de CSS dibuja el rectangulo del elemento y el
-    // `clip-path` se aplica despues, llevandoselo por delante. Gemelo exacto
-    // del fallo de la sombra.
+    // The original failure: CSS `border` draws the element's rectangle and the
+    // `clip-path` is applied afterwards, carrying it away. An exact twin of the
+    // shadow failure.
     const { motor, nodo } = montar("star");
     await motor.renderSlots();
     const figura = nodo().querySelector("polygon")!;
@@ -82,15 +82,15 @@ describe("el trazo sigue la silueta", () => {
   });
 
   it("no se estira con la capa", async () => {
-    // `preserveAspectRatio: none` estira el viewBox: sin esto, una forma ancha
-    // y baja tendria el borde grueso arriba y fino a los lados.
+    // `preserveAspectRatio: none` stretches the viewBox: without this, a wide and
+    // short shape would have a thick border at the top and a thin one at the sides.
     const { motor, nodo } = montar("hexagon");
     await motor.renderSlots();
     expect(nodo().querySelector("polygon")!.getAttribute("vector-effect")).toBe("non-scaling-stroke");
   });
 
   it("un rectangulo SI conserva su borde de caja", async () => {
-    // Ahi la caja ES la figura, y el radio de esquina llega en pixeles reales.
+    // There the box IS the shape, and the corner radius arrives in real pixels.
     const { motor, nodo } = montar("rectangle");
     await motor.renderSlots();
     expect(nodo().querySelector("svg")).toBeNull();
@@ -103,7 +103,7 @@ describe("el fill", () => {
     const { motor, nodo } = montar("diamond");
     await motor.renderSlots();
     expect(nodo().querySelector("polygon")!.getAttribute("fill")).toBe("#93c5fd");
-    // Si el container siguiera pintado, se veria la caja entera por detras.
+    // If the container were still painted, the whole box would show behind it.
     expect(nodo().style.backgroundColor).toBe("transparent");
   });
 
@@ -116,7 +116,7 @@ describe("el fill", () => {
 
 describe("los puntos son los del editor", () => {
   it("el triangulo va metido un 5%, no a sangre", async () => {
-    // El player lo dibujaba `50% 0%, 0% 100%, 100% 100%`.
+    // The player drew it as `50% 0%, 0% 100%, 100% 100%`.
     const { motor, nodo } = montar("triangle");
     await motor.renderSlots();
     expect(nodo().querySelector("polygon")!.getAttribute("points")).toBe("50,5 95,90 5,90");

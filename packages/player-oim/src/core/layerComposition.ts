@@ -11,16 +11,17 @@ import { mediaFilterCss } from "../../../core/src/media-filters.js";
 // editor and the player. There the polygons are DERIVED from the shared shape
 // table; here they are literals, pinned by maskShapes.test.ts.
 //
-// Faltaban triangle, line, arrow y diamond: el lookup de abajo cae a `circle`
-// cuando no conoce un nombre, y lo hace EN SILENCIO, asi que una mascara
-// triangular se veia triangulo en el editor y circulo en el reproductor.
+// triangle, line, arrow and diamond were missing: the lookup below falls back
+// to `circle` when it does not know a name, and it does so SILENTLY, so a
+// triangular mask looked like a triangle in the editor and like a circle in the
+// player.
 //
-// star y hexagon ademas no coincidian -llegaban a 100/0 aqui y a 95/5 en el
-// lienzo-, asi que la misma figura tenia dos siluetas segun donde se mirara.
-// Se alinean con los valores del lienzo, que son los que el usuario tiene
-// delante mientras disena.
+// star and hexagon also did not match -they came out as 100/0 here and as 95/5
+// on the canvas-, so the same shape had two silhouettes depending on where you
+// looked. They are aligned with the canvas values, which are the ones the user
+// has in front of them while designing.
 //
-// Si se toca una figura, hay que tocar las dos tablas.
+// If a shape is changed, both tables must be changed.
 export const MASK_SHAPE_PATHS: Record<string, string> = {
   circle: "M50 0 A50 50 0 1 1 49.99 0 Z",
   rectangle: "M0 0 H100 V100 H0 Z",
@@ -45,11 +46,11 @@ export function getMaskClipPathId(slot: Slot): string {
 }
 
 /**
- * Silueta del troquel, sin el rectangulo de inversion.
+ * The cut-out silhouette, without the inversion rectangle.
  *
- * `maskShape`/`maskSvgPath` son los campos de la mascara dedicada; `geoShape`
- * y `svgPath` los de la mascara clasica sobre una figura. Se aceptan ambos
- * porque los dos tipos comparten esta funcion.
+ * `maskShape`/`maskSvgPath` are the fields of the dedicated mask; `geoShape`
+ * and `svgPath` are those of the classic mask over a shape. Both are accepted
+ * because the two types share this function.
  */
 export function getMaskSilhouettePath(slot: Slot): string {
   const style = slot.style || {};
@@ -66,28 +67,28 @@ export function getMaskSilhouettePath(slot: Slot): string {
 export function getMaskPathData(slot: Slot): string {
   const style = slot.style || {};
   const path = getMaskSilhouettePath(slot);
-  // El mode "ventana" pinta el marco y deja la silueta hueca, asi que necesita
-  // el mismo rectangulo de cobertura total que la inversion.
+  // The "window" mode paints the frame and leaves the silhouette hollow, so it
+  // needs the same full-coverage rectangle as the inversion.
   return (style.maskInvert || style.maskMode === "window")
     ? `M0 0H100V100H0Z ${path}`
     : path;
 }
 
 /**
- * Marco de la mascara en mode ventana, en COORDENADAS DE LIENZO.
+ * The mask frame in window mode, in CANVAS COORDINATES.
  *
- * `getMaskPathData` devuelve el marco en un viewBox "0 0 100 100" que se
- * estira sobre la caja de la propia figura, asi que el area que oculta esta
- * limitada por el size de la mascara: para cubrir el lienzo habia que
- * dimensionarla EXACTAMENTE como el lienzo, y cualquier diferencia dejaba una
- * franja visible. Los editores tratan una mascara como una relacion, no como
- * un rectangulo pintado: la silueta decide que se ve y la oclusion se extiende
- * sin limite, nunca acotada al bounding box de la mascara.
+ * `getMaskPathData` returns the frame in a "0 0 100 100" viewBox that is
+ * stretched over the box of the shape itself, so the area it hides is limited
+ * by the mask's size: to cover the canvas, the mask had to be sized EXACTLY like
+ * the canvas, and any difference left a visible strip. Editors treat a mask as
+ * a relation, not as a painted rectangle: the silhouette decides what is seen,
+ * and the occlusion extends without limit, never clipped to the mask's bounding
+ * box.
  *
- * Aqui el marco es siempre el lienzo entero y solo el hueco sigue a la caja de
- * la figura, con `fill-rule="evenodd"`. Es el mismo espacio de coordenadas que
- * ya usaba `getMaskClipPathD` para el mode troquel (`userSpaceOnUse`), asi que
- * los dos modos pasan a compartir modelo.
+ * Here the frame is always the entire canvas and only the hole follows the
+ * shape's box, with `fill-rule="evenodd"`. It is the same coordinate space that
+ * `getMaskClipPathD` already used for the cut-out mode (`userSpaceOnUse`), so
+ * the two modes now share one model.
  */
 export function getWindowMaskCanvasD(
   slot: Slot,
@@ -102,8 +103,8 @@ export function getWindowMaskCanvasD(
   const w = typeof s.width === "number" ? s.width : Number(s.width_px) || 0;
   const h = typeof s.height === "number" ? s.height : Number(s.height_px) || 0;
 
-  // Alcance del marco: 'canvas' cubre el lienzo entero (sin franjas aunque la
-  // caja sea menor); 'container' lo limita a la caja de la figura.
+  // Frame scope: 'canvas' covers the entire canvas (no strips even if the box
+  // is smaller); 'container' limits it to the shape's box.
   const coverage = (s.maskCoverage || (s.style && s.style.maskCoverage)) === "container"
     ? "container"
     : "canvas";
@@ -124,8 +125,8 @@ export function getWindowMaskCanvasD(
 }
 
 /**
- * Solo la silueta, en coordenadas de lienzo. La usa el contorno del troquel,
- * que debe delinear el hueco pero no el marco.
+ * Only the silhouette, in canvas coordinates. It is used by the cut-out outline,
+ * which must trace the hole but not the frame.
  */
 export function getMaskSilhouetteCanvasD(
   slot: Slot,
@@ -254,10 +255,10 @@ export function getMaskClipPathD(
   const { width: W, height: H } = artboard;
   const s = slot as any;
 
-  // La geometria de un slot del .oim NO vive en `style`: la posicion viaja en
-  // `position: [xPorcentaje, yPorcentaje]` y el size en `width_px`/`height_px`.
-  // `style.width` existe pero es una cadena en `cqw` ("60.0cqw"), asi que usarla
-  // aqui producia concatenaciones de text y NaN en vez de coordenadas.
+  // A slot's geometry in the .oim does NOT live in `style`: the position travels
+  // in `position: [xPercent, yPercent]` and the size in `width_px`/`height_px`.
+  // `style.width` exists but is a string in `cqw` ("60.0cqw"), so using it here
+  // produced text concatenations and NaN instead of coordinates.
   const pos = Array.isArray(s.position) ? s.position : [0, 0];
   const x = typeof s.x === "number" ? s.x : (Number(pos[0]) / 100) * W;
   const y = typeof s.y === "number" ? s.y : (Number(pos[1]) / 100) * H;
@@ -283,13 +284,13 @@ export function getMaskClipPathD(
 }
 
 /**
- * Recorre `slots` una sola vez y produce un árbol de nodos de renderizado.
- * - Una capa `type === "mask"` en mode `cutout` recorta todas las capas situadas
- *   por detrás en la jerarquía Z (alcance posicional de filtro).
- * - Una máscara dedicada (`type === "mask"`) en mode `window` es un marco
- *   visible por sí mismo: genera su propio nodo `shape`.
- * - Una capa `type === 'filter'` se renderiza como una capa posicional estándar ('shape')
- *   con `backdrop-filter`.
+ * Walks `slots` once and produces a tree of render nodes.
+ * - A layer with `type === "mask"` in `cutout` mode clips all the layers placed
+ *   behind it in the Z hierarchy (positional scope of the filter).
+ * - A dedicated mask (`type === "mask"`) in `window` mode is a frame that is
+ *   visible on its own: it generates its own `shape` node.
+ * - A layer with `type === 'filter'` is rendered as a standard positional layer
+ *   ('shape') with `backdrop-filter`.
  */
 export function computeLayerComposition(slots: Slot[]): CompositionNode[] {
   let acc: CompositionNode[] = [];

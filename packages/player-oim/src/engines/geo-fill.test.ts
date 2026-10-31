@@ -8,7 +8,7 @@
  */
 
 /**
- * Complex fills of Shapes. Until 12 Sept the player painted a geo slot with a
+ * Complex fills of shapes. Before the fix, the player painted a geo slot with a
  * gradient, pattern or generative fill as its flat `fillColor`: the editor
  * showed the fill and the published file did not.
  */
@@ -104,7 +104,7 @@ describe("los rellenos complejos de una forma llegan al player", () => {
 describe("el dibujo de la forma coincide con su capa de relleno", () => {
   // The SVG was a flex child placed after the empty `oim-slot-loop-wrap`, so it
   // sat a line lower than the slot box while the fill layer sat at the box: the
-  // stroke ring and the gradient drifted apart (seen in the player, 13 Sept).
+  // stroke ring and the gradient drifted apart (seen in the player).
   it("el SVG del borde se ancla a la caja del slot, como la capa de relleno", async () => {
     const el = await slotDe("geo", { fillType: "gradient", fillGradient: GRAD, geoShape: "circle", strokeWidth: 3, strokeColor: "#111111" });
     const svg = el.querySelector("svg") as SVGSVGElement;

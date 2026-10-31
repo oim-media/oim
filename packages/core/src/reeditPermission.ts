@@ -19,26 +19,26 @@
 
 export type ReeditPermission = "publico" | "solo_autor" | "sellado";
 
-/** El valor cuando el archivo no dice nada. TODOS los .oim de hoy caen aqui. */
+/** The value when the file says nothing. ALL current .oim files fall here. */
 export const DEFAULT_PERMISSION: ReeditPermission = "solo_autor";
 
 const VALIDOS: readonly ReeditPermission[] = ["publico", "solo_autor", "sellado"];
 
 /**
- * Lee el permiso de los metadatos.
+ * Reads the permission from the metadata.
  *
- * **Un valor desconocido cae a `solo_autor`, nunca a `publico`.** Es la regla
- * que impide que un dato corrupto —o manipulado— ablande un permiso. El
- * default de un sistema de permisos se elige por lo que pasa cuando algo va
- * mal, no por lo que pasa cuando va bien.
+ * **An unknown value falls back to `solo_autor`, never to `publico`.** This is the
+ * rule that stops corrupt —or tampered— data from loosening a permission. A
+ * permission system's default is chosen by what happens when something goes wrong,
+ * not by what happens when it goes right.
  */
 export function permissionOf(metadata: unknown): ReeditPermission {
   if (!metadata || typeof metadata !== "object") return DEFAULT_PERMISSION;
   const m = metadata as Record<string, unknown>;
 
-  // El candado heredado gana sobre todo lo demas: hay archivos publicados que
-  // lo llevan y ninguno lleva `reedicion` todavia. Si un archivo dijera
-  // `reedicion: "publico"` e `immutable_lock: true`, lo prudente es el sellado.
+  // The legacy lock wins over everything else: there are published files that carry
+  // it, and none carries `reedicion` yet. If a file said `reedicion: "publico"` and
+  // `immutable_lock: true`, the prudent choice is sealing.
   if (m.immutable_lock === true || m.immutable === true) return "sellado";
 
   const v = m.reedicion;
@@ -48,24 +48,24 @@ export function permissionOf(metadata: unknown): ReeditPermission {
 }
 
 /**
- * Los campos que un `.oim` debe llevar para expresar este permiso.
+ * The fields a `.oim` must carry to express this permission.
  *
- * **La inversa de `permissionOf`, y vive aqui para que no puedan separarse.** El
- * candado y el permiso eran dos mecanismos para una sola idea: `permissionOf` ya
- * traducia `immutable_lock: true` a `"sellado"`, pero al ESCRIBIR cada lado
- * decidia por su cuenta. El editor exportaba solo el candado, con una etiqueta
- * que ademas decia otra cosa —«el JSON no podra ser modificado post-render»,
- * que es lo que hace la FIRMA, no esto—.
+ * **The inverse of `permissionOf`, and it lives here so the two cannot drift apart.** The
+ * lock and the permission were two mechanisms for one idea: `permissionOf` already
+ * translated `immutable_lock: true` to `"sellado"`, but when WRITING each side decided
+ * on its own. The editor exported only the lock, with a label that also said something
+ * else: «the JSON can no longer be modified after render», which is what the SIGNATURE
+ * does, not this.
  *
- * Se escriben LOS DOS campos, y no es redundancia:
+ * Both fields are written, and that is not redundancy:
  *
- *   - `reedicion` viaja DENTRO del archivo. Es la declaracion: cualquiera que
- *     lo abra sabe que quiso su autor, sin preguntarle a nadie.
- *   - `immutable_lock` es lo que el backend guarda en el registro. Es la
- *     aplicacion: lo unico que puede negarse a firmar de verdad.
+ *   - `reedicion` travels INSIDE the file. It is the declaration: anyone who
+ *     opens it knows what its author wanted, without asking anyone.
+ *   - `immutable_lock` is what the backend stores in the registry. It is the
+ *     enforcement: the only thing that can truly refuse to sign.
  *
- * Una declaracion sin aplicacion es una sugerencia; una aplicacion sin
- * declaracion es una puerta cerrada sin cartel.
+ * A declaration without enforcement is a suggestion; enforcement without a
+ * declaration is a locked door with no sign.
  */
 export function permissionFields(permiso: ReeditPermission): {
   reedicion: ReeditPermission;
@@ -76,16 +76,16 @@ export function permissionFields(permiso: ReeditPermission): {
 
 export interface Verdict {
   permitido: boolean;
-  /** Por que no, para poder decirselo a la persona sin adivinar. */
+  /** Why not, so the person can be told without guessing. */
   reason?: "sellado" | "no_eres_el_autor";
 }
 
 /**
- * ¿Puede esta persona reeditar este documento?
+ * Can this person re-edit this document?
  *
- * `esElAutor` es `null` cuando no se sabe —sin sesion, o sin haber preguntado
- * al registro—. En ese caso NO se concede: solo el permiso `publico` se
- * resuelve sin saber quien eres, que es justo lo que lo hace util para una
+ * `esElAutor` is `null` when it is not known (no session, or the registry was never
+ * asked). In that case it is NOT granted: only the `publico` permission resolves
+ * without knowing who you are, which is exactly what makes it useful for a library.
  * biblioteca.
  */
 export function canReedit(
@@ -100,21 +100,21 @@ export function canReedit(
 }
 
 /**
- * ¿Hay que rechazar SIN preguntarle a nadie?
+ * Must this be rejected WITHOUT asking anyone?
  *
- * Solo cuando la respuesta es segura. Es una pregunta distinta de
- * `canReedit`, y confundirlas rompe el caso mas comun:
+ * Only when the answer is certain. It is a different question from `canReedit`, and
+ * confusing them breaks the most common case:
  *
- * - `sellado` → si, nadie puede, y eso se sabe leyendo el archivo.
- * - `publico` → no, cualquiera puede.
- * - `solo_autor` → **NO se rechaza aqui**, salvo que se sepa a ciencia cierta
- *   que no eres el autor. Y casi nunca se sabe: el backend borra
- *   `creator_user_id` del canonico antes de firmar —es dato personal—, asi que
- *   un `.oim` no lleva dentro a quien lo hizo. La respuesta autoritativa vive
- *   en el registro.
+ * - `sellado` → yes, nobody can, and that is known by reading the file.
+ * - `publico` → no, anyone can.
+ * - `solo_autor` → **NOT rejected here**, unless it is known for certain that you are
+ *   not the author. And that is almost never known: the backend deletes
+ *   `creator_user_id` from the canonical before signing (it is personal data), so a
+ *   `.oim` does not carry within it who made it. The authoritative answer lives
+ *   in the registry.
  *
- * Rechazar por `null` bloquearia a todo el mundo incluso sus PROPIOS archivos,
- * porque ninguno de los .oim que existen hoy lleva autoria dentro.
+ * Rejecting on `null` would block everyone, including their OWN files, because none
+ * of the .oim files that exist today carries authorship within it.
  */
 export function mustRejectWithoutAsking(
   permiso: ReeditPermission,
@@ -128,26 +128,26 @@ export function mustRejectWithoutAsking(
 }
 
 /**
- * ¿Hay que preguntarle al registro por este documento?
+ * Must the registry be asked about this document?
  *
- * **Los publicos NO se consultan, ni para leer.** Sin fila en el registro su
- * `oim_id` esta libre, y el primero que lo reedite «como suyo» crearia la fila
- * con el como autor. Al ser insert-only, esa fila NO se puede sobrescribir
- * jamas: podria sellar el documento de otro. Si un publico nunca busca su id,
- * nadie puede apropiarselo por ese camino.
+ * **Public ones are NOT looked up, not even to read.** Without a registry row their
+ * `oim_id` is free, and whoever first re-edits it «as their own» would create the row
+ * with themselves as author. Being insert-only, that row can NEVER be overwritten:
+ * it could seal someone else's document. If a public file never looks up its id,
+ * nobody can claim it by that route.
  */
 export function registryQuery(permiso: ReeditPermission): boolean {
   return permiso !== "publico";
 }
 
 /**
- * Que sello merece el archivo.
+ * Which seal the file deserves.
  *
- * Hoy el visor solo distingue «firmado» de «no firmado», y con archivos
- * publicos esa etiqueta pasa a prometer de mas: cualquiera puede coger uno,
- * cambiar una cifra, re-firmarlo, y saldria igual de «verificado». No es un
- * fallo del modelo —es lo que significa publico— pero el sello tiene que
- * decirlo o deja de significar algo.
+ * Today the viewer only tells «signed» from «unsigned», and with public files that label
+ * starts promising too much: anyone can take one, change a figure, re-sign it, and it
+ * would come out just as «verified». It is not a flaw in the model
+ * —it is what public means— but the seal has to say so,
+ * or it stops meaning anything.
  */
 export function signatureStamp(permiso: ReeditPermission): "verified" | "verified_sin_autoria" {
   return permiso === "publico" ? "verified_sin_autoria" : "verified";

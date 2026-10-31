@@ -22,7 +22,7 @@ import { styleSchema, CSS_GRADIENT_PATTERN } from "./schema";
 const COLOR = new RegExp(CSS_COLOR_PATTERN);
 const GRADIENT = new RegExp(CSS_GRADIENT_PATTERN);
 
-// Measured on 24 Sept 2026 over the real .oim files on disk, plus the shapes
+// Measured over the real .oim files on disk, plus the shapes
 // `resolveCssColor` writes for dynamic colours.
 const COLORES_REALES = [
   "#f59e0b", "#FFF", "#00000080", "rgb(0, 0, 0)", "rgba(255,255,255,0.5)",

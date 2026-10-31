@@ -47,7 +47,7 @@ describe("renderSlots parcial", () => {
 
     await motor.renderSlots({ onlyIds: new Set(["titulo"]) });
 
-    // El MISMO nodo, no uno equivalente: es lo que conserva animaciones y parallax.
+    // The SAME node, not an equivalent one: that is what keeps animations and parallax.
     expect(host.shadowRoot!.querySelector('[data-slot-id="pie"]')).toBe(pieAntes);
     expect(host.shadowRoot!.querySelector('[data-slot-id="titulo"]')).not.toBe(tituloAntes);
   });
@@ -67,7 +67,7 @@ describe("renderSlots parcial", () => {
     await m2.renderSlots();
     const pieAntes = h2.shadowRoot!.querySelector('[data-slot-id="pie"]');
     await m2.renderSlots({ onlyIds: new Set(["titulo"]) });
-    // La composicion se calcula sobre la pila entera: no se puede parchear un nodo.
+    // The composition is computed over the whole stack: a node cannot be patched.
     expect(h2.shadowRoot!.querySelector('[data-slot-id="pie"]')).not.toBe(pieAntes);
   });
 });
@@ -80,8 +80,8 @@ describe("el controlador de parallax sobrevive al render parcial", () => {
   ]);
 
   it("reapunta la capa reconstruida al nodo nuevo", async () => {
-    // Sin esto el controlador seguiria moviendo el nodo viejo, ya desconectado,
-    // y la capa nueva se quedaria quieta sin que nada lo delate.
+    // Without this the controller would keep moving the old node, already detached,
+    // and the new layer would stay still without anything giving it away.
     const { host, motor } = montar(conParallax());
     await motor.renderSlots();
 
@@ -97,8 +97,8 @@ describe("el controlador de parallax sobrevive al render parcial", () => {
   });
 
   it("un render completo destruye el controlador anterior", async () => {
-    // Cada render creaba uno nuevo y dejaba el viejo corriendo: listener de
-    // mousemove y bucle de rAF, para siempre.
+    // Each render created a new one and left the old one running: a mousemove
+    // listener and an rAF loop, forever.
     const { motor } = montar(conParallax());
     await motor.renderSlots();
 

@@ -33,37 +33,37 @@ export const DYNAMIC_COLOR_ROLES: readonly DynamicColorRole[] = [
   "text-on-accent",
 ] as const;
 
-/** Colores de una paleta con nombre: un color por rol que la paleta define. */
+/** Colors of a named palette: one color per role that the palette defines. */
 export type Palette = Partial<Record<DynamicColorRole, string>>;
 
 const ROLE_SET = new Set<string>(DYNAMIC_COLOR_ROLES);
 
 /**
- * Valida si un valor pertenece a la lista blanca de roles semanticos reconocidos.
+ * Checks whether a value belongs to the allowlist of recognized semantic roles.
  */
 export function isValidDynamicColorRole(role: unknown): role is DynamicColorRole {
   return typeof role === "string" && ROLE_SET.has(role);
 }
 
 /**
- * Formas de color que se aceptan de un archivo .oim.
+ * Color forms accepted from a .oim file.
  *
- * Lista BLANCA, y a proposito: una lista de lo prohibido siempre se queda
- * corta. Se midio contra los 391 colores de los proyectos reales y cubre el
- * 100%: 343 hex de 6, 20 `var()`, 16 rgb/rgba y 12 `transparent`.
+ * An ALLOWLIST, on purpose: a list of what is forbidden always falls short. It
+ * was measured against the 391 colors of real projects and covers 100%: 343
+ * 6-digit hex, 20 `var()`, 16 rgb/rgba and 12 `transparent`.
  *
- * Un color del .oim es dato ajeno: el esquema no valida su formato y el
- * archivo puede fabricarlo cualquiera. Sin esto, un valor como
- * "red; background-image: url(https://tercero/baliza)" se convierte en DOS
- * declaraciones al llegar a un atributo `style`, y abrir un archivo ajeno
- * pide un recurso a un tercero.
+ * A .oim color is foreign data: the schema does not validate its format, and
+ * anyone can produce the file. Without this, a value such as
+ * "red; background-image: url(https://third-party/beacon)" becomes TWO
+ * declarations when it reaches a `style` attribute, and opening a foreign file
+ * would request a resource from a third party.
  */
 const HEX = /^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
-// Solo numeros, unidades y separadores: ni comillas, ni `;`, ni `url(`.
+// Only numbers, units and separators: no quotes, no `;`, no `url(`.
 const FUNCION_COLOR = /^(?:rgb|rgba|hsl|hsla)\(\s*[0-9a-zA-Z.,%/\s+-]*\)$/;
 const PALABRAS = new Set(["transparent", "currentcolor", "none", "inherit"]);
-// El nombre de una variable no puede inyectar nada; el peligro vive en su
-// valor por defecto, que se valida aparte y de forma recursiva.
+// A variable's name cannot inject anything; the danger lives in its default
+// value, which is validated separately and recursively.
 const VAR_SIMPLE = /^var\(\s*(--[A-Za-z0-9_-]+)\s*\)$/;
 const VAR_CON_RESPALDO = /^var\(\s*(--[A-Za-z0-9_-]+)\s*,([\s\S]+)\)$/;
 
@@ -88,19 +88,19 @@ const P_VAR2 = `var\\(\\s*${P_NOMBRE}\\s*,\\s*(?:${P_BASE}|${P_VAR0}|${P_VAR1})\
 export const CSS_COLOR_PATTERN = `^(?:${P_BASE}|${P_VAR0}|${P_VAR1}|${P_VAR2})$`;
 
 /**
- * Si un valor es una expresion de color que se puede pintar sin riesgo.
+ * Whether a value is a color expression that can be painted safely.
  *
- * `profundidad` corta los `var()` anidados: sin ella, un archivo con mil
- * niveles agotaria la pila.
+ * `profundidad` (depth) cuts off nested `var()` calls: without it, a file with
+ * a thousand levels would exhaust the stack.
  */
 export function isSafeCssColor(valor: unknown, profundidad = 0): boolean {
   if (typeof valor !== "string") return false;
   const v = valor.trim();
   if (!v || v.length > 128 || profundidad > 4) return false;
-  // Segundo cerrojo, y hoy REDUNDANTE: se comprobo por mutacion que quitarlo
-  // no rompe ninguna prueba, porque la lista blanca de abajo -positiva y
-  // anclada- ya rechaza estas cargas. Se conserva por si alguien ensancha
-  // `FUNCION_COLOR`, no porque este atrapando algo ahora.
+  // A second lock, and REDUNDANT today: a mutation check showed that removing it
+  // breaks no test, because the allowlist below -positive and anchored- already
+  // rejects these payloads. It is kept in case someone widens `FUNCION_COLOR`,
+  // not because it is catching anything now.
   if (/[;{}<>"]/.test(v) || v.includes(String.fromCharCode(92))) return false;
   if (/url\(|expression\(|\/\*/i.test(v)) return false;
   if (HEX.test(v)) return true;
@@ -113,19 +113,20 @@ export function isSafeCssColor(valor: unknown, profundidad = 0): boolean {
 }
 
 /**
- * Elige la paleta del documento y devuelve sus colores ya saneados.
+ * Picks the document's palette and returns its colors, already sanitized.
  *
- * Orden: `requested` si existe; si no, `dark`/`light` según `prefersDark`
- * cuando el documento trae ambas; si no, `defaultPalette`. Un nombre que no existe
- * no cuenta. Un color inválido se descarta y el resto de la paleta se queda.
+ * Order: `requested` if it exists; otherwise `dark`/`light` according to
+ * `prefersDark` when the document carries both; otherwise `defaultPalette`. A
+ * name that does not exist does not count. An invalid color is discarded and
+ * the rest of the palette is kept.
  */
 export function resolvePalette(
   doc: { palettes?: Record<string, Palette>; defaultPalette?: string },
   opts: { requested?: string | null; prefersDark?: boolean } = {}
 ): { name: string; colors: Palette } | null {
   const paletas = doc.palettes ?? {};
-  // La preferencia solo decide si el documento trae AMBAS paletas; con una
-  // sola no hay a cual elegir y manda defaultPalette.
+  // The preference only decides when the document carries BOTH palettes; with
+  // only one there is nothing to choose between, and defaultPalette wins.
   const ambas = Object.hasOwn(paletas, "dark") && Object.hasOwn(paletas, "light");
   const porPreferencia = ambas && opts.prefersDark !== undefined ? (opts.prefersDark ? "dark" : "light") : undefined;
   const nombre = [opts.requested, porPreferencia, doc.defaultPalette]
@@ -140,27 +141,27 @@ export function resolvePalette(
 }
 
 /**
- * Resuelve una expresion de color CSS para el renderizador web:
- * - Si tiene un rol semantico valido y un color base (fallback):
+ * Resolves a CSS color expression for the web renderer:
+ * - If it has a valid semantic role and a base color (fallback):
  *   var(--oim-color-${role}, var(--oim-palette-${role}, ${fallback}))
- * - Si tiene un rol semantico valido y NO tiene fallback:
+ * - If it has a valid semantic role and NO fallback:
  *   var(--oim-color-${role}, var(--oim-palette-${role}))
- * - Si NO tiene rol valido: devuelve el color de fallback directo o cadena vacia.
+ * - If it has NO valid role: returns the direct fallback color, or an empty string.
  *
- * El rol se resuelve en la paleta del visor (`--oim-palette-*`) y el color
- * fijo de la capa queda como respaldo para los que no la conocen.
+ * The role is resolved in the viewer's palette (`--oim-palette-*`), and the
+ * layer's fixed color stays as the fallback for those who do not know it.
  */
 export function resolveCssColor(
   role: DynamicColorRole | string | undefined | null,
   fallback?: string | null
 ): string {
-  // El saneado vive AQUI, en el embudo por el que pasan los 13 sitios que
-  // pintan color en el player, y no en cada sumidero: un sumidero nuevo
-  // nacera seguro sin que nadie se acuerde.
+  // Sanitizing lives HERE, in the funnel that all 13 places painting color in
+  // the player pass through, and not in each sink: a new sink will be safe from
+  // the start without anyone having to remember.
   //
-  // Se DESCARTA lo invalido en vez de caer a un color por defecto: la figura
-  // sale visiblemente rara y el archivo manipulado se nota, en vez de
-  // disimularse.
+  // Invalid values are DISCARDED rather than falling back to a default color:
+  // the shape comes out visibly odd and the tampered file shows, instead of
+  // being disguised.
   const bruto = fallback != null && fallback !== "" ? String(fallback).trim() : undefined;
   const cleanFallback = bruto && isSafeCssColor(bruto) ? bruto : undefined;
   if (isValidDynamicColorRole(role)) {

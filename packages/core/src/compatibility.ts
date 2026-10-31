@@ -5,43 +5,43 @@
  */
 
 /**
- * Que un lector sepa DECIR lo que no entiende de un archivo.
+ * Lets a reader say what it does not understand about a file.
  *
- * El formato ya degrada bien: `.passthrough()` deja pasar las claves
- * desconocidas, asi que un `.oim` escrito por un editor nuevo no revienta en un
- * player viejo. Pero degrada EN SILENCIO, y ese silencio es el problema.
+ * The format already degrades gracefully: `.passthrough()` lets unknown keys
+ * through, so a `.oim` written by a new editor does not crash an old player.
+ * But it degrades SILENTLY, and that silence is the problem.
  *
- * Medido el 27/08/2026: el esquema declara cuatro capabilities
- * -`vector_parallax`, `infinite_parallax`, `path_morph`, `physics_2d`- y el
- * player implementa DOS. `path_morph` y `physics_2d` no aparecen ni una vez en
- * su codigo. Un archivo que las declarara se pintaria mal sin que nada lo
- * dijera, y su autor no tendria forma de distinguir «el player no sabe hacer
- * esto» de «lo hice mal».
+ * Measured at the time: the schema declared four capabilities
+ * -`vector_parallax`, `infinite_parallax`, `path_morph`, `physics_2d`- and the
+ * player implemented TWO. `path_morph` and `physics_2d` do not appear even once
+ * in its code. A file that declared them would paint wrongly with nothing saying
+ * so, and its author would have no way to tell "the player cannot do this" apart
+ * from "I did it wrong".
  *
- * ## Por que no se rechaza el archivo
+ * ## Why the file is not rejected
  *
- * Porque el formato degrada a PNG por diseno: un `.oim` que no se puede leer
- * del todo sigue siendo una imagen valida, y eso es una red que Rive y Lottie
- * no tienen. Rechazar cambiaria una perdida parcial por una perdida total.
+ * Because the format degrades to PNG by design: a `.oim` that cannot be read in
+ * full is still a valid image, and that is a safety net Rive and Lottie do not
+ * have. Rejecting it would trade a partial loss for a total one.
  *
- * Se pinta lo que se sabe y se DICE lo que no. La mitad amable de la
- * compatibilidad ya existia; esto es la otra mitad.
+ * What is known gets painted, and what is not gets SAID. The friendly half of
+ * compatibility already existed; this is the other half.
  *
- * ## Dos preguntas distintas
+ * ## Two different questions
  *
- * `min_player` es un corte grueso: el formato cambio de una forma que un lector
- * anterior no puede reconstruir. `capabilities` es fino: el formato es el
- * mismo, pero el documento usa un efecto que este lector no implementa.
+ * `min_player` is a coarse cut: the format changed in a way that an earlier
+ * reader cannot reconstruct. `capabilities` is fine-grained: the format is the
+ * same, but the document uses an effect this reader does not implement.
  *
- * Un archivo puede estar bien de version y aun asi pedir algo que falta.
+ * A file can be fine on version and still ask for something that is missing.
  */
 
 /**
- * La version del CONTRATO, no la de ningun paquete.
+ * The CONTRACT version, not that of any package.
  *
- * `@oim-media/core` puede publicar diez versiones sin que el formato cambie, y el
- * formato puede cambiar sin que se toque el player. Atar ambos numeros haria
- * que una correccion interna pareciera una ruptura del formato.
+ * `@oim-media/core` can publish ten versions without the format changing, and
+ * the format can change without the player being touched. Tying both numbers
+ * together would make an internal fix look like a format break.
  */
 export const CONTRACT_VERSION = "1.22.0";
 // 1.22.0: per-layer reveal transition (`reveal`), `animation.trigger` and the `play` action.
@@ -82,30 +82,30 @@ export const CONTRACT_VERSION = "1.22.0";
 // not know the grain paints the layer without it, which is an acceptable
 // fallback, and requiring 1.10.0 would lock out readers that show everything
 // else perfectly.
-// 1.9.0: un .oim deja de llevar CSS en crudo. `custom_loop_css`,
-// `custom_keyframes` y `custom_hover_css` se marcan retiradas y el player no
-// las aplica: acababan en una hoja de estilo donde `@import`, `image-set()` o
-// un `}` que escapaba de la regla pedian recursos a terceros o reescribian el
-// player. El editor nunca las escribio. `cssAnimation` queda acotada a la
-// unica forma que el editor escribe.
-// 1.8.0: las claves de estilo declaradas en 1.6 dejan de ser texto libre. Los
-// dieciseis colores comparten `cssColor` -gemelo portable de `isSafeCssColor`,
-// admite `var()` y `none`-; roles, patron, direccion y animacion de texto pasan
-// a `enum` con el vocabulario del editor; y los tres `z.any()` -`cuts`,
-// `fillGenerative`, `fillGradient`- tienen forma. `fillGradient` ya no admite
-// una segunda imagen: con ella un archivo podia pedir recursos a un tercero.
-// 1.7.0: se retira `allowed_domains` (marcada, no borrada). El .oim es un
-// sandbox: abrirlo no conecta con nadie y el player deja de mirar en que
-// sitio se abre. Desaparece el veredicto `domain_blocked`.
-// 1.6.0: se retiran del contrato `path_morph` y `physics_2d` de `capabilities`
-// al no haber sido implementadas nunca por ningun lector o player, quedando
-// acotado a las implementadas (`vector_parallax` e `infinite_parallax`).
-// 1.5.0: se retiran los SIETE alias de `style` -`size`, `font`, `color`,
-// `bold`, `italic`, `underline`, `fontSizeOverrides`-. Sin fase de
-// deprecacion: los .oim publicados son de prueba, asi que no habia
-// compatibilidad que proteger. El compilador ya emite solo los canonicos
-// (`canonizar_estilo`), y `fillColor` hereda el patron que tenia `color` —
-// que resultaba estar mejor especificado que ella. `style` baja de 46 a 39.
+// 1.9.0: a .oim no longer carries raw CSS. `custom_loop_css`,
+// `custom_keyframes` and `custom_hover_css` are marked retired and the player
+// does not apply them: they ended up in a stylesheet where `@import`,
+// `image-set()` or a `}` that escaped the rule requested resources from third
+// parties or rewrote the player. The editor never wrote them. `cssAnimation` is
+// limited to the one form the editor writes.
+// 1.8.0: the style keys declared in 1.6 stop being free text. The sixteen
+// colors share `cssColor` -the portable twin of `isSafeCssColor`, it accepts
+// `var()` and `none`-; roles, pattern, direction and text animation become an
+// `enum` with the editor's vocabulary; and the three `z.any()` -`cuts`,
+// `fillGenerative`, `fillGradient`- now have a shape. `fillGradient` no longer
+// accepts a second image: with it, a file could request resources from a third party.
+// 1.7.0: `allowed_domains` is retired (marked, not deleted). The .oim is a
+// sandbox: opening it connects to no one, and the player stops checking where
+// it is opened. The `domain_blocked` verdict disappears.
+// 1.6.0: `path_morph` and `physics_2d` are removed from the contract's
+// `capabilities`, since no reader or player ever implemented them; it is
+// limited to the implemented ones (`vector_parallax` and `infinite_parallax`).
+// 1.5.0: the SEVEN `style` aliases are removed -`size`, `font`, `color`,
+// `bold`, `italic`, `underline`, `fontSizeOverrides`-. There was no deprecation
+// phase: the published .oim files are test files, so there was no compatibility
+// to protect. The compiler now emits only the canonical keys (`canonizar_estilo`),
+// and `fillColor` inherits the pattern that `color` had -which turned out to be
+// better specified than it. `style` goes from 46 to 39.
 // 1.4.0: the root declares `reedicion` -- who may re-edit the work -- and
 // `name`. Both were in every published file and in no version of the
 // contract, so a reader built from the contract alone could not know they
@@ -122,51 +122,51 @@ export const CONTRACT_VERSION = "1.22.0";
 // final for that language, even when empty. The schema does not change
 // (content is already a string record); the meaning of "*" does, and that is
 // what a reader in another language needs to know.
-// 1.1.0: se retira `allow_external_urls`. El player ya no carga URL externas
-// -- un .oim se comparte, y una peticion a un tercero al abrirlo revela IP y
-// navegador de quien lo mira. Ningun archivo la usaba (0 de 20 medidos) y el
-// editor nunca la escribio. Los esquemas son `.passthrough()`, asi que un
-// archivo antiguo que la traiga SIGUE siendo valido: el campo se ignora.
+// 1.1.0: `allow_external_urls` is removed. The player no longer loads external
+// URLs -- a .oim gets shared, and a request to a third party on opening it would
+// reveal the IP and browser of whoever views it. No file used it (0 of 20
+// measured) and the editor never wrote it. The schemas are `.passthrough()`, so
+// an old file that still carries it REMAINS valid: the field is ignored.
 
 /**
- * La primera version del formato. Lo que no exige nada mas, exige esto.
+ * The first version of the format. Whatever requires nothing more requires this.
  *
- * Separada de `CONTRACT_VERSION` porque son dos cosas distintas: aquella
- * sube cuando el formato cambia, esta no se mueve nunca.
+ * Kept separate from `CONTRACT_VERSION` because they are two different things:
+ * that one rises when the format changes, this one never moves.
  */
 export const BASE_CONTRACT_VERSION = "1.0.0";
 
 /**
- * Lo que el player implementa HOY, medido y no supuesto.
+ * What the player implements TODAY, measured and not assumed.
  *
- * `path_morph` y `physics_2d` estan en el enum del esquema pero no en el
- * codigo: cero apariciones. Se quedan fuera a proposito -declarar lo que no se
- * hace es exactamente el silencio que esto viene a romper-.
+ * `path_morph` and `physics_2d` are in the schema's enum but not in the code:
+ * zero occurrences. They are left out on purpose -declaring what is not done is
+ * exactly the silence this is meant to break.
  */
 export const PLAYER_CAPABILITIES = ["vector_parallax", "infinite_parallax", "text_marks", "image_fill", "media_filters", "frame_shapes"] as const;
 
 export interface Reader {
-  /** La version del contrato que este lector implementa. */
+  /** The contract version this reader implements. */
   version: string;
   capabilities: readonly string[];
 }
 
 export interface MissingSupport {
-  /** Lo que el archivo exige, tal cual venia. `null` si no exige nada. */
+  /** What the file requires, exactly as it came. `null` if it requires nothing. */
   requiredVersion: string | null;
-  /** El archivo pide una version del formato posterior a la del lector. */
+  /** The file asks for a format version later than the reader's. */
   versionTooOld: boolean;
-  /** Capacidades que el documento declara y el lector no implementa. */
+  /** Capabilities the document declares and the reader does not implement. */
   missingCapabilities: string[];
-  /** Capacidades requeridas que el documento exige y el lector no implementa. */
+  /** Required capabilities the document demands and the reader does not implement. */
   missingRequiredCapabilities: string[];
-  /** ¿Falta alguna capacidad requerida o la versión es demasiado antigua para renderizar con fidelidad? */
+  /** Is a required capability missing, or is the version too old to render faithfully? */
   cannotRender: boolean;
-  /** ¿Hay algo que decir? */
+  /** Is there anything to report? */
   hayAlgoQueDecir: boolean;
 }
 
-/** `1.2.10` -> [1, 2, 10]. Cualquier cosa que no sea eso, `null`. */
+/** `1.2.10` -> [1, 2, 10]. Anything that is not that shape gives `null`. */
 function partes(version: unknown): [number, number, number] | null {
   if (typeof version !== "string") return null;
   const m = /^(\d+)\.(\d+)\.(\d+)$/.exec(version.trim());
@@ -175,11 +175,11 @@ function partes(version: unknown): [number, number, number] | null {
 }
 
 /**
- * ¿`a` es posterior a `b`? Si alguna no se puede leer, NO.
+ * Is `a` later than `b`? If either cannot be read, NO.
  *
- * Una version ilegible no debe convertirse en una advertencia: un archivo
- * puede traer cualquier cosa ahi, y gritar por un campo mal escrito enseñaria
- * a ignorar el aviso justo cuando importe.
+ * An unreadable version must not become a warning: a file can carry anything
+ * there, and shouting about a mistyped field would teach people to ignore the
+ * warning exactly when it matters.
  */
 function esPosterior(a: unknown, b: unknown): boolean {
   const pa = partes(a), pb = partes(b);
@@ -192,10 +192,10 @@ function esPosterior(a: unknown, b: unknown): boolean {
 }
 
 /**
- * Lo que este lector no puede honrar de este archivo.
+ * What this reader cannot honor in this file.
  *
- * Un archivo sin `min_player` no exige nada: son todos los publicados hasta
- * hoy, y tratarlos como sospechosos convertiria el aviso en ruido de fondo.
+ * A file without `min_player` requires nothing: that covers every published file
+ * so far, and treating them as suspect would turn the warning into background noise.
  */
 export function whatTheReaderCannotDo(metadata: any, lector: Reader): MissingSupport {
   const exigida = metadata && typeof metadata.min_player === "string" ? metadata.min_player : null;
@@ -229,7 +229,7 @@ export function whatTheReaderCannotDo(metadata: any, lector: Reader): MissingSup
   };
 }
 
-/** Una linea legible para la consola de quien incrusta el player. */
+/** A readable line for the console of whoever embeds the player. */
 export function describeMissing(falta: MissingSupport): string {
   const partes: string[] = [];
   if (falta.versionTooOld) {
@@ -250,34 +250,33 @@ export function describeMissing(falta: MissingSupport): string {
 }
 
 /**
- * Desde que version del contrato existe cada capacidad.
+ * The contract version from which each capability exists.
  *
- * **Hoy esta vacio a proposito, y eso es correcto:** las cuatro capabilities que
- * declara el esquema -`vector_parallax`, `infinite_parallax`, `path_morph`,
- * `physics_2d`- nacieron con la 1.0.0. Lo que no esta aqui vale la version
- * base.
+ * **It is empty today on purpose, and that is correct:** the four capabilities
+ * the schema declares -`vector_parallax`, `infinite_parallax`, `path_morph`,
+ * `physics_2d`- date from 1.0.0. Anything not listed here is at the base version.
  *
- * Existe vacio porque la alternativa es la trampa: escribir en `min_player` la
- * version con la que se compilo el editor. Eso funciona hoy y se rompe el dia
- * que el contrato llegue a la 1.1.0, porque un documento que no usa nada nuevo
- * empezaria a exigir 1.1.0 y dejaria fuera a lectores perfectamente capaces de
- * pintarlo. El fallo seria ademas invisible desde el editor: el archivo se ve
- * bien en quien lo escribio.
+ * It exists empty because the alternative is a trap: writing into `min_player`
+ * the version the editor was compiled with. That works today and breaks the day
+ * the contract reaches 1.1.0, because a document that uses nothing new would
+ * start requiring 1.1.0 and lock out readers perfectly capable of painting it.
+ * The failure would also be invisible from the editor: the file looks right to
+ * whoever wrote it.
  *
- * `min_player` no es «con que se hizo», es «que hace falta para leerlo».
+ * `min_player` is not "what it was made with", it is "what is needed to read it".
  */
 export const VERSION_BY_CAPABILITY: Readonly<Record<string, string>> = { image_fill: "1.17.0", media_filters: "1.18.0", frame_shapes: "1.19.0" };
 
-/** La mayor de dos versiones legibles; si alguna no lo es, la primera. */
+/** The greater of two readable versions; if either is not readable, the first. */
 function laMayor(a: string, b: string): string {
   return esPosterior(b, a) ? b : a;
 }
 
 /**
- * La version minima del contrato que hace falta para leer este documento.
+ * The minimum contract version needed to read this document.
  *
- * El mapa entra como parametro para poder probar el mecanismo sin inventarse
- * una capacidad futura en el codigo de produccion.
+ * The map comes in as a parameter so the mechanism can be tested without
+ * inventing a future capability in production code.
  */
 export function minVersionFor(
   metadata: any,

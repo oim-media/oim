@@ -38,14 +38,14 @@ global.fetch = vi.fn().mockImplementation((url, init) => {
 
 describe('oim-player Web Component', () => {
   beforeEach(async () => {
-    // Un IntersectionObserver que reporta al observar, como hace el navegador
-    // de verdad con un elemento que se ve.
+    // An IntersectionObserver that reports on observe, as a real browser does
+    // for an element that is visible.
     //
-    // Hace falta desde que la carga es perezosa: el de happy-dom existe pero
-    // NUNCA dispara, asi que sin esto el player se queda dormido y estas cinco
-    // pruebas medirian un elemento vacio. No es un apaño para pasar: es la
-    // condicion "este player se ve", que antes se cumplia por accidente porque
-    // el `src` cargaba a la fuerza.
+    // It is needed since loading became lazy: happy-dom's version exists but
+    // NEVER fires, so without this the player stays dormant and these five
+    // tests would measure an empty element. This is not a workaround to make
+    // them pass: it is the condition "this player is visible", which used to
+    // hold by accident because the `src` loaded by force.
     window.IntersectionObserver = class {
       constructor(cb) { this._cb = cb; }
       observe(el) {
@@ -120,9 +120,9 @@ describe('oim-player Web Component', () => {
     expect(cssText).toContain('-webkit-user-select: none');
 
     expect(cssText).toContain('.oim-slot:hover {');
-    // El hover MULTIPLICA por `--oim-scale` desde el 21 de agosto: si lo
-    // reemplazara, pasar el raton por encima de una capa sobredimensionada la
-    // devolveria de golpe a su tamaño y asomaria el recorte del parallax.
+    // Hover MULTIPLIES by `--oim-scale`: if it replaced it, moving the pointer
+    // over an oversized layer would snap it back to its size and expose the
+    // parallax clipping.
     expect(cssText).toContain('scale(calc(var(--oim-scale, 1) * var(--oim-slot-hover-scale, 1)))');
 
     document.body.removeChild(player);
@@ -138,7 +138,7 @@ describe('oim-player Web Component', () => {
     
     // The language should change from 'es' to the next available one. Polled,
     // not a fixed 150 ms sleep: on a loaded CI runner loading took longer
-    // and the test failed (22 Oct 2026).
+    // and the test failed intermittently.
     await vi.waitFor(() => expect(player.getAttribute('lang')).not.toBe('es'), { timeout: 3000, interval: 25 });
 
     document.body.removeChild(player);

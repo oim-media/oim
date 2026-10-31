@@ -14,7 +14,7 @@ const NUEVAS = [
   "bolt", "bubble", "flower", "burst", "arch",
 ];
 
-/** Todos los numeros de un trazado; con solo M/L/C/Z absolutos son pares x,y. */
+/** All the numbers of a path; with only absolute M/L/C/Z they come in x,y pairs. */
 const numeros = (d: string): number[] => (d.match(/-?\d+(\.\d+)?/g) ?? []).map(Number);
 
 describe("las doce formas nuevas del catalogo", () => {

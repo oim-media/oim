@@ -5,12 +5,12 @@
  */
 
 /**
- * El relieve 3D en el player.
+ * The 3D relief in the player.
  *
- * Su `shadeHexColor` aclaraba hacia el blanco mientras el del editor
- * oscurecia: con `#111827` el autor veia un relieve casi negro y el .oim lo
- * pintaba blanco. Esta prueba mira el modelo que el player construye desde el
- * slot, que es lo que acaba pintado.
+ * Its `shadeHexColor` lightened toward white while the editor's darkened: with
+ * `#111827` the author saw an almost black relief and the .oim painted it white.
+ * This test checks the model that the player builds from the slot, which is what
+ * ends up painted.
  */
 
 import { describe, it, expect } from "vitest";

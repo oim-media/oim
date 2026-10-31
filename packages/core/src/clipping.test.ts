@@ -5,12 +5,12 @@
  */
 
 /**
- * El orden importa mas que las reglas.
+ * Order matters more than the rules.
  *
- * Un grupo de parallax de texto existe -una cinta de titulares en bucle-, y si
- * el texto ganara, el bucle dejaria de recortarse y se veria la pista entera.
- * Esa combinacion es la que decide el orden de las tres reglas, y la que una
- * prueba por regla no habria tocado.
+ * A text parallax group exists (a looping headline ribbon), and if the text won,
+ * the loop would stop being clipped and the whole track would show.
+ * That combination is what decides the order of the three rules, and the one that a
+ * test per rule would not have touched.
  */
 
 import { describe, it, expect } from "vitest";
@@ -34,8 +34,8 @@ describe("slotClipping", () => {
   });
 
   /**
-   * La combinacion que decide el orden. Sin esto, poner la regla del texto
-   * antes que la del parallax pasaba en verde y rompia el bucle en produccion.
+   * The combination that decides the order. Without this, putting the text rule
+   * before the parallax one passed in green and broke the loop in production.
    */
   it("un grupo de parallax DE TEXTO sigue recortando", () => {
     expect(slotClipping(slot({ isText: true, isParallaxGroup: true }))).toBe("hidden");

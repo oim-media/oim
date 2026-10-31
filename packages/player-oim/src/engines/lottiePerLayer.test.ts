@@ -10,7 +10,7 @@
 import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine";
 
-/** Un doble que anota si le han llamado a destroy(). */
+/** A double that records whether destroy() was called on it. */
 function lottieFalso() {
   const estado = { destruido: 0 };
   return {
@@ -32,8 +32,8 @@ function motorCon(registros: Array<{ slotId: string; inst: any }>) {
 
 describe("_destroyLottiesIn", () => {
   it("destruye solo las capas pedidas y deja vivas las demas", () => {
-    // Es TODO el motivo de esta tarea: reconstruir una capa no puede matar
-    // los Lottie del resto del lienzo.
+    // This is the WHOLE reason for this task: rebuilding one layer must not kill
+    // the Lottie instances of the rest of the canvas.
     const a = lottieFalso(), b = lottieFalso();
     const motor = motorCon([
       { slotId: "logo", inst: a.inst },
@@ -47,8 +47,8 @@ describe("_destroyLottiesIn", () => {
   });
 
   it("saca de la lista las destruidas, y solo esas", () => {
-    // Si se quedaran en la lista, un destroy() posterior las tocaria dos veces
-    // y play()/pause() seguirian hablando con instancias muertas.
+    // If they stayed in the list, a later destroy() would touch them twice and
+    // play()/pause() would keep talking to dead instances.
     const a = lottieFalso(), b = lottieFalso();
     const motor = motorCon([
       { slotId: "logo", inst: a.inst },
@@ -71,7 +71,7 @@ describe("_destroyLottiesIn", () => {
   });
 
   it("si una instancia falla al destruirse, las demas se destruyen igual", () => {
-    // El destroy() de lottie-web puede lanzar sobre un nodo ya desmontado.
+    // lottie-web's destroy() can throw on a node that is already unmounted.
     const rota = { destroy() { throw new Error("nodo desmontado"); } } as any;
     const buena = lottieFalso();
     const motor = motorCon([
@@ -85,8 +85,8 @@ describe("_destroyLottiesIn", () => {
   });
 
   it("play() y pause() siguen alcanzando a las que quedan", () => {
-    // El registro paso de ser la instancia a ser {slotId, inst}: si algun
-    // bucle no se actualizo, aqui se ve.
+    // The registry changed from the instance to {slotId, inst}: if any loop
+    // was not updated, it shows up here.
     let reproducidas = 0;
     const inst = { destroy() {}, play() { reproducidas++; }, pause() {} } as any;
     const motor = motorCon([{ slotId: "vive", inst }]);

@@ -5,13 +5,13 @@
  */
 
 /**
- * La regla de recorte se delega en `@oim-media/core`. Vive compartida desde que
- * tiene DOS consumidores: el editor arrastraba el mismo fallo -su wrapper
- * interior del content lleva `overflow: hidden` y recorta el text- y dos
- * implementaciones de esto discreparian igual que discrepaba el interlineado.
+ * The clipping rule is delegated to `@oim-media/core`. It has been shared since
+ * it has TWO consumers: the editor carried the same bug -its inner wrapper of the
+ * content has `overflow: hidden` and clips the text- and two implementations of
+ * this would disagree the same way the line spacing did.
  *
- * Se importa el fichero del modulo y no el indice del paquete, igual que en
- * `binary.ts`, `grupos.ts` y `tipografia.ts`, para no arrastrar zod.
+ * The module file is imported, not the package index, as in `binary.ts`,
+ * `grupos.ts` and `tipografia.ts`, to avoid pulling in zod.
  */
 export { slotClipping } from '../../../core/src/clipping.js';
 export type { Clipping, WhoClips } from '../../../core/src/clipping.js';

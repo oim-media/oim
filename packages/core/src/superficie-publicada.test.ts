@@ -27,7 +27,7 @@ import * as core from "./index";
 
 const DIR = join(__dirname);
 
-/** Los ficheros que `tsc` compila a `dist/`, que es lo unico que se publica. */
+/** The files that `tsc` compiles to `dist/`, which is the only thing that is published. */
 function fuentesPublicadas(): { nombre: string; texto: string }[] {
   return readdirSync(DIR)
     .filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"))
@@ -35,11 +35,11 @@ function fuentesPublicadas(): { nombre: string; texto: string }[] {
 }
 
 /**
- * La superficie permitida, a proposito escrita a mano.
+ * The allowed surface, deliberately written by hand.
  *
- * Anadir una exportacion obliga a editar esta lista, y esa edicion es la
- * decision consciente que la publicacion exige. Si la lista se generara sola
- * del propio indice, no vigilaria nada.
+ * Adding an export forces an edit to this list, and that edit is the conscious
+ * decision that publishing requires. If the list were generated from the index
+ * itself, it would guard nothing.
  */
 const SUPERFICIE = [
   // text-marks.ts: text marks, contract 1.11.0.
@@ -60,7 +60,7 @@ const SUPERFICIE = [
   "layerTextureMask",
   "dropCapStyle",
   "splitDropCap",
-  // glitch.ts: the glitch as portable primitives, one definition (contract audit, 10 Oct 2026).
+  // glitch.ts: the glitch as portable primitives, one definition (contract audit).
   "DEFAULT_GLITCH_SPEED",
   "DEFAULT_GLITCH_DELAY",
   "DEFAULT_GLITCH_INTENSITY",
@@ -78,7 +78,7 @@ const SUPERFICIE = [
   "entranceFrameAt",
   "entranceKeyframes",
   "entranceClips",
-  // binary.ts — extraccion del chunk OIM_Data. Ya publico en el player.
+  // binary.ts — extraction of the OIM_Data chunk. Already public in the player.
   "compressAndEncodeJSON",
   "decodeAndDecompressJSON",
   "decompressBytes",
@@ -89,17 +89,17 @@ const SUPERFICIE = [
   "extractOIMMetadataFromStream",
   "fetchMetadataTail",
   "imageDataHash",
-  // canonical.ts — serialización canónica para firmas ECDSA (RFC 8785).
+  // canonical.ts — canonical serialization for ECDSA signatures (RFC 8785).
   "serializeCanonical",
   "normalizeCanonicalNumbers",
   "sortKeysByCodePoint",
-  // api.ts — contrato de endpoints publicos.
+  // api.ts — public endpoint contract.
   "OIM_BACKEND_URL_DEFAULT",
   "OIM_ENDPOINTS",
   "OIM_PACKAGE_FIELDS",
   "oimEndpoint",
   "resolveBackendUrl",
-  // dynamic-colors.ts — roles semanticos de color y resolucion CSS.
+  // dynamic-colors.ts — semantic color roles and CSS resolution.
   "DYNAMIC_COLOR_ROLES",
   "isSafeCssColor",
   "CSS_COLOR_PATTERN",
@@ -108,9 +108,9 @@ const SUPERFICIE = [
   // Named palettes (1.20.0): the document picks one, the player paints its roles.
   "resolvePalette",
   "PALETTE_NAME_PATTERN",
-  // css-gradient.ts — lista blanca de gradientes de un .oim.
+  // css-gradient.ts — allowlist of a .oim's gradients.
   "isSafeCssGradient",
-  // proceduralNoise.ts — generador de ruido procedural SVG y geometrias de blob.
+  // proceduralNoise.ts — procedural SVG noise generator and blob geometries.
   "buildSvgNoiseFilter",
   // Per-layer grain.
   "GRAIN_BLENDS",
@@ -119,12 +119,12 @@ const SUPERFICIE = [
   "buildLayerGrainFilter",
   "generateBlobPath",
   "generateScribblePath",
-  // artisticTextCurve.ts — el trazado del texto curvado, uno para los dos.
+  // artisticTextCurve.ts — the path of curved text, one for both.
   "calculateTextCurvePath",
   "artisticTextLines",
   "calculate3DExtrusionLayers",
   "shadeHexColor",
-  // embeddedFonts.ts — fuentes incrustadas en el .oim.
+  // embeddedFonts.ts — fonts embedded in the .oim.
   "EMBEDDED_FONT_NAME",
   "EMBEDDED_FONT_MAX_BYTES",
   "EMBEDDED_FONTS_MAX_TOTAL_BYTES",
@@ -138,21 +138,21 @@ const SUPERFICIE = [
   // fontFile.ts — whether an uploaded font may be embedded.
   "readFontInfo",
   "fontEmbedding",
-  // grupos.ts — la regla de pertenencia.
+  // grupos.ts — the membership rule.
   "isGroup",
   "childrenByGroup",
   "slotParent",
-  // tipografia.ts — interlineado y margen para la tinta.
+  // tipografia.ts — line spacing and margin for the ink.
   "MAX_FONT_HEIGHT",
   "MAX_LINE_HEIGHT",
   "MIN_LINE_HEIGHT",
   "DEFAULT_LINE_HEIGHT",
   "resolveLineHeight",
   "inkMargin",
-  // dimensions.ts — resolución de dimensiones hacia CSS y unidades de usuario.
+  // dimensions.ts — resolution of dimensions into CSS and user units.
   "resolveDimensionToCss",
   "resolveNumericDimension",
-  // compatibilidad.ts — que un lector diga lo que no entiende.
+  // compatibilidad.ts — a reader saying what it does not understand.
   "PLAYER_CAPABILITIES",
   "BASE_CONTRACT_VERSION",
   "CONTRACT_VERSION",
@@ -160,27 +160,27 @@ const SUPERFICIE = [
   "describeMissing",
   "whatTheReaderCannotDo",
   "minVersionFor",
-  // media-filters.ts — CSS de los filtros de imagen, contrato 1.18.0.
+  // media-filters.ts — CSS for the image filters, contract 1.18.0.
   "FILTER_PRESET_CSS",
   "mediaFilterCss",
   "hasMediaFilter",
-  // recorte.ts — quien recorta y quien no.
+  // recorte.ts — who clips and who does not.
   "slotClipping",
-  // formasGeo.ts — la geometria de las formas del catalogo.
+  // formasGeo.ts — the geometry of the catalog shapes.
   "GEO_SHAPES",
   "shapeDrawing",
   "pointsToAttribute",
   "isKnownGeoShape",
-  // frame-silhouette.ts — la silueta del marco con foto, contrato 1.19.0.
+  // frame-silhouette.ts — the silhouette of the photo frame, contract 1.19.0.
   "FRAME_SHAPES",
   "frameSilhouette",
   "usesFrameShapes",
-  // parallaxCss.ts — el CSS del parallax y su pista infinita.
+  // parallaxCss.ts — the parallax CSS and its endless track.
   "TRACK_CLASS",
   "CSS_PARALLAX",
   "ensureParallaxKeyframes",
   "infiniteLayerPlan",
-  // permisoDeReedicion.ts — quien puede reeditar un .oim.
+  // permisoDeReedicion.ts — who may re-edit a .oim.
   "DEFAULT_PERMISSION",
   "permissionFields",
   "registryQuery",
@@ -188,11 +188,11 @@ const SUPERFICIE = [
   "permissionOf",
   "canReedit",
   "signatureStamp",
-  // sobredimensionado.ts — cuanto agranda el parallax una capa al borde.
+  // sobredimensionado.ts — how much parallax enlarges a layer at the edge.
   "MAX_SCALE",
   "maxOffset",
   "oversizeScale",
-  // fill.ts — el relleno de una capa, y el motor de patrones que usa.
+  // fill.ts — a layer's fill, and the pattern engine it uses.
   "PATTERN_PRESET_SVGS",
   "PATTERN_SHAPES",
   "generatePatternSVG",
@@ -204,7 +204,7 @@ const SUPERFICIE = [
   "patternShapeMask",
   "shapeMaskCss",
   "svgSilhouetteMaskCss",
-  // schema.ts — forma de los metadatos, deducible de cualquier .oim.
+  // schema.ts — shape of the metadata, derivable from any .oim.
   "MAX_SLOTS",
   "OIMOrOVMMetadata",
   "OimMetadataSchema",
@@ -212,9 +212,8 @@ const SUPERFICIE = [
   "grainConfigSchema",
   "contentSchema",
   "interactionSchema",
-  // La interactividad, declarada desde el 29 de agosto: viajaba en el archivo
-  // pero no en el contrato, asi que un lector en otro lenguaje tenia que
-  // deducirla del player.
+  // Interactivity, now declared: it travelled in the file but not in the
+  // contract, so a reader in another language had to infer it from the player.
   "interactiveStateSchema",
   "slotStatesSchema",
   "stateActionSchema",
@@ -238,7 +237,7 @@ const SUPERFICIE = [
   "textRunsSchema",
   "trackingKeyframeSchema",
   "zoneSchema",
-  // Stack canónico de efectos y texturas (Spec 2026-10-07)
+  // Canonical stack of effects and textures.
   "EFFECT_BLENDS",
   "TEXTURE_CATALOG",
   "TEXTURE_PRESETS",
@@ -259,8 +258,8 @@ describe("superficie publica de @oim-media/core", () => {
 
 describe("nada sensible viaja en el paquete", () => {
   /**
-   * Material criptografico. La clave privada de firma vive en el backend y
-   * jamas debe cruzar a un paquete que se instala en maquinas ajenas.
+   * Cryptographic material. The private signing key lives in the backend and
+   * must never cross into a package installed on third-party machines.
    */
   it("no incluye claves privadas ni tokens de servicio", () => {
     const prohibido = [
@@ -269,7 +268,7 @@ describe("nada sensible viaja en el paquete", () => {
       /SUPABASE_SERVICE_ROLE/i,
       /\bsk_live_/,
       /\bsk_test_/,
-      /eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\./, // un JWT literal
+      /eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\./, // a literal JWT
     ];
     for (const { nombre, texto } of fuentesPublicadas()) {
       for (const patron of prohibido) {
@@ -279,10 +278,10 @@ describe("nada sensible viaja en el paquete", () => {
   });
 
   /**
-   * El fallo que ya ocurrio, documentado en la cabecera de `api.ts`: dos
-   * plugins salieron apuntando a `http://localhost:8000` por defecto, o sea
-   * que publicados llamaban a la maquina de quien los usaba. Con el paquete
-   * publicado ese error se reparte solo.
+   * The failure that already happened, documented in the header of `api.ts`:
+   * two plugins shipped pointing to `http://localhost:8000` by default, which
+   * means that published ones called the machine of whoever used them. With the
+   * package published, that error spreads by itself.
    */
   it("no fija localhost como destino por defecto", () => {
     for (const { nombre, texto } of fuentesPublicadas()) {
@@ -294,9 +293,9 @@ describe("nada sensible viaja en el paquete", () => {
   });
 
   /**
-   * `files: ["dist"]` es lo que impide que el codigo fuente, los tests y
-   * cualquier fichero suelto del directorio acaben en el tarball. Sin el,
-   * `npm publish` empaqueta TODO el directorio del paquete.
+   * `files: ["dist"]` is what keeps the source code, the tests and any loose
+   * file in the directory from ending up in the tarball. Without it,
+   * `npm publish` packages the WHOLE package directory.
    */
   it("el manifiesto limita el tarball a dist/", () => {
     const pkg = JSON.parse(readFileSync(join(DIR, "..", "package.json"), "utf8"));

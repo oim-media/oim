@@ -196,8 +196,8 @@ export async function verifyMetadataSignature(metadata: any, origin?: string): P
 
     let isValid = await verifyWithJwk(keyJwk, canonicalBytes);
 
-    // Fallback de retrocompatibilidad: archivos publicados antes del cambio
-    // de exclusión de creator_user_id firmaron conservando ese campo en la raíz.
+    // Backward-compatibility fallback: files published before the
+    // creator_user_id exclusion change were signed keeping that field at the root.
     if (!isValid && metadata.creator_user_id) {
       const legacyCleaned: Record<string, any> = {};
       const legacyKeys = Object.keys(metadata).filter(function (k) {
@@ -256,7 +256,7 @@ export async function verifyMetadataSignature(metadata: any, origin?: string): P
 }
 
 import { permissionOf, signatureStamp } from './reeditPermission.js';
-// El tope del formato, no un literal copiado: `limits.js` no arrastra zod.
+// The format limit, not a copied literal: `limits.js` does not pull in zod.
 import { MAX_SLOTS } from './limits.js';
 
 /**
@@ -302,7 +302,7 @@ export function securityVerdict(input: VerdictInput): SecurityStatus {
   // after tampering on purpose: an altered file is refused either way.
   if (input.keyExpired) return 'expired_key';
 
-  // Only seals made by the current scheme are enforced. In June 2026 a client
+  // Only seals made by the current scheme are enforced. Previously a client
   // sent its own `image_hash` and the backend signed it unchecked (one sample
   // carries the SHA-256 of empty input), so a legacy hash proves nothing and
   // must not get a legitimate file refused.
@@ -380,8 +380,8 @@ export function validateOimMetadata(json: any): string[] {
 
     if (s.style) {
       if (typeof s.style !== 'object') fail('slot[' + i + '].style must be object');
-      // `fillColor` y no `color`: el contrato 1.5.0 retiro `color`, y un
-      // campo retirado ya no se pinta, asi que no hay nada que validar en el.
+      // `fillColor` and not `color`: contract 1.5.0 removed `color`, and a
+      // removed field is no longer painted, so there is nothing to validate in it.
       else if (s.style.fillColor && (typeof s.style.fillColor !== 'string' || s.style.fillColor.length > 64)) fail('slot[' + i + '].style.fillColor invalid');
     }
 
@@ -394,26 +394,26 @@ export function validateOimMetadata(json: any): string[] {
 }
 
 /**
- * Esquemas admitidos en `href` y `src`.
+ * Schemes allowed in `href` and `src`.
  *
- * Lista BLANCA de esquema, no busqueda de "javascript:". Un denylist sobre esa
- * cadena se sortea con mayusculas, espacios en medio, saltos de linea o
- * entidades -`&#106;avascript:`-, porque el navegador normaliza todo eso
- * DESPUES de que el filtro haya mirado. Preguntando "es uno de los que
- * permito?" esas variantes no llegan a existir.
+ * ALLOWLIST of schemes, not a search for "javascript:". A denylist over that
+ * string is bypassed with uppercase letters, spaces in the middle, line breaks
+ * or entities -`&#106;avascript:`-, because the browser normalizes all of that
+ * AFTER the filter has looked. Asking "is it one of the ones I allow?" those
+ * variants never get to exist.
  */
 function isSafeScheme(value: string, fragmentOnly: boolean): boolean {
-  // Los navegadores IGNORAN tabuladores, saltos de linea y retornos dentro de
-  // una URL antes de resolverla, asi que `java\nscript:alert(1)` se ejecuta.
-  // Si se mira el valor en crudo, ese salto hace que ni siquiera parezca tener
-  // esquema y se cuela como path relativa. Hay que normalizar ANTES de decidir:
-  // lo comprobo con una prueba y pasaba.
+  // Browsers IGNORE tabs, line breaks and carriage returns inside a URL before
+  // resolving it, so `java\nscript:alert(1)` does run. If the raw value is
+  // checked, that break makes it look like it has no scheme at all, and it
+  // slips through as a relative path. You must normalize BEFORE deciding:
+  // I check it with a test and it passed.
   //
-  // Se filtra por CODIGO y no con un rango escrito en la expresion regular:
-  // un rango de control en el fuente lo convierten en los caracteres REALES
-  // las herramientas que tocan el archivo, y entonces el codigo lleva dentro
-  // un nulo invisible. Paso al escribir esto, y ayer al escribir el saneador
-  // de nombres de proyecto.
+  // Filtering is done by CODE and not with a range written in the regular
+  // expression: a control-character range in the source gets turned into the
+  // REAL characters by the tools that touch the file, and then the code carries
+  // an invisible null inside. It happened while writing this, and again in the
+  // project-name sanitizer.
   const raw = value || '';
   let v = '';
   for (let k = 0; k < raw.length; k++) {
@@ -421,83 +421,84 @@ function isSafeScheme(value: string, fragmentOnly: boolean): boolean {
   }
   v = v.trim();
 
-  // Referencia interna al propio documento: `<use href="#id">`.
+  // Internal reference to the document itself: `<use href="#id">`.
   if (v.charAt(0) === '#') return true;
 
-  // `<use>` solo puede apuntar dentro del documento. Una referencia externa se
-  // trae content de otro sitio; los navegadores modernos la bloquean por
-  // mismo origen, pero deja de ser una peticion que el archivo no deberia
-  // provocar, y no cuesta nada cerrarla aqui.
+  // `<use>` can only point inside the document. An external reference pulls
+  // content from another site; modern browsers block it by same-origin policy,
+  // but it is still a request the file should not trigger, and closing it here
+  // costs nothing.
   if (fragmentOnly) return false;
 
-  // Sin esquema: path relativa.
+  // No scheme: relative path.
   if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(v)) return true;
 
   return /^https?:/i.test(v) || /^data:image\//i.test(v);
 }
 
 export function sanitizeHtml(htmlStr: string): string {
-  // NO hay atajo para el SVG.
+  // There is NO shortcut for SVG.
   //
-  // Aqui habia un `if (htmlStr.startsWith('<svg')) return htmlStr;` que se
-  // saltaba TODO el saneado de abajo. Como cualquier SVG empieza por `<svg`, el
-  // filtro no llegaba a correr nunca para content vectorial: un
-  // `<svg onload="...">` autorado pasaba intacto hasta el documento vivo, donde
-  // los atributos de evento SI se disparan -los `<script>` no, porque salen
-  // inertes de DOMParser, pero un `onload` o un `onerror` bastan-. Y el .oim
-  // viaja a terceros, asi que ejecutaba en el origen de quien lo abriera.
+  // There used to be an `if (htmlStr.startsWith('<svg')) return htmlStr;` that
+  // SKIPPED ALL the sanitizing below. Since any SVG starts with `<svg`, the
+  // filter never ran for vector content: an authored `<svg onload="...">`
+  // passed through intact to the live document, where event attributes DO fire
+  // -`<script>` tags do not, because they come out inert from DOMParser, but an
+  // `onload` or an `onerror` is enough-. And the .oim travels to third parties,
+  // so it ran in the origin of whoever opened it.
   //
-  // El atajo existia por un motivo real: la lista blanca era tan corta que
-  // mutilaba el SVG legitimo. La solucion es que cubra lo que tiene que cubrir.
-  // Si algo vectorial deja de verse, se anade a la lista; no se reabre la puerta.
+  // The shortcut existed for a real reason: the allowlist was so short that it
+  // mangled legitimate SVG. The fix is for the list to cover what it has to.
+  // If some vector content stops showing, it is added to the list; the door is
+  // not reopened.
   if (typeof DOMParser === 'undefined') return htmlStr;
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlStr, 'text/html');
 
     const allowedTags = [
-      // Estructura y formas
+      // Structure and shapes
       'svg', 'g', 'defs', 'symbol', 'use', 'title', 'desc',
       'path', 'circle', 'rect', 'polygon', 'polyline', 'ellipse', 'line',
-      // Pintura
+      // Paint
       'lineargradient', 'radialgradient', 'stop', 'pattern', 'image',
-      // Clipping, mascara y filtros: el player los genera para sus propias
-      // figuras y el arte vectorial autorado los trae de serie.
+      // Clipping, masks and filters: the player generates them for its own
+      // shapes, and authored vector art brings them built in.
       'clippath', 'mask', 'filter',
       'fegaussianblur', 'fecolormatrix', 'fecomponenttransfer',
       'fefunca', 'fefuncr', 'fefuncg', 'fefuncb',
       'feblend', 'feoffset', 'femerge', 'femergenode', 'feflood', 'fecomposite',
-      // Texto dentro del SVG
+      // Text inside the SVG
       'text', 'tspan',
-      // HTML de los slots de text enriquecido
+      // HTML of the rich-text slots
       'span', 'div', 'br', 'p', 'a', 'b', 'i', 'strong', 'em', 'img'
     ];
 
     const allowedAttrs = [
-      // Generales
+      // General
       'class', 'style', 'id', 'lang', 'aria-hidden', 'part', 'transform',
-      // Geometria
+      // Geometry
       'd', 'cx', 'cy', 'r', 'rx', 'ry', 'x', 'y', 'dx', 'dy',
       'x1', 'y1', 'x2', 'y2', 'fx', 'fy', 'width', 'height', 'points',
       'viewbox', 'preserveaspectratio', 'vector-effect',
-      // Pintura
+      // Paint
       'fill', 'stroke', 'fill-rule', 'clip-rule', 'opacity',
       'fill-opacity', 'stroke-opacity', 'stroke-width', 'stroke-linecap',
       'stroke-linejoin', 'stroke-dasharray', 'stroke-dashoffset',
       'stroke-miterlimit', 'offset', 'stop-color', 'stop-opacity',
       'gradientunits', 'gradienttransform', 'spreadmethod',
       'patternunits', 'patterncontentunits', 'patterntransform',
-      // Clipping, mascara y filtros
+      // Clipping, masks and filters
       'clip-path', 'clippathunits', 'mask', 'maskunits', 'maskcontentunits',
       'filter', 'filterunits', 'primitiveunits', 'stddeviation', 'result',
       'in', 'in2', 'mode', 'type', 'values', 'tablevalues',
       'flood-color', 'flood-opacity', 'operator',
-      // Texto
+      // Text
       'font-family', 'font-size', 'font-weight', 'font-style', 'text-anchor',
       'dominant-baseline', 'letter-spacing', 'word-spacing',
-      // Enlaces y recursos: el valor lo filtra `isSafeScheme`
+      // Links and resources: the value is filtered by `isSafeScheme`
       'href', 'src', 'target', 'rel', 'alt',
-      // Propias del player
+      // Player-specific
       'data-slot-id', 'allow-lottie', 'show-controls', 'crossorigin'
     ];
     
@@ -517,12 +518,12 @@ export function sanitizeHtml(htmlStr: string): string {
           el.removeAttribute(attr.name);
           continue;
         }
-        // `href` por lista blanca de esquema y no buscando "javascript:", que
-        // es lo que habia: esa comparacion la sortea `JaVaScRiPt:`, un salto de
-        // linea en medio o `&#106;avascript:`, porque el navegador normaliza
-        // despues de mirar nosotros.
-        // En `<use>` y `<image>` el href TRAE content; en `<a>` solo navega.
-        // Por eso los primeros quedan restringidos al propio documento.
+        // `href` by scheme allowlist and not by searching for "javascript:", which
+        // is what it was: that comparison is bypassed by `JaVaScRiPt:`, a line
+        // break in the middle, or `&#106;avascript:`, because the browser
+        // normalizes after we look.
+        // In `<use>` and `<image>` the href BRINGS content; in `<a>` it only
+        // navigates. That is why the former are restricted to the document itself.
         if (name === 'href' && !isSafeScheme(attr.value, tag === 'use' || tag === 'image')) {
           el.removeAttribute(attr.name);
         }
@@ -532,15 +533,15 @@ export function sanitizeHtml(htmlStr: string): string {
         } else if (name !== 'href' && name !== 'src' && requestsOutsideByCss(attr.value)) {
           // `fill`, `stroke`, `filter`, `mask`, `clip-path`...: not URLs, but a
           // `url(https://...)` in them is a request when the work opens. Twin
-          // of `pide_fuera_por_css` in the backend's saneado.py.
+          // of `pide_fuera_por_css` in the backend's `saneado.py`.
           el.removeAttribute(attr.name);
           continue;
         }
         if (name === 'src') {
           const val = attr.value.trim();
-          // Solo `data:`. Las URL externas se retiraron del player: un .oim
-          // se comparte entre usuarios, y una peticion a un tercero al abrirlo
-          // revela IP y navegador de quien lo mira.
+          // Only `data:`. External URLs were removed from the player: a .oim is
+          // shared between users, and a request to a third party when opening it
+          // reveals the IP and browser of whoever is looking.
           const isSafe = isSafeImageDataUri(val);
           if (!isSafe) {
             el.removeAttribute(attr.name);

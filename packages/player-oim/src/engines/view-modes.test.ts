@@ -8,26 +8,25 @@
  */
 
 /**
- * Los modos de vista: que hace un .oim segun donde lo pongan.
+ * View modes: what a .oim does depending on where it is placed.
  *
- * El mismo archivo vale para dos sitios muy distintos —una rejilla con veinte
- * miniaturas y una vista ampliada donde solo esta el— y no debe comportarse
- * igual en los dos. Quien lo sabe es la PAGINA, no el player: no ve fuera de
- * si mismo, asi que no puede deducir que hay mas archivos a la vista.
+ * The same file serves two very different places —a grid with twenty
+ * thumbnails, and an enlarged view where only it is— and it must not behave
+ * the same in both. The one who knows is the PAGE, not the player: the player
+ * cannot see beyond itself, so it cannot deduce that there are more files in view.
  *
- * Antes de esto la landing ya se fabricaba los modos a mano y a medias:
- * `ShowcasePage.tsx` pasaba `disable-animations="true"` en la galeria y
- * `BlogPage.tsx` no pasaba nada. Un eje de los dos, copiado a mano, sin nombre.
+ * Before this, the landing already built the modes by hand and halfway:
+ * `ShowcasePage.tsx` passed `disable-animations="true"` in the gallery and
+ * `BlogPage.tsx` passed nothing. One axis of the two, copied by hand, without a name.
  *
- * **El defecto de fabrica cambia.** Antes un `<oim-player src>` pelado se movia
- * -y desde el 28 de agosto tambien ejecutaba clics-. Ahora hereda lo minimo:
- * imagen quieta con su idioma. Un defecto no es una preferencia, es lo que se
- * lleva quien no lee nada, y es la unica parte de una API que no se puede
- * cambiar despues sin romper a alguien. Se cambia hoy porque hoy es gratis.
+ * **The factory default changes.** Before, a bare `<oim-player src>` moved
+ * -and it also ran clicks-. Now it inherits the minimum: a still image with
+ * its language. A default is not a preference, it is what whoever reads nothing
+ * carries away, and it is the only part of an API that cannot be changed later
+ * without breaking someone. It changes today because today it is free.
  *
- * `mode` es un preajuste de las DOS banderas, y un atributo explicito manda
- * sobre el. Por eso no hace falta un tercer mode «personalizado»: es
- * simplemente no poner `mode`.
+ * `mode` is a preset of the TWO flags, and an explicit attribute overrides it.
+ * That is why a third "custom" mode is not needed: it is simply not setting `mode`.
  */
 
 import { describe, it, expect, vi, afterEach } from "vitest";
@@ -42,7 +41,7 @@ function motorCon(attrs: Record<string, string> = {}, options: any = {}) {
 
 afterEach(() => vi.unstubAllGlobals());
 
-/** `prefers-reduced-motion: reduce` activo. */
+/** `prefers-reduced-motion: reduce` active. */
 function conMovimientoReducido() {
   vi.stubGlobal("matchMedia", (q: string) => ({
     matches: q.indexOf("prefers-reduced-motion") >= 0,
@@ -71,7 +70,7 @@ describe('mode="full"', () => {
     expect(m.disableActions).toBe(true);
   });
 
-  /** Un mode que no existe no puede encender nada: se cae al defecto. */
+  /** A mode that does not exist cannot turn anything on: it falls back to the default. */
   it("un mode desconocido no enciende nada", () => {
     const m = motorCon({ mode: "galeria-turbo" });
     expect(m.disableAnimations).toBe(true);
@@ -92,7 +91,7 @@ describe("un atributo explicito manda sobre el mode", () => {
     expect(m.disableActions).toBe(true);
   });
 
-  /** Sin `mode`: los atributos sueltos siguen valiendo. Eso es el «personalizado». */
+  /** Without `mode`: the loose attributes still apply. That is the «custom» one. */
   it("y sin mode ninguno, los atributos solos bastan", () => {
     const m = motorCon({ "disable-actions": "false" });
     expect(m.disableActions).toBe(false);
@@ -102,9 +101,10 @@ describe("un atributo explicito manda sobre el mode", () => {
 
 describe("prefers-reduced-motion", () => {
   /**
-   * Es una preferencia VESTIBULAR: protege de mareos por movimiento. Quien la
-   * activa sigue queriendo pulsar. Apagarle las acciones le quita FUNCION, no
-   * movimiento — seria una regresion de accesibilidad disfrazada de deferencia.
+   * It is a VESTIBULAR preference: it protects against motion sickness. Whoever
+   * turns it on still wants to click. Switching off its actions takes away
+   * FUNCTION, not motion — that would be an accessibility regression disguised
+   * as deference.
    */
   it("apaga el movimiento aunque el mode sea completo", () => {
     conMovimientoReducido();
@@ -118,7 +118,7 @@ describe("prefers-reduced-motion", () => {
 });
 
 describe("las opciones de mount ganan a todo", () => {
-  // `OimPlayer.mount()` es la via del visor, que trae sus propios controles.
+  // `OimPlayer.mount()` is the viewer's route, which brings its own controls.
   it("una opcion explicita pisa el mode", () => {
     const m = motorCon({ mode: "image" }, { disableAnimations: false, disableActions: false });
     expect(m.disableAnimations).toBe(false);
@@ -127,10 +127,10 @@ describe("las opciones de mount ganan a todo", () => {
 });
 
 /**
- * Que el mode se NOTE en el DOM, no solo en la bandera.
+ * That the mode is NOTICED in the DOM, not only in the flag.
  *
- * Una bandera que nadie consulta es peor que no tenerla: el integrador declara
- * `mode="image"`, se queda tranquilo, y el archivo sigue respondiendo.
+ * A flag that nobody checks is worse than not having it: the integrator declares
+ * `mode="image"`, feels reassured, and the file keeps responding.
  */
 describe("el mode llega al slot", () => {
   function montar(slots: any[], attrs: Record<string, string> = {}) {
@@ -171,7 +171,7 @@ describe("el mode llega al slot", () => {
   it("y un clic no ejecuta nada", async () => {
     const el = await slotEn({ mode: "image" });
     const otra = document.createElement("div");
-    // Si algo se enganchara, el clic lanzaria la accion y tocaria el DOM.
+    // If something were hooked up, the click would fire the action and touch the DOM.
     const antes = el.outerHTML;
     el.dispatchEvent(new Event("click", { bubbles: true }));
     expect(el.outerHTML).toBe(antes);
@@ -189,9 +189,9 @@ describe("el mode llega al slot", () => {
   });
 
   /**
-   * El camino viejo del clic (`interaction.toggle_elements`) es otra puerta al
-   * mismo sitio. Gatear una y dejar la otra abierta seria peor que no gatear:
-   * daria por seguro algo que no lo es.
+   * The old click path (`interaction.toggle_elements`) is another door to the
+   * same place. Gating one and leaving the other open would be worse than not
+   * gating: it would deem something safe that is not.
    */
   it("el camino viejo del clic tambien queda cerrado", async () => {
     const conInteraction = {
@@ -204,10 +204,10 @@ describe("el mode llega al slot", () => {
   });
 
   /**
-   * El actionEvent de consola existe para el caso «el archivo lo pide y el player no
-   * sabe». En mode imagen el player SI sabe y ha decidido no hacerlo: avisar
-   * mandaria a buscar un fallo que no hay, y en una galeria de veinte, veinte
-   * veces.
+   * The console's actionEvent exists for the case "the file asks for it and the
+   * player does not know". In image mode the player DOES know and has decided
+   * not to do it: warning would send someone looking for a failure that does
+   * not exist, and in a gallery of twenty, twenty times.
    */
   it("y no avisa por consola de algo que se apago a proposito", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});

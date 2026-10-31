@@ -5,16 +5,16 @@
  */
 
 /**
- * La regla de compatibilidad se delega en `@oim-media/core`, igual que `binary.ts`,
- * `grupos.ts`, `tipografia.ts` y `recorte.ts`.
+ * The compatibility rule is delegated to `@oim-media/core`, like `binary.ts`,
+ * `grupos.ts`, `tipografia.ts` and `recorte.ts`.
  *
- * Aqui importa especialmente que sea compartida: el numero que el editor
- * ESCRIBE en `min_player` y el que el player COMPARA tienen que salir del
- * mismo sitio, o el actionEvent mentiria en una direccion u otra -callando cuando
- * deberia hablar, o gritando con archivos correctos-.
+ * Sharing matters especially here: the number the editor WRITES into `min_player` and
+ * the one the player COMPARES must come from the same place, or actionEvent would lie in
+ * one direction or the other: staying silent when it should speak, or shouting about
+ * correct files.
  *
- * Se importa el fichero del modulo y no el indice del paquete, para no
- * arrastrar el esquema ni zod al paquete que sirve el CDN.
+ * The module file is imported, not the package index, so that the schema and zod are not
+ * dragged into the bundle that serves the CDN.
  */
 export {
   whatTheReaderCannotDo,

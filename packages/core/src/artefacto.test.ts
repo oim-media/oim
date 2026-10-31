@@ -5,30 +5,30 @@
  */
 
 /**
- * Que lo que se empaqueta sea lo que hay en `src`, y nada mas.
+ * That what gets packaged is what is in `src`, and nothing more.
  *
- * `superficie-publicada.test.ts` vigila las EXPORTACIONES del codigo fuente.
- * Esto vigila el ARTEFACTO, que es lo que de verdad viaja: `files: ["dist"]`
- * mete en el tarball todo lo que haya en ese directorio, lo genere el build de
- * hoy o el de hace tres meses. `tsc` no borra nada al recompilar.
+ * `superficie-publicada.test.ts` watches the EXPORTS of the source code.
+ * This watches the ARTIFACT, which is what really travels: `files: ["dist"]`
+ * puts everything in that directory into the tarball, whether it was produced by
+ * today's build or the one from three months ago. `tsc` deletes nothing when it recompiles.
  *
- * Medido el 27/08/2026, al preparar el primer `pnpm pack`. El tarball llevaba:
+ * Measured when preparing the first `pnpm pack`. The tarball carried:
  *
- *   - `binary.test.js`, `integration.test.js`, `schema.test.js` - las pruebas
- *     compiladas, de antes de que `tsconfig` las excluyera;
- *   - `dist/src/` - un arbol duplicado entero, de cuando `rootDir` era otro;
- *   - **`serialize.js`**, cuyo fuente se BORRO a proposito. El comentario que
- *     dejo su borrado en `index.ts` explica por que: anclaba la posicion al
- *     centro del slot -`anchorX += w / 2`- mientras el compilador real, el del
- *     backend, la ancla a la esquina superior izquierda, «un tercero que
- *     integrara contra este paquete habria obtenido todo desplazado media
- *     caja, sin ningun error que lo delatara».
+ *   - `binary.test.js`, `integration.test.js`, `schema.test.js`: the compiled tests, from
+ *     before `tsconfig` excluded them;
+ *   - `dist/src/`: a whole duplicated tree, from when `rootDir` was something else;
+ *   - **`serialize.js`**, whose source was DELETED on purpose. The comment that its
+ *     deletion left in `index.ts` explains why: it anchored the position to the centre of
+ *     the slot (`anchorX += w / 2`) while the real compiler, the backend's, anchors it to the
+ *     top-left corner. "A third party integrating against this package would have got
+ *     everything shifted by half a box, with no error
+ *     to give it away."
  *
- * O sea que el fichero se quito del fuente para que nadie lo recibiera, y se
- * habria distribuido igual. Borrar el codigo no borro el artefacto.
+ * So the file was taken out of the source so that nobody would receive it, and it would
+ * have been distributed anyway. Deleting the code did not delete the artifact.
  *
- * El build ahora limpia `dist` antes de compilar. Esto vigila que siga
- * haciendolo, y que nadie deje caer nada suelto ahi.
+ * The build now cleans `dist` before compiling. This watches that it keeps doing so,
+ * and that nobody lets anything stray drop in there.
  */
 
 import { describe, it, expect } from "vitest";
@@ -39,7 +39,7 @@ const RAIZ = join(__dirname, "..");
 const SRC = join(RAIZ, "src");
 const DIST = join(RAIZ, "dist");
 
-/** Rutas relativas de todo lo que hay dentro, incluidos subdirectorios. */
+/** Relative paths of everything inside, including subdirectories. */
 function contenido(dir: string, prefijo = ""): string[] {
   const salida: string[] = [];
   for (const entrada of readdirSync(dir, { withFileTypes: true })) {
@@ -63,14 +63,14 @@ function masReciente(dir: string): number {
 }
 
 /**
- * Los modulos de `src`, con su ruta relativa y sin extension.
+ * The modules of `src`, with their relative path and without extension.
  *
- * Recorre los subdirectorios desde que `generative/` vive aqui: 21 ficheros que
- * antes estaban duplicados byte a byte en los dos repositorios. Mirar solo el
- * primer nivel dejaria 1.974 lineas del artefacto sin vigilar.
+ * It walks the subdirectories since `generative/` lives here: 21 files that
+ * were previously duplicated byte for byte in both repositories. Looking only at the
+ * first level would leave 1,974 lines of the artifact unwatched.
  *
- * Los ficheros que no son `.ts` -como `__baseline_snapshots__.json`, que lee una
- * prueba- no se compilan, asi que no aparecen en `dist` y no cuentan.
+ * Files that are not `.ts` (such as `__baseline_snapshots__.json`, which a test reads)
+ * are not compiled, so they do not appear in `dist` and do not count.
  */
 function modulosDe(dir: string, prefijo = ""): string[] {
   const salida: string[] = [];
@@ -92,9 +92,9 @@ describe("el artefacto que se empaqueta", () => {
   });
 
   /**
-   * La comprobacion que muerde: cualquier fichero de mas -una prueba
-   * compilada, un modulo borrado del fuente, un arbol viejo- aparece aqui como
-   * un nombre que `src` no tiene.
+   * The check that bites: any extra file (a compiled test, a module deleted from
+   * the source, an old tree) shows up here as a name that `src` does not
+   * have.
    */
   it("contiene exactamente los modulos de src, ni uno mas", () => {
     const esperado = MODULOS.flatMap((m) => [`${m}.d.ts`, `${m}.js`]).sort();
@@ -106,12 +106,12 @@ describe("el artefacto que se empaqueta", () => {
   });
 
   /**
-   * `dist/src/` llego a existir con una copy entera del paquete: un consumidor
-   * que importara por esa ruta recibiria otra version del mismo codigo.
+   * `dist/src/` came to exist with a whole copy of the package: a consumer
+   * that imported through that path would get another version of the same code.
    *
-   * La regla ya no puede ser «ningun subdirectorio» —`generative/` es uno
-   * legitimo— asi que se comprueba que los que haya salgan de `src`. Un
-   * `dist/src/` no tiene contrapartida ahi y sigue cayendo.
+   * The rule can no longer be "no subdirectory" (`generative/` is a legitimate one),
+   * so it checks that whatever is there comes out of `src`. A `dist/src/` has no counterpart
+   * there and still fails.
    */
   it("sus subdirectorios son los de src, y no otros", () => {
     const enDist = new Set(
@@ -122,9 +122,9 @@ describe("el artefacto que se empaqueta", () => {
   });
 
   /**
-   * Sin esto, todo lo de arriba puede pasar en verde sobre el build de la
-   * semana pasada mientras `src` ya dice otra cosa. Es el mismo fallo que
-   * `dist-al-dia.test.js` vigila en el player.
+   * Without this, all of the above can pass green on last week's build while `src` already
+   * says something else. It is the same failure that `dist-al-dia.test.js` watches for in the
+   * player.
    */
   it("no es mas viejo que src", () => {
     const construido = Math.max(...contenido(DIST).map((f) => statSync(join(DIST, f)).mtimeMs));

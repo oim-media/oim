@@ -8,27 +8,27 @@
  */
 
 /**
- * `oim:action`: el player DICE lo que hizo; no hace lo que le manden.
+ * `oim:action`: the player REPORTS what it did; it does not do what it is told.
  *
- * Hay tres formas de que un clic salga del archivo:
+ * There are three ways a click can leave the file:
  *
- *   1. el archivo declara una URL y el player navega  -> decide el ARCHIVO
- *   2. el archivo lleva codigo y el player lo ejecuta -> jamas
- *   3. el player anuncia lo que paso y la pagina decide -> decide la PAGINA
+ *   1. the file declares a URL and the player navigates  -> the FILE decides
+ *   2. the file carries code and the player runs it     -> never
+ *   3. the player announces what happened and the page decides -> the PAGE decides
  *
- * Esto es la tercera, y es la unica que respeta el consentimiento de quien
- * embebe. El archivo no puede PROVOCAR nada: solo puede DECIR algo, y solo si
- * la pagina se molesta en escuchar. No hay handler declarado en el .oim, ni
- * `href`, ni destino.
+ * This is the third, and the only one that respects the consent of whoever
+ * embeds it. The file cannot TRIGGER anything: it can only SAY something, and
+ * only if the page bothers to listen. There is no handler declared in the .oim,
+ * no `href`, no destination.
  *
- * Y no es un adorno: es lo que hace INNECESARIO que el player navegue. Si una
- * pagina quiere que pulsar lleve a un producto, escucha y navega ella, con su
- * URL y sus reglas. Sin este evento la presion para implementar `link` en el
- * player no desaparece nunca, porque el integrador necesita algo.
+ * It is not decoration: it is what makes navigation by the player UNNECESSARY.
+ * If a page wants a click to lead to a product, it listens and navigates itself,
+ * with its own URL and rules. Without this event the pressure to implement `link`
+ * in the player never goes away, because the integrator needs something.
  *
- * El detalle lleva SOLO identificadores que el autor puso en el archivo. Sin
- * URLs —la regla de las imagenes vale igual aqui— y sin datos libres: no es un
- * canal hacia fuera, es el mismo documento hablando de si mismo.
+ * The detail carries ONLY identifiers that the author put in the file. No
+ * URLs -the image rule applies here too- and no free-form data: it is not an
+ * outward channel, it is the same document speaking about itself.
  */
 
 import { describe, it, expect, vi } from "vitest";
@@ -37,13 +37,14 @@ import ImageEngine from "./ImageEngine";
 function montar(slots: any[]) {
   const host = document.createElement("div");
   host.setAttribute("mode", "full");
-  // Sin animaciones el mostrar/ocultar es INSTANTANEO y se puede observar. Con
-  // ellas, un slot nace en `opacity: 0` esperando un `requestAnimationFrame`
-  // que en happy-dom no llega, asi que ya valia "0" antes del clic y comparar
-  // opacidades no distinguia nada: las dos pruebas del veto pasaban en vacio.
+  // Without animations, show/hide is INSTANT and can be observed. With them, a
+  // slot is born at `opacity: 0` waiting for a `requestAnimationFrame` that
+  // happy-dom never delivers, so "0" was already the value before the click and
+  // comparing opacities distinguished nothing: the two veto tests passed
+  // vacuously.
   //
-  // De paso comprueba que los dos ejes son independientes: acciones encendidas
-  // por el mode, movimiento apagado por el atributo.
+  // It also checks that the two axes are independent: actions enabled by the
+  // mode, motion disabled by the attribute.
   host.setAttribute("disable-animations", "true");
   const shadow = (host as any).attachShadow({ mode: "open" });
   document.body.appendChild(host);
@@ -62,10 +63,10 @@ const caja = (id: string, extra: any = {}) => ({
   style: { width: "32.5cqw", height: "8.75cqw", fontSize: "2.75cqw", ...extra },
 });
 
-// `hide` y no `toggle`: ocultar deja `display: none`, que la pintura normal no
-// produce nunca. Con `toggle` el resultado dependia del estado de partida y
-// coincidia con lo que el propio render deja encolado — comparar ahi no
-// distingue el efecto de la accion del efecto de pintar.
+// `hide` and not `toggle`: hiding leaves `display: none`, which normal painting
+// never produces. With `toggle` the result depended on the starting state and
+// matched what the render itself leaves queued -comparing there does not tell
+// the effect of the action apart from the effect of painting.
 const ACCIONES = [{ target: "ficha", type: "hide" }];
 
 async function escenario(states: any, extra: any = {}) {
@@ -79,9 +80,9 @@ async function escenario(states: any, extra: any = {}) {
   host.addEventListener("oim:action", (e: any) => avisos.push(e));
   return {
     host, avisos,
-    // `queueUpdate` encola y aplica en el siguiente fotograma. happy-dom no da
-    // fotogramas, asi que sin esto la cola no se vacia nunca y el DOM se queda
-    // como estaba: comparar styles ahi no distingue nada.
+    // `queueUpdate` queues and applies on the next frame. happy-dom does not
+    // produce frames, so without this the queue never drains and the DOM stays
+    // as it was: comparing styles there distinguishes nothing.
     vaciar: () => motor._flushDOMUpdates(),
     boton: sr.querySelector('[data-slot-id="boton"]') as HTMLElement,
     ficha: sr.querySelector('[data-slot-id="ficha"]') as HTMLElement,
@@ -111,9 +112,9 @@ describe("el player anuncia lo que hizo", () => {
   });
 
   /**
-   * El guardian del detalle. Sin esto, cualquiera puede colar mañana un campo
-   * con una URL o con content del archivo, y el evento deja de ser «el
-   * documento hablando de si mismo» para volverse un canal.
+   * The guard on the detail. Without it, anyone could sneak in a field tomorrow
+   * with a URL or with the file's content, and the event would stop being "the
+   * document speaking about itself" and become a channel.
    */
   it("y NO lleva nada mas que identificadores del propio archivo", async () => {
     const e = await escenario({ active: { actions: ACCIONES } });
@@ -123,19 +124,19 @@ describe("el player anuncia lo que hizo", () => {
 });
 
 /**
- * Escuchar por NOMBRE, que es lo unico que un humano puede escribir.
+ * Listen by NAME, the only thing a human can type.
  *
- * El id lo inventa el editor al azar —`shape_text_k3j9x2m1p`, de
- * `Math.random().toString(36)`—, asi que ni el propio autor puede escribir
- * `if (e.detail.slot === "Boton1")`. Tendria que abrir el archivo a copiar una
- * cadena aleatoria, que es justo el trabajo que este evento viene a evitar.
+ * The id is invented by the editor at random -`shape_text_k3j9x2m1p`, from
+ * `Math.random().toString(36)`-, so not even the author can write
+ * `if (e.detail.slot === "Boton1")`. They would have to open the file to copy a
+ * random string, which is exactly the chore this event is meant to avoid.
  *
- * `name` es lo que el autor teclea y ve en su lista de capas, y viaja al
- * archivo desde el 22 de agosto. El `id` se queda como clave estable —los
- * `targets` de las acciones lo usan— y el nombre como el legible.
+ * `name` is what the author types and sees in their layer list, and it is carried
+ * in the file. The `id` stays as the stable key -the actions' `targets` use it-
+ * and the name is the readable one.
  *
- * Los nombres NO son unicos: dos capas pueden llamarse igual y las dos
- * emitiran. Es responsabilidad de quien escucha, y por eso el id sigue yendo.
+ * Names are NOT unique: two layers can share a name and both will emit. It is the
+ * listener's responsibility, and that is why the id is still sent.
  */
 describe("el aviso se puede escuchar por nombre", () => {
   it("lleva el nombre que puso el autor", async () => {
@@ -150,7 +151,7 @@ describe("el aviso se puede escuchar por nombre", () => {
     expect(e.avisos[0].detail.slot).toBe("boton");
   });
 
-  /** Una capa sin nombre no inventa uno: se omite y queda el id. */
+  /** A layer without a name does not invent one: it is omitted and the id remains. */
   it("una capa sin nombre no se lo inventa", async () => {
     const e = await escenario({ active: { actions: ACCIONES } });
     e.boton.dispatchEvent(new Event("click"));
@@ -159,16 +160,16 @@ describe("el aviso se puede escuchar por nombre", () => {
 });
 
 /**
- * Una capa interactiva SIN acciones tambien avisa.
+ * An interactive layer WITHOUT actions also announces itself.
  *
- * El caso que lo pide: un boton que el autor pone en su propia web para que la
- * PAGINA navegue. No quiere ningun efecto local — quiere que se lo cuenten—. Sin
- * esto tendria que declarar una accion falsa, un mostrar/ocultar de mentira,
- * solo para que el evento exista.
+ * The case that calls for it: a button the author places on their own website so
+ * that the PAGE navigates. It wants no local effect -it wants to be told about
+ * the click. Without this it would have to declare a fake action, a show/hide
+ * that does nothing, just so the event exists.
  *
- * Y no hace falta comprobar nada nuevo: `bindStates` solo se llama cuando el
- * slot YA es interactivo (`ImageEngine.ts:2096`), asi que la condicion de las
- * acciones sobraba. El aviso sale con `targets` y `types` vacios.
+ * No new check is needed: `bindStates` is only called when the slot is ALREADY
+ * interactive (`ImageEngine.ts:2096`), so the actions condition was redundant.
+ * The announcement goes out with empty `targets` and `types`.
  */
 describe("una capa interactiva sin acciones", () => {
   it("avisa igual, con destinos vacios", async () => {
@@ -190,8 +191,8 @@ describe("una capa interactiva sin acciones", () => {
 
 describe("la pagina puede vetar el efecto local", () => {
   /**
-   * `cancelable`. Con esto una galeria puede decidir clic a clic sin necesitar
-   * siquiera `mode="image"`: escucha, veta, y hace lo suyo.
+   * `cancelable`. With this a gallery can decide click by click without even
+   * needing `mode="image"`: it listens, vetoes, and does its own thing.
    */
   it("preventDefault deja la capa como estaba", async () => {
     const e = await escenario({ active: { actions: ACCIONES } });

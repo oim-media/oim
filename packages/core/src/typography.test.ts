@@ -5,12 +5,11 @@
  */
 
 /**
- * Que el interlineado deje de tener cuatro opiniones.
+ * Making sure line height stops having four opinions.
  *
- * El caso que de verdad muerde es la CADENA: los `.oim` publicados traen
- * `lineHeight: "1.2"`, no `1.2`. Una comprobacion que solo aceptara numeros
- * pasaria en verde mientras todos los archivos reales caen al valor por
- * defecto sin que nada lo diga.
+ * The case that really bites is the STRING: published .oim files carry
+ * `lineHeight: "1.2"`, not `1.2`. A check that only accepted numbers would
+ * pass green while every real file silently falls back to the default value.
  */
 
 import { describe, it, expect } from "vitest";
@@ -28,7 +27,7 @@ describe("resolveLineHeight", () => {
     expect(resolveLineHeight({ lineHeight: 1.6 })).toBe(1.6);
   });
 
-  /** Lo que traen los .oim publicados, medido sobre tres de ellos. */
+  /** What published .oim files carry, measured across three of them. */
   it("lee la cadena numerica, que es lo que hay en los archivos reales", () => {
     expect(resolveLineHeight({ lineHeight: "1.2" })).toBe(1.2);
   });
@@ -47,10 +46,10 @@ describe("resolveLineHeight", () => {
   );
 
   /**
-   * `<input type="number" min max>` no impide teclear fuera de rango: el
-   * atributo solo bloquea el envio de un formulario, y en el editor no hay
-   * ninguno. Un archivo puede traer 99, y 99 lineas de alto por linea es un
-   * texto que tapa el resto del documento.
+   * `<input type="number" min max>` does not stop typing outside the range: the
+   * attribute only blocks submitting a form, and the editor has none. A file can
+   * carry 99, and 99 lines of height per line is text that covers the rest of
+   * the document.
    */
   it("acota a los limites que ofrece el editor", () => {
     expect(resolveLineHeight({ lineHeight: 99 })).toBe(MAX_LINE_HEIGHT);
@@ -64,9 +63,8 @@ describe("resolveLineHeight", () => {
   });
 
   /**
-   * El valor por defecto tiene que caer dentro del rango o el editor y el
-   * player discreparian justo en el caso mas comun: el de la capa que no dice
-   * nada.
+   * The default value must fall within the range, or the editor and the player
+   * would disagree in the most common case: the layer that says nothing.
    */
   it("el valor por defecto esta dentro del rango", () => {
     expect(DEFAULT_LINE_HEIGHT).toBeGreaterThanOrEqual(MIN_LINE_HEIGHT);
@@ -76,9 +74,10 @@ describe("resolveLineHeight", () => {
 
 describe("inkMargin", () => {
   /**
-   * El caso de hoy: interlineado 1.2, que es lo que traen los .oim reales.
-   * Poppins declara 1.396 em de alto, asi que sobresale 0.196 -0.098 por
-   * lado-. Sin ese margen, la «j» y la «p» pierden el relleno por abajo.
+   * The case at hand: line height 1.2, which is what real .oim files carry.
+   * Poppins declares 1.396 em of height, so it protrudes 0.196 -0.098 per
+   * side-. Without that margin, the "j" and the "p" lose their fill at the
+   * bottom.
    */
   it("con el interlineado de los archivos reales, deja margen", () => {
     expect(inkMargin(1.2)).toBeCloseTo(0.1, 3);
@@ -90,9 +89,9 @@ describe("inkMargin", () => {
   });
 
   /**
-   * La mitad que suele olvidarse. Un margen fijo agrandaria el area de fondo
-   * siempre, y un degradado VERTICAL se reparte sobre ella: sus colores se
-   * moverian aunque no hubiera nada que compensar.
+   * The half that is usually forgotten. A fixed margin would always enlarge the
+   * background area, and a VERTICAL gradient is spread over it: its colors would
+   * move even when there is nothing to compensate.
    */
   it("con un interlineado holgado NO anade nada", () => {
     expect(inkMargin(1.4)).toBe(0);
@@ -111,9 +110,9 @@ describe("inkMargin", () => {
   });
 
   /**
-   * La constante sale de una medicion, no de una intuicion: es el alto de
-   * Poppins, la mayor de las seis fuentes que se midieron. Si bajara, la
-   * fuente que mas sobresale volveria a cortarse.
+   * The constant comes from a measurement, not from intuition: it is Poppins'
+   * height, the largest of the six fonts measured. If it were lowered, the font
+   * that protrudes the most would be cut off again.
    */
   it("el alto maximo cubre a Poppins, que es la peor medida", () => {
     expect(MAX_FONT_HEIGHT).toBeGreaterThanOrEqual(1.396);

@@ -201,8 +201,8 @@
         }
       }
 
-      // `fillColor` y no `color`: el contrato 1.5.0 retiro los alias de
-      // `style` y el compilador ya solo escribe los canonicos.
+      // `fillColor` and not `color`: contract 1.5.0 removed the aliases of
+      // `style`, and the compiler now only writes the canonical ones.
       if (s.style && s.style.fillColor && !/^#[0-9a-fA-F]{3,8}$/.test(s.style.fillColor)) {
         fail("slot[" + i + "].style.fillColor invalid");
       }
@@ -363,9 +363,9 @@
       slotEl.className = 'slot';
       slotEl.style.left = left.toFixed(2) + '%';
       slotEl.style.top = top.toFixed(2) + '%';
-      // Claves canonicas del contrato 1.5.0. Se leian `color`, `size` y
-      // `font`, que el compilador ya no escribe: el texto de un .ovm firmado
-      // salia sin color, sin tamano y sin fuente.
+      // Canonical keys of contract 1.5.0. It used to read `color`, `size` and
+      // `font`, which the compiler no longer writes: the text of a signed .ovm
+      // came out without color, without size and without font.
       if (st.fillColor) slotEl.style.color = st.fillColor;
       if (st.fontSize) slotEl.style.fontSize = st.fontSize;
       if (st.fontFamily) slotEl.style.fontFamily = st.fontFamily + ',sans-serif';

@@ -16,10 +16,10 @@ export interface SvgNoiseFilterOptions {
 const GRAIN_COLOR =/^#[0-9a-fA-F]{3,8}$|^rgba?\([\d.,\s%]+\)$/;
 
 /**
- * Genera el marcado SVG canónico para el filtro de ruido analógico procedural.
+ * Generates the canonical SVG markup for the procedural analog-noise filter.
  *
- * Utiliza los estándares abiertos del W3C (`<feTurbulence>` y `<feColorMatrix>`).
- * Con `stitchTiles="stitch"`, el patrón puede repetirse sin costuras ni bordes duros.
+ * It uses the open W3C standards (`<feTurbulence>` and `<feColorMatrix>`).
+ * With `stitchTiles="stitch"`, the pattern can repeat without seams or hard edges.
  */
 export function buildSvgNoiseFilter(id: string, options?: SvgNoiseFilterOptions): string {
   const intensity = Math.max(1, Math.min(100, options?.intensity ?? 15));
@@ -99,10 +99,10 @@ export interface BlobPathOptions {
 }
 
 /**
- * Genera una curva cerrada de Bézier cúbica determinista para una forma de Blob orgánico.
+ * Generates a deterministic closed cubic Bézier curve for an organic Blob shape.
  *
- * Emplea un generador pseudoaleatorio por congruencia lineal (LCG) para garantizar
- * que la misma semilla (seed) siempre produzca idéntica geometría en cualquier cliente.
+ * It uses a linear congruential generator (LCG) so that the same seed always
+ * produces identical geometry on any client.
  */
 export function generateBlobPath(options?: BlobPathOptions): string {
   let seed = options?.seed ?? 42;
@@ -128,7 +128,7 @@ export function generateBlobPath(options?: BlobPathOptions): string {
     points.push([Math.round(x * 10) / 10, Math.round(y * 10) / 10]);
   }
 
-  // Interpolar puntos en un ciclo cerrado con curvas de Bézier cúbicas
+  // Interpolate points in a closed loop with cubic Bézier curves
   const n = points.length;
   let d = `M ${points[0][0]},${points[0][1]}`;
 
@@ -138,7 +138,7 @@ export function generateBlobPath(options?: BlobPathOptions): string {
     const p2 = points[(i + 1) % n];
     const p3 = points[(i + 2) % n];
 
-    // Puntos de control Catmull-Rom a Bézier cúbica
+    // Catmull-Rom control points to cubic Bézier
     const cp1x = p1[0] + (p2[0] - p0[0]) / 6;
     const cp1y = p1[1] + (p2[1] - p0[1]) / 6;
     const cp2x = p2[0] - (p3[0] - p1[0]) / 6;
@@ -160,8 +160,9 @@ export interface ScribblePathOptions {
 }
 
 /**
- * Genera un trazo abierto editorial de garabato / subrayado procedural y determinista.
- * Ideal para rotuladores, subrayados de titulares, anotaciones y garabatos fffuel.
+ * Generates an open, editorial-style procedural and deterministic scribble /
+ * underline stroke. Suited to markers, headline underlines, annotations and
+ * fffuel doodles.
  */
 export function generateScribblePath(options?: ScribblePathOptions): string {
   let seed = options?.seed ?? 42;
@@ -175,7 +176,7 @@ export function generateScribblePath(options?: ScribblePathOptions): string {
     return seed / 233280;
   };
 
-  // Trazo de izquierda a derecha con oscilaciones y retorno leve
+  // Stroke from left to right with oscillations and a slight return
   const startX = 5;
   const startY = h * 0.7 + (rng() - 0.5) * 10;
   let d = `M ${startX.toFixed(1)},${startY.toFixed(1)}`;
@@ -190,7 +191,7 @@ export function generateScribblePath(options?: ScribblePathOptions): string {
     d += ` Q ${cpX.toFixed(1)},${cpY.toFixed(1)} ${currentX.toFixed(1)},${targetY.toFixed(1)}`;
   }
 
-  // Trazo de vuelta rápido inferior
+  // Quick return stroke at the bottom
   const returnCpX = w * 0.5;
   const returnCpY = h * 0.85 + (rng() - 0.5) * 8;
   const endX = startX + (rng() * 10);

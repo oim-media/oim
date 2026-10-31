@@ -5,20 +5,20 @@
  */
 
 /**
- * Serialización canónica conforme a las 7 reglas normativas de la especificación OIM
- * (packages/spec/BINARY_SPEC.md y packages/spec/README.md) y principios de RFC 8785 (JCS).
+ * Canonical serialization conforming to the 7 normative rules of the OIM specification
+ * (the BINARY_SPEC and README of the spec package) and the principles of RFC 8785 (JCS).
  *
- * Fuente ÚNICA de verdad compartida entre @oim-media/core, @oim-media/cli y @oim-media/player-oim.
+ * SINGLE source of truth shared by @oim-media/core, @oim-media/cli and @oim-media/player-oim.
  *
- * Las 7 reglas canónicas:
- * 1. Objeto base de metadatos deserializado.
- * 2. Exclusión estricta en la raíz de: 'signature', 'key_version', 'timestamp', 'creator_user_id'.
- * 3. Normalización numérica: decimales con parte fraccionaria nula a enteros (2.0 -> 2);
- *    resto redondeado a máximo 6 decimales.
- * 4. Ordenación léxica de claves recursiva por punto de código Unicode (codePointAt).
- * 5. Serialización compacta sin espacios entre separadores (',', ':').
- * 6. Caracteres no-ASCII emitidos directamente en UTF-8 sin escapar (sin \uXXXX).
- * 7. Codificación UTF-8 nativa.
+ * The 7 canonical rules:
+ * 1. Deserialized base metadata object.
+ * 2. Strict exclusion at the root of: 'signature', 'key_version', 'timestamp', 'creator_user_id'.
+ * 3. Numeric normalization: decimals with a null fractional part become integers (2.0 -> 2);
+ *    the rest is rounded to at most 6 decimals.
+ * 4. Recursive lexical key ordering by Unicode code point (codePointAt).
+ * 5. Compact serialization without spaces between separators (',', ':').
+ * 6. Non-ASCII characters emitted directly in UTF-8 without escaping (no \uXXXX).
+ * 7. Native UTF-8 encoding.
  */
 
 const EXCLUDED_ROOT_KEYS = new Set([
@@ -29,7 +29,7 @@ const EXCLUDED_ROOT_KEYS = new Set([
 ]);
 
 /**
- * Regla 3: enteros float se convierten a int, el resto se redondea a 6 decimales.
+ * Rule 3: integer floats are converted to int; the rest is rounded to 6 decimals.
  */
 export function normalizeCanonicalNumbers(value: any): any {
   if (Array.isArray(value)) {
@@ -49,7 +49,7 @@ export function normalizeCanonicalNumbers(value: any): any {
 }
 
 /**
- * Regla 4: ordenación recursiva por punto de código Unicode real (RFC 8785 / JCS).
+ * Rule 4: recursive ordering by real Unicode code point (RFC 8785 / JCS).
  */
 export function sortKeysByCodePoint(value: any): any {
   if (Array.isArray(value)) {
@@ -77,14 +77,14 @@ export function sortKeysByCodePoint(value: any): any {
 }
 
 /**
- * Ejecuta la serialización canónica completa devolviendo los bytes UTF-8 exactos.
+ * Runs the full canonical serialization, returning the exact UTF-8 bytes.
  */
 export function serializeCanonical(metadata: Record<string, any>): Uint8Array {
   if (!metadata || typeof metadata !== 'object') {
     return new TextEncoder().encode('{}');
   }
 
-  // Regla 2: Exclusión en raíz
+  // Rule 2: Exclusion at the root
   const kept: Record<string, any> = {};
   for (const key of Object.keys(metadata)) {
     if (!EXCLUDED_ROOT_KEYS.has(key)) {
@@ -92,7 +92,7 @@ export function serializeCanonical(metadata: Record<string, any>): Uint8Array {
     }
   }
 
-  // Reglas 3, 4, 5, 6 y 7
+  // Rules 3, 4, 5, 6 and 7
   const normalized = normalizeCanonicalNumbers(kept);
   const sorted = sortKeysByCodePoint(normalized);
   const jsonStr = JSON.stringify(sorted);

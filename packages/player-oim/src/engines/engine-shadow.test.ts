@@ -8,12 +8,12 @@
  */
 
 /**
- * El hueco que el plan daba por conocido.
+ * The gap that the plan took for granted.
  *
- * `sombra.test.ts` fija la CADENA; esto fija que el motor la pone donde toca:
- * en `filter`, la ultima, y solo en las capas que no son text. Sin esto, mover
- * el `drop-shadow` al principio de la cadena no tumbaba nada, y ese orden es la
- * mitad del arreglo —un preset de color posterior teñiria la sombra—.
+ * `sombra.test.ts` pins the CHAIN; this pins that the engine places it where it should:
+ * in `filter`, last, and only on the layers that are not text. Without this, moving
+ * the `drop-shadow` to the start of the chain would break nothing, and that order is
+ * half of the fix (a later colour preset would tint the shadow).
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
@@ -57,8 +57,8 @@ describe("la sombra en el motor", () => {
   });
 
   it("y va LA ULTIMA de la cadena, detras del desenfoque", async () => {
-    // Los filtros se aplican en orden: delante, un preset de color posterior
-    // teñiria la sombra y el color elegido no seria el que se ve.
+    // Filters apply in order: at the front, a later colour preset would tint the
+    // shadow and the chosen colour would not be the one that is seen.
     const { host: h2, motor: m2 } = montar([conSombra({ blur: 4 })]);
     await m2.renderSlots();
     const filtro = (h2.shadowRoot!.querySelector('[data-slot-id="caja"]') as HTMLElement).style.filter;
@@ -93,15 +93,15 @@ describe("la sombra en el motor", () => {
 
 describe("una capa de vector no lleva borde de caja", () => {
   it("un icono con strokeWidth heredado no gana un rectangulo alrededor", async () => {
-    // El editor interpreta el trazo como el contorno de los caminos del SVG;
-    // el player dibujaba `slotEl.style.border`, un rectangulo alrededor del
-    // icono que el editor nunca enseño. Los iconos insertados antes del 21 de
-    // agosto arrastran strokeWidth: 2 de los defectos de una forma.
+    // The editor interprets the stroke as the outline of the SVG paths; the player
+    // drew `slotEl.style.border`, a rectangle around the icon that the editor never
+    // showed. Icons inserted before the fix carry strokeWidth: 2, which is one of the
+    // shape's defects.
     const { host, motor } = montar([{
       id: "icono", type: "svg", align: "left",
       position: [50, 50], width_px: 120, height_px: 120,
-      // El SVG viaja en `content`, que es donde lo pone el editor: comprobado
-      // descomprimiendo un .oim real.
+      // The SVG travels in `content`, which is where the editor puts it: checked by
+      // decompressing a real .oim.
       content: { es: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg>' },
       style: { strokeColor: "#2563EB", strokeWidth: 2 },
     }]);
@@ -127,8 +127,8 @@ describe("una capa de vector no lleva borde de caja", () => {
 
 describe("y los iconos VIEJOS, creados como geo, tampoco", () => {
   it("un `geo` con el SVG dentro del content no gana borde de caja", async () => {
-    // Antes del 21 de agosto los iconos de la biblioteca se creaban como `geo`.
-    // Mirar solo el tipo los dejaria fuera.
+    // Before the fix, library icons were created as `geo`. Checking only the type
+    // would leave them out.
     const { host, motor } = montar([{
       id: "viejo", type: "geo", align: "left",
       position: [50, 50], width_px: 120, height_px: 120,
@@ -142,10 +142,10 @@ describe("y los iconos VIEJOS, creados como geo, tampoco", () => {
 });
 
 describe("el sello depende de si el archivo tiene autoria", () => {
-  // Un publico y uno con autoria son igual de integros -la firma protege el
-  // content-, pero no son igual de fiables como ORIGINAL: cualquiera puede
-  // coger un publico, cambiar una cifra y re-firmarlo. Con el mismo sello
-  // verde, la etiqueta dejaria de significar algo.
+  // A public one and one with authorship are equally intact (the signature protects the
+  // content), but they are not equally reliable as ORIGINAL: anyone can take a public
+  // one, change a figure and re-sign it. With the same green seal, the label would
+  // stop meaning anything.
   const conPermiso = (permiso?: string) => {
     const host = document.createElement("div");
     (host as any).attachShadow({ mode: "open" });
@@ -158,8 +158,8 @@ describe("el sello depende de si el archivo tiene autoria", () => {
 
   it("un .oim sin el campo conserva el sello de siempre", async () => {
     const { motor } = conPermiso();
-    // `signatureStamp(permissionOf({}))` -> 'verified'. Se comprueba la regla, que
-    // es lo que el motor consulta.
+    // `signatureStamp(permissionOf({}))` -> 'verified'. The rule is checked, which is
+    // what the engine consults.
     const { permissionOf, signatureStamp } = await import("../core/reeditPermission");
     expect(signatureStamp(permissionOf({}))).toBe("verified");
     expect(motor.securityStatus).toBe("unsigned");

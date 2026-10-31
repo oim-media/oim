@@ -5,83 +5,82 @@
  */
 
 /**
- * Configuracion de una capa con movimiento infinito.
+ * Configuration of a layer with infinite motion.
  */
 export interface InfiniteLayer {
-  speedPxSec: number; // 0 = quieta
+  speedPxSec: number; // 0 = still
   direction: "left_to_right" | "right_to_left";
-  mirror: boolean; // segunda copy en espejo
+  mirror: boolean; // second copy, mirrored
   pauseOnHover: boolean;
 }
 
 /**
- * Plan de renderizado para una capa infinita.
+ * Render plan for an infinite layer.
  */
 export interface LayerPlan {
-  /** true = hay que envolver el contenido en una pista. Solo si se mueve. */
+  /** true = the content must be wrapped in a track. Only if it moves. */
   duplicate: boolean;
   /**
-   * Cuantas piezas lleva la pista: 0 si esta quieta, y si no, las que hagan
-   * falta para cubrir el lienzo durante toda la vuelta (`unidad + lienzo`).
+   * How many pieces the track carries: 0 if it is still, otherwise as many as
+   * needed to cover the canvas for the whole lap (`unit + canvas`).
    *
-   * CUATRO con espejo, y no dos, porque el desplazamiento es de -50% de la
-   * pista. Con `A | espejo(A)` al final de la vuelta ves `espejo(A)` donde
-   * empezaste viendo `A`, y al reiniciar SALTA. La unidad que se repite no es
-   * la copy, es la PAREJA: con `A | espejo(A) | A | espejo(A)`, a -50% la
-   * tercera pieza esta donde estaba la primera y son identicas.
+   * FOUR with mirroring, not two, because the displacement is -50% of the
+   * track. With `A | mirror(A)`, at the end of the lap you see `mirror(A)` where
+   * you started by seeing `A`, and on restart it JUMPS. The unit that repeats is
+   * not the copy, it is the PAIR: with `A | mirror(A) | A | mirror(A)`, at -50%
+   * the third piece is where the first one was, and they are identical.
    *
-   * Se descubrio mirando el bucle en el visor: se veia el salto en cada vuelta.
-   * El diseno decia "dos copies, la segunda en espejo, -50%", que solo es
-   * continuo SIN espejo.
+   * It was found by watching the loop in the viewer: the jump showed on every lap.
+   * The design said "two copies, the second mirrored, -50%", which is only
+   * continuous WITHOUT mirroring.
    */
   copies: number;
-  /** Estilos del container que se anima. Vacio si la capa esta quieta. */
+  /** Styles of the container that is animated. Empty if the layer is still. */
   container: Record<string, string>;
   /**
-   * Estilos que llevan LAS DOS copies.
+   * Styles carried by BOTH copies.
    *
-   * Existe porque la pista es `display: flex; width: max-content`: dentro de un
-   * container de ancho indefinido, una copy con ancho en porcentaje colapsa y
-   * las dos acaban superpuestas en vez de una al lado de otra. Fijar la base de
-   * flex en pixeles lo impide.
+   * It exists because the track is `display: flex; width: max-content`: inside a
+   * container of indefinite width, a copy with a percentage width collapses and
+   * the two end up overlapping instead of side by side. Fixing the flex basis in
+   * pixels prevents that.
    *
-   * Va en el plan y no en cada lado A PROPOSITO: cuando el editor lo resolvio
-   * por su cuenta y el player no, volvimos a tener dos comportamientos: la
-   * vista previa correcta y el archivo publicado roto. Si el ancho es parte del
-   * plan, ninguno de los dos puede olvidarlo.
+   * It lives in the plan and not on each side ON PURPOSE: when the editor resolved
+   * it on its own and the player did not, we again had two behaviours: the correct
+   * preview and the broken published file. If the width is part of the plan,
+   * neither one can forget it.
    */
   copy: Record<string, string>;
   /**
-   * Estilos que llevan las copies IMPARES (la 2a y la 4a). Vacio si no hay
-   * espejo: son las que se reflejan.
+   * Styles carried by the ODD copies (the 2nd and the 4th). Empty if there is no
+   * mirroring: these are the ones that are reflected.
    */
   secondCopy: Record<string, string>;
 }
 
-/** Clase de la pista que se anima. La ponen el player y el editor: si cada uno
- *  inventara la suya, el CSS de abajo solo funcionaria en uno de los dos. */
+/** Class of the track that is animated. Both the player and the editor set it: if
+ *  each one invented its own, the CSS below would only work in one of the two. */
 export const TRACK_CLASS = "oim-parallax-pista";
 
 /** How far each piece reaches under the next one, in layer pixels. */
 const SEAM_OVERLAP_PX = 1;
 
 /**
- * TODO el CSS que el efecto necesita. Se inyecta una vez por shadow root o
- * documento.
+ * ALL the CSS the effect needs. Injected once per shadow root or document.
  *
- * Va junto a `infiniteLayerPlan` A PROPOSITO: la funcion emite
- * `--oim-parallax-hover` y esta hoja es lo unico que le da significado. Cuando
- * el generador y su consumidor viven en archivos distintos, uno de los dos se
- * queda atras y el resultado es un ajuste que no ajusta nada -es exactamente lo
- * que le paso a `damping` y a `seamlessTile` en el motor viejo-.
+ * It sits next to `infiniteLayerPlan` ON PURPOSE: the function emits
+ * `--oim-parallax-hover` and this sheet is the only thing that gives it meaning.
+ * When the generator and its consumer live in different files, one of them falls
+ * behind and the result is a setting that adjusts nothing -exactly what happened
+ * to `damping` and `seamlessTile` in the old engine.
  *
- * El desplazamiento es de UNA UNIDAD exacta -`--oim-parallax-unidad`-, no de un
- * porcentaje: el numero de piezas depende del lienzo, asi que un -50% fijo solo
- * seria correcto cuando la pista mide justo dos unidades.
+ * The displacement is exactly ONE UNIT -`--oim-parallax-unidad`-, not a
+ * percentage: the number of pieces depends on the canvas, so a fixed -50% would
+ * only be correct when the track measures exactly two units.
  *
- * `--oim-parallax-hover` solo se lee DENTRO de `:hover`, asi que su valor
- * "paused" significa "pausa mientras el cursor este encima"; sin la variable,
- * el `running` por defecto deja la animacion como estaba.
+ * `--oim-parallax-hover` is only read INSIDE `:hover`, so its value "paused"
+ * means "pause while the cursor is over it"; without the variable, the default
+ * `running` leaves the animation as it was.
  */
 export const CSS_PARALLAX = `@keyframes oim-parallax-infinite {
   0% { transform: translateX(0px); }
@@ -94,16 +93,16 @@ export const CSS_PARALLAX = `@keyframes oim-parallax-infinite {
 }`;
 
 /**
- * Traduce la configuracion de una capa infinita a estilos CSS puros.
+ * Translates an infinite layer's configuration into pure CSS styles.
  *
- * Principio:
- * - Si la capa esta quieta (velocidad <= 0) o el ancho es invalido,
- *   no se duplica ni se anima para no alterar el DOM ni duplicate elementos fijos.
- * - Si se mueve, la duracion se calcula exactamente como ancho / velocidad.
- * - El espejo solo afecta a la segunda copy, nunca al container.
+ * Principle:
+ * - If the layer is still (speed <= 0) or the width is invalid, it is neither
+ *   duplicated nor animated, so the DOM is not altered and fixed elements are not duplicated.
+ * - If it moves, the duration is computed exactly as width / speed.
+ * - Mirroring only affects the second copy, never the container.
  *
- * @param cfg Configuracion de la capa infinita
- * @param anchoPiezaPx Ancho del elemento o artboard en pixeles
+ * @param cfg Configuration of the infinite layer
+ * @param anchoPiezaPx Width of the element or artboard in pixels
  */
 export function infiniteLayerPlan(
   cfg: InfiniteLayer,
@@ -128,25 +127,24 @@ export function infiniteLayerPlan(
     };
   }
 
-  // LA UNIDAD que se repite: una pieza sin espejo, la PAREJA con espejo. Con
-  // `A | espejo(A)` la vuelta no cierra hasta pasar las dos, porque
-  // espejo(A) != A.
+  // THE UNIT that repeats: one piece without mirroring, the PAIR with mirroring.
+  // With `A | mirror(A)` the lap does not close until both have passed, because
+  // mirror(A) != A.
   const piezasPorUnidad = cfg.mirror ? 2 : 1;
   const unidadPx = anchoPiezaPx * piezasPorUnidad;
 
-  // CUANTAS PIEZAS: las que hagan falta para que la pista cubra el lienzo
-  // durante TODA la vuelta, o sea `unidad + lienzo`. Es lo que hacen los
-  // motores 2D -repeticiones = ancho de camara / ancho del tile- y lo que
-  // faltaba aqui: el numero estaba fijo en 2 o 4, que solo acierta cuando la
-  // capa mide justo lo que el lienzo.
+  // HOW MANY PIECES: as many as needed for the track to cover the canvas during
+  // the WHOLE lap, that is `unit + canvas`. This is what 2D engines do
+  // -repetitions = camera width / tile width- and what was missing here: the
+  // number was fixed at 2 or 4, which is only right when the layer measures
+  // exactly the canvas.
   //
-  // Sin esto, una capa mas estrecha que el lienzo deja bandas vacias a los
-  // lados -el fallo que se veia en el editor- y una mas ancha monta piezas que
-  // nadie ve.
+  // Without this, a layer narrower than the canvas leaves empty bands at the
+  // sides -the fault seen in the editor- and a wider one builds pieces nobody sees.
   const lienzo = Number.isFinite(anchoLienzoPx) && anchoLienzoPx > 0 ? anchoLienzoPx : anchoPiezaPx;
   let copies = Math.ceil(lienzo / anchoPiezaPx) + piezasPorUnidad;
-  // Con espejo el numero tiene que ser PAR: media pareja rompe la simetria y
-  // vuelve el salto.
+  // With mirroring the number must be EVEN: half a pair breaks the symmetry and
+  // brings back the jump.
   if (cfg.mirror && copies % 2 !== 0) copies += 1;
 
   const duracion = unidadPx / cfg.speedPxSec;
@@ -166,7 +164,7 @@ export function infiniteLayerPlan(
     // slot in the player is a column flex with `align-items: center`, and the
     // track is wider than the layer: centred, it stuck out on both sides and,
     // for half of every lap, the right part of the layer had no piece over it
-    // (library, 4 Oct 2026). Ignored where the parent is not a flex box.
+    // (library). Ignored where the parent is not a flex box.
     "align-self": "flex-start",
     "flex-shrink": "0",
     "--oim-parallax-unidad": `${unidadPx}px`,
@@ -181,15 +179,15 @@ export function infiniteLayerPlan(
     container["--oim-parallax-hover"] = "paused";
   }
 
-  // `flex: 0 0 <ancho>px` en vez de `width`: dentro de la pista flex es la
-  // unica forma de que el ancho no se negocie con el hermano.
+  // `flex: 0 0 <width>px` instead of `width`: inside the flex track, this is the
+  // only way for the width not to be negotiated with the sibling.
   //
   // Each piece is also stretched SEAM_OVERLAP_PX to the right, under the next
   // one. Pieces that only touch leave a seam: scaled and moving, the joint
   // falls on a fractional screen pixel, the browser paints the last pixel of
   // one piece and the first of the next half transparent, and the background
   // shows through as a 1 px line travelling with the scene (seen in the viewer
-  // on 3 Oct 2026). Stretching instead of shifting keeps every column of the
+  // at the time). Stretching instead of shifting keeps every column of the
   // art and keeps the unit exact; the scale is (w + 1) / w, invisible.
   const stretch = (anchoPiezaPx + SEAM_OVERLAP_PX) / anchoPiezaPx;
   const copy: Record<string, string> = {
@@ -215,23 +213,22 @@ export function infiniteLayerPlan(
 }
 
 /**
- * Inyecta la hoja de estilos de parallax una sola vez por shadow root o documento.
+ * Injects the parallax style sheet once per shadow root or document.
  */
 export function ensureParallaxKeyframes(raiz: ShadowRoot | Document | null): void {
   if (!raiz) return;
   const styleId = "oim-parallax-styles";
   if (raiz.getElementById(styleId)) return;
 
-  // El destino NO es siempre `raiz`. En un shadow root si, pero un Document
-  // admite un unico elemento raiz -ya tiene <html>- y un appendChild sobre el
-  // lanza HierarchyRequestError: "Only one element on document allowed". En el
-  // editor eso dejaba la pantalla EN BLANCO en cualquier proyecto.
+  // The target is NOT always `raiz`. In a shadow root it is, but a Document
+  // accepts a single root element -it already has <html>- and an appendChild on
+  // it throws HierarchyRequestError: "Only one element on document allowed". In
+  // the editor that left the screen BLANK in every project.
   //
-  // No lo vio nadie: la firma acepta `Document`, asi que TypeScript daba el
-  // codigo por bueno; y happy-dom permite ese appendChild, asi que la prueba de
-  // idempotencia pasaba. El entorno de pruebas era mas permisivo que el
-  // navegador, que es la forma mas traicionera de este fallo: no es que faltara
-  // la prueba, es que la prueba mentia.
+  // Nobody saw it: the signature accepts `Document`, so TypeScript passed the
+  // code; and happy-dom allows that appendChild, so the idempotency test passed.
+  // The test environment was more permissive than the browser, which is the
+  // most treacherous form of this fault: the test was not missing, it was lying.
   const destino: Node = (raiz as Document).head || raiz;
 
   const styleEl = (raiz.ownerDocument || (raiz as Document)).createElement("style");

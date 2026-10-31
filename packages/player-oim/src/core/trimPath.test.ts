@@ -24,7 +24,7 @@
 import { describe, it, expect } from "vitest";
 import { getTrimCss } from "./trimPath";
 
-/** El visor lee `style` del .oim, no un `Shape`, así que el molde es estructural. */
+/** The viewer reads `style` from the .oim, not a `Shape`, so the mold is structural. */
 function makeStyle(overrides: Record<string, unknown>) {
   return { strokeWidth: 2, ...overrides };
 }

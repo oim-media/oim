@@ -7,17 +7,17 @@
 import { resolveCssColor } from './dynamicColors.js';
 
 /**
- * La sombra como `drop-shadow`, que sigue la SILUETA y no la caja.
+ * The shadow as `drop-shadow`, which follows the SILHOUETTE and not the box.
  *
- * `box-shadow` dibuja el rectangulo del elemento: una sombra sobre un circulo
- * salia cuadrada.
+ * `box-shadow` draws the element's rectangle: a shadow on a circle
+ * came out square.
  *
- * **La cadena tiene que ser identica a la del editor**
- * (its shadow module), con espacio detras de cada coma del `rgba`. La
- * misma tabla de casos esta en las pruebas de los dos repositorios.
+ * **The chain must be identical to the editor's**
+ * (its shadow module), with a space after each comma in the `rgba`. The
+ * same table of cases is in the tests of both repositories.
  *
- * No reutiliza `hexToRgba` de `ImageEngine` a proposito: aquel compone sin
- * espacios y se usa en otro sitio, asi que cambiarlo seria tocar algo ajeno.
+ * It does not reuse `hexToRgba` from `ImageEngine` on purpose: that one composes without
+ * spaces and is used elsewhere, so changing it would touch something that is not ours.
  */
 export function dropShadowCss(style: {
   shadowOffsetX?: number;
@@ -35,23 +35,23 @@ export function dropShadowCss(style: {
 }
 
 /**
- * Si la sombra de este slot debe seguir los GLIFOS en vez de la silueta.
+ * Whether this slot's shadow must follow the GLYPHS instead of the silhouette.
  *
- * Solo el text. Es el unico caso donde `text-shadow` es lo correcto, porque
- * sigue cada letra en vez del rectangulo que las contiene.
+ * Text only. It is the only case where `text-shadow` is correct, because it
+ * follows each letter instead of the rectangle that contains them.
  *
- * Todo lo demas va por `drop-shadow`, que sigue el canal alfa y por tanto sale
- * bien sobre cualquier cosa que se pinte: una forma, una imagen o un SVG.
+ * Everything else goes through `drop-shadow`, which follows the alpha channel and so comes
+ * out right over anything that is painted: a shape, an image or an SVG.
  *
- * **Un tipo desconocido va por la silueta**, a proposito. Pecar de
- * `drop-shadow` es lo seguro: un `text-shadow` sobre algo sin glifos no pinta
- * NADA, y ese silencio es exactamente el fallo que esta funcion arregla — el
- * vector de un `.oim` real llegaba con sus seis campos `shadow*` y
- * `shadowEnabled: true`, y en el visor no se veia nada.
+ * **An unknown type goes by the silhouette**, on purpose. Erring towards
+ * `drop-shadow` is the safe choice: a `text-shadow` over something without glyphs paints
+ * NOTHING, and that silence is exactly the failure this function fixes: the vector of a
+ * real `.oim` arrived with its six `shadow*` fields and `shadowEnabled: true`, and nothing
+ * was seen in the viewer.
  *
- * No se amplia `isGeoLike` de `ImageEngine`: se usa en nueve sitios mas
- * -geometria, fill, dibujo de formas- y meter `svg` ahi los cambiaria
- * todos.
+ * `isGeoLike` of `ImageEngine` is not widened: it is used in nine other places
+ * (geometry, fill, shape drawing), and putting `svg` there would change
+ * all of them.
  */
 export function shadowFollowsGlyphs(slotType: string | undefined | null): boolean {
   return slotType === 'text';

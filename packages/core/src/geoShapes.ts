@@ -17,7 +17,7 @@
 
 export type ShapeDrawing =
   | { tipo: "polygon"; puntos: [number, number][] }
-  /** `rellenable: false` para los trazos abiertos: la linea. */
+  /** `rellenable: false` for open strokes: the line. */
   | { tipo: "path"; d: string; rellenable: boolean };
 
 export const GEO_SHAPES: Record<string, ShapeDrawing> = {
@@ -29,23 +29,23 @@ export const GEO_SHAPES: Record<string, ShapeDrawing> = {
   arrow: { tipo: "polygon", puntos: [[5, 40], [60, 40], [60, 20], [95, 50], [60, 80], [60, 60], [5, 60]] },
   diamond: { tipo: "polygon", puntos: [[50, 5], [95, 50], [50, 95], [5, 50]] },
   hexagon: { tipo: "polygon", puntos: [[25, 5], [75, 5], [95, 50], [75, 95], [25, 95], [5, 50]] },
-  // El circulo es un arco y no un poligono: aproximarlo con puntos le pondria
-  // facetas visibles al agrandarlo.
+  // The circle is an arc and not a polygon: approximating it with points would give it
+  // visible facets when enlarged.
   circle: { tipo: "path", d: "M 50,5 A 45,45 0 1,1 49.999,5 Z", rellenable: true },
   heart: {
     tipo: "path",
     d: "M 50,88 C 10,60 -5,30 15,12 C 30,-2 50,5 50,25 C 50,5 70,-2 85,12 C 105,30 90,60 50,88 Z",
     rellenable: true,
   },
-  // Abierta: rellenarla la convertiria en una barra.
+  // Open: filling it would turn it into a bar.
   line: { tipo: "path", d: "M 5,50 L 95,50", rellenable: false },
-  // Forma generativa: blob orgánico continuo
+  // Generative shape: continuous organic blob
   blob: {
     tipo: "path",
     d: "M 50,10 C 75,10 92,25 90,50 C 88,75 75,90 50,90 C 25,90 10,75 10,50 C 10,25 25,10 50,10 Z",
     rellenable: true,
   },
-  // Forma generativa: garabato / subrayado editorial abierto
+  // Generative shape: open editorial scribble / underline
   scribble: {
     tipo: "path",
     d: "M 5,80 Q 25,65 50,75 T 95,70 Q 75,85 50,82 T 5,88",
@@ -109,9 +109,9 @@ export const GEO_SHAPES: Record<string, ShapeDrawing> = {
 };
 
 /**
- * Las formas que puede tener un marco con foto: todas menos la linea y el
- * garabato, que son trazos abiertos. El rectangulo va primero, porque es el
- * marco por defecto y no esta en GEO_SHAPES.
+ * The shapes that a photo frame can take: all except the line and the
+ * scribble, which are open strokes. The rectangle goes first, because it is the
+ * default frame and is not in GEO_SHAPES.
  */
 export const FRAME_SHAPES: string[] = [
   "rectangle",
@@ -119,7 +119,7 @@ export const FRAME_SHAPES: string[] = [
 ];
 
 /**
- * Determina si una forma geométrica está en el catálogo oficial o es rect/rectangle.
+ * Determines whether a geometric shape is in the official catalogue or is rect/rectangle.
  */
 export function isKnownGeoShape(geoShape?: string): boolean {
   if (!geoShape) return false;
@@ -128,16 +128,16 @@ export function isKnownGeoShape(geoShape?: string): boolean {
 }
 
 /**
- * El dibujo de una forma, o `undefined` si no se conoce.
+ * The drawing of a shape, or `undefined` if it is not known.
  *
- * SIN valor por defecto a proposito. Cuando esto caia a "pinta el fondo y ya",
- * cinco formas del catalogo -corazon, rombo, hexagono, flecha y linea- se
- * publicaban como rectangulos de color, y en silencio. Quien llama tiene que
- * decidir que hacer con lo desconocido.
+ * NO default value on purpose. When this fell back to "just paint the background",
+ * five catalogue shapes (heart, rhombus, hexagon, arrow and line) were published as
+ * coloured rectangles, silently. The caller has to
+ * decide what to do with the unknown value.
  *
- * El rectangulo NO esta en la tabla: no se dibuja con esta geometria sino con
- * el ancho, el alto y el radio de esquina en pixeles reales, porque un radio en
- * un viewBox estirado sale ovalado.
+ * The rectangle is NOT in the table: it is not drawn with this geometry but with the
+ * width, height and corner radius in real pixels, because a radius in a stretched viewBox
+ * comes out oval.
  */
 export function shapeDrawing(geoShape?: string): ShapeDrawing | undefined {
   if (!geoShape) return undefined;
@@ -145,7 +145,7 @@ export function shapeDrawing(geoShape?: string): ShapeDrawing | undefined {
   return GEO_SHAPES[geoShape];
 }
 
-/** Los puntos de un poligono como atributo `points` de SVG. */
+/** The points of a polygon as an SVG `points` attribute. */
 export function pointsToAttribute(puntos: [number, number][]): string {
   return puntos.map(([x, y]) => `${x},${y}`).join(" ");
 }

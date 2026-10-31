@@ -33,7 +33,7 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
     const styleEl = shadowRoot.querySelector("style");
     expect(styleEl?.textContent).toContain(CSS_PARALLAX);
 
-    // Segunda llamada idempotente
+    // Second call is idempotent
     ensureParallaxKeyframes(shadowRoot);
     expect(shadowRoot.querySelectorAll("style")).toHaveLength(1);
   });
@@ -87,31 +87,31 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
 
     await engine.renderSlots();
 
-    // Comprobar que se normalizo s.parallax
+    // Check that s.parallax was normalized
     expect(engine.metadata.slots[0].parallax).toBeDefined();
     expect(engine.metadata.slots[0].parallax.enabled).toBe(true);
 
-    // Comprobar que el slot contiene la pista
+    // Check that the slot contains the track
     const slotEl = engine._overlay.querySelector('[data-slot-id="cielo"]') as HTMLElement;
     expect(slotEl).not.toBeNull();
 
     const pista = slotEl.querySelector(`.${TRACK_CLASS}`) as HTMLElement;
     expect(pista).not.toBeNull();
     expect(pista.style.getPropertyValue("--oim-parallax-hover")).toBe("paused");
-    // Con espejo la vuelta recorre DOS piezas, asi que a 40 px/s sobre 800 px
-    // tarda 40s, no 20. Si tardara 20 el espejo doblaria la velocidad sin que
-    // nadie hubiera tocado el ajuste.
+    // With a mirror the return trip covers TWO pieces, so at 40 px/s over 800 px
+    // it takes 40s, not 20. If it took 20, the mirror would double the speed without
+    // anyone having touched the setting.
     expect(pista.style.animationDuration).toBe("40s");
 
-    // Con espejo son CUATRO piezas: con dos, el reinicio salta.
+    // With a mirror there are FOUR pieces: with two, the reset jumps.
     const copies = pista.children;
     expect(copies).toHaveLength(4);
 
-    // Comprobar que la segunda copy tiene el espejo scaleX(-1)
+    // Check that the second copy has the mirror scaleX(-1)
     const copia2 = copies[1] as HTMLElement;
     expect(copia2.style.transform).toContain("scaleX(-1)");
 
-    // Comprobar que el shadowRoot tiene inyectado el style de parallax
+    // Check that the shadowRoot has the parallax style injected
     const styleEl = shadowRoot.querySelector("#oim-parallax-styles");
     expect(styleEl).not.toBeNull();
   });
@@ -146,11 +146,11 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
     const slotEl = engine._overlay.querySelector('[data-slot-id="cabana"]') as HTMLElement;
     expect(slotEl).not.toBeNull();
 
-    // NO debe existir pista
+    // There must NOT be a track
     const pista = slotEl.querySelector(`.${TRACK_CLASS}`);
     expect(pista).toBeNull();
 
-    // Debe tener solo el wrapper original
+    // It must have only the original wrapper
     expect(slotEl.children).toHaveLength(1);
     expect(slotEl.classList.contains(TRACK_CLASS)).toBe(false);
   });
@@ -171,7 +171,7 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
           style: {
             width: "800px",
             height: "600px",
-            filter: "brightness(1)", // normalmente pondria overflow visible si no fuera grupo
+            filter: "brightness(1)", // would normally set overflow visible if this were not a group
           },
         },
       ],
@@ -264,7 +264,7 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
       ],
     };
 
-    // No debe lanzar ninguna excepcion al abrir
+    // It must not throw any exception when opening
     await expect(engine.renderSlots()).resolves.not.toThrow();
 
     const slotEl1 = engine._overlay.querySelector('[data-slot-id="slot-legado-1"]');
@@ -275,10 +275,10 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
 });
 
 describe("el ancho de las copies sale del plan, no del motor", () => {
-  // Cuando el editor fijo el ancho por su cuenta y el player no, volvimos a
-  // tener dos comportamientos: vista previa correcta y archivo publicado roto.
-  // La pista es `width: max-content`: sin un ancho en pixeles las dos copies
-  // colapsan una sobre otra.
+  // When the editor fixed the width on its own and the player did not, we went back
+  // to two behaviors: a correct preview and a broken published file.
+  // The track is `width: max-content`: without a pixel width the two copies
+  // collapse on top of each other.
   it("LAS DOS copies llevan la base de flex del plan", async () => {
     const host = document.createElement("div");
     document.body.appendChild(host);
@@ -323,13 +323,13 @@ describe("el ancho de las copies sale del plan, no del motor", () => {
 });
 
 describe("el bucle apagado es velocidad cero", () => {
-  // El caso real que motivo el rediseno: cielo y arboles en movimiento, y una
-  // montana y una cabana QUIETAS delante, en el mismo grupo. Duplicar la cabana
-  // daria dos cabanas.
+  // The real case that motivated the redesign: sky and trees in motion, and a
+  // mountain and a cabin STILL in front, in the same group. Duplicating the cabin
+  // would give two cabins.
   //
-  // `parallax.enabled` dice que la capa tiene parallax; `infinite.enabled` dice
-  // si se desplaza en bucle. Mirar solo el primero dejaba la capa quieta
-  // duplicada y desfilando a su velocidad guardada.
+  // `parallax.enabled` says the layer has parallax; `infinite.enabled` says
+  // whether it scrolls in a loop. Looking only at the first left the still layer
+  // duplicated and scrolling past at its saved speed.
   it("una capa con parallax y el bucle desactivado NO se duplica", async () => {
     const host = document.createElement("div");
     document.body.appendChild(host);
@@ -349,7 +349,7 @@ describe("el bucle apagado es velocidad cero", () => {
           content: { es: "Cabana quieta" },
           style: {
             parallax: {
-              enabled: true,                 // la capa TIENE parallax
+              enabled: true,                 // the layer HAS parallax
               mode: "infinite_horizontal",
               infinite: { enabled: false, speedPxSec: 20, direction: "right_to_left" },
             },
@@ -383,19 +383,19 @@ describe("cuantas piezas monta la pista", () => {
     return shadow.querySelector(`.${TRACK_CLASS}`) as HTMLElement;
   };
 
-  // La capa de estas pruebas mide 400 y el lienzo 800: hacen falta piezas para
-  // cubrir `lienzo + unidad`, no un numero fijo.
+  // The layer in these tests measures 400 and the canvas 800: pieces are needed
+  // to cover `canvas + unit`, not a fixed number.
 
   it("con espejo monta un numero PAR y suficiente", async () => {
-    // Con espejo la unidad es la pareja (800), asi que la pista debe medir al
-    // menos 1600: cuatro piezas de 400.
+    // With a mirror the unit is the pair (800), so the track must measure at
+    // least 1600: four pieces of 400.
     const pista = await montar(true);
     expect(pista.children.length % 2, "media pareja rompe la simetria").toBe(0);
     expect(pista.children.length * 400).toBeGreaterThanOrEqual(800 + 800);
   });
 
   it("sin espejo, las justas para cubrir el lienzo mas una", async () => {
-    // 800/400 = 2, mas una para que el bucle tenga a donde ir = 3.
+    // 800/400 = 2, plus one so the loop has somewhere to go = 3.
     const pista = await montar(false);
     expect(pista.children).toHaveLength(3);
   });
@@ -411,10 +411,10 @@ describe("cuantas piezas monta la pista", () => {
 });
 
 describe("una forma geo circular se dibuja redonda", () => {
-  // El exportador escribe SIEMPRE `border_radius_px: 0`, que llega como
-  // `style.borderRadius = '0px'`, y el bucle generico de styles corre DESPUES
-  // de aplicar la forma: el circulo acababa cuadrado. Llevaba asi desde
-  // siempre; se destapo poniendo un sol en una escena de prueba.
+  // The exporter ALWAYS writes `border_radius_px: 0`, which arrives as
+  // `style.borderRadius = '0px'`, and the generic styles loop runs AFTER
+  // applying the shape: the circle ended up square. It had been like this
+  // always; it surfaced when a sun was placed in a test scene.
   it("el borde redondo del circulo no lo pisa el bucle de styles", async () => {
     const host = document.createElement("div");
     document.body.appendChild(host);
@@ -428,10 +428,10 @@ describe("una forma geo circular se dibuja redonda", () => {
       slots: [{
         id: "sol", type: "geo", width_px: 180, height_px: 180,
         content: {},
-        // Un `borderRadius: 0px` dentro de `style` es lo que acaba llegando a
-        // partir del `border_radius_px: 0` que el exportador escribe SIEMPRE.
-        // Es la condicion exacta que dejaba el circulo cuadrado: el bucle
-        // generico de styles corre DESPUES de aplicar la forma y lo pisaba.
+        // A `borderRadius: 0px` inside `style` is what ends up arriving from
+        // the `border_radius_px: 0` that the exporter ALWAYS writes.
+        // It is the exact condition that left the circle square: the generic
+        // styles loop runs AFTER applying the shape and overwrote it.
         style: { geoShape: "circle", fillColor: "#fb923c", borderRadius: "0px" },
       }],
     };
@@ -439,11 +439,11 @@ describe("una forma geo circular se dibuja redonda", () => {
     await (engine as never as { renderSlots: () => Promise<void> }).renderSlots();
     const sol = shadow.querySelector("[data-slot-id]") as HTMLElement;
     expect(sol, "no se monto el slot").toBeTruthy();
-    // Desde el 21 de agosto el circulo NO va con `border-radius`: se dibuja con
-    // un <path> igual que en el editor, y por eso el `borderRadius: 0px` del
-    // exportador ya no puede cuadrarlo. La condicion original de la prueba se
-    // conserva -ese style sigue en el slot- y lo que se comprueba es que la
-    // figura redonda sigue ahi.
+    // The circle is NOT drawn with `border-radius` any more: it is drawn with
+    // a <path>, as in the editor, which is why the exporter's `borderRadius: 0px`
+    // can no longer square it. The original test condition is kept (that style
+    // is still on the slot), and what is checked is that the round figure is
+    // still there.
     const arco = sol.querySelector("path");
     expect(arco, "el circulo no se dibujo").toBeTruthy();
     expect(arco!.getAttribute("d"), "no es un arco de radio 45").toContain("A 45,45");
@@ -462,9 +462,9 @@ describe("el sobredimensionado llega al nodo", () => {
     motor._overlay = document.createElement("div");
     motor._viewport.appendChild(motor._overlay);
     motor.metadata = {
-      // `canvasWidth`/`canvasHeight` y no `width`/`height`: el motor NO lee
-      // esas ultimas y caeria a 1080x1920 por defecto, con lo que la capa
-      // dejaria de tocar el borde y la prueba mediria otra cosa.
+      // `canvasWidth`/`canvasHeight` and not `width`/`height`: the engine does NOT read
+      // those last ones and would fall back to the 1080x1920 default, so the layer
+      // would stop touching the edge and the test would measure something else.
       canvasWidth: 800, canvasHeight: 600,
       slots: [
         { id: "horizonte", type: "geo", align: "left",
@@ -483,7 +483,7 @@ describe("el sobredimensionado llega al nodo", () => {
     const horizonte = host.shadowRoot!.querySelector('[data-slot-id="horizonte"]') as HTMLElement;
     const luna = host.shadowRoot!.querySelector('[data-slot-id="luna"]') as HTMLElement;
     expect(horizonte.style.getPropertyValue("--oim-scale")).toBe("1.24");
-    // La luna esta suelta: agrandarla seria cambiar el diseño sin motivo.
+    // The moon is loose: enlarging it would change the design for no reason.
     expect(luna.style.getPropertyValue("--oim-scale")).toBe("");
   });
 });
@@ -542,10 +542,10 @@ describe("una capa con bucle infinito no se sobredimensiona", () => {
 });
 
 describe("las copies se solapan en el player, no solo en el plan", () => {
-  // La linea de 1 px en la union se vio en el visor publicado. El plan ya
-  // trae el solape; esto comprueba que el motor lo aplica a CADA pieza, el
-  // origen incluido: sin `transform-origin: 0 0` el estiramiento se reparte a
-  // los dos lados y la copy reflejada se sale de su hueco.
+  // The 1 px line at the join was seen in the published viewer. The plan already
+  // carries the overlap; this checks that the engine applies it to EACH piece, the
+  // origin included: without `transform-origin: 0 0` the stretch is split between
+  // both sides and the mirrored copy spills out of its gap.
   it("cada pieza lleva el origen y el estiramiento; las impares, ademas, el espejo", async () => {
     const host = document.createElement("div");
     document.body.appendChild(host);

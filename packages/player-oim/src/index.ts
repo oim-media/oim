@@ -51,22 +51,20 @@ function detectMediaType(src: Blob | string, firstBytes: Uint8Array | null): 'im
 const OimPlayerElement = Object.create(HTMLElement.prototype);
 
 /**
- * Un `<oim-player>` sin cargar no ocupa NADA.
+ * An `<oim-player>` that has not loaded takes up NO space.
  *
- * Es un elemento a medida: por defecto es `display: inline` y sin content.
- * En una lista, los contenedores vacios colapsan sus margenes en uno solo y
- * TODOS los players quedan apilados en el mismo pixel. Medido con 24 en un
- * feed: los 24 reportaban `top: 700` y por tanto los 24 estaban "a la vista",
- * asi que los 24 se cargaban. La carga perezosa no puede funcionar si el hueco
- * no existe todavia.
+ * It is a custom element: by default it is `display: inline` and has no content.
+ * In a list, empty containers collapse their margins into one, and ALL the
+ * players end up stacked on the same pixel. Measured with 24 in a feed: all 24
+ * reported `top: 700`, so all 24 counted as "in view", and therefore all 24
+ * were loaded. Lazy loading cannot work if the gap does not exist yet.
  *
- * Se reserva sitio hasta que el motor pone `data-oim-cargado`, y NO se usa la
- * clase `oim-player-host`: esa se añade en `connectedCallback`, antes de
- * cargar nada, asi que como señal de "ya tiene content" no vale -se probó y
- * el hueco no llegaba a reservarse nunca-.
+ * Space is reserved until the engine sets `data-oim-cargado`, and the
+ * `oim-player-host` class is NOT used for this: it is added in
+ * `connectedCallback`, before anything is loaded, so as a signal of "already
+ * has content" it is no good -it was tried, and the gap never got reserved-.
  *
- * Con `:where()` para especificidad CERO: cualquier regla del autor gana sin
- * tener que pelear.
+ * Uses `:where()` for ZERO specificity: any author rule wins without a fight.
  */
 function ensureReservedSpace(): void {
   if (typeof document === 'undefined') return;
@@ -94,7 +92,7 @@ OimPlayerElement.connectedCallback = function (this: any) {
   if (this.hasAttribute('placeholder')) this._oimOptions.placeholder = this.getAttribute('placeholder');
   if (this.hasAttribute('allow-zoom')) this._oimOptions.allowZoom = this.getAttribute('allow-zoom') === 'true';
 
-  // Dark/light del sistema: en vivo, sin recargar. Se quita en disconnectedCallback.
+  // System dark/light mode: live, without reloading. Removed in disconnectedCallback.
   this._mqOscuro = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : null;
   this._onEsquema = () => this._engine && this._engine.aplicarPaleta();
   if (this._mqOscuro) this._mqOscuro.addEventListener('change', this._onEsquema);
@@ -103,32 +101,32 @@ OimPlayerElement.connectedCallback = function (this: any) {
 };
 
 /**
- * El dueño de "estoy activo".
+ * The owner of "I am active".
  *
- * Antes habia TRES mecanismos rozando la idea -el observador, `pause()` y la
- * clase `oim-player-paused`- y ninguno mandaba sobre los otros: cada uno
- * protegia un trozo y nadie protegia el conjunto.
+ * Before, there were THREE mechanisms brushing against the idea -the observer,
+ * `pause()` and the `oim-player-paused` class- and none of them governed the
+ * others: each one protected a piece and nobody protected the whole.
  *
- *   dormido -> ni se descarga
- *   listo   -> descargado y construido, quieto
- *   activo  -> se mueve
+ *   dormido (dormant) -> not even loaded
+ *   listo (ready)     -> loaded and built, still
+ *   activo (active)   -> moving
  */
 OimPlayerElement._replantearActividad = function (this: any) {
   if (!this._src || !this.isConnected) return;
 
   if (!this._observers) {
     if (!('IntersectionObserver' in window)) {
-      // Sin observador no hay forma de saber si se ve: se carga y se anima,
-      // que es como se comportaba antes de todo esto.
+      // Without an observer there is no way to know whether it is visible: it
+      // loads and animates, as it behaved before all of this.
       this._pasarA('activo');
       return;
     }
     const self = this;
     const fire = () => self._programarDecision();
 
-    // DOS observadores, UNA decision. Al cruzar margenes, guardamos el estado de
-    // interseccion para evitar llamar a getBoundingClientRect() de forma sincronica
-    // en cada frame durante desplazamientos rapidos a 120Hz.
+    // TWO observers, ONE decision. When crossing margins, we store the
+    // intersection state to avoid calling getBoundingClientRect() synchronously
+    // on every frame during fast scrolling at 120Hz.
     this._observers = [
       new IntersectionObserver((entries) => {
         const entry = entries[0];
@@ -161,13 +159,13 @@ OimPlayerElement._replantearActividad = function (this: any) {
 };
 
 /**
- * Aplaza la decision al siguiente frame.
+ * Defers the decision to the next frame.
  *
- * Al insertar varios players de golpe -`innerHTML` con una lista- hay un
- * instante ANTES de la maquetacion en que todos ocupan el mismo sitio y el
- * observador los reporta a TODOS como visibles. Medido: los 24 pasaban por
- * `dormido > activo > dormido`, y ese `activo` fantasma bastaba para
- * descargarlos enteros.
+ * When inserting several players at once -`innerHTML` with a list- there is an
+ * instant BEFORE layout in which they all occupy the same spot, and the observer
+ * reports ALL of them as visible. Measured: all 24 went through
+ * `dormido > activo > dormido`, and that ghost `activo` was enough to
+ * unload them all.
  */
 OimPlayerElement._programarDecision = function (this: any) {
   if (this._activityFrame) return;
@@ -179,11 +177,11 @@ OimPlayerElement._programarDecision = function (this: any) {
 };
 
 /**
- * Traduce la situacion al estado, y solo aqui.
+ * Translates the situation into a state, and only here.
  *
- * Usa el informe del observador cuando esta disponible para evitar reflows
- * sincronicos durante el desplazamiento; cae a la lectura de getBoundingClientRect()
- * cuando no hay informe (ej. pruebas o inicializacion).
+ * Uses the observer's report when it is available, to avoid synchronous reflows
+ * during scrolling; falls back to reading getBoundingClientRect() when there is
+ * no report (e.g. tests or initialization).
  */
 OimPlayerElement._decidir = function (this: any) {
   if (!this._src || !this.isConnected) return;
@@ -207,8 +205,8 @@ OimPlayerElement._decidir = function (this: any) {
   }
 
   if (this.getAttribute('activate-on') === 'hover') {
-    // En tactil no hay cursor: `hover` se comporta como `visible`, o el archivo
-    // no se moveria NUNCA en un movil.
+    // On touch there is no cursor: `hover` behaves like `visible`, or the file
+    // would NEVER move on a phone.
     const hasPointer = typeof matchMedia === 'function' && matchMedia('(hover: hover)').matches;
     if (hasPointer) moves = moves && !!this._hasPointer;
   }
@@ -225,7 +223,7 @@ OimPlayerElement._pasarA = function (this: any, state: string) {
   if (this._activityState === state) return;
   this._activityState = state;
 
-  if (state === 'dormido') return;   // nada que construir ni que parar
+  if (state === 'dormido') return;   // nothing to build or stop
   if (!this._engine) this._initPlayer();
   if (state === 'activo') this.play();
   else this.pause();
@@ -316,16 +314,16 @@ OimPlayerElement.attributeChangedCallback = function (this: any, name: string, o
   } else if (name === 'palette' && oldVal !== newVal) {
     if (this._engine) this._engine.aplicarPaleta();
   } else if (name === 'src' && oldVal !== newVal) {
-    // NO se llama a `_initPlayer()` aqui, y es el arreglo entero.
+    // `_initPlayer()` is NOT called here, and this is the whole fix.
     //
-    // Esta funcion se dispara al parsear `<oim-player src="...">`, ANTES de
-    // `connectedCallback`, asi que el motor quedaba creado antes de que el
-    // `IntersectionObserver` existiera: la carga perezosa no se usaba nunca.
-    // Medido el 21 de agosto con 12 players y 1 visible: 12 motores.
+    // This function fires when parsing `<oim-player src="...">`, BEFORE
+    // `connectedCallback`, so the engine was created before the
+    // `IntersectionObserver` existed: lazy loading was never used.
+    // Measured with 12 players and 1 visible: 12 engines.
     this._src = newVal;
     if (this._engine) {
-      // Cambiar el `src` de un player YA cargado si recarga: quien lo cambia
-      // esta pidiendo ver otra cosa, no montando una lista.
+      // Changing the `src` of a player that is ALREADY loaded reloads it:
+      // whoever changes it is asking to see something else, not mounting a list.
       this._initPlayer();
     } else {
       this._replantearActividad();
@@ -333,14 +331,14 @@ OimPlayerElement.attributeChangedCallback = function (this: any, name: string, o
   } else if (name === 'activate-on' && oldVal !== newVal) {
     this._replantearActividad();
   } else if (name === 'lang' && oldVal !== newVal) {
-    // Por el motor, NO por `setLang()` publico: ese despierta al player, y
-    // `<oim-player src lang="es">` es la forma normal de escribirlo. Pasar por
-    // el metodo publico aqui hacia que los 24 de una lista se cargaran igual
-    // -medido en el navegador: 23 dormidos y 24 con motor-.
+    // Through the engine, NOT the public `setLang()`: that wakes the player, and
+    // `<oim-player src lang="es">` is the normal way to write it. Going through
+    // the public method here made all 24 in a list load anyway -measured in the
+    // browser: 23 dormant and 24 with an engine-.
     //
-    // Un ATRIBUTO es configuracion; una llamada de JS es una peticion. Solo la
-    // segunda justifica una descarga que nadie ha visto. Si el motor no existe
-    // todavia, `_initPlayer` ya lee el atributo `lang` al construirlo.
+    // An ATTRIBUTE is configuration; a JS call is a request. Only the second
+    // justifies a download nobody has seen. If the engine does not exist yet,
+    // `_initPlayer` already reads the `lang` attribute when building it.
     if (this._engine && this._engine.setLang) this._engine.setLang(newVal);
   } else if ((name === 'fit' || name === 'align') && oldVal !== newVal) {
     if (!this._oimOptions) this._oimOptions = {};
@@ -362,10 +360,10 @@ OimPlayerElement.attributeChangedCallback = function (this: any, name: string, o
   } else if (name === 'auto-rotate-lang' && oldVal !== newVal) {
     this._startAutoRotateLang();
   } else if ((name === 'mode' || name === 'disable-animations' || name === 'disable-actions') && oldVal !== newVal) {
-    // Los tres cambian lo mismo, asi que se resuelven juntos y por el MISMO
-    // camino que al construir. Resolver aqui a mano -«este atributo vale
-    // true»- ignoraba la precedencia: `mode` dejaba de mandar en cuanto se
-    // tocaba un atributo suelto una sola vez.
+    // All three change the same thing, so they are resolved together and by the
+    // SAME path as when building. Resolving here by hand -"this attribute is
+    // true"- ignored the precedence: `mode` stopped governing as soon as a
+    // single attribute was touched once.
     if (this._engine) {
       const reducedMotion = typeof window !== 'undefined' && window.matchMedia
         && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -442,16 +440,16 @@ OimPlayerElement._initPlayer = function (this: any) {
 };
 
 /**
- * Despierta al player si nadie lo habia hecho.
+ * Wakes the player if nobody has done so yet.
  *
- * La carga perezosa elimina la descarga que NADIE pidio. Una llamada a la API
- * SI la pide: sin esto, `getMetadata()` sobre un `.oim` al fondo de una lista
- * devolveria `null` donde antes devolvia datos, y romperiamos a quien la use.
+ * Lazy loading removes a download NOBODY asked for. An API call DOES ask for it:
+ * without this, `getMetadata()` on a `.oim` at the bottom of a list would
+ * return `null` where it used to return data, and we would break whoever uses it.
  */
 OimPlayerElement._despertar = function (this: any) {
-  // `_loading` y no solo `_engine`: `_initPlayer` tarda en asignar el motor,
-  // asi que `_pasarA` lo llamaba y acto seguido `play()` -> `_despertar()` lo
-  // llamaba OTRA VEZ. Medido: dos cargas y el doble de peticiones por player.
+  // `_loading` and not only `_engine`: `_initPlayer` takes a while to assign the
+  // engine, so `_pasarA` called it and then `play()` -> `_despertar()` called it
+  // AGAIN. Measured: two loads and double the requests per player.
   if (this._engine || this._loading || !this._src) return;
   this._initPlayer();
 };

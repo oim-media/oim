@@ -10,9 +10,9 @@ import { MASK_SHAPE_PATHS } from "./layerComposition";
  * designing and a CIRCLE when played. The lookup silently falls back to
  * `circle` for an unknown name, so the bug only showed in the output.
  *
- * Estas pruebas no pueden comparar contra el editor -son repos distintos- pero
- * si fijan el contrato: si alguien anade una figura alli y olvida esta tabla,
- * hay que actualizar tambien esta lista, y ese paso obliga a mirar aqui.
+ * These tests cannot compare against the editor (they are separate repos), but they
+ * do pin the contract: if someone adds a shape there and forgets this table, this
+ * list must be updated too, and that step forces a look here.
  */
 const FIGURAS_ESPERADAS = [
   "circle",
@@ -35,8 +35,8 @@ describe("MASK_SHAPE_PATHS", () => {
   });
 
   it("no tiene siluetas de mas que el editor no sepa producir", () => {
-    // Una silueta que solo existe aqui no se puede elegir desde el editor:
-    // es codigo muerto que aparenta ser una opcion.
+    // A silhouette that exists only here cannot be chosen from the editor:
+    // it is dead code that looks like an option.
     expect(Object.keys(MASK_SHAPE_PATHS).sort()).toEqual([...FIGURAS_ESPERADAS].sort());
   });
 

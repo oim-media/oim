@@ -5,17 +5,17 @@
  */
 
 /**
- * Genera la matriz canónica de 20 vectores de conformidad con la TUBERIA REAL.
+ * Generates the canonical matrix of 20 conformance vectors through the REAL PIPELINE.
  *
- * `/v1/oim/compile` normaliza los slots a `cqw` y `/v1/oim/package` sanea,
- * firma y empotra. Producirlos a mano habria dado ficheros que se parecen a un
- * .oim; producirlos asi da .oim de verdad, con su firma valida y su saneado
- * aplicado — que es justo lo que un segundo lector tiene que saber leer.
+ * `/v1/oim/compile` normalizes the slots to `cqw` and `/v1/oim/package` sanitizes,
+ * signs and embeds. Producing them by hand would give files that look like an
+ * .oim; producing them this way gives real .oim files, with a valid signature and
+ * sanitization applied, which is exactly what a second reader has to know how to read.
  *
- * La imagen base se reutiliza de un vector existente y pesa unos 3 KB. Los
- * .oim publicados pesan megabytes porque llevan su lienzo rasterizado dentro;
- * una suite de conformidad no puede pesar eso, y la imagen no es lo que se
- * comprueba.
+ * The base image is reused from an existing vector and weighs about 3 KB. The
+ * published .oim files weigh megabytes because they carry their rasterized canvas
+ * inside; a conformance suite cannot weigh that, and the image is not what is
+ * checked.
  *
  *   node tools/generar-vectores.mjs
  */
@@ -35,7 +35,7 @@ if (!CLAVE) {
   process.exit(1);
 }
 
-/** Los vectores que no genera este guion —vienen de una exportacion real—. */
+/** The vectors this script does not generate: they come from a real export. */
 const DESCRIPCIONES = {
   "interactive": "Un boton con accion de clic, esquinas por lado y dos idiomas. Exportado desde el editor, no generado aqui.",
 };
@@ -608,13 +608,13 @@ for (const caso of casos) {
 }
 
 /**
- * El resultado esperado: lo que un lector conforme debe extraer.
+ * The expected result: what a conforming reader must extract.
  *
- * NO es el metadato entero. Un volcado completo se rompe cada vez que el
- * compilado añade un campo, y entonces se regenera sin mirar — un vector que se
- * actualiza a ciegas deja de comprobar nada. Aqui van los campos por los que
- * dos implementaciones pueden discrepar de verdad: la geometria normalizada, la
- * jerarquia, la profundidad, la tipografía, efectos visuales y la interactividad declarada.
+ * NOT the entire metadata. A full dump breaks every time the compiler adds a
+ * field, and then it gets regenerated without looking. A vector that is updated
+ * blindly stops checking anything. The fields here are those on which two
+ * implementations can truly disagree: the normalized geometry, the hierarchy,
+ * the depth, the typography, the visual effects and the declared interactivity.
  */
 const DEL_ESTILO = [
   "width", "height", "fontSize", "borderRadius", "fillColor",

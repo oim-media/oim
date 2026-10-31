@@ -8,8 +8,8 @@ import { escalaComoFactor, stateStyles } from "./states";
 
 describe("la escala de un estado interactivo viaja en porcentaje", () => {
   it("103 agranda un 3%, no ciento tres veces", () => {
-    // El fallo real, medido en obras publicadas el 18 de septiembre de 2026:
-    // el valor se pasaba tal cual a un CSS que multiplica.
+    // The real failure, measured on published works:
+    // the value was passed as-is to a CSS that multiplies.
     expect(escalaComoFactor(103)).toBeCloseTo(1.03);
     expect(stateStyles({ scale: 103 })["--oim-slot-hover-scale"]).toBe("1.03");
   });
@@ -28,9 +28,9 @@ describe("la escala de un estado interactivo viaja en porcentaje", () => {
 
   describe("el puente para los multiplicadores que el contrato permitia", () => {
     it("un 1.1 de los de antes sigue siendo un 10% mas, no un 1%", () => {
-      // Sin el puente, dividir entre 100 lo encogeria a 0.011: la capa
-      // desapareceria al pasar el raton. No hay ningun archivo asi, pero el
-      // contrato los admitia y la cuenta no distingue por si sola.
+      // Without the bridge, dividing by 100 would shrink it to 0.011: the layer would
+      // vanish when the mouse went over it. No file like that exists, but the contract
+      // allowed them and the arithmetic does not tell them apart on its own.
       expect(escalaComoFactor(1.1)).toBe(1.1);
       expect(escalaComoFactor(1.5)).toBe(1.5);
     });
@@ -42,8 +42,8 @@ describe("la escala de un estado interactivo viaja en porcentaje", () => {
   });
 
   it("opacity sigue en porcentaje, que ya lo estaba", () => {
-    // La pareja que delataba el fallo: misma unidad, mismo objeto, y solo una
-    // de las dos se dividia.
+    // The pair that gave the bug away: same unit, same object, and only one of the
+    // two was divided.
     expect(stateStyles({ opacity: 50 }).opacity).toBe("0.5");
   });
 });

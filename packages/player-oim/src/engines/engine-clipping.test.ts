@@ -8,11 +8,11 @@
  */
 
 /**
- * Que la regla llegue al elemento.
+ * That the rule reaches the element.
  *
- * `recorte.test.ts` fija la decision; esto fija que el motor la escribe, y
- * sobre todo que el grupo de parallax SIGUE recortando: es el unico caso en el
- * que recortar es el efecto, y el que se rompe si alguien reordena las reglas.
+ * `recorte.test.ts` pins the decision; this pins that the engine writes it, and above
+ * all that the parallax group STILL CLIPS: it is the only case in which clipping is the
+ * effect, and the one that breaks if someone reorders the rules.
  */
 
 import { describe, it, expect } from "vitest";
@@ -44,26 +44,25 @@ const text = (extra: any = {}) => ({
 
 describe("el recorte en el motor", () => {
   /**
-   * El fallo medido: con `line-height: 1.2`, Poppins corta 0,70 px de tinta
-   * por abajo a 48 px y Playfair Display 0,20. Son las dos fuentes de los
-   * .oim reales, y el corte crece con el size.
+   * The measured failure: with `line-height: 1.2`, Poppins cuts 0.70 px of ink off the
+   * bottom at 48 px and Playfair Display 0.20. These are the two fonts of the real .oim
+   * files, and the cut grows with the size.
    */
   it("un text no recorta sus propios glifos", async () => {
     expect(await recorteDe(text())).toBe("visible");
   });
 
   /**
-   * Aqui NO se comprueba «una capa cualquiera recorta»: el motor vuelve a
-   * escribir `overflow` mas adelante en otras tres ramas -las de SVG y forma-
-   * para que el trazo no se corte, asi que una figura geometrica acaba en
-   * `visible` por un camino distinto. Afirmarlo aqui comprobaria esas ramas,
-   * no esta regla. `recorte.test.ts` cubre la decision; esto cubre el cable.
+   * Here it is NOT checked that «any layer clips»: the engine writes `overflow` again later
+   * in three other branches (the SVG and shape ones) so that the stroke is not cut, so a
+   * geometric figure ends up as `visible` by a different path. Asserting it here would test
+   * those branches, not this rule. `recorte.test.ts` covers the decision; this covers the wire.
    */
 
   /**
-   * Su recorte ES el efecto: la caja es la ventana por la que pasa la pista.
-   * Si el text ganara a esta regla, un bucle de titulares mostraria la cinta
-   * entera y dejaria de ser un bucle.
+   * Its clipping IS the effect: the box is the window the track passes through.
+   * If the text rule won over this one, a headline loop would show the whole tape
+   * and stop being a loop.
    */
   it("un grupo de parallax DE TEXTO sigue recortando", async () => {
     expect(await recorteDe({ ...text(), isParallaxGroup: true })).toBe("hidden");

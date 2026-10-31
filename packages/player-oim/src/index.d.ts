@@ -28,14 +28,14 @@ export interface OimPlayerInstance extends HTMLElement {
   getSecurityStatus(): OimSecurityStatus | null;
   setLang(lang: string): void;
   /**
-   * Idiomas presentes en el archivo.
+   * Languages present in the file.
    *
-   * No es una lista declarada: el player la deduce de las claves de contenido
-   * de cada capa, asi que refleja lo que de verdad esta traducido. Ya existia
-   * en el prototipo; faltaba en el contrato.
+   * It is not a declared list: the player derives it from the content keys of
+   * each layer, so it reflects what is actually translated. It already existed
+   * in the prototype; it was missing from the contract.
    */
   readonly languages: string[];
-  /** El idioma que se esta mostrando ahora mismo. */
+  /** The language being shown right now. */
   readonly currentLang: string | null;
   setZoom(zoom: number): void;
   play(): void;

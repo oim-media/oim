@@ -57,8 +57,8 @@ describe("setLang quirurgico", () => {
   });
 
   it("un cambio de SOLO size escribe la propiedad sin reconstruir", async () => {
-    // El caso del editor: ajustar el size del aleman no debe reiniciar la
-    // animacion de la capa que estas mirando.
+    // The editor case: adjusting the German size must not restart the
+    // animation of the layer you are looking at.
     const antes = nodo("grande");
     motor.setLang("en");
     await new Promise((r) => setTimeout(r, 250));
@@ -85,9 +85,9 @@ describe("setLang quirurgico", () => {
 
 describe("el bucle de parallax infinito sobrevive al cambio de idioma", () => {
   it("la pista de una capa que no cambia sigue siendo el MISMO nodo", async () => {
-    // Es el motivo de toda esta tarea: antes, cambiar de idioma reconstruia el
-    // lienzo entero y devolvia todas las pistas a la posicion 0. El salto que
-    // se cerro el 19 de agosto tenia aqui una puerta trasera.
+    // This is the reason for this whole task: before, switching language rebuilt
+    // the entire canvas and sent all the tracks back to position 0. The jump
+    // that was closed earlier had a back door here.
     const { host, motor } = montar([
       { id: "titulo", type: "text", content: { es: "Hola", en: "Hello" }, position: [50, 20], style: {} },
       {
@@ -106,10 +106,10 @@ describe("el bucle de parallax infinito sobrevive al cambio de idioma", () => {
     motor.setLang("en");
     await new Promise((r) => setTimeout(r, 250));
 
-    // El mismo nodo, no uno equivalente: un nodo nuevo es una animacion CSS
-    // que vuelve a empezar, que es exactamente lo que se veia como un salto.
+    // The same node, not an equivalent one: a new node is a CSS animation that
+    // starts again, which is exactly what was seen as a jump.
     expect(host.shadowRoot!.querySelector(".oim-parallax-pista")).toBe(pistaAntes);
-    // Y el titulo si cambio, para que la prueba no pase por no hacer nada.
+    // And the title did change, so the test does not pass by doing nothing.
     expect(host.shadowRoot!.querySelector('[data-slot-id="titulo"]')!.textContent).toContain("Hello");
   });
 });
@@ -118,7 +118,7 @@ describe("la transicion del cambio de idioma", () => {
   const visorDe = (m: any) => m._viewport as HTMLElement;
 
   it("si no cambia ninguna capa no hay transicion", () => {
-    // Difuminar para mostrar la misma imagen es un parpadeo que miente.
+    // Blurring to show the same image is a flicker that lies.
     const { motor } = montar([
       { id: "solo", type: "text", content: { es: "OIM", en: "OIM" }, position: [50, 50], style: {} },
     ]);
@@ -145,7 +145,7 @@ describe("la transicion del cambio de idioma", () => {
 
     motor.setLang("en");
     await new Promise((r) => setTimeout(r, 60));
-    // A los 60ms sigue difuminandose: el lienzo todavia no ha cambiado.
+    // At 60ms it is still blurring: the canvas has not changed yet.
     expect(host.shadowRoot!.querySelector('[data-slot-id="titulo"]')).toBe(antes);
 
     await new Promise((r) => setTimeout(r, 400));
@@ -153,10 +153,10 @@ describe("la transicion del cambio de idioma", () => {
   });
 
   /**
-   * OJO al medir opacidad: el motor monta TODAS las capas en `opacity: 0` y las
-   * funde al entrar (ImageEngine:1331), y se asienta hacia los 100ms. Medir
-   * antes de eso mide SU fundido, no el nuestro, y la prueba pasa aunque el
-   * nuestro no exista. Aqui se espera siempre a que se asiente.
+   * CAREFUL when measuring opacity: the engine mounts ALL layers at `opacity: 0`
+   * and fades them in on entry (ImageEngine:1331), and it settles around 100ms.
+   * Measuring before that measures ITS fade, not ours, and the test passes even
+   * if ours does not exist. Here it always waits for it to settle.
    */
   const conMenosMovimiento = async (fn: (h: HTMLElement, m: any) => Promise<void>) => {
     const previo = window.matchMedia;
@@ -168,9 +168,9 @@ describe("la transicion del cambio de idioma", () => {
       const { host, motor } = montar([
         { id: "titulo", type: "text", content: { es: "Hola", en: "Hello" },
           position: [50, 20], style: { fontSize: "16px", opacity: 40 } },
-        // Cambia SOLO el size: no se reconstruye, asi que la unica opacidad
-        // que se ve al final es la que restaura el fundido. Si cambiara el
-        // content, el nodo nuevo traeria su propia entrada y taparia el fallo.
+        // It changes ONLY the size: it is not rebuilt, so the only opacity visible
+        // at the end is the one the fade restores. If the content changed, the
+        // new node would bring its own entry and would cover the bug.
         { id: "translucida", type: "text", content: { es: "Precio", en: "Precio" },
           position: [50, 65], style: { fontSize: "16px", fontSizes: { en: "13px" }, opacity: 40 } },
         { id: "pulsante", type: "text", content: { es: "Ya", en: "Yes" }, position: [50, 35], style: {} },
@@ -178,15 +178,15 @@ describe("la transicion del cambio de idioma", () => {
       ]);
       motor.lang = "es";
       await motor.renderSlots();
-      // La pasada de entrada del motor reescribe la opacidad de TODAS las capas
-      // y tarda mas cuanto mas hay. Se espera a que la translucida llegue a su
-      // valor real: medir antes mide su fundido, no el nuestro.
+      // The engine's entry pass rewrites the opacity of ALL layers and takes
+      // longer the more there are. It waits until the translucent one reaches its
+      // real value: measuring before that measures its fade, not ours.
       const traslucida = () =>
         (host.shadowRoot!.querySelector('[data-slot-id="translucida"]') as HTMLElement).style.opacity;
       for (let i = 0; i < 40 && traslucida() !== "0.4"; i++) {
         await new Promise((r) => setTimeout(r, 25));
       }
-      expect(traslucida()).toBe("0.4"); // la entrada ya termino
+      expect(traslucida()).toBe("0.4"); // the entry has already finished
       await fn(host, motor);
     } finally {
       (window as any).matchMedia = previo;
@@ -197,33 +197,33 @@ describe("la transicion del cambio de idioma", () => {
     (h.shadowRoot!.querySelector('[data-slot-id="' + id + '"]') as HTMLElement).style.opacity;
 
   it("con reduced-motion no difumina el lienzo, pero SI funde lo que cambia", async () => {
-    // Quitar la transicion del todo dejaria un salto seco justo donde mira el
-    // ojo. Un fundido de opacidad no desplaza nada: cumple la peticion.
+    // Removing the transition altogether would leave a dry jump right where the
+    // eye is looking. An opacity fade displaces nothing: it meets the request.
     await conMenosMovimiento(async (host, motor) => {
-      expect(op(host, "titulo")).toBe("0.4"); // asentada
+      expect(op(host, "titulo")).toBe("0.4"); // settled
       motor.setLang("en");
       expect((motor._viewport as HTMLElement).style.filter).not.toContain("blur");
-      expect(op(host, "titulo")).toBe("0");   // se esta yendo
+      expect(op(host, "titulo")).toBe("0");   // on its way out
     });
   });
 
   it("el fundido devuelve la capa a SU opacidad, no a 1", async () => {
     await conMenosMovimiento(async (host, motor) => {
       motor.setLang("en");
-      // A los 150ms: nuestro fundido ya restauro (120ms) y todavia no ha saltado
-      // el `animationend` que la entrada del motor deja registrado, que tambien
-      // reescribe la opacidad (ImageEngine:1994). Los dos acaban en el mismo
-      // valor, asi que en produccion converge; medir mas tarde solo mide al otro.
+      // At 150ms our fade has already restored (120ms), and the `animationend`
+      // that the engine's entry leaves registered has not fired yet. That one also
+      // rewrites the opacity (ImageEngine:1994). Both end at the same value, so in
+      // production it converges; measuring later only measures the other one.
       await new Promise((r) => setTimeout(r, 150));
-      // Una capa al 40% no puede acabar opaca por cambiar de idioma.
+      // A layer at 40% cannot end up opaque by switching language.
       expect(op(host, "translucida")).toBe("0.4");
       expect(host.shadowRoot!.querySelector('[data-slot-id="titulo"]')!.textContent).toContain("Hello");
     });
   });
 
   it("una capa con animacion propia de opacidad cambia sin fundido", async () => {
-    // Los dos fundidos pelearian y se veria un parpadeo que nadie sabria
-    // explicar. Mas vale cambio seco que dos animaciones discutiendo.
+    // The two fades would fight each other and a flicker would appear that
+    // nobody could explain. A dry change is better than two animations arguing.
     await conMenosMovimiento(async (host, motor) => {
       const el = host.shadowRoot!.querySelector('[data-slot-id="pulsante"]') as HTMLElement;
       el.style.animationName = "oim-latido-opacity";
@@ -236,7 +236,7 @@ describe("la transicion del cambio de idioma", () => {
   it("una capa que no cambia no se funde", async () => {
     await conMenosMovimiento(async (host, motor) => {
       motor.setLang("en");
-      // "quieto" dice lo mismo en los dos idiomas: no tiene por que parpadear.
+      // "quieto" says the same in both languages: it has no reason to flicker.
       expect(op(host, "quieto")).toBe("1");
     });
   });

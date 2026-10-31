@@ -12,8 +12,8 @@ import { infiniteLayerPlan, CSS_PARALLAX, TRACK_CLASS, ensureParallaxKeyframes }
 
 describe("parallaxCss - infiniteLayerPlan", () => {
   it("una capa quieta no se duplica ni se anima", () => {
-    // La regla que protege el caso real: montana y cabana dentro del grupo,
-    // inmoviles. Duplicarlas daria dos cabanas.
+    // The rule that protects the real case: a mountain and a cabin inside the group,
+    // still. Duplicating them would give two cabins.
     const p = infiniteLayerPlan({ speedPxSec: 0, direction: "right_to_left", mirror: true, pauseOnHover: false }, 800);
     expect(p.duplicate).toBe(false);
     expect(p.container).toEqual({});
@@ -53,7 +53,7 @@ describe("parallaxCss - infiniteLayerPlan", () => {
   });
 
   it("una velocidad negativa o un ancho cero no producen NaN ni Infinity", () => {
-    // Un `animation-duration: Infinitys` no falla: no hace nada, en silencio.
+    // An `animation-duration: Infinitys` does not throw: it does nothing, silently.
     const p = infiniteLayerPlan({ speedPxSec: 40, direction: "right_to_left", mirror: true, pauseOnHover: false }, 0);
     expect(p.duplicate).toBe(false);
     const n = infiniteLayerPlan({ speedPxSec: -10, direction: "right_to_left", mirror: true, pauseOnHover: false }, 800);
@@ -62,17 +62,17 @@ describe("parallaxCss - infiniteLayerPlan", () => {
 });
 
 describe("el CSS que da significado a lo que emite el generador", () => {
-  // Sin estas pruebas, `--oim-parallax-hover` seria una variable que se escribe
-  // y no lee nadie: un ajuste que no ajusta nada. Es el fallo de `damping` y de
-  // `seamlessTile` en el motor viejo, y el reason de este rediseno.
+  // Without these tests, `--oim-parallax-hover` would be a variable that is written
+  // and read by nobody: a setting that adjusts nothing. It is the failure of `damping`
+  // and `seamlessTile` in the old engine, and the reason for this redesign.
 
   it("la variable de pausa se LEE en alguna parte del CSS", () => {
     expect(CSS_PARALLAX).toContain("var(--oim-parallax-hover");
   });
 
   it("y se lee dentro de :hover, no en la regla base", () => {
-    // Leerla en la regla base pausaria la animacion SIEMPRE, no al pasar el
-    // cursor. El valor "paused" solo tiene sentido dentro de `:hover`.
+    // Reading it in the base rule would pause the animation ALWAYS, not on hover.
+    // The value "paused" only makes sense inside `:hover`.
     const lineas = CSS_PARALLAX.split(String.fromCharCode(10));
     const reglaHover = lineas.find((l) => l.includes(":hover")) || "";
     expect(reglaHover).toContain("var(--oim-parallax-hover");
@@ -81,15 +81,15 @@ describe("el CSS que da significado a lo que emite el generador", () => {
   });
 
   it("los keyframes desplazan UNA UNIDAD, no un porcentaje fijo", () => {
-    // Un -50% solo seria correcto si la pista midiera siempre dos unidades, y
-    // el numero de piezas depende del lienzo. La unidad viaja en una variable.
+    // A -50% would only be correct if the track always measured two units, and
+    // the number of pieces depends on the canvas. The unit travels in a variable.
     expect(CSS_PARALLAX).toContain("var(--oim-parallax-unidad");
     expect(CSS_PARALLAX).not.toContain("translateX(-50%)");
   });
 
   it("respeta prefers-reduced-motion", () => {
-    // Un fondo que se desplaza sin parar es justo lo que esa preferencia pide
-    // detener, y no cuesta nada.
+    // A background that scrolls non-stop is exactly what that preference asks to
+    // stop, and it costs nothing.
     expect(CSS_PARALLAX).toContain("prefers-reduced-motion");
   });
 
@@ -99,14 +99,14 @@ describe("el CSS que da significado a lo que emite el generador", () => {
 });
 
 describe("el ancho de las copies tambien lo decide el plan", () => {
-  // Cuando el editor lo resolvio por su cuenta y el player no, volvimos a tener
-  // dos comportamientos: vista previa correcta y archivo publicado roto. El
-  // ancho es parte del plan para que ninguno de los dos pueda olvidarlo.
+  // When the editor resolved it on its own and the player did not, we again had
+  // two behaviours: a correct preview and a broken published file. The width is part
+  // of the plan so that neither of the two can forget it.
 
   it("cada copy fija su ancho en pixeles, no en porcentaje", () => {
-    // La pista es `width: max-content`: dentro de un container de ancho
-    // indefinido, un ancho en porcentaje colapsa y las dos copies se
-    // superponen en vez de quedar lado a lado.
+    // The track is `width: max-content`: inside a container of undefined width, a
+    // percentage width collapses and the two copies overlap instead of sitting side
+    // by side.
     const p = infiniteLayerPlan({ speedPxSec: 40, direction: "right_to_left", mirror: true, pauseOnHover: false }, 800);
     expect(p.copy["flex"]).toBe("0 0 800px");
     expect(JSON.stringify(p.copy)).not.toContain("%");
@@ -125,10 +125,10 @@ describe("el ancho de las copies tambien lo decide el plan", () => {
 });
 
 describe("ensureParallaxKeyframes: donde deja la hoja", () => {
-  // El editor pasa `document` y el player pasa un shadow root. Un Document
-  // admite UN solo elemento raiz, asi que appendChild sobre el lanza
-  // HierarchyRequestError y deja el editor en blanco. La firma aceptaba
-  // Document y el codigo no lo soportaba.
+  // The editor passes `document` and the player passes a shadow root. A Document
+  // allows ONE single root element, so appendChild on it throws
+  // HierarchyRequestError and leaves the editor blank. The signature accepted
+  // Document and the code did not support it.
 
   it("en un Document la hoja va al <head>, no al documento", () => {
     document.getElementById("oim-parallax-styles")?.remove();
@@ -157,11 +157,11 @@ describe("ensureParallaxKeyframes: donde deja la hoja", () => {
 });
 
 describe("el espejo necesita CUATRO piezas, no dos", () => {
-  // Con `A | espejo(A)` y un desplazamiento de -50%, al final de la vuelta ves
-  // `espejo(A)` donde empezaste viendo `A`, y al reiniciar SALTA. Se vio en el
-  // visor: el bucle daba un tiron en cada vuelta.
+  // With `A | mirror(A)` and a -50% offset, at the end of the lap you see
+  // `mirror(A)` where you started seeing `A`, and on restart it JUMPS. Seen in the
+  // viewer: the loop jerked on every lap.
   //
-  // La unidad que se repite no es la copy, es la PAREJA.
+  // The unit that repeats is not the copy, it is the PAIR.
 
   it("sin espejo bastan dos piezas", () => {
     const p = infiniteLayerPlan({ speedPxSec: 40, direction: "right_to_left", mirror: false, pauseOnHover: false }, 800);
@@ -179,8 +179,8 @@ describe("el espejo necesita CUATRO piezas, no dos", () => {
   });
 
   it("con espejo la vuelta dura el doble, porque recorre dos piezas", () => {
-    // La velocidad en px/s tiene que seguir significando lo mismo. Sin este
-    // factor, activar el espejo doblaria la velocidad sin tocar el ajuste.
+    // The speed in px/s has to keep meaning the same. Without this
+    // factor, enabling the mirror would double the speed without touching the setting.
     const sin = infiniteLayerPlan({ speedPxSec: 40, direction: "right_to_left", mirror: false, pauseOnHover: false }, 800);
     const con = infiniteLayerPlan({ speedPxSec: 40, direction: "right_to_left", mirror: true, pauseOnHover: false }, 800);
     expect(sin.container["animation-duration"]).toBe("20s");
@@ -189,18 +189,18 @@ describe("el espejo necesita CUATRO piezas, no dos", () => {
 });
 
 describe("cuantas piezas: las que pida el lienzo, no un numero fijo", () => {
-  // La capa manda el TAMANO de la pieza -es el arte, y repetirlo es el efecto-.
-  // El lienzo manda CUANTAS: las que hagan falta para cubrirlo durante toda la
-  // vuelta. Es lo que hacen los motores 2D, y lo que faltaba: el numero estaba
-  // fijo en 2 o 4, que solo acierta cuando la capa mide lo mismo que el lienzo.
+  // The layer sets the SIZE of the piece: it is the art, and repeating it is the effect.
+  // The canvas sets HOW MANY: as many as needed to cover it for the whole
+  // lap. That is what 2D engines do, and what was missing: the number was
+  // fixed at 2 or 4, which only works when the layer measures the same as the canvas.
 
   const cfg = (mirror: boolean) => ({
     speedPxSec: 40, direction: "right_to_left" as const, mirror, pauseOnHover: false,
   });
 
   it("una capa estrecha monta piezas de sobra para tapar el lienzo", () => {
-    // 180 de pieza en 800 de lienzo: con 4 piezas la pista mide 720 y quedan
-    // 80 px sin cubrir. Es el hueco lateral que se veia en el editor.
+    // 180 of piece on 800 of canvas: with 4 pieces the track measures 720 and
+    // 80 px are left uncovered. That is the side gap that was seen in the editor.
     const p = infiniteLayerPlan(cfg(true), 180, 800);
     expect(p.copies * 180).toBeGreaterThanOrEqual(800 + 180 * 2);
     expect(p.copies % 2, "con espejo el numero debe ser par").toBe(0);
@@ -227,7 +227,7 @@ describe("cuantas piezas: las que pida el lienzo, no un numero fijo", () => {
   });
 
   it("la duracion es la de la unidad: la velocidad sigue significando px/s", () => {
-    // 180 px a 40 px/s son 4.5s; con espejo la vuelta son 360 px, o sea 9s.
+    // 180 px at 40 px/s is 4.5s; with the mirror the lap is 360 px, i.e. 9s.
     expect(infiniteLayerPlan(cfg(false), 180, 800).container["animation-duration"]).toBe("4.5s");
     expect(infiniteLayerPlan(cfg(true), 180, 800).container["animation-duration"]).toBe("9s");
   });
@@ -239,13 +239,13 @@ describe("cuantas piezas: las que pida el lienzo, no un numero fijo", () => {
 });
 
 describe("las copies se solapan: sin rendija en la union", () => {
-  // Medido el 3 oct 2026 en el visor: cada copy a x1,936 cae en un pixel de
-  // pantalla fraccionario, el navegador pinta medio transparente el ultimo
-  // pixel de una y el primero de la siguiente, y por la rendija asoma el
-  // fondo -una linea vertical de 1 px que viaja con la escena-. Solapar 1 px
-  // la quita; se comprobo a mano en el navegador antes de escribir esto.
+  // Measured in the viewer: each copy at x 1,936 lands on a fractional screen
+  // pixel, so the browser paints the last pixel of one copy and the first of the
+  // next half transparent, and through the gap the background shows: a 1 px vertical
+  // line that travels with the scene. Overlapping by 1 px removes it; it was checked
+  // by hand in the browser before writing this.
 
-  /** Donde acaba el punto `x` de la pieza segun sus estilos (origen 0 0). */
+  /** Where the point `x` of the piece ends according to its styles (origin 0 0). */
   const place = (style: Record<string, string>, x: number): number => {
     expect(style["transform-origin"], "sin origen fijo el escalado se reparte a los dos lados").toBe("0 0");
     const fns = [...(style["transform"] || "").matchAll(/(translateX|scaleX)\(([-\d.e]+)(px)?\)/g)];
@@ -263,7 +263,7 @@ describe("las copies se solapan: sin rendija en la union", () => {
   it("la copy reflejada tambien se estira hacia la derecha, y sigue reflejada", () => {
     const p = plan(true);
     const reflected = { ...p.copy, ...p.secondCopy };
-    // Su borde izquierdo (x = 0) acaba a la derecha y el derecho en el origen.
+    // Its left edge (x = 0) ends up on the right and its right edge at the origin.
     expect(place(reflected, 0)).toBeCloseTo(577, 6);
     expect(place(reflected, 576)).toBeCloseTo(0, 6);
   });
@@ -276,7 +276,7 @@ describe("las copies se solapan: sin rendija en la union", () => {
 });
 
 describe("the track starts at the layer's left edge", () => {
-  // 4 Oct 2026, library: an image slot is a column flex with
+  // Library: an image slot is a column flex with
   // `align-items: center`. The track is wider than the layer, so it was
   // centred and stuck out on both sides; for half of every lap the right part
   // of the layer had no piece over it (measured: track at -288 px in a

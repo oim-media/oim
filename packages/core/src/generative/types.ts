@@ -19,12 +19,12 @@ export interface DefsRegistry {
 }
 
 export interface RenderContext {
-  width: number;          // Ancho real del lienzo del proyecto
-  height: number;         // Alto real
-  bleed: number;          // Sangrado en unidades de usuario (default 1)
-  rng: Rng;               // Flujo determinista mulberry32
-  defs: DefsRegistry;     // Deduplicación de gradientes y filtros
-  ramp: (i: number, total: number) => string; // Color de la capa i
+  width: number;          // Real width of the project canvas
+  height: number;         // Real height
+  bleed: number;          // Bleed in user units (default 1)
+  rng: Rng;               // Deterministic mulberry32 stream
+  defs: DefsRegistry;     // Gradient and filter deduplication
+  ramp: (i: number, total: number) => string; // Color of layer i
 }
 
 export type PrimitiveName = 
@@ -72,16 +72,16 @@ export interface GeneratorSpec {
 }
 
 /**
- * La entrada de `renderGenerativeSVG`.
+ * The input of `renderGenerativeSVG`.
  *
- * Todo es opcional menos `generatorId` a proposito. Este objeto no lo construye
- * el codigo: llega de una fila persistida, asi que puede ser parcial o venir de
- * una version anterior del esquema. El motor ya lo trata asi -lee `config.params
- * ?` y `config.colors?.mode`-, y este tipo hace que esas guardas dejen de
- * contradecir la firma.
+ * Everything is optional except `generatorId`, on purpose. This object is not built
+ * by the code: it arrives from a persisted row, so it may be partial or come from an
+ * older schema version. The engine already treats it that way (it reads `config.params
+ * ?` and `config.colors?.mode`), and this type stops those guards from
+ * contradicting the signature.
  *
- * El `GenerativeBackground` del editor, con todos los campos presentes, es
- * asignable a esto por tipado estructural.
+ * The editor's `GenerativeBackground`, with all fields present, is assignable to this
+ * by structural typing.
  */
 export interface GenerativeConfig {
   generatorId: string;

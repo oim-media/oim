@@ -7,17 +7,17 @@
 import { isSafeCssColor, type DynamicColorRole } from "./dynamic-colors.js";
 
 /**
- * El motor de PATRONES: teselas repetibles -nubes, rayas, puntos, estrellas-
- * que se pintan como fondo de una capa.
+ * The PATTERN engine: repeatable tiles (clouds, stripes, dots, stars)
+ * painted as the background of a layer.
  *
- * No confundir con `generative/`, que es otra cosa: aquel es un catalogo de
- * generadores de composicion -mallas, blobs, degradados radiales- con esquema
- * de parametros y galeria propia. Este produce un SVG que se repite.
+ * Not to be confused with `generative/`, which is something else: that one is a
+ * catalogue of composition generators (meshes, blobs, radial gradients) with a
+ * parameter schema and its own gallery. This one produces an SVG that repeats.
  *
- * Vivia en `player-oim/src/core/generativeEngine.ts` y el editor tenia la misma
- * funcion dentro de `utils.ts`, mezclada con ayudantes de ficheros y de Lottie.
- * Las dos implementaciones solo diferian en la DECLARACION de tipos, no en el
- * cuerpo -16 lineas, todas comentarios y dos campos opcionales-.
+ * It lived in `player-oim/src/core/generativeEngine.ts`, and the editor had the
+ * same function inside `utils.ts`, mixed with helpers for files and Lottie.
+ * The two implementations differed only in the TYPE DECLARATION, not in the
+ * body (16 lines, all of them comments, plus two optional fields).
  */
 
 export interface GenerativeEngineOptions {
@@ -81,14 +81,14 @@ export function generatePatternSVG(options: {
   colors?: string[];
   svgs?: string[];
   sizes?: number[];
-  // `counts` y `dispersions` los usa el EDITOR al empaquetar -App.tsx- y no
-  // estaban en la copy del player. Se toma la interfaz del editor porque es
-  // la que describe lo que de verdad viaja: la otra los habria descartado en
-  // silencio al comprobar tipos.
+  // `counts` and `dispersions` are used by the EDITOR when packaging and were
+  // not in the player's copy. The editor's interface is taken because it is the
+  // one that describes what really travels: the other would have silently
+  // discarded them when type-checking.
   counts?: number[];
   dispersions?: number[];
-  count?: number; // cantidad de elementos
-  dispersion?: number; // desorden (0 a 1)
+  count?: number; // number of elements
+  dispersion?: number; // disorder (0 to 1)
   complexity?: number;
   curvature?: number;
   blur?: number;
@@ -121,7 +121,7 @@ export function generatePatternSVG(options: {
 
   const { counts, dispersions } = options;
   if ((counts && counts.length > 0) || (dispersions && dispersions.length > 0)) {
-    // Per-figure layout (13 Sept): each figure on its own grid, with its own
+    // Per-figure layout: each figure on its own grid, with its own
     // count and dispersion. Only when the lists arrive, so files without them
     // keep the exact tile above (pinned by a fixture test).
     const globalCount = count !== undefined && count > 0 ? count : 15;

@@ -2,13 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { resolveBackgroundFit } from './ImageEngine';
 
 /**
- * El contrato editor↔player para el fondo: el editor hornea un SVG y el player
- * lo pinta. La única decisión que el player toma por su cuenta es si ese SVG se
- * repite como mosaico o cubre el lienzo entero.
+ * The editor↔player contract for the background: the editor bakes an SVG and
+ * the player paints it. The only decision the player makes on its own is
+ * whether that SVG repeats as a tile or covers the entire canvas.
  *
- * Equivocarse hacia 'cover' rompe todos los .oim ya publicados (patrones de
- * íconos que dejarían de repetirse); equivocarse hacia 'tile' convierte una
- * escena generativa en un mosaico deformado.
+ * Getting it wrong toward 'cover' breaks every .oim already published (icon
+ * patterns would stop repeating); getting it wrong toward 'tile' turns a
+ * generative scene into a distorted mosaic.
  */
 describe('resolveBackgroundFit', () => {
   it('defaults to tile so already-published .oim files keep repeating', () => {

@@ -6,12 +6,11 @@
  */
 
 /**
- * Un .oim es un sandbox: abrirlo no conecta con nadie.
+ * A .oim is a sandbox: opening it does not connect to anyone.
  *
- * Decision de producto (24 sept 2026): el archivo se comporta como una imagen
- * cualquiera. La UNICA peticion aceptada es la clave publica que el player no
- * traiga incluida. Cada prueba de aqui cierra una via medida que la rompia;
- * ver docs/superpowers/specs/2026-09-24-player-sandbox-sin-red-design.md.
+ * Product decision: the file behaves like any ordinary image. The ONLY request
+ * accepted is the public key that the player does not already include. Each
+ * test here closes a measured route that used to break this rule.
  */
 
 import { describe, it, expect } from "vitest";
@@ -34,8 +33,8 @@ function fuentes(dir: string): string[] {
 
 describe("ninguna fuente del player pide tipografias a Google", () => {
   it("no queda ninguna referencia a fonts.googleapis.com ni fonts.gstatic.com", () => {
-    // El editor incrusta las fuentes. Pedir las que falten a Google revelaba
-    // la IP de quien abre el archivo a un tercero.
+    // The editor embeds its fonts. Requesting missing ones from Google would
+    // reveal the IP address of whoever opens the file to a third party.
     const culpables = fuentes(SRC).filter((f) => /fonts\.(googleapis|gstatic)\.com/.test(fs.readFileSync(f, "utf8")));
     expect(culpables.map((f) => path.relative(SRC, f))).toEqual([]);
   });
@@ -48,8 +47,9 @@ describe("isSandboxImageSrc: una imagen viaja dentro del archivo o no se pinta",
   });
 
   it("rechaza cualquier URL de red, tambien las nuestras y localhost", () => {
-    // Un <img src="https://..."> es un pixel de rastreo: el autor sabria quien
-    // mira su obra. Ni siquiera assets.oim.media: el archivo debe bastarse solo.
+    // An <img src="https://..."> is a tracking pixel: the author would learn who
+    // is viewing their work. Not even assets.oim.media: the file must be
+    // self-contained.
     for (const src of [
       "https://tracker.example/p.gif",
       "https://assets.oim.media/u/abc.png",

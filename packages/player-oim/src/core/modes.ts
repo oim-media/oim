@@ -5,17 +5,18 @@
  */
 
 /**
- * Que puede hacer un .oim segun donde lo pongan.
+ * What a .oim may do depending on where it is placed.
  *
- * El mismo archivo vale para una rejilla de veinte miniaturas y para una vista
- * ampliada donde solo esta el, y no debe comportarse igual en las dos. Quien lo
- * sabe es la PAGINA: el player no ve fuera de si mismo, asi que no puede
- * deducir que hay mas archivos a la vista. Se declara, no se detecta.
+ * The same file is valid both for a grid of twenty thumbnails and for an
+ * enlarged view where it is the only one, and it must not behave the same way
+ * in both. The one who knows is the PAGE: the player cannot see beyond itself,
+ * so it cannot infer that there are more files in view. It is declared, not
+ * detected.
  *
- * **Por que vive aqui y no en el constructor del motor.** Hace falta en dos
- * sitios —al construir, y al cambiar un atributo en caliente— y tenerlo escrito
- * dos veces es la clase de duplicado que acaba divergiendo en silencio: el
- * player se comportaria de una forma al montarse y de otra al reconfigurarse.
+ * **Why it lives here and not in the engine constructor.** It is needed in two
+ * places -at construction, and when an attribute changes at runtime- and having
+ * it written twice is the kind of duplication that silently diverges: the
+ * player would behave one way when mounted and another when reconfigured.
  */
 
 export interface ResolvedMode {
@@ -28,28 +29,29 @@ export interface ModeOptions {
   disableActions?: boolean;
 }
 
-/** Lo minimo de un elemento anfitrion: leer sus atributos. */
+/** The minimum a host element must provide: reading its attributes. */
 export interface AttributeReader {
   getAttribute(name: string): string | null;
 }
 
 /**
- * Resuelve las dos banderas con esta precedencia, de mas fuerte a mas debil:
+ * Resolves the two flags with this precedence, from strongest to weakest:
  *
- * 1. las opciones de `mount()` —la via del visor, que trae sus propios mandos—
- * 2. el atributo suelto (`disable-animations`, `disable-actions`)
- * 3. el preajuste `mode`
- * 4. el defecto: imagen quieta con su idioma
+ * 1. the `mount()` options -the viewer's path, which brings its own controls-
+ * 2. the standalone attribute (`disable-animations`, `disable-actions`)
+ * 3. the `mode` preset
+ * 4. the default: a still image with its language
  *
- * No hay mode «personalizado»: es no poner `mode` y usar los atributos.
+ * There is no "custom" mode: it means not setting `mode` and using the
+ * attributes.
  */
 export function resolveMode(
   host: AttributeReader,
   options: ModeOptions = {},
   prefersLessMotion = false,
 ): ResolvedMode {
-  // Solo `completo` enciende. Un mode mal escrito -o inventado- no puede
-  // encender nada: el defecto seguro es el que no sorprende.
+  // Only `completo` turns things on. A misspelled or invented mode cannot
+  // turn anything on: the safe default is the one that does not surprise.
   const fullMode = host.getAttribute('mode') === 'full';
 
   const decide = (option: boolean | undefined, attribute: string): boolean => {
@@ -60,12 +62,13 @@ export function resolveMode(
   };
 
   return {
-    // El movimiento tiene ademas una señal del dispositivo, y gana siempre.
+    // Motion also has a device signal, and it always wins.
     disableAnimations: decide(options.disableAnimations, 'disable-animations') || prefersLessMotion,
-    // Las acciones NO la tienen, y es deliberado: `prefers-reduced-motion` es
-    // una preferencia vestibular -protege de mareos por movimiento- y quien la
-    // activa sigue queriendo pulsar. Apagarle el clic le quitaria FUNCION, no
-    // movimiento: una regresion de accesibilidad disfrazada de deferencia.
+    // Actions do NOT have it, and that is deliberate: `prefers-reduced-motion`
+    // is a vestibular preference -it protects against motion sickness- and
+    // whoever enables it still wants to press things. Turning off the click
+    // would remove FUNCTION, not motion: an accessibility regression disguised
+    // as deference.
     disableActions: decide(options.disableActions, 'disable-actions'),
   };
 }

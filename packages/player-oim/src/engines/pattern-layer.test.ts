@@ -8,19 +8,19 @@
  */
 
 /**
- * La capa `pattern` en el player: tesela y se repite, con el CSS que calcula
- * el core. El player no calcula nada por su cuenta -lo unico que hace es
- * aplicar `patternLayerCss` tal cual-, y una capa de patron NO es el fondo
- * del lienzo: si heredara ese trato saltaria a ocupar el 100% del visor en
- * vez de quedarse en su posicion y tamano declarados.
+ * The `pattern` layer in the player: it tiles and repeats, with the CSS that
+ * the core computes. The player calculates nothing on its own -all it does is
+ * apply `patternLayerCss` as-is-, and a pattern layer is NOT the canvas
+ * background: if it inherited that treatment, it would jump to fill 100% of the
+ * viewer instead of staying at its declared position and size.
  */
 
 import { describe, it, expect, vi } from "vitest";
 import ImageEngine from "./ImageEngine";
 import { patternLayerCss } from "../core/fill.js";
 
-// Arnes copiado de `text-fill.test.ts`: mismo `attachShadow`, mismos
-// `_viewport` y `_overlay`.
+// Harness copied from `text-fill.test.ts`: same `attachShadow`, same
+// `_viewport` and `_overlay`.
 function montar(slots: any[]) {
   const host = document.createElement("div");
   const shadow = (host as any).attachShadow({ mode: "open" });
@@ -34,12 +34,12 @@ function montar(slots: any[]) {
   return { host, motor };
 }
 
-// `content` no vacio A PROPOSITO: con `{}` la rama que decide el tamano
-// (`ImageEngine.ts`, condicion de `slotEl.style.width/height`) ya cae en
-// `!rawText` ANTES de llegar a `slotType === 'pattern'`, y la mutante que
-// quita esa condicion seguiria pasando la prueba. Con texto real, `rawText`
-// deja de estar vacio y solo la condicion propia del patron mantiene el
-// tamano declarado -sin ella caeria al 'max-content'/'auto' del ultimo
+// `content` is deliberately non-empty: with `{}` the branch that decides the size
+// (`ImageEngine.ts`, the `slotEl.style.width/height` condition) already falls
+// into `!rawText` BEFORE reaching `slotType === 'pattern'`, and the mutant that
+// removes that condition would still pass the test. With real text, `rawText`
+// stops being empty and only the pattern's own condition keeps the declared
+// size -without it, it would fall back to 'max-content'/'auto' in the last
 // `else`-.
 const slotPatron = {
   id: "p", type: "pattern", align: "left",
@@ -72,16 +72,17 @@ describe("la capa de patron en el player", () => {
     expect(el.style.backgroundSize).toBe(esperado.backgroundSize);
   });
 
-  // La capa NO es el fondo: si heredara esa marca, saltaria a ocupar la
-  // escena. La aseveracion es POSITIVA -el tamano exacto que declara el
-  // slot, 200x200 sobre un lienzo de 800 da "25.0000cqw"- y no "no es 100%":
-  // esa ultima pasaria igual con un estilo vacio, sin comprobar nada.
+  // The layer is NOT the background: if it inherited that mark, it would jump
+  // to fill the scene. The assertion is POSITIVE -the exact size the slot
+  // declares, 200x200 on an 800 canvas gives "25.0000cqw"- and not "is not
+  // 100%": that latter one would pass just the same with an empty style, without
+  // checking anything.
   //
-  // No se puede leer `el.style.width` de vuelta: happy-dom rechaza `cqw`
-  // como unidad invalida y el setter se convierte en no-op silencioso -se
-  // comprobo aparte, con `div.style.width = '25cqw'` fuera del motor, que
-  // el valor se queda en ''-. La unica forma de ver que valor INTENTO poner
-  // el motor es espiar el setter de `CSSStyleDeclaration` antes de rendear.
+  // You cannot read `el.style.width` back: happy-dom rejects `cqw` as an invalid
+  // unit and the setter becomes a silent no-op -it was checked separately, with
+  // `div.style.width = '25cqw'` outside the engine, and the value stays ''-. The
+  // only way to see which value the engine TRIED to set is to spy on the setter
+  // of `CSSStyleDeclaration` before rendering.
   it("no se estira al 100% del visor: mide lo que declara el slot", async () => {
     const setWidth = vi.spyOn(CSSStyleDeclaration.prototype, "width", "set");
     const setHeight = vi.spyOn(CSSStyleDeclaration.prototype, "height", "set");

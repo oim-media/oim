@@ -5,18 +5,18 @@
  */
 
 /**
- * La regla de pertenencia: quien es hijo de quien.
+ * The membership rule: who is a child of whom.
  *
- * Estas pruebas vivian en `player-oim` y viajaron con el codigo al extraerse a
- * `@oim-media/core`. Ahora vigilan la unica parte de los grupos donde el editor y el
- * player DEBEN coincidir: si ambos no responden lo mismo a «que layers van
- * dentro de este grupo», el mismo archivo se pinta distinto segun quien lo
- * abra.
+ * These tests lived in `player-oim` and travelled with the code when it was
+ * extracted to `@oim-media/core`. Now they guard the only part of the groups
+ * where the editor and the player MUST agree: if both do not answer the same to
+ * "which layers go inside this group", the same file is painted differently
+ * depending on who opens it.
  *
- * Lo que mas se comprueba aqui no es el caso bueno, es la degradacion: un
- * archivo antiguo, un `groupId` roto o un grupo que no llego no pueden hacer
- * desaparecer una capa. Un player embebido en la pagina de un tercero que
- * pierde contenido es peor que uno que ignora un efecto.
+ * What matters most here is not the good case, it is the degradation: an old
+ * file, a broken `groupId` or a group that never arrived cannot make a layer
+ * disappear. A player embedded in a third party's page that loses content is
+ * worse than one that ignores an effect.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -33,10 +33,9 @@ describe('quien es el padre de cada slot', () => {
   });
 
   it('NO lo lee de la raiz del slot', () => {
-    // La raiz no sobrevive al backend: `RawSlot` es un modelo Pydantic con
-    // `extra='ignore'`. Si el player lo leyera de ahi, funcionaria en pruebas
-    // y fallaria en todos los archivos firmados — que es exactamente como se
-    // perdio el parallax.
+    // The root does not survive the backend: `RawSlot` is a Pydantic model with
+    // `extra='ignore'`. If the player read it from there, it would work in tests
+    // and fail on every signed file — which is exactly how the parallax got lost.
     expect(slotParent({ id: 'a', type: 'geo', groupId: 'g1', style: {} })).toBeNull();
   });
 
@@ -78,7 +77,7 @@ describe('quien va dentro de quien', () => {
 
 describe('lo que NO puede pasar aunque el archivo venga roto', () => {
   it('un archivo antiguo no anida nada', () => {
-    // Ningun slot trae `style.groupId`: el visor pinta lo de siempre.
+    // No slot carries `style.groupId`: the viewer paints things as always.
     expect(childrenByGroup([
       { id: 'g1', type: 'group', style: {} },
       { id: 'a', type: 'geo', style: {} },
@@ -94,7 +93,7 @@ describe('lo que NO puede pasar aunque el archivo venga roto', () => {
   });
 
   it('un grupo dentro de otro grupo no se anida', () => {
-    // El editor lo prohibe, pero el archivo puede venir de cualquier sitio.
+    // The editor forbids it, but the file can come from anywhere.
     const mapa = childrenByGroup([
       grupo('g1'), { id: 'g2', type: 'group', style: { groupId: 'g1' } },
     ]);

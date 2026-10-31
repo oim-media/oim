@@ -46,7 +46,7 @@ describe("Typewriter, Glitch, Highlight, and DropCap in ImageEngine", () => {
     const wrap = makeWrap();
     const anim = applyGlitchText(wrap, "Cyberpunk", "glitch-cyberpunk", 1.0, 0, 70);
 
-    // Changed at Josué's request (portable glitch, 10 Oct 2026): no text-shadow;
+    // Portable glitch: no text-shadow;
     // the text plus two colour ghosts (aria-hidden), faded in during a burst.
     const ghosts = [...wrap.querySelectorAll('[aria-hidden="true"]')] as HTMLElement[];
     expect(ghosts).toHaveLength(2);

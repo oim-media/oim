@@ -9,8 +9,8 @@
  *
  * In the CDN build, vite.config.ts aliases lottie_light to lottie-external.ts,
  * so this import resolves to a tiny loader that fetches vendor/lottie_light-*.js
- * on demand. Everywhere else (vitest, apps/studio) it is the real library, and
- * apps/studio's ES build splits it into its own chunk.
+ * on demand. Everywhere else (vitest, an app bundling the ES build) it is the
+ * real library, and the app's bundler splits it into its own chunk.
  */
 export function loadLottie(): Promise<any> {
   return import('lottie-web/build/player/lottie_light').then((m: any) => {

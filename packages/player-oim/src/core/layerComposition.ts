@@ -6,14 +6,10 @@
 
 import { mediaFilterCss } from "../../../core/src/media-filters.js";
 
-// Presets de recorte de máscara, en un viewBox normalizado "0 0 100 100".
-// El mismo lookup se porta 1:1 desde OIM-Studio src/lib/layerComposition.ts
-// para que la máscara se vea idéntica en editor y en el player.
-// Espejo de MASK_SHAPE_PATHS del editor (OIM-Studio,
-// src/lib/layerComposition.ts). Alli los poligonos se DERIVAN de la tabla
-// `PUNTOS_GEO`, que es la fuente unica que alimenta tambien el lienzo y el
-// rasterizado del PNG; aqui van como literales porque el player no comparte
-// modulo con el editor.
+// Mask clip presets, in a normalized "0 0 100 100" viewBox.
+// Mirrors the editor's MASK_SHAPE_PATHS 1:1 so a mask looks identical in the
+// editor and the player. There the polygons are DERIVED from the shared shape
+// table; here they are literals, pinned by maskShapes.test.ts.
 //
 // Faltaban triangle, line, arrow y diamond: el lookup de abajo cae a `circle`
 // cuando no conoce un nombre, y lo hace EN SILENCIO, asi que una mascara

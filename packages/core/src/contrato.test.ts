@@ -346,7 +346,7 @@ describe("1.12.0 marca lo que nadie usa, sin borrarlo (auditoria del 10 oct)", (
     return st.$ref ? r.$defs[st.$ref.split("/").pop()] : st;
   };
 
-  // Was "1.20.0"; colour roles in patterns and backgrounds (Josué, 26-29 Oct) raised it to 1.21.0. Reveal, trigger and play (Josué, 30 Oct) raised it to 1.22.0.
+  // 1.21.0 added colour roles in patterns and backgrounds; 1.22.0 added reveal, trigger and play.
   it("el contrato declara la 1.22.0", () => {
     expect(CONTRACT_VERSION).toBe("1.22.0");
   });

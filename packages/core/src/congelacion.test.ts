@@ -47,13 +47,12 @@
  * `fontSizeOverrides`. Es peor que un duplicado — es un campo que aparenta
  * llevar intencion y no la lleva.
  *
- * Decidido con Josue el 20 de septiembre de 2026: **el archivo lleva el
- * tamano resuelto y ya**. Un `.oim` es un artefacto de DIBUJO; necesita saber
- * que pintar, no por que. Lo que se pierde -al reeditar un archivo ajeno no
- * se sabe que tamanos fueron deliberados- se acepta a cambio de un formato
- * mas pequeno y portable. Si algun dia hace falta, la intencion de autoria va
- * en SU PROPIO espacio, como los `extras` de glTF, nunca mezclada con los
- * datos de dibujo.
+ * Decision: **the file carries the resolved size, nothing more**. A `.oim` is
+ * a DRAWING artifact; it needs to know what to paint, not why. What is lost
+ * (when re-editing someone else's file you cannot tell which sizes were
+ * deliberate) is accepted in exchange for a smaller, portable format. If
+ * authoring intent is ever needed, it goes in ITS OWN space, like glTF
+ * `extras`, never mixed with drawing data.
  */
 import { describe, it, expect } from "vitest";
 import { z } from "zod";
@@ -289,9 +288,8 @@ describe("la superficie de `style` esta congelada", () => {
   });
 
   it("ya no queda ningun alias", () => {
-    // Los siete se retiraron el 20 de septiembre de 2026, sin fase de
-    // deprecacion: Josue aclaro que los .oim publicados son de PRUEBA y no hay
-    // ninguno funcional, asi que no habia compatibilidad que proteger.
+    // All seven were removed before 1.0 with no deprecation phase: no
+    // production .oim files existed yet, so there was no compatibility to keep.
     //
     // El compilador ya no los emite -`canonizar_estilo` los traduce-, asi que
     // el contrato dejaria de describir algo que nadie escribe.

@@ -6,7 +6,7 @@
 
 /**
  * Where a layer's texture effect goes: on the layer's own pixels, never on
- * its whole box. Decided by Josué on 10 Oct 2026: an SVG with a transparent
+ * its whole box. The bug that settled it: an SVG with a transparent
  * background came out as a coloured square in the editor and the player (the
  * texture covered the box) and as a faint shape in the static export (which
  * already masked it). One rule for the three renderers: the texture overlay

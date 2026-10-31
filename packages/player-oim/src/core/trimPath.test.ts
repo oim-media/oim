@@ -5,20 +5,20 @@
  */
 
 /**
- * Gemela de OIM-Studio/src/lib/trimPath.test.ts.
+ * Twin of the editor's trimPath tests.
  *
- * Los dos repos no comparten paquete, así que la función está duplicada a
- * propósito — y por eso la prueba también. Es el guardián de paridad: si una
- * de las dos implementaciones cambia sin la otra, esta prueba lo detecta antes
- * de que un `.oim` se vea distinto en el visor que en el editor.
+ * The function is duplicated in the editor on purpose, and so is its test:
+ * it is the parity guard. If one implementation changes without the other,
+ * this catches it before a `.oim` looks different in the player than in the
+ * editor.
  *
- * No es una precaución teórica: el editor y el visor implementaron por
- * separado la misma onda senoidal y salieron en direcciones opuestas. Las 224
- * pruebas pasaron porque coincidían en el primer carácter, y solo lo detectó
- * una revisión cruzada a mano.
+ * Not a theoretical worry: the editor and the player implemented the same
+ * sine wave separately and it came out in opposite directions. 224 tests
+ * passed because both agreed on the first character; only a manual
+ * cross-review caught it.
  *
- * Los valores esperados son EXACTAMENTE los del editor. Si aquí hay que
- * cambiar uno, el cambio va en las dos partes o hay una divergencia.
+ * The expected values are EXACTLY the editor's. Changing one here means
+ * changing both, or there is a divergence.
  */
 
 import { describe, it, expect } from "vitest";
@@ -56,8 +56,7 @@ describe("getTrimCss", () => {
 });
 
 /**
- * Espejo de "getTrimCss con animacion de dibujado" en
- * OIM-Studio/src/lib/trimPath.test.ts. Mismos valores esperados.
+ * Mirrors the editor's "getTrimCss with draw animation" suite. Same values.
  */
 describe("getTrimCss con animacion de dibujado", () => {
   it("un contorno completo CON duracion si se anima", () => {

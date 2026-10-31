@@ -207,16 +207,15 @@ describe("getMaskPathData con inversion", () => {
 });
 
 /**
- * Espejo de "computeLayerComposition con calado (feather)" en
- * OIM-Studio/src/lib/layerComposition.test.ts.
+ * Mirrors the editor's "computeLayerComposition with feather" suite.
  *
- * El editor y el visor implementan por separado la misma regla —con calado se
- * usa `mask-image`, sin calado `clip-path`— porque los dos repos no comparten
- * paquete. Estas pruebas son lo unico que impide que una de las dos se mueva
- * sin la otra.
+ * The editor and the player implement the same rule separately (feather uses
+ * `mask-image`, no feather uses `clip-path`). These tests are what stops one
+ * from moving without the other.
  *
- * Ya paso con la onda senoidal: se implemento dos veces, salio en direcciones
- * opuestas, y las 224 pruebas pasaron porque coincidian en el primer caracter.
+ * It already happened with the sine wave: implemented twice, it came out in
+ * opposite directions, and 224 tests passed because both agreed on the first
+ * character.
  */
 describe("computeLayerComposition con calado (feather)", () => {
   it("sin calado devuelve clipPath como antes", () => {
@@ -245,8 +244,7 @@ describe("computeLayerComposition con calado (feather)", () => {
 });
 
 /**
- * Espejo de las suites de mascara dedicada en
- * OIM-Studio/src/lib/layerComposition.test.ts. Mismos casos, mismos valores.
+ * Mirrors the editor's dedicated-mask suites. Same cases, same values.
  *
  * El visor no conocia el tipo 'mask': un slot asi caia en el `return null` de
  * ImageEngine y desaparecia por completo, aunque el .oim lo llevara y el PNG

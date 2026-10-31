@@ -297,7 +297,7 @@ redondear, y en una sola pasada dejaba `2.0000001` como `2.0` y `1e-7` como
 `0.0`, donde TypeScript emite `2` y `0`. El firmante no la sufría porque
 aplica `clean_floats` dos veces; quien reimplementase el Python con una sola
 pasada, sí. Ahora redondea primero, y
-`apps/backend/tests/test_canonico_numeros.py` fija los bytes.
+una prueba del firmante de referencia fija los bytes.
 
 **Lo que manda es lo que se firma**: redondear a 6 decimales primero y, si el
 resultado no tiene parte fraccionaria, emitirlo como entero. `-0` se emite

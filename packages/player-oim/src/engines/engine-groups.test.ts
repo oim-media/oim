@@ -300,10 +300,9 @@ describe("un repintado parcial no rompe el grupo", () => {
 });
 
 describe("animar una capa que esta en un grupo", () => {
-  // Josue: *"si animaste una capa y la metes a un grupo, esta animacion se
-  // sustituye?"*. No. El grupo no toca las animaciones de sus hijos: se
-  // COMPONEN, porque estan en elementos anidados y las transformadas se
-  // multiplican al bajar. Es justo lo que la fase 2 buscaba.
+  // Does grouping an animated layer replace its animation? No. A group never
+  // touches its children's animations: they COMPOSE, because they live on
+  // nested elements and transforms multiply on the way down.
   let hostEl: HTMLElement;
   let shadowRoot: ShadowRoot;
 

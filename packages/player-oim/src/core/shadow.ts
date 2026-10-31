@@ -13,7 +13,7 @@ import { resolveCssColor } from './dynamicColors.js';
  * salia cuadrada.
  *
  * **La cadena tiene que ser identica a la del editor**
- * (`OIM-Studio/src/shadow.ts`), con espacio detras de cada coma del `rgba`. La
+ * (its shadow module), con espacio detras de cada coma del `rgba`. La
  * misma tabla de casos esta en las pruebas de los dos repositorios.
  *
  * No reutiliza `hexToRgba` de `ImageEngine` a proposito: aquel compone sin

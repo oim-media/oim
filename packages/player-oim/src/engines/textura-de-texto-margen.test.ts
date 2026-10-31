@@ -9,7 +9,7 @@
 
 // A text with a texture is painted with background-clip: text, like a clipped
 // fill, so it needs the same ink margin: at line height 1 the descender of a
-// «p» was left unfilled while its stroke still showed (Josué, 10 Oct 2026).
+// «p» was left unfilled while its stroke still showed.
 import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine";
 import { inkMargin } from "../core/typography.js";

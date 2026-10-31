@@ -168,7 +168,7 @@ export const cssColorSchema = z.string().max(128).regex(new RegExp(CSS_COLOR_PAT
 const cssColor = cssColorSchema;
 
 /**
- * One gradient, as OIM-Studio's `toCss` writes it. The portable twin of
+ * One gradient, as the OIM editor writes it. The portable twin of
  * `isSafeCssGradient`: a single linear/radial/conic function whose only inner
  * functions are colour ones. No `url()`, no second image.
  */
@@ -183,7 +183,7 @@ const PATTERN_PRESETS = [
   "zigzags", "bolt", "leaf", "drop", "moon", "crown", "heart",
 ] as const;
 
-/** A vector cut inside a mask. Mirrors `MaskCut` in OIM-Studio/src/types.ts. */
+/** A vector cut inside a mask. Mirrors the editor's `MaskCut` type. */
 export const maskCutSchema = z.object({
   id: z.string().max(128),
   x: z.number(),
@@ -198,7 +198,7 @@ export const maskCutSchema = z.object({
 }).passthrough();
 
 /**
- * A generative fill. Mirrors `GenerativeBackground` in OIM-Studio. The
+ * A generative fill. Mirrors the editor's `GenerativeBackground`. The
  * generator is a slug, not an enum: generators are added over time and an
  * unknown one degrades to no fill in the player, it does not break the file.
  */

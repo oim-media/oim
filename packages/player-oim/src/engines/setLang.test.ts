@@ -128,8 +128,8 @@ describe("la transicion del cambio de idioma", () => {
   });
 
   it("difumina TODO el lienzo a 14px, no la capa suelta", async () => {
-    // Josue lo pidio asi: "se ve como otra imagen". Un desenfoque pequeno sobre
-    // la capa que cambia produce lo contrario: se ve COMO se modifica.
+    // A language switch should read as "another image". A small blur on just
+    // the changing layer does the opposite: you watch it being modified.
     const { motor } = montar(proyecto());
     motor.lang = "es";
     await motor.renderSlots();

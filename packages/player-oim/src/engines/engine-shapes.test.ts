@@ -8,11 +8,11 @@
  */
 
 /**
- * Las ocho formas del catalogo, montadas.
+ * The eight catalogue shapes, mounted.
  *
- * Reproduce `prueba_forma.png`: el archivo que hizo Josue el 21 de agosto con
- * las ocho, donde CINCO -corazon, rombo, hexagono, flecha y linea- salian como
- * rectangulos de color y otras dos tenian otra silueta que en el editor.
+ * Reproduces a real file with all eight in which FIVE (heart, diamond,
+ * hexagon, arrow and line) rendered as coloured rectangles and two more had a
+ * different silhouette than in the editor.
  */
 
 import { describe, it, expect } from "vitest";

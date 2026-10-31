@@ -7,23 +7,23 @@
 import type { OimEffect, EffectBlend } from "./types.js";
 
 /**
- * Normaliza cualquier objeto de estilo (incluyendo campos legacy como `grain`,
- * `layerBlur`, `shadowEnabled`) a un array canónico de efectos `OimEffect[]`.
- * Garantiza total retrocompatibilidad para vectores de conformidad y archivos existentes.
+ * Normalizes any style object (including legacy fields such as `grain`,
+ * `layerBlur`, `shadowEnabled`) into a canonical array of `OimEffect[]` effects.
+ * Guarantees full backward compatibility for conformance vectors and existing files.
  */
 export function normalizeSlotEffects(style?: Record<string, any>): OimEffect[] {
   if (!style || typeof style !== "object") {
     return [];
   }
 
-  // Si ya tiene el array canonical `effects`, lo respetamos
+  // If it already has the canonical `effects` array, we respect it
   if (Array.isArray(style.effects) && style.effects.length > 0) {
     return style.effects.filter((e) => e && typeof e === "object" && typeof e.type === "string");
   }
 
   const result: OimEffect[] = [];
 
-  // 1. Grano legacy (`grain: true`)
+  // 1. Legacy grain (`grain: true`)
   if (style.grain === true) {
     const intensity = typeof style.grainIntensity === "number" ? style.grainIntensity : 20;
     const blend: EffectBlend =
@@ -40,7 +40,7 @@ export function normalizeSlotEffects(style?: Record<string, any>): OimEffect[] {
     });
   }
 
-  // 2. Desenfoque legacy (`layerBlur > 0` o `blur > 0`)
+  // 2. Legacy blur (`layerBlur > 0` or `blur > 0`)
   const blurRadius =
     typeof style.layerBlur === "number" && style.layerBlur > 0
       ? style.layerBlur
@@ -56,7 +56,7 @@ export function normalizeSlotEffects(style?: Record<string, any>): OimEffect[] {
     });
   }
 
-  // 3. Sombra legacy (`shadowEnabled: true`)
+  // 3. Legacy shadow (`shadowEnabled: true`)
   if (style.shadowEnabled === true) {
     result.push({
       type: "drop-shadow",
@@ -69,7 +69,7 @@ export function normalizeSlotEffects(style?: Record<string, any>): OimEffect[] {
     });
   }
 
-  // 4. Efecto decorativo legacy (`effect: "neon" | "shadow"`)
+  // 4. Legacy decorative effect (`effect: "neon" | "shadow"`)
   if (style.effect === "neon") {
     result.push({
       type: "glow",

@@ -21,7 +21,7 @@ describe("Paso 0: Snapshot baseline de los 17 generadores antes de migrar a laye
     }
 
     if (!fs.existsSync(snapshotPath)) {
-      // Guardar el baseline previo a la migración
+      // Save the baseline before the migration
       fs.writeFileSync(snapshotPath, JSON.stringify(current, null, 2), "utf8");
       expect(Object.keys(current).length).toBe(17);
     } else {

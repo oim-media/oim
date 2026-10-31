@@ -1,19 +1,19 @@
 /**
  * @vitest-environment jsdom
  *
- * `sanitizeHtml` tenia un atajo que se saltaba TODO el saneado para cualquier
- * cosa que empezara por `<svg`. Como todo SVG empieza asi, el filtro no corria
- * nunca para content vectorial: un `<svg onload="...">` autorado llegaba
- * intacto al documento vivo, y el `.oim` viaja a terceros.
+ * `sanitizeHtml` had a shortcut that skipped ALL sanitizing for anything that starts with
+ * `<svg`. Since every SVG starts that way, the filter never ran on vector content: an
+ * authored `<svg onload="...">` reached the live document intact, and the `.oim` travels
+ * to third parties.
  *
- * Estas pruebas van en dos direcciones a la vez, y las dos importan:
+ * These tests run in two directions at once, and both matter:
  *
- *  - lo hostil se limpia
- *  - lo LEGITIMO sobrevive
+ *   - the hostile content is cleaned
+ *   - the LEGITIMATE content survives
  *
- * El segundo grupo no es fill. El atajo se puso porque la lista blanca era
- * tan corta que mutilaba el SVG bueno, asi que sin estas pruebas el arreglo se
- * revierte en cuanto alguien vea una mascara desaparecer.
+ * The second group is not filler. The shortcut was added because the allowlist was so
+ * short that it mutilated good SVG, so without these tests the fix gets reverted as soon as
+ * someone sees a mask disappear.
  */
 
 import { describe, it, expect } from "vitest";
@@ -25,7 +25,7 @@ describe("lo hostil se limpia", () => {
   it("quita onload del propio <svg>", () => {
     const salida = limpio('<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><circle r="9"/></svg>');
     expect(salida).not.toContain("onload");
-    // pero la figura se conserva: sanear no es borrar
+    // but the shape is kept: sanitizing is not deleting
     expect(salida).toContain("circle");
   });
 
@@ -53,8 +53,8 @@ describe("lo hostil se limpia", () => {
   });
 
   it("quita href con javascript: partido por un salto de linea", () => {
-    // El navegador normaliza esto a `javascript:`; un `indexOf("javascript:")`
-    // no lo veia. La lista blanca de esquema si.
+    // The browser normalizes this to `javascript:`; an `indexOf("javascript:")` did
+    // not catch it. The scheme allowlist does.
     expect(limpio('<svg><a href="java\nscript:alert(1)"><rect/></a></svg>')).not.toContain("script:");
   });
 
@@ -91,7 +91,7 @@ describe("lo legitimo sobrevive", () => {
   });
 
   it("una mascara y un recorte sobreviven", () => {
-    // Esto es lo que el atajo protegia: con la lista corta desaparecian.
+    // This is what the shortcut was protecting: with the short list, they disappeared.
     const salida = limpio(
       '<svg><defs><clipPath id="c" clipPathUnits="objectBoundingBox"><path d="M0 0"/></clipPath>' +
       '<mask id="m" maskUnits="userSpaceOnUse"><rect fill="#fff"/></mask></defs>' +

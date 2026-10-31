@@ -102,11 +102,11 @@ export class ParallaxController {
   }
 
   /**
-   * Reapunta una capa ya registrada a su nodo nuevo.
+   * Repoints an already-registered layer to its new node.
    *
-   * Hace falta cuando el lienzo reconstruye UNA capa —al cambiar de idioma, por
-   * ejemplo—: el nodo viejo queda desconectado y sin esto el controlador
-   * seguiria moviendolo a el. La capa nueva no se moveria nunca, y en silencio.
+   * Needed when the canvas rebuilds ONE layer (for example when switching
+   * language): the old node gets detached, and without this the controller
+   * would keep moving it. The new layer would never move, silently.
    */
   public retarget(id: string, element: HTMLElement): boolean {
     let found = false;
@@ -146,8 +146,8 @@ export class ParallaxController {
       const dt = (timestamp - this.lastTimeMs) / 1000;
       this.lastTimeMs = timestamp;
 
-      // Suavizado exponencial independiente de los FPS de la pantalla
-      // (a 60Hz dt~0.0166s da factor~0.10; a 30Hz o 120Hz/144Hz se mueve a la misma velocidad temporal real)
+      // Exponential smoothing, independent of the screen's FPS
+      // (at 60Hz dt~0.0166s gives factor~0.10; at 30Hz or 120/144Hz it moves at the same real-time speed)
       const factor = dt > 0 ? 1 - Math.exp(-6.5 * Math.min(dt, 0.1)) : 0.1;
       this.mouseX += (this.targetMouseX - this.mouseX) * factor;
       this.mouseY += (this.targetMouseY - this.mouseY) * factor;
@@ -171,7 +171,7 @@ export class ParallaxController {
         item.element.style.setProperty('--oim-py', `${offsetY.toFixed(2)}px`);
       }
 
-      // Dormirse cuando esta quieto y el puntero no esta interactuando
+      // Go idle when still and the pointer is not interacting
       const diffX = Math.abs(this.targetMouseX - this.mouseX);
       const diffY = Math.abs(this.targetMouseY - this.mouseY);
       if (diffX < 0.001 && diffY < 0.001 && !this.isHovered) {

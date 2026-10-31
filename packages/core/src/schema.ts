@@ -21,9 +21,9 @@
 import { z } from "zod";
 import { EMBEDDED_FONT_NAME, EMBEDDED_FONT_MAX_BYTES, EMBEDDED_FONTS_MAX_ENTRIES } from "./embeddedFonts.js";
 
-// El tope vive en `limits.ts`, sin dependencias, para que el player pueda
-// importarlo sin arrastrar zod -que es por lo que acabo copiado como literal-.
-// Se reexporta aqui porque formaba parte de la superficie publica del paquete.
+// The cap lives in `limits.ts`, with no dependencies, so the player can import
+// it without pulling in zod -which is why it ended up copied as a literal.
+// It is re-exported here because it was part of the package's public surface.
 export { MAX_SLOTS } from "./limits.js";
 import { MAX_SLOTS, MARK_NAME, MAX_MARKS } from "./limits.js";
 import { CSS_COLOR_PATTERN, DYNAMIC_COLOR_ROLES, type DynamicColorRole } from "./dynamic-colors.js";
@@ -34,21 +34,20 @@ import { TEXTURE_PRESETS, EFFECT_BLENDS } from "./effects/types.js";
 export const PALETTE_NAME_PATTERN = /^[a-z][a-z0-9-]{0,23}$/;
 
 /**
- * Un fotograma clave: como esta la capa en un instante.
+ * A keyframe: how the layer looks at an instant.
  *
- * `o` —la opacidad— se declaraba `max(1)` y los archivos publicados llegan a
- * 1.367. No es que los archivos esten mal: los valores los produce una curva
- * de interpolacion que REBOTA, y una curva que rebota se pasa del destino
- * antes de volver. El tope estaba puesto pensando en el valor de llegada, no
- * en el camino.
+ * `o` -the opacity- was declared as `max(1)`, and published files reach 1.367.
+ * The files are not wrong: the values are produced by an interpolation curve
+ * that BOUNCES, and a bouncing curve overshoots the target before coming back.
+ * The cap had been set with the arrival value in mind, not the path.
  *
- * Se sube a 2 en vez de quitarlo: el rebote no llega ni de lejos al doble, y
- * un tope que no acota nada tampoco sirve. Medido el 18 de septiembre de 2026
- * sobre 300 valores de cinco obras publicadas; el mayor fue 1.367.
+ * It is raised to 2 rather than removed: the bounce comes nowhere near double,
+ * and a cap that bounds nothing is no use either. Measured on 300 values from
+ * five published works; the largest was 1.367.
  *
- * `o` va aqui de 0 a 1, a diferencia de la opacidad de `interactiveStateSchema`
- * que va de 0 a 100. Son unidades distintas en el mismo formato, y esta escrito
- * porque no se puede deducir.
+ * `o` runs here from 0 to 1, unlike the opacity in `interactiveStateSchema`,
+ * which runs from 0 to 100. They are different units in the same format, and it
+ * is written down because it cannot be deduced.
  */
 /** A curve: a CSS keyword or a cubic-bezier 4-tuple. Keyframes and reveals share it. */
 export const keyframeEasingSchema = z.union([
@@ -70,12 +69,12 @@ export const keyframeSchema = z.object({
 
 // Style object — restricts CSS-like properties to safe values
 /**
- * Una accion entre capas: que le hace esta capa a otra al activarse.
+ * An action between layers: what this layer does to another when activated.
  *
- * Estaba en el formato desde antes y NO en el contrato: viajaba dentro de
- * `style`, que este esquema declara abierto. Un lector escrito en otro lenguaje
- * veia un diccionario opaco y tenia que deducir la interactividad LEYENDO EL
- * PLAYER — justo la divergencia que un contrato compartido existe para evitar.
+ * It was in the format from before and NOT in the contract: it travelled inside
+ * `style`, which this schema declares open. A reader written in another language
+ * saw an opaque dictionary and had to deduce the interactivity by READING THE
+ * PLAYER -exactly the divergence a shared contract exists to prevent.
  */
 /**
  * 1.22.0: how a layer appears when an action shows it, and disappears when one
@@ -98,26 +97,26 @@ export const stateActionSchema = z.object({
 });
 
 /**
- * Un estado interactivo: como se ve la capa y que hace.
+ * An interactive state: how the layer looks and what it does.
  *
- * `opacity` va de 0 a 100, igual que la opacidad de capa y que lo que el player
- * espera —divide entre 100 para el CSS—. Declararlo aqui destapo que el editor
- * guardaba 0..1: una opacidad de hover del 50% acababa pintando 0.005.
+ * `opacity` runs from 0 to 100, the same as the layer opacity and what the player
+ * expects -it divides by 100 for the CSS. Declaring it here exposed that the
+ * editor stored 0..1: a 50% hover opacity ended up painting 0.005.
  *
- * `scale` va en la MISMA unidad, y averiguarlo costo un fallo visible. Se
- * declaraba `max(10)` —multiplicador— mientras el editor escribia porcentaje y
- * el player pasaba el numero a un CSS que multiplica: un `103` agrandaba la
- * capa ciento tres veces al pasar el raton, en obras ya publicadas.
+ * `scale` is in the SAME unit, and working that out cost a visible fault. It was
+ * declared as `max(10)` -a multiplier- while the editor wrote a percentage, and
+ * the player passed the number to CSS, which multiplies: a `103` enlarged the
+ * layer a hundred and three times when the pointer passed over it, in works that
+ * were already published.
  *
- * Lo llamativo es que las dos unidades convivian en este mismo objeto, y la
- * unica razon de que `opacity` estuviera bien es que alguien la comparo con un
- * archivo real. A `scale` nadie, hasta el 18 de septiembre de 2026: nueve
- * valores medidos sobre dieciseis archivos, todos entre 96 y 106, ninguno por
- * debajo de 10.
+ * What stands out is that both units coexisted in this same object, and the only
+ * reason `opacity` was right is that someone compared it with a real file. Nobody
+ * had checked `scale`, until: nine values measured across sixteen files, all
+ * between 96 and 106, none below 10.
  *
- * El player mantiene un puente para `<= 10` (`escalaComoFactor`), por si queda
- * algun multiplicador de los que el contrato permitia. Este tope de 1000 es
- * generoso a proposito: 10x en porcentaje.
+ * The player keeps a bridge for `<= 10` (`escalaComoFactor`), in case some
+ * multiplier that the contract allowed is still around. This cap of 1000 is
+ * generous on purpose: 10x as a percentage.
  */
 export const interactiveStateSchema = z.object({
   scale: z.number().min(0).max(1000).optional(),
@@ -128,9 +127,9 @@ export const interactiveStateSchema = z.object({
 }).passthrough();
 
 /**
- * `hover` responde al puntero y se deshace al salir; `active` responde al clic
- * y NO se deshace. Un lector que solo implemente `hover` sigue siendo valido:
- * los dos son opcionales.
+ * `hover` responds to the pointer and is undone on leave; `active` responds to
+ * the click and is NOT undone. A reader that only implements `hover` is still
+ * valid: both are optional.
  */
 export const slotStatesSchema = z.object({
   hover: interactiveStateSchema.optional(),
@@ -138,9 +137,9 @@ export const slotStatesSchema = z.object({
 }).passthrough();
 
 /**
- * Una línea de texto precalculada dentro de un textRun.
- * Permite que renderizadores no-web (Swift, Kotlin, Skia) pinten texto
- * sin requerir un motor de maquetación/shaping de párrafos complejo.
+ * A pre-computed line of text inside a textRun.
+ * Lets non-web renderers (Swift, Kotlin, Skia) paint text without requiring a
+ * complex paragraph layout/shaping engine.
  */
 export const textLineSchema = z.object({
   text: z.string().max(10000),
@@ -148,7 +147,7 @@ export const textLineSchema = z.object({
   yOffset: z.number(),
 }).passthrough();
 
-/** Cajas de línea precalculadas para un idioma específico. */
+/** Pre-computed line boxes for a specific language. */
 export const textRunByLangSchema = z.object({
   fontSize: z.number().min(0).optional(),
   lineHeight: z.number().min(0).optional(),
@@ -268,9 +267,9 @@ export const oimEffectSchema = z.discriminatedUnion("type", [
 ]);
 
 /**
- * RETIRED (10 Oct 2026): whole-text highlight, superseded by text marks. The
- * editor no longer writes it (it turns it into a mark); kept so files already
- * published still validate and render. Do not remove.
+ * RETIRED: whole-text highlight, superseded by text marks. The editor no longer
+ * writes it (it turns it into a mark); kept so files already published still
+ * validate and render. Do not remove.
  */
 export const textHighlightSchema = z.object({
   enabled: z.boolean().default(true),
@@ -285,7 +284,6 @@ export const textHighlightSchema = z.object({
  * A text mark (contract 1.11.0): the style of the phrases a text wraps in
  * `{name}...{/name}`. A closed set of attributes, never free CSS; colours go
  * through `cssColor` and roles through DYNAMIC_COLOR_ROLES like every colour.
- * Spec: docs/superpowers/specs/2026-10-10-marcas-de-texto-design.md
  */
 export const textMarkSchema = z.object({
   color: cssColor.optional(),
@@ -334,20 +332,19 @@ export const dropCapSchema = z.object({
 const languageCodeSchema = z.string().max(10);
 
 export const styleSchema = z.object({
-  // Stack canónico de efectos unificados
+  // Canonical stack of unified effects
   effects: z.array(oimEffectSchema).max(8).optional(),
-  // CSS color: hex, rgb(), rgba(), hsl(), hsla(), `transparent` — max 64 chars
-  // para cortar inyecciones largas.
+  // CSS color: hex, rgb(), rgba(), hsl(), hsla(), `transparent` -- max 64 chars
+  // to cut off long injections.
   //
-  // `transparent` se anadio tras medirlo: el editor lo escribe y los .oim
-  // publicados lo llevan, pero el esquema lo rechazaba. Nadie se entero porque
-  // hasta ahora nada validaba un fichero real contra este esquema. Es una
-  // palabra clave exacta, asi que no ensancha la superficie que el limite de
-  // 64 caracteres protege.
-  // Factor sin unidad. Se declara aqui porque NO estaba: `z.object` lo
-  // descartaba al validar aunque los .oim publicados lo traen -como cadena-, y
-  // el contrato en JSON Schema tampoco lo mencionaba. El player lo aplica a
-  // traves de `resolveLineHeight`, que acota al rango que ofrece el editor.
+  // `transparent` was added after measuring: the editor writes it and published
+  // .oim files carry it, but the schema rejected it. Nobody noticed because until
+  // then nothing validated a real file against this schema. It is an exact
+  // keyword, so it does not widen the surface that the 64-character limit protects.
+  // Unitless factor. It is declared here because it was NOT: `z.object` discarded
+  // it when validating even though published .oim files carry it -as a string-,
+  // and the JSON Schema contract did not mention it either. The player applies it
+  // through `resolveLineHeight`, which clamps to the range the editor offers.
   lineHeight: z.union([z.number(), z.string().max(16)]).optional(),
   fontSize: z.union([z.string().max(16), z.number().min(0)]).optional(),
   fontWeight: z.union([z.string(), z.number()]).optional(),
@@ -401,12 +398,12 @@ export const styleSchema = z.object({
     crt_curve: z.boolean().optional(),
   }).meta({ deprecated: true, description: "Retired in 1.12.0 (contract audit, 10 Oct 2026): no writer and no reader." }).optional(),
 
-  // La capa responde al puntero. Es la declaracion del AUTOR, y lo que decide
-  // que un lector enganche algo: sin esto, `states` no significa nada.
+  // The layer responds to the pointer. It is the AUTHOR's declaration, and it
+  // decides whether a reader hooks anything: without it, `states` means nothing.
   isInteractive: z.boolean().optional(),
   states: slotStatesSchema.optional(),
 
-  // Texturas y efectos visuales de capa (estilo fffuel)
+  // Textures and visual effects of the layer (fffuel style)
   // Retired in 1.12.0: a layer's grain is a texture in its `effects`. Kept so
   // files already published validate and render.
   grain: z.boolean().meta({ deprecated: true, description: "Retired in 1.12.0 (contract audit, 10 Oct 2026): a layer's grain is a texture in style.effects." }).optional(),
@@ -420,57 +417,57 @@ export const styleSchema = z.object({
   effectRadius: z.number().min(0).max(100).optional(),
 
   // ==========================================================================
-  // Las veintidós que TODOS los archivos traen.
+  // The twenty-two that EVERY file carries.
   //
-  // Medido el 18 de septiembre de 2026 con `packages/spec/tools/style-usage.mjs`
-  // sobre doce archivos -nueve obras publicadas mas tres demos-: estas
-  // veintidos aparecen en los doce, sin excepcion, y ninguna estaba declarada.
-  // El contrato describia 24 claves de estilo mientras el player leia 117.
+  // Measured with the spec's style-usage tool on twelve files -nine
+  // published works plus three demos-: these twenty-two appear in all twelve,
+  // without exception, and none of them was declared. The contract described 24
+  // style keys while the player read 117.
   //
-  // Se declaran estas primero justamente porque no admiten discusion: lo que
-  // trae el 100% del corpus pertenece al formato.
+  // These are declared first precisely because they admit no argument: what the
+  // whole corpus carries belongs to the format.
   //
-  // DOS CAUTELAS, las dos aprendidas mirando los valores reales antes de
-  // escribir una sola linea:
+  // TWO CAUTIONS, both learned by looking at the real values before writing a
+  // single line:
   //
-  //   1. Los colores pueden ser `var(--text)` o `var(--oim-color-accent, #...)`
-  //      -los colores dinamicos-. El patron del campo `color` de mas arriba
-  //      (hex/rgb/hsl/transparent) los RECHAZARIA. Por eso estos van como
-  //      cadena acotada y sin patron: declarar de mas aqui invalida archivos
-  //      que hoy funcionan.
-  //   2. `blendMode` viaja tal cual a `mix-blend-mode` en CSS, asi que su
-  //      conjunto de valores es el de CSS, no uno nuestro. Un enum seria
-  //      inventarse un limite que el player no aplica.
+  //   1. Colors can be `var(--text)` or `var(--oim-color-accent, #...)`
+  //      -the dynamic colors-. The pattern of the `color` field above
+  //      (hex/rgb/hsl/transparent) would REJECT them. That is why these go as a
+  //      bounded string with no pattern: declaring too much here would invalidate
+  //      files that work today.
+  //   2. `blendMode` travels as-is to CSS `mix-blend-mode`, so its set of values
+  //      is CSS's, not ours. An enum would invent a limit that the player does not
+  //      apply.
   //
-  // Los rangos numericos son holgados a proposito. Lo medido fue
-  // `shadowBlur` 8..32, `shadowOpacity` 30..70 y `layerBlur` 0..40; acotar a
-  // lo observado convertiria «nadie lo ha hecho todavia» en «esta prohibido».
+  // The numeric ranges are deliberately loose. What was measured was
+  // `shadowBlur` 8..32, `shadowOpacity` 30..70 and `layerBlur` 0..40; bounding to
+  // what was observed would turn "nobody has done it yet" into "it is forbidden".
   // ==========================================================================
 
-  // Texto
+  // Text
   textAlign: z.enum(["left", "center", "right", "justify"]).optional(),
   fontFamily: z.string().max(128).optional(),
 
-  // Geometria de la capa: admite `cqw` -porcentaje del ancho del contenedor-,
-  // o valores numericos puros en unidades de usuario / viewBox.
+  // Layer geometry: accepts `cqw` -a percentage of the container's width-,
+  // or pure numeric values in user units / viewBox.
   width: z.union([z.string().max(32), z.number().min(0)]).optional(),
   height: z.union([z.string().max(32), z.number().min(0)]).optional(),
   maxWidth: z.union([z.string().max(32), z.number().min(0)]).optional(),
-  // Cuatro radios en una cadena: "0.0cqw 0.0cqw 0.0cqw 6.0cqw", o valor unico.
+  // Four radii in one string: "0.0cqw 0.0cqw 0.0cqw 6.0cqw", or a single value.
   borderRadius: z.union([z.string().max(128), z.number().min(0)]).optional(),
 
-  // Relleno y trazo. Ver cautela 1 sobre el patron de color.
-  // El patron lo hereda de `color`, el alias que sustituye: resultaba estar
-  // MEJOR especificado que ella -validaba el formato mientras `fillColor`
-  // admitia cualquier cadena de 64-. Retirar el alias sin quedarse su patron
-  // habria cambiado un duplicado por un agujero.
+  // Fill and stroke. See caution 1 about the color pattern.
+  // The pattern is inherited from `color`, the alias it replaces: it turned out
+  // to be BETTER specified than it -it validated the format while `fillColor`
+  // accepted any 64-character string. Retiring the alias without keeping its
+  // pattern would have swapped a duplicate for a hole.
   //
-  // `transparent` esta dentro a proposito: el editor lo escribe.
+  // `transparent` is included on purpose: the editor writes it.
   fillColor: cssColor.optional(),
   strokeStyle: z.enum(["solid", "dashed", "dotted"]).optional(),
   textStrokeColor: cssColor.optional(),
 
-  // Sombra. `shadowEnabled` manda: el resto solo cuenta si es cierto.
+  // Shadow. `shadowEnabled` takes precedence: the rest only counts if it is true.
   shadowEnabled: z.boolean().optional(),
   shadowColor: cssColor.optional(),
   shadowColorRole: z.enum(DYNAMIC_COLOR_ROLES as [DynamicColorRole, ...DynamicColorRole[]]).optional(),
@@ -479,7 +476,7 @@ export const styleSchema = z.object({
   shadowOffsetY: z.number().min(-500).max(500).optional(),
   shadowOpacity: z.number().min(0).max(100).optional(),
 
-  // Composicion
+  // Composition
   // Closed to the values the editor offered, then retired: the canvas and the
   // player isolate each layer, so it only ever showed in the static export.
   blendMode: z.enum(["normal", "multiply", "screen", "overlay", "darken", "lighten", "color-dodge", "color-burn", "difference"]).meta({ deprecated: true, description: "Retired in 1.12.0 (contract audit, 10 Oct 2026): layer blend did not show in the editor or the player; readers draw the layer as normal." }).optional(),
@@ -488,14 +485,14 @@ export const styleSchema = z.object({
   maskInvert: z.boolean().optional(),
 
   // ==========================================================================
-  // Cargas útiles funcionales (las 28 propiedades de dibujo y estilo)
+  // Functional payloads (the 28 drawing and style properties)
   // ==========================================================================
-  // Bordes y trazos
+  // Borders and strokes
   strokeColor: cssColor.optional(),
   strokeWidth: z.number().min(0).optional(),
   textStrokeWidth: z.number().min(0).max(100).optional(),
 
-  // Geometría y formas vectoriales
+  // Geometry and vector shapes
   // `scribble` was missing: the editor writes it and the player paints it
   // (ImageEngine, via `customBlobPath`), so a real file failed the contract.
   // 1.19.0: twelve shapes that work as photo frames (geoShapes.ts).
@@ -512,7 +509,7 @@ export const styleSchema = z.object({
   svgViewBox: z.string().max(64).regex(/^-?\d+(\.\d+)?([\s,]+-?\d+(\.\d+)?){3}$/).optional(),
   svgRawXml: z.string().optional(),
 
-  // Texto vectorial y relieve artístico (artistic-text)
+  // Vector text and artistic relief (artistic-text)
   artisticPreset: z.enum([
     "neon-cyberpunk", "retro-wave-3d", "comic-pop-extrusion",
     "vintage-emboss", "chrome-metallic", "arcade-80s", "custom"
@@ -528,7 +525,7 @@ export const styleSchema = z.object({
   innerStrokeColor: cssColor.optional(),
   innerStrokeWidth: z.number().min(0).optional(),
 
-  // Máscara y troquelado
+  // Mask and cut-out
   maskMode: z.enum(["window", "cutout"]).optional(),
   maskShape: z.enum([
     "circle", "rectangle", "triangle", "star", "line", "arrow",
@@ -538,7 +535,7 @@ export const styleSchema = z.object({
   maskStrokeColor: cssColor.optional(),
   maskStrokeWidth: z.number().min(0).optional(),
 
-  // Filtros y CSS de animación
+  // Filters and CSS animation
   filterPreset: z.enum([
     "none", "duotone", "grayscale", "sepia", "high-contrast", "vintage",
     "cool", "warm", "faded", "cinema", "nordic", "sunset", "noir",
@@ -555,13 +552,13 @@ export const styleSchema = z.object({
   filterSaturate: z.number().min(0).max(500).optional(),
   filterHueRotate: z.number().min(0).max(360).optional(),
 
-  // Animación de texto por caracteres (wave-chars, glitch, typewriter)
+  // Per-character text animation (wave-chars, glitch, typewriter)
   textAnimationType: z.enum([
     "none",
     "typewriter",
     "fade-chars",
     "slide-up",
-    "blur-chars", // RETIRED (10 Oct 2026): per-letter blur is not portable; kept so old files validate
+    "blur-chars", // RETIRED: per-letter blur is not portable; kept so old files validate
     "bounce-chars",
     "wave-chars",
     "glitch-cyberpunk",
@@ -581,7 +578,7 @@ export const styleSchema = z.object({
     .refine((m) => Object.keys(m).length <= MAX_MARKS, { message: `At most ${MAX_MARKS} marks per layer` })
     .optional(),
 
-  // Propiedades complementarias de relleno, patrones y máscaras
+  // Complementary fill, pattern and mask properties
   customBlobPath: z.string().optional(),
   maskFeather: z.number().min(0).max(100).optional(),
   maskSvgPath: z.string().optional(),
@@ -620,7 +617,7 @@ export const styleSchema = z.object({
   fillPatternCounts: z.array(z.number()).max(16).optional(),
   fillPatternDispersions: z.array(z.number()).max(16).optional(),
 
-  // Fondos y patrones de relleno
+  // Backgrounds and fill patterns
   backgroundType: z.enum(["color", "gradient", "pattern", "generative", "transparent", "image"]).optional(),
   backgroundPatternColor: cssColor.optional(),
   backgroundPatternColorRole: z.enum(DYNAMIC_COLOR_ROLES as [DynamicColorRole, ...DynamicColorRole[]]).optional(),
@@ -686,13 +683,13 @@ export const parallaxSchema = z.object({
 
 export const slotSchema = z.object({
   id: z.string().min(1).max(128),
-  // Los cinco ultimos son las layers anadidas despues de escribirse este
-  // schema. Nada valida con Zod en tiempo de ejecucion —el player lee con
-  // JSON.parse en binary.ts—, asi que ningun .oim se rechazaba por faltar;
-  // el riesgo era el otro: @oim-media/core publica este tipo como su contrato, y un
-  // tercero que lo tomara por bueno concluiria que una mascara no es un slot
-  // valido. Mismo problema que el compilador huerfano que vivia en
-  // serialize.ts: un tipo exportado que miente.
+  // The last five are layers added after this schema was written. Nothing
+  // validates with Zod at run time -the player reads with JSON.parse in
+  // binary.ts-, so no .oim was rejected for missing them. The risk was the other
+  // way round: @oim-media/core publishes this type as its contract, and a third
+  // party taking it at face value would conclude that a mask is not a valid slot.
+  // It is the same problem as the orphaned compiler that lived in serialize.ts:
+  // an exported type that lies.
   type: z.enum([
     "text", "image", "lottie", "zone", "geo", "shape", "draw",
     "filter", "container", "group", "component", "mask", "svg", "pattern", "artistic-text"
@@ -712,21 +709,21 @@ export const slotSchema = z.object({
   height_px: z.number().optional(),
   zone_id: z.string().max(128).optional(), // target containment zone
 
-  // El nombre que puso el AUTOR. Viaja al archivo desde el 22 de agosto y el
-  // backend ya lo acepta; este esquema era el unico que iba por detras.
+  // The name the AUTHOR gave. It travels in the file and the backend already
+  // accepts it; this schema was the only one lagging behind.
   //
-  // Importa para quien integra: el `id` lo genera el editor al azar, asi que es
-  // estable pero ilegible. El nombre es lo unico por lo que una pagina puede
-  // reconocer una capa sin abrir el archivo. NO es unico.
+  // It matters to whoever integrates: the `id` is generated by the editor at
+  // random, so it is stable but unreadable. The name is the only thing by which a
+  // page can recognize a layer without opening the file. It is NOT unique.
   name: z.string().max(256).optional(),
 
-  // `link` y `target` estuvieron aqui hasta el 29 de agosto de 2026. Un .oim no
-  // declara a donde te lleva un clic: seria la unica via en la que decide el
-  // ARCHIVO y no la PAGINA que lo embebe. Se quitaron del backend y del espejo
-  // del editor el 28; este esquema era el tercer sitio.
+  // `link` and `target` used to be here. A .oim does not declare where a click
+  // takes you: that would be the only route by which the FILE decides, rather
+  // than the PAGE that embeds it. They were removed from the backend and from the
+  // editor's mirror; this schema was the third place.
   interaction: interactionSchema.optional(),
   
-  // Abreviaciones para optimización extrema de tamaño (estilo Lottie)
+  // Abbreviations for extreme size optimization (Lottie style)
   // Short aliases, retired in 1.12.0: no writer emits them and two names for
   // one concept mean two readings of a file (as 1.5.0 did with style).
   p: positionSchema.meta({ deprecated: true, description: "Retired in 1.12.0 (contract audit, 10 Oct 2026): use position." }).optional(),
@@ -736,7 +733,7 @@ export const slotSchema = z.object({
   t: z.array(trackingKeyframeSchema).meta({ deprecated: true, description: "Retired in 1.12.0 (contract audit, 10 Oct 2026): use tracking_data." }).optional(),
 });
 
-// Configuración de textura de grano analógico procedural (Post-procesado / Lienzo)
+// Procedural analog grain texture configuration (post-processing / canvas)
 export const grainConfigSchema = z.object({
   enabled: z.boolean().default(false),
   intensity: z.number().min(1).max(100).default(15),
@@ -763,11 +760,10 @@ export const OimMetadataSchema = z.object({
   description: z.record(languageCodeSchema, z.string().max(1000)).optional(),
   oim: z.string().optional(),
   version: z.string().optional(),
-  // La version MINIMA del contrato que hace falta para reconstruir este
-  // documento. Se declara para que aparezca en el JSON Schema publicado: una
-  // implementacion en otro lenguaje no puede honrar un campo que el contrato
-  // no menciona. Ausente = no exige nada, que es el caso de todo lo publicado
-  // hasta hoy.
+  // The MINIMUM contract version needed to rebuild this document. It is declared
+  // so that it appears in the published JSON Schema: an implementation in another
+  // language cannot honor a field that the contract does not mention. Absent = it
+  // requires nothing, which is the case for everything published so far.
   min_player: z.string().max(16).optional(),
   image: z.string().optional(),
   oim_id: z.string().max(128).optional(),      // Unique tracking ID for document re-editing
@@ -833,14 +829,14 @@ export const OimMetadataSchema = z.object({
   defaultPalette: z.string().optional(),
   zones: z.array(zoneSchema).optional(),       // Catalog of bounding box zones
   slots: z.array(slotSchema).max(MAX_SLOTS),
-  // Los tres campos llevan los MISMOS slots y por eso los tres se acotan.
-  // `elements` no es herencia: el player lee `slots || elements` y el backend
-  // cuenta `elements` primero. Acotar solo `slots` dejaba el contrato
-  // prometiendo un tope que un campo equivalente no cumplia.
+  // The three fields carry the SAME slots, which is why all three are bounded.
+  // `elements` is not legacy: the player reads `slots || elements` and the backend
+  // counts `elements` first. Bounding only `slots` left the contract promising a
+  // cap that an equivalent field did not meet.
   elements: z.array(slotSchema).max(MAX_SLOTS).meta({ deprecated: true, description: "Retired in 1.12.0 (contract audit, 10 Oct 2026): slots is the one name; readers still accept it." }).optional(),
   layers: z.array(slotSchema).max(MAX_SLOTS).meta({ deprecated: true, description: "Retired in 1.12.0 (contract audit, 10 Oct 2026): slots is the one name; readers still accept it." }).optional(),
   capabilities: z.array(z.enum(["vector_parallax", "infinite_parallax", "text_marks", "image_fill", "media_filters", "frame_shapes"])).optional(),
-  // Capacidades requeridas indispensables para reproducir fielmente el documento (patrón glTF).
+  // Required capabilities, indispensable for faithfully reproducing the document (glTF pattern).
   capabilities_required: z.array(z.enum(["vector_parallax", "infinite_parallax", "text_marks", "image_fill", "media_filters", "frame_shapes"])).optional(),
   // Fonts shipped inside the file (1.3.0). Optional and ignorable: a reader
   // that does not know it asks Google for the family, as before 1.3.0.
@@ -850,11 +846,11 @@ export const OimMetadataSchema = z.object({
   effects: z.array(oimEffectSchema).max(8).meta({ deprecated: true, description: "Retired in 1.12.0 (contract audit, 10 Oct 2026): the background grain is baked into the base image." }).optional(),
   signature: z.string().optional(),            // Cryptographic ECDSA signature
   key_version: z.string().optional(),          // Cryptographic key version used
-  // Fecha exacta de la firma criptografica (dentro de la firma para verificar caducidad de claves)
+  // Exact date of the cryptographic signature (inside the signature, to verify key expiry)
   signed_at: z.string().datetime({ offset: true }).optional(),
-  // `{ offset: true }` porque el backend escribe `2026-06-12T20:38:40.713579+00:00`
-  // -isoformat de Python-, no la forma con `Z` que Zod exige por defecto. Los
-  // CUATRO .oim de produccion que se probaron fallaban aqui.
+  // `{ offset: true }` because the backend writes `2026-06-12T20:38:40.713579+00:00`
+  // -Python's isoformat-, not the form with `Z` that Zod requires by default. The
+  // FOUR production .oim files that were tested all failed here.
   timestamp: z.string().datetime({ offset: true }).optional(), // ISO timestamp of package creation
 }).passthrough();
 
@@ -886,10 +882,10 @@ export const OvmMetadataSchema = z.object({
   }).optional(),
   zones: z.array(zoneSchema).optional(),       // Catalog of bounding box zones
   slots: z.array(slotSchema).max(MAX_SLOTS),
-  // Los tres campos llevan los MISMOS slots y por eso los tres se acotan.
-  // `elements` no es herencia: el player lee `slots || elements` y el backend
-  // cuenta `elements` primero. Acotar solo `slots` dejaba el contrato
-  // prometiendo un tope que un campo equivalente no cumplia.
+  // The three fields carry the SAME slots, which is why all three are bounded.
+  // `elements` is not legacy: the player reads `slots || elements` and the backend
+  // counts `elements` first. Bounding only `slots` left the contract promising a
+  // cap that an equivalent field did not meet.
   elements: z.array(slotSchema).max(MAX_SLOTS).meta({ deprecated: true, description: "Retired in 1.12.0 (contract audit, 10 Oct 2026): slots is the one name; readers still accept it." }).optional(),
   layers: z.array(slotSchema).max(MAX_SLOTS).meta({ deprecated: true, description: "Retired in 1.12.0 (contract audit, 10 Oct 2026): slots is the one name; readers still accept it." }).optional(),
   capabilities: z.array(z.enum(["vector_parallax", "infinite_parallax", "text_marks", "image_fill", "media_filters", "frame_shapes"])).optional(),
@@ -897,9 +893,9 @@ export const OvmMetadataSchema = z.object({
   signature: z.string().optional(),            // Cryptographic ECDSA signature
   key_version: z.string().optional(),          // Cryptographic key version used
   signed_at: z.string().datetime({ offset: true }).optional(),
-  // `{ offset: true }` porque el backend escribe `2026-06-12T20:38:40.713579+00:00`
-  // -isoformat de Python-, no la forma con `Z` que Zod exige por defecto. Los
-  // CUATRO .oim de produccion que se probaron fallaban aqui.
+  // `{ offset: true }` because the backend writes `2026-06-12T20:38:40.713579+00:00`
+  // -Python's isoformat-, not the form with `Z` that Zod requires by default. The
+  // FOUR production .oim files that were tested all failed here.
   timestamp: z.string().datetime({ offset: true }).optional(), // ISO timestamp of package creation
 }).passthrough();
 

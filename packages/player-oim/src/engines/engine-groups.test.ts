@@ -7,14 +7,14 @@
 // @vitest-environment happy-dom
 
 /**
- * El grupo, dentro del motor de verdad.
+ * The group, inside the real engine.
  *
- * `core/grupos.test.ts` comprueba las reglas; esto comprueba que el motor las
- * APLICA. La diferencia no es teórica: la mitad de los fallos de estos días
- * eran una regla correcta que la path real no llegaba a usar, y una regla
- * comprobada que nadie aplica se comporta igual que una que no existe.
+ * `core/grupos.test.ts` checks the rules; this checks that the engine APPLIES
+ * them. The difference is not theoretical: half of the failures of these days
+ * were a correct rule that the real path never used, and a checked rule that
+ * nobody applies behaves the same as one that does not exist.
  *
- * Fase 3 de `docs/superpowers/specs/2026-08-23-el-grupo-como-nodo-design.md`.
+ * Phase 3 of the group-as-node design spec.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
@@ -30,9 +30,9 @@ const capa = (id: string, extra: any = {}) => ({
   width_px: 100,
   height_px: 100,
   ...extra,
-  // Una capa real siempre trae fill: `buildSlotStyle` escribe `fillColor`
-  // en todas. Sin el, el motor la descarta antes de construir nada, asi que se
-  // fusiona con lo que traiga `extra` en vez de dejar que lo machaque.
+  // A real layer always carries fill: `buildSlotStyle` writes `fillColor` in
+  // all of them. Without it, the engine discards it before building anything,
+  // so it is merged with whatever `extra` brings instead of letting it overwrite it.
   style: { fillColor: "#ff0000", ...(extra.style || {}) },
 });
 
@@ -74,11 +74,11 @@ describe("el grupo en el motor", () => {
   });
 
   it("y van dentro del container que ANIMA, no colgando del slot", async () => {
-    // La animacion de un slot corre sobre `.oim-slot-loop-wrap` y nunca sobre
-    // el propio slot, porque el transform de `.oim-slot` es su anclaje de
-    // posicion. Colgar los hijos del slot los dejaria como HERMANOS de la
-    // animacion: animar el grupo moveria un wrapper vacio y los hijos se
-    // quedarian quietos.
+    // The animation of a slot runs on `.oim-slot-loop-wrap` and never on the
+    // slot itself, because the transform of `.oim-slot` is its position anchor.
+    // Hanging the children off the slot would leave them as SIBLINGS of the
+    // animation: animating the group would move an empty wrapper and the
+    // children would stay still.
     const engine = motorCon([
       capa("g1", { type: "group" }),
       capa("a", { style: { groupId: "g1" } }),
@@ -97,15 +97,15 @@ describe("el grupo en el motor", () => {
     ]);
     await engine.renderSlots();
 
-    // `.oim-slot-loop-wrap` trae `center center`, que en un wrapper del
-    // size del lienzo es el centro del LIENZO.
+    // `.oim-slot-loop-wrap` carries `center center`, which on a wrapper the
+    // size of the canvas is the CANVAS center.
     expect(el(engine, "a").parentElement!.style.transformOrigin).toBe("300px 350px");
   });
 
   it("el grupo deja de ser una caja de su size y pasa a cubrir el lienzo", async () => {
-    // Era el peso muerto: un elemento vacio de 200x100 encima de sus hijos.
-    // Ahora envuelve, y por eso tiene que estar en el origen: los hijos traen
-    // coordenadas de LIENZO y se irian de sitio dentro de una caja desplazada.
+    // It used to be dead weight: an empty 200x100 element on top of its
+    // children. Now it wraps, and so it has to sit at the origin: the children
+    // carry CANVAS coordinates and would end up misplaced inside an offset box.
     const engine = motorCon([
       capa("g1", { type: "group", position: [0.25, 0.5], width_px: 200, height_px: 100 }),
       capa("a", { style: { groupId: "g1" } }),
@@ -118,8 +118,8 @@ describe("el grupo en el motor", () => {
     expect(groupEl.style.top).toBe("0px");
     expect(groupEl.style.width).toBe("800px");
     expect(groupEl.style.height).toBe("600px");
-    // El origen de la transformada sigue en el centro del GRUPO: rotarlo tiene
-    // que girarlo sobre si mismo, no sobre el centro del lienzo.
+    // The transform origin stays at the center of the GROUP: rotating it has to
+    // spin it around itself, not around the canvas center.
     expect(groupEl.style.transformOrigin).toBe("300px 350px");
   });
 
@@ -131,14 +131,14 @@ describe("el grupo en el motor", () => {
     ]);
     await engine.renderSlots();
     expect(el(engine, "g1").style.pointerEvents).toBe("none");
-    // Y no recorta: cubre el lienzo entero, asi que `overflow: hidden`
-    // cortaria la sombra o el desplazamiento de animacion de cualquier hijo.
+    // And it does not clip: it covers the whole canvas, so `overflow: hidden`
+    // would cut off the shadow or the animation displacement of any child.
     expect(el(engine, "g1").style.overflow).toBe("visible");
   });
 
   it("ocultar el grupo oculta a sus hijos, sin propagar nada a mano", async () => {
-    // La prueba de que el arbol funciona: `display: none` en el padre y los
-    // hijos, que no llevan NADA propio, dejan de verse porque estan dentro.
+    // The proof that the tree works: `display: none` on the parent hides the
+    // children, which carry NOTHING of their own, because they are inside it.
     const engine = motorCon([
       capa("g1", { type: "group", style: { isVisible: false } }),
       capa("a", { style: { groupId: "g1" } }),
@@ -160,7 +160,7 @@ describe("el grupo en el motor", () => {
     await engine.renderSlots();
 
     expect(el(engine, "g1").dataset.oimOpacity).toBe("0.4");
-    // El hijo NO lleva la opacidad escrita: la hereda por estar dentro.
+    // The child does NOT carry the written opacity: it inherits it by being inside.
     expect(el(engine, "a").dataset.oimOpacity).toBe("1");
   });
 });
@@ -188,14 +188,14 @@ describe("degradar sin perder nada", () => {
   });
 
   it("un archivo ANTERIOR a la fase 3 se pinta plano, como siempre", async () => {
-    // Ningun slot trae `style.groupId`. Es el caso de todos los .oim ya
-    // publicados, y tiene que verse exactamente igual que antes: las dos capas
-    // sueltas, y el grupo SIN elemento.
+    // No slot carries `style.groupId`. That is the case for all the .oim files
+    // already published, and it has to look exactly as before: the two loose
+    // layers, and the group WITHOUT an element.
     //
-    // Que el grupo no aparezca no es un descarte nuevo: `group` no esta en
-    // `isGeoLike`, asi que un slot de grupo sin text se descartaba ya antes
-    // de la fase 3. Medido, y contra lo que decia el diagnostico del diseno:
-    // el peso muerto del grupo estaba en el archivo firmado, no en el DOM.
+    // The group not appearing is not a new discard: `group` is not in
+    // `isGeoLike`, so a group slot without text was already being discarded
+    // before phase 3. Measured, and contrary to what the design's diagnosis
+    // said: the group's dead weight was in the signed file, not in the DOM.
     const engine = motorCon([
       capa("g1", { type: "group" }),
       capa("a"),
@@ -232,8 +232,8 @@ describe("degradar sin perder nada", () => {
 });
 
 describe("un repintado parcial no rompe el grupo", () => {
-  // `renderSlots({onlyIds})` sustituye en su sitio los nodos que cambian —lo
-  // usa el cambio de idioma— y conserva animaciones y parallax del resto.
+  // `renderSlots({onlyIds})` replaces in place the nodes that change —it is
+  // used by the language switch— and keeps the animations and parallax of the rest.
   let hostEl: HTMLElement;
   let shadowRoot: ShadowRoot;
 
@@ -274,10 +274,10 @@ describe("un repintado parcial no rompe el grupo", () => {
   });
 
   it("repintar el grupo Y un hijo a la vez no pierde al hijo", async () => {
-    // Es el caso que se me escapo al escribir la fase 3: anidando ANTES de la
-    // sustitucion, `replaceChild` metia el hijo nuevo dentro del elemento
-    // VIEJO del grupo y acto seguido sustituia ese grupo entero. El hijo se
-    // iba con el y la capa desaparecia del lienzo.
+    // It is the case that slipped past me when writing phase 3: nesting BEFORE
+    // the substitution, `replaceChild` put the new child inside the group's OLD
+    // element and then replaced that whole group. The child left with it, and
+    // the layer disappeared from the canvas.
     const engine = motorCon(escena());
     await engine.renderSlots();
     await engine.renderSlots({ onlyIds: new Set(["g1", "a"]) });
@@ -339,19 +339,19 @@ describe("animar una capa que esta en un grupo", () => {
     const groupEl = engine._overlay!.querySelector('[data-slot-id="g1"]') as HTMLElement;
     const childEl = engine._overlay!.querySelector('[data-slot-id="a"]') as HTMLElement;
 
-    // El hijo sigue estando dentro, y sigue siendo un elemento propio: nadie
-    // ha fundido su animacion con la del padre ni se la ha quitado. Las dos
-    // corren, en elementos anidados, y se COMPONEN.
+    // The child is still inside, and it is still its own element: nobody has
+    // merged its animation with the parent's or removed it. Both run, on nested
+    // elements, and they COMPOSE.
     expect(groupEl.contains(childEl)).toBe(true);
     expect(childEl).not.toBe(groupEl);
   });
 });
 
 describe("lo que el wrapper desbloquea (fase 4)", () => {
-  // El diseno prometia tres cosas para la fase 4 —animar un grupo entero, una
-  // accion que lo muestre u oculte, y parallax sobre el conjunto— y decia que
-  // ninguna necesitaria codigo nuevo de jerarquia. Esto lo comprueba: las tres
-  // salen del wrapper, sin una sola linea que hable de `childIds`.
+  // The design promised three things for phase 4 —animating a whole group, an
+  // action that shows or hides it, and parallax over the set— and said that
+  // none of them would need new hierarchy code. This checks it: all three come
+  // out of the wrapper, without a single line that mentions `childIds`.
   let hostEl: HTMLElement;
   let shadowRoot: ShadowRoot;
 
@@ -366,7 +366,7 @@ describe("lo que el wrapper desbloquea (fase 4)", () => {
   const el = (engine: any, id: string) =>
     engine._overlay!.querySelector('[data-slot-id="' + id + '"]') as HTMLElement;
 
-  /** `queueUpdate` agrupa las escrituras al DOM; esto espera a que salgan. */
+  /** `queueUpdate` batches DOM writes; this waits for them to be flushed. */
   const alSiguienteCuadro = () =>
     new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
 
@@ -393,9 +393,9 @@ describe("lo que el wrapper desbloquea (fase 4)", () => {
     engine.executeToggleState({ hide_slots: ["g1"] });
     await alSiguienteCuadro();
 
-    // `executeToggleState` sigue buscando UN elemento por `data-slot-id` y no
-    // sabe nada de grupos. Los hijos desaparecen porque estan dentro, y sin
-    // que nadie recorra `childIds`.
+    // `executeToggleState` still looks for ONE element by `data-slot-id` and
+    // knows nothing about groups. The children disappear because they are
+    // inside, without anyone walking `childIds`.
     expect(el(engine, "g1").style.display).toBe("none");
     expect(el(engine, "fuera").style.display).not.toBe("none");
     expect(el(engine, "g1").contains(el(engine, "a"))).toBe(true);
@@ -427,8 +427,8 @@ describe("lo que el wrapper desbloquea (fase 4)", () => {
     ]);
     await engine.renderSlots();
 
-    // El controlador registra el elemento del slot, que en un grupo ES el
-    // wrapper: al desplazarlo se va con el todo lo que contiene.
+    // The controller registers the slot's element, which in a group IS the
+    // wrapper: moving it takes everything it contains along with it.
     expect(engine._parallaxController).not.toBeNull();
     expect(el(engine, "g1").contains(el(engine, "a"))).toBe(true);
     expect(el(engine, "g1").contains(el(engine, "b"))).toBe(true);
@@ -436,17 +436,17 @@ describe("lo que el wrapper desbloquea (fase 4)", () => {
 });
 
 describe("con un slot como el que emite el backend DE VERDAD", () => {
-  // Esta es la prueba que faltaba, y su ausencia costo un fallo entero.
+  // This is the test that was missing, and its absence cost a whole failure.
   //
-  // El backend emite SIEMPRE `style.width` y `style.height` en cqw, y el motor
-  // tiene un bucle que vuelca `style` sobre el elemento. Ese bucle corria
-  // DESPUES del bloque del wrapper y le pisaba el size: el wrapper se
-  // quedaba con la caja del grupo en vez del lienzo, y sus hijos salian a la
-  // mitad de size y fuera de sitio.
+  // The backend ALWAYS emits `style.width` and `style.height` in cqw, and the
+  // engine has a loop that dumps `style` onto the element. That loop ran AFTER
+  // the wrapper block and overwrote its size: the wrapper kept the group's box
+  // instead of the canvas, and its children came out at half size and out of
+  // place.
   //
-  // Ninguna prueba lo vio porque todas construian el slot con la forma que el
-  // codigo espera —sin `style.width`—, asi que el bucle no tenia nada que
-  // pisar. Aparecio al abrir un .oim firmado por produccion.
+  // No test saw it, because all of them built the slot in the shape the code
+  // expects —without `style.width`—, so the loop had nothing to overwrite.
+  // It showed up when opening a .oim signed by production.
   let hostEl: HTMLElement;
   let shadowRoot: ShadowRoot;
 
@@ -461,7 +461,7 @@ describe("con un slot como el que emite el backend DE VERDAD", () => {
   const el = (engine: any, id: string) =>
     engine._overlay!.querySelector('[data-slot-id="' + id + '"]') as HTMLElement;
 
-  /** Un slot con la forma exacta que sale de `/v1/oim/compile`. */
+  /** A slot with the exact shape that comes out of `/v1/oim/compile`. */
   const comoDelBackend = (id: string, extra: any = {}) => ({
     id,
     type: "geo",
@@ -472,7 +472,7 @@ describe("con un slot como el que emite el backend DE VERDAD", () => {
     ...extra,
     style: {
       fillColor: "#ef4444",
-      // Los dos campos que el backend anade a TODOS los slots.
+      // The two fields that the backend adds to ALL slots.
       width: "37.5cqw",
       height: "20.0cqw",
       ...(extra.style || {}),
@@ -505,14 +505,14 @@ describe("con un slot como el que emite el backend DE VERDAD", () => {
   });
 
   it("neutraliza la scale del visor, que si no se aplicaria dos veces", async () => {
-    // `--oim-scale` la fija el overlay y cascada a todo lo de dentro;
-    // `.oim-slot` la aplica en su propia transformada. El wrapper es un
-    // `.oim-slot` que CONTIENE a otros, asi que sus hijos la recibian dos
-    // veces y salian a la mitad de size.
+    // `--oim-scale` is set by the overlay and cascades to everything inside;
+    // `.oim-slot` applies it on its own transform. The wrapper is an
+    // `.oim-slot` that CONTAINS others, so its children received it twice and
+    // came out at half size.
     //
-    // Esta prueba mira la variable y no el ancho medido a proposito: happy-dom
-    // no compone transformadas. El size de verdad se comprobo en un
-    // navegador, abriendo el .oim con el player del CDN.
+    // This test checks the variable and not the measured width on purpose:
+    // happy-dom does not compose transforms. The real size was checked in a
+    // browser, opening the .oim with the CDN player.
     const engine = motorCon([
       comoDelBackend("g1", { type: "group" }),
       comoDelBackend("a", { style: { groupId: "g1" } }),
@@ -522,7 +522,7 @@ describe("con un slot como el que emite el backend DE VERDAD", () => {
   });
 
   it("y una capa suelta SI conserva el suyo", async () => {
-    // El wrapper es la excepcion, no la regla nueva.
+    // The wrapper is the exception, not the new rule.
     const engine = motorCon([comoDelBackend("suelta")]);
     await engine.renderSlots();
     expect(el(engine, "suelta").style.width).not.toBe("800px");

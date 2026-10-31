@@ -5,21 +5,21 @@
  */
 
 /**
- * `oim-player.test.js` importa `../dist/oim-player.js`: prueba el PAQUETE
- * CONSTRUIDO, no la fuente.
+ * `oim-player.test.js` imports `../dist/oim-player.js`: it tests the BUILT
+ * package, not the source.
  *
- * Eso lo convierte en un generador de falsos verdes. El 21 de agosto sus siete
- * pruebas estuvieron en verde toda la mañana validando el build de la vispera,
- * mientras la fuente cambiaba debajo. Solo se pusieron en rojo al reconstruir
- * `dist/` para desplegar —es decir, al final, cuando ya no avisaban de nada—.
+ * That makes it a generator of false greens. Its seven tests stayed green all morning,
+ * validating the build from the day before, while the source changed underneath.
+ * They only turned red when `dist/` was rebuilt to deploy, that is, at the end,
+ * when they no longer warned of anything.
  *
- * Esta guardia no arregla el diseño de aquel archivo. Hace lo unico que se
- * puede hacer barato: gritar cuando el build es mas viejo que la fuente, para
- * que su verde signifique algo.
+ * This guard does not fix that file's design. It does the one cheap thing that
+ * can be done: shout when the build is older than the source, so that its green
+ * means something.
  *
- * En `.js` y no en `.ts` por lo mismo que su vecino `oim-player.test.js`: este
- * paquete no tiene `@types/node`, asi que un `import "node:fs"` en TypeScript
- * suma tres errores al typecheck. Esta anotado en PENDIENTE.
+ * In `.js` and not `.ts` for the same reason as its neighbour `oim-player.test.js`: this
+ * package has no `@types/node`, so an `import "node:fs"` in TypeScript adds three errors
+ * to the typecheck. It is noted as pending.
  */
 
 import { describe, it, expect } from "vitest";
@@ -31,7 +31,7 @@ const raiz = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const construido = path.join(raiz, "dist", "oim-player.js");
 const fuente = path.join(raiz, "src");
 
-/** El archivo de fuente modificado mas recientemente. */
+/** The most recently modified source file. */
 function masReciente(dir) {
   let max = 0;
   for (const entrada of fs.readdirSync(dir, { withFileTypes: true })) {

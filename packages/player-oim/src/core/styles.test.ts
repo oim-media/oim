@@ -5,29 +5,28 @@
  */
 
 /**
- * Que el factor de ajuste y la scale de una forma NO compartan nombre.
+ * The fitting factor and a shape's scale must NOT share a name.
  *
- * El fallo, medido el 26/08/2026 sobre un `.oim` real: una forma declarada de
- * 140 px se pintaba a 90 en vez de a 112. Todos los slots salian un 20 % mas
- * pequenos. Las posiciones eran correctas — solo el size.
+ * The fault, measured on a real `.oim`: a shape declared at 140 px was painted
+ * at 90 instead of 112. Every slot came out 20% smaller. The positions were
+ * correct -only the size was wrong.
  *
- * `--oim-scale` significaba dos cosas a la vez:
+ * `--oim-scale` meant two things at once:
  *
- *   - en `ImageEngine` linea 766, el **factor de ajuste** del documento a la
- *     caja del anfitrion, puesto sobre el visor;
- *   - en la linea 2272, la **scale propia** de una forma, puesta sobre su
- *     elemento.
+ *   - in `ImageEngine` line 766, the document's **fitting factor** to the
+ *     host box, set on the viewer;
+ *   - in line 2272, a shape's own **scale**, set on its element.
  *
- * Y aqui entra la particularidad de CSS que lo vuelve invisible:
- * `var(--x, 1)` **no** significa «1 si nadie le dio valor a esta caja», sino
- * «1 si esa variable no existe en toda la cadena». Como el visor la definia
- * tres niveles mas arriba, cada slot heredaba el factor de ajuste y lo
- * aplicaba en su propia transformada — encima del que ya aplicaba el overlay.
- * Dos veces 0,8 = 0,64.
+ * And here is the CSS quirk that makes it invisible:
+ * `var(--x, 1)` does **not** mean "1 if nobody gave this box a value", but
+ * "1 if that variable does not exist anywhere in the chain". Since the viewer
+ * defined it three levels up, every slot inherited the fitting factor and
+ * applied it in its own transform -on top of the one the overlay already applied.
+ * Twice 0.8 = 0.64.
  *
- * Un valor por defecto que la herencia puede robar. Por eso la regla no es
- * «poner `--oim-scale: 1` en mas sitios» —eso tapa la herencia caso por
- * caso— sino que los dos conceptos tengan nombres distintos.
+ * A default value that inheritance can steal. That is why the rule is not
+ * "put `--oim-scale: 1` in more places" -which hides the inheritance case by
+ * case- but that the two concepts have different names.
  */
 
 import { describe, it, expect } from "vitest";
@@ -36,16 +35,16 @@ import { getStylesText } from "./styles";
 const css = getStylesText();
 
 /**
- * La regla completa de un selector, para poder mirarla entera.
+ * The full rule for a selector, so that it can be read whole.
  *
- * Ancla en el PRINCIPIO de la regla, no en cualquier aparicion del selector:
- * `.oim-slot {` tambien esta dentro de
- * `.oim-player-viewport:not(.oim-viewport--ready) .oim-slot { … }`, y buscar
- * la subcadena devolvia esa. Es el mismo fallo que la regla que estas pruebas
- * vigilan, cometido en las pruebas.
+ * It anchors at the START of the rule, not at any occurrence of the selector:
+ * `.oim-slot {` also appears inside
+ * `.oim-player-viewport:not(.oim-viewport--ready) .oim-slot { … }`, and
+ * searching for the substring returned that one. It is the same mistake that
+ * the rule these tests guard against makes, committed in the tests themselves.
  */
 function regla(selector: string): string {
-  // Se parte por `}` y se compara el selector ENTERO, no como subcadena.
+  // Split on `}` and compare the WHOLE selector, not as a substring.
   const encontrada = css
     .split("}")
     .map((trozo) => trozo + "}")
@@ -64,9 +63,9 @@ describe("los dos escalados no comparten nombre", () => {
   });
 
   /**
-   * La comprobacion que muerde. Si el overlay volviera a usar `--oim-scale`,
-   * el valor viajaria por herencia hasta cada `.oim-slot` y se aplicaria dos
-   * veces. Es exactamente el fallo que esto cierra.
+   * The check that bites. If the overlay went back to using `--oim-scale`, the
+   * value would travel by inheritance to every `.oim-slot` and be applied twice.
+   * That is exactly the fault this closes.
    */
   it("el overlay NO define ni consume --oim-scale", () => {
     expect(regla(".oim-layer-overlay")).not.toContain("--oim-scale");
@@ -77,14 +76,15 @@ describe("los dos escalados no comparten nombre", () => {
   });
 
   it("el slot NO consume el factor de ajuste", () => {
-    // Si lo consumiera volveria a multiplicar por lo que ya aplico el overlay.
+    // If it consumed it, it would multiply again by what the overlay already applied.
     expect(regla(".oim-slot")).not.toContain("--oim-fit");
   });
 
   it("las variantes del slot mantienen la misma separacion", () => {
-    // `:hover` compone sobre la scale de la forma; si colara el factor de
-    // ajuste, el slot saltaria de size al pasar el raton. (La entrada por capa
-    // que tambien se comprobaba aqui ya no existe: el velo es la unica entrada.)
+    // `:hover` composes over the shape's scale; if the fitting factor slipped
+    // in, the slot would jump in size when the pointer passes over it. (The
+    // per-layer entry that was also checked here no longer exists: the veil is
+    // the only entry.)
     for (const sel of [".oim-slot:hover"]) {
       expect(regla(sel)).toContain("--oim-scale");
       expect(regla(sel)).not.toContain("--oim-fit");
@@ -94,28 +94,27 @@ describe("los dos escalados no comparten nombre", () => {
 });
 
 /**
- * El overlay no promete cambios que no va a hacer.
+ * The overlay does not promise changes it will not make.
  *
- * Llevaba `will-change: transform`, y la transformada NO se anima: lo dice el
- * propio motor en `ImageEngine.ts`, junto a la llamada que no hay que hacer
- * -«`--oim-fit` only needs updating when the container/viewport dimensions
- * change»-. Cambia al redimensionar y nada mas. La unica transicion declarada
- * sobre el overlay es la de `opacity`.
+ * It carried `will-change: transform`, and the transform is NOT animated: the
+ * engine itself says so in `ImageEngine.ts`, next to the call that should not be
+ * made -"`--oim-fit` only needs updating when the container/viewport dimensions
+ * change"-. It changes on resize and nothing else. The only transition declared
+ * on the overlay is the one for `opacity`.
  *
- * `will-change` no es una optimizacion gratis: le pide al navegador que
- * mantenga el elemento en su propia capa de compositor de forma PERMANENTE.
- * El overlay mide el lienzo entero -1080x1920 por defecto-, o sea unos 8 MB de
- * memoria de GPU por reproductor, y el player se incrusta en paginas de
- * terceros que no eligieron pagarlo.
+ * `will-change` is not a free optimization: it asks the browser to keep the
+ * element in its own compositor layer PERMANENTLY. The overlay measures the
+ * entire canvas -1080x1920 by default-, which is roughly 8 MB of GPU memory per
+ * player, and the player is embedded in third-party pages that did not choose
+ * to pay for it.
  *
- * Lo que esto NO arregla, y conviene dejarlo escrito para no volver a
- * sospechar de aqui: el pixelado de las letras con fill degradado. Se
- * comparo a mano -degradado con y sin `will-change`, y color plano con
- * `will-change`- y el que se ve limpio es el de COLOR PLANO, que lleva
- * `will-change` puesto. La causa esta en `fill.ts`: un text con fill
- * degradado, generativo o de patron se pinta con `background-clip: text`, o
- * sea como una mascara, y una mascara se rasteriza sin saber que sus bordes
- * son contornos de letra.
+ * What this does NOT fix, and it is worth writing down so as not to suspect this
+ * place again: the pixelation of letters with a gradient fill. It was compared
+ * by hand -gradient with and without `will-change`, and flat color with
+ * `will-change`- and the one that looks clean is the FLAT COLOR one, which has
+ * `will-change` set. The cause is in `fill.ts`: a text with a gradient, generative
+ * or pattern fill is painted with `background-clip: text`, that is, like a mask,
+ * and a mask is rasterized without knowing that its edges are letter outlines.
  */
 describe("el overlay no pide capa de compositor permanente", () => {
   it("no declara will-change", () => {
@@ -123,7 +122,7 @@ describe("el overlay no pide capa de compositor permanente", () => {
   });
 
   it("y sigue escalando con el factor de ajuste", () => {
-    // Que quitar `will-change` no se lleve por delante la transformada.
+    // Removing `will-change` must not take the transform away with it.
     expect(regla(".oim-layer-overlay")).toContain("scale(var(--oim-fit");
   });
 });

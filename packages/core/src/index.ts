@@ -2,48 +2,48 @@ export * from "./schema.js";
 export * from "./binary.js";
 export * from "./canonical.js";
 export * from "./api.js";
-// `./grupos.js`: la regla de pertenencia -quien es hijo de quien-. Es la
-// unica parte de los grupos donde el editor y el player deben coincidir; si
-// discrepan, el mismo archivo se pinta distinto segun quien lo abra.
+// `./grupos.js`: the membership rule (who is whose child). It is the
+// only part of the groups where the editor and the player must agree; if
+// they disagree, the same file is painted differently depending on who opens it.
 export * from "./groups.js";
-// `./tipografia.js`: el interlineado. Vive compartido porque el fallo ERA que
-// el editor y el player no coincidian en el.
+// `./tipografia.js`: line spacing. It is shared because the bug WAS that the
+// editor and the player did not agree on it.
 export * from "./typography.js";
-// `./recorte.js`: quien recorta y quien no. Compartido porque el editor tenia
-// el mismo fallo que el player -recortaba los glifos del texto- y dos
-// implementaciones volverian a discrepar.
+// `./recorte.js`: who crops and who does not. Shared because the editor had
+// the same bug as the player (it cropped the text glyphs), and two
+// implementations would disagree again.
 export * from "./clipping.js";
-// `./compatibilidad.js`: que un lector sepa DECIR lo que no entiende. El
-// formato ya degradaba bien; lo que faltaba era que no lo hiciera en silencio.
+// `./compatibilidad.js`: letting a reader say what it does NOT understand. The
+// format already degraded gracefully; what was missing was not doing it silently.
 export * from "./compatibility.js";
 export * from "./media-filters.js";
 export * from "./flip.js";
 export * from "./reveal.js";
 export * from "./crop.js";
-// Las cuatro reglas de formato que el editor tenia COPIADAS en
-// `src/lib/parallax/`, con su propio fichero de bloqueo y su guardia de
-// hashes: geometria de las formas, CSS del parallax, permiso de reedicion y
-// sobredimensionado. Ninguna importa nada, asi que moverlas fue trivial; lo
-// caro era la maquinaria que existia para mantener las dos copies iguales.
+// The four format rules that the editor had COPIED into
+// `src/lib/parallax/`, with its own lock file and its
+// hash guard: shape geometry, parallax CSS, re-edit permission and
+// oversizing. None of them imports anything, so moving them was trivial; what was
+// costly was the machinery that existed to keep the two copies equal.
 export * from "./geoShapes.js";
 // frame-silhouette.ts: the outline a photo frame crops to, shared by player and editor (1.19.0).
 export * from "./frame-silhouette.js";
 export * from "./parallaxCss.js";
 export * from "./reeditPermission.js";
 export * from "./oversize.js";
-// El relleno y el motor de patrones. `fill.ts` estaba duplicado con una
-// divergencia REAL: el editor deducia el tipo desde el color y el player no,
-// asi que una capa con `fillColor` y sin `fillType` se pintaba en uno y salia
-// vacia en el otro. Se conserva la deduccion.
+// The fill and pattern engine. `fill.ts` was duplicated with a
+// REAL divergence: the editor inferred the type from the colour and the player did not,
+// so a layer with `fillColor` and no `fillType` was painted one way and came out
+// empty the other. The inference is kept.
 export * from "./fill.js";
 export * from "./patterns.js";
 export * from "./dynamic-colors.js";
 // css-gradient.ts: whitelist for `fillGradient`, the other CSS a .oim hands the player.
 export * from "./css-gradient.js";
 export * from "./generative/proceduralNoise.js";
-// `./artisticTextCurve.js`: el trazado del texto artistico curvado. Sexto caso
-// del mismo patron: estaba escrito dos veces y las dos copias divergieron -el
-// arco salia un 80% mas curvado al publicarse que al editarlo-.
+// `./artisticTextCurve.js`: the path of curved artistic text. Sixth case of the
+// same pattern: it was written twice and the two copies diverged (the
+// arc came out 80% more curved when published than when edited).
 export * from "./artisticTextCurve.js";
 // `./artisticTextExtrusion.js`: the 3D extrusion. Seventh case: the editor
 // darkened it and the player lightened it, from the same colour.
@@ -53,16 +53,16 @@ export * from "./artisticTextExtrusion.js";
 export * from "./embeddedFonts.js";
 // fontFile.ts — whether an uploaded font may be embedded (staff catalog, part 3).
 export * from "./fontFile.js";
-// `./dimensions.js`: resolución de dimensiones hacia CSS/unidades de usuario.
+// `./dimensions.js`: resolving dimensions to CSS/user units.
 export * from "./dimensions.js";
 export * from "./effects/index.js";
-// `./serialize.js` (mapLayersToOimSlots) se eliminó: era un tercer compilador
-// de medidas, exportado como API pública de @oim-media/core pero sin ningún
-// consumidor salvo su propio test. Anclaba la posición al CENTRO del slot
-// (`anchorX += w/2`), mientras el compilador real —el del backend, en
-// `/api/v1/oim/compile`— la ancla a la esquina superior izquierda. Un tercero
-// que integrara contra este paquete habría obtenido todo desplazado media
-// caja, sin ningún error que lo delatara.
+// `./serialize.js` (mapLayersToOimSlots) was removed: it was a third compiler of
+// measurements, exported as public API of @oim-media/core but with no
+// consumer besides its own test. It anchored the position to the CENTER of the slot
+// (`anchorX += w/2`), while the real compiler (the one in the backend, in
+// `/api/v1/oim/compile`) anchors it to the top-left corner. A third party
+// integrating against this package would have got everything shifted by half a
+// box, with no error to reveal it.
 export * from "./text-marks.js";
 export * from "./drop-cap.js";
 export * from "./text-effects.js";

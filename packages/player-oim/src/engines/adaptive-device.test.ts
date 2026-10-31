@@ -24,7 +24,7 @@ describe('Adaptación inteligente de rendimiento (Device Tiering)', () => {
 
   it('en dispositivo móvil o low-tier, el cambio de idioma usa fundido sin blur en el viewport', () => {
     const motor = new ImageEngine(host as any);
-    // Simular perfil móvil
+    // Simulate a mobile profile
     motor._deviceProfile = {
       tier: 'low',
       isMobile: true,
@@ -43,7 +43,7 @@ describe('Adaptación inteligente de rendimiento (Device Tiering)', () => {
     shadow.appendChild(viewport);
     motor._viewport = viewport;
 
-    // Simular que hay cambio de contenido en 'titulo'
+    // Simulate a content change in 'titulo'
     motor._classifyLangChange = () => ({
       styleOnly: new Set<string>(),
       content: new Set(['titulo']),
@@ -52,7 +52,7 @@ describe('Adaptación inteligente de rendimiento (Device Tiering)', () => {
 
     motor.setLang('en');
 
-    // En móvil / low-tier NO se aplica blur al viewport
+    // On mobile / low-tier, the blur is NOT applied to the viewport
     expect(viewport.style.filter).not.toContain('blur');
   });
 
@@ -80,7 +80,7 @@ describe('Adaptación inteligente de rendimiento (Device Tiering)', () => {
 
     motor.setLang('en');
 
-    // En desktop high-tier se aplica el desenfoque suave cinemático
+    // On desktop high-tier, the soft cinematic blur is applied
     expect(viewport.style.filter).toContain('blur(14px)');
   });
 

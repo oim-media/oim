@@ -12,7 +12,7 @@
  *
  * Both run on a JavaScript timer, which the `oim-player-paused` class (CSS
  * `animation-play-state`) does not reach. A paused library card with a glitch
- * kept writing styles 30 times a second (audit of 9 Oct 2026).
+ * kept writing styles 30 times a second (found in an audit).
  */
 
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";

@@ -44,8 +44,8 @@ describe("dynamic-colors (Core)", () => {
 });
 
 describe("isSafeCssColor — lista blanca de colores del archivo", () => {
-  // Las CUATRO formas que existen de verdad en los 19 proyectos reales
-  // (391 valores medidos): 343 hex de 6, 20 var(), 16 rgb/rgba, 12 transparent.
+  // The FOUR forms that really exist in the 19 real projects
+  // (391 measured values): 343 six-digit hex, 20 var(), 16 rgb/rgba, 12 transparent.
   it("acepta lo que producen los proyectos reales", () => {
     for (const v of ["#06B6D4", "#FFF", "#18181Bff",
                      "rgba(139, 92, 246, 0.15)", "rgb(37,99,235)",
@@ -58,8 +58,8 @@ describe("isSafeCssColor — lista blanca de colores del archivo", () => {
   });
 
   it("rechaza la inyeccion que abria el visor a un tercero", () => {
-    // Esta carga, pegada a un atributo `style`, se parsea como DOS
-    // declaraciones y pide un recurso a un servidor ajeno.
+    //     // This payload, pasted into a `style` attribute, is parsed as TWO
+    //     // declarations and requests a resource from a foreign server.
     expect(isSafeCssColor("red; background-image: url(https://tercero/baliza)")).toBe(false);
     expect(isSafeCssColor("#fff; background: url(//evil)")).toBe(false);
     expect(isSafeCssColor("url(https://tercero/x)")).toBe(false);
@@ -93,7 +93,7 @@ describe("resolveCssColor DESCARTA el color invalido", () => {
   });
 
   it("con rol valido, tampoco entra en el respaldo del var()", () => {
-    // Se conserva la variable -util- y se tira el respaldo envenenado.
+    //     // The variable is kept (it is useful) and the poisoned fallback is discarded.
     expect(resolveCssColor("accent", "red; background: url(//evil)"))
       .toBe("var(--oim-color-accent, var(--oim-palette-accent))");
   });

@@ -5,22 +5,22 @@
  */
 
 /**
- * Dimensiones y unidades de usuario del formato OIM.
+ * Dimensions and user units of the OIM format.
  *
- * En la transicion hacia un modelo basado en ViewBox y unidades de usuario puras
- * (independientes de la plataforma y de cadenas de texto CSS como `cqw`),
- * esta utilidad permite resolver valores que pueden venir como:
- *  - numero puro (unidades de usuario de diseño, ej. 250 sobre un lienzo de 1000 = 25%)
- *  - porcentaje numerico o string con % (ej. "25%")
- *  - cadena CSS preexistente (ej. "25cqw", "100px")
+ * In the transition toward a model based on ViewBox and pure user units
+ * (platform-independent and free of CSS text strings such as `cqw`), this
+ * utility resolves values that can come as:
+ *  - a plain number (design user units, e.g. 250 on a 1000 canvas = 25%)
+ *  - a numeric percentage or a string with % (e.g. "25%")
+ *  - a pre-existing CSS string (e.g. "25cqw", "100px")
  */
 
 const RE_CSS_UNIT = /^[\d.+-]+(cqw|cqh|cqi|cqb|rem|em|ex|ch|vw|vh|vmin|vmax|%|px|pt|pc|cm|mm|in|lh|rlh)$/i;
 
 /**
- * Resuelve una dimension (ancho, alto, radio, padding) a una expresion CSS utilizable en web.
- * Si recibe un numero y un baseDimension > 0, lo convierte a porcentaje `cqw` respecto a baseDimension.
- * Si recibe una cadena con unidad CSS valida, la conserva (garantizando compatibilidad total con .oim legacy).
+ * Resolves a dimension (width, height, radius, padding) to a CSS expression usable on the web.
+ * If it receives a number and baseDimension > 0, it converts it to a `cqw` percentage relative to baseDimension.
+ * If it receives a string with a valid CSS unit, it keeps it (guaranteeing full compatibility with legacy .oim files).
  */
 export function resolveDimensionToCss(
   val: number | string | undefined | null,
@@ -58,8 +58,8 @@ export function resolveDimensionToCss(
 }
 
 /**
- * Extrae el valor numerico puro de una dimension dada en unidades de usuario.
- * Si viene como '25cqw' o '25%' y se conoce baseDimension, calcula su equivalente numerico.
+ * Extracts the pure numeric value of a dimension given in user units.
+ * If it comes as '25cqw' or '25%' and baseDimension is known, it computes its numeric equivalent.
  */
 export function resolveNumericDimension(
   val: number | string | undefined | null,

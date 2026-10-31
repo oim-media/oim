@@ -5,9 +5,9 @@
  */
 
 /**
- * Lo unico que el idioma puede cambiar en una capa. El inventario es CERRADO:
- * si algun dia se anade una cuarta entrada, se anade aqui o `setLang` no se
- * enterara de que hay algo nuevo que actualizar.
+ * The only things the language can change in a layer. The inventory is CLOSED:
+ * if a fourth entry is ever added, it must be added here, or `setLang` will
+ * not know there is something new to update.
  */
 export interface LocalizedEntries {
   content: string;
@@ -17,7 +17,7 @@ export interface LocalizedEntries {
 
 export type ChangeKind = "none" | "style-only" | "content";
 
-/** Busca una clave de idioma sin distinguir mayusculas. Ausente = undefined. */
+/** Looks up a language key, ignoring case. Missing = undefined. */
 export function resolveByLang(map: any, lang: string): any {
   if (!map || typeof map !== "object") return undefined;
   const lk = (lang || "").toLowerCase();
@@ -29,7 +29,7 @@ export function resolveByLang(map: any, lang: string): any {
   return undefined;
 }
 
-/** El content del idioma, con la misma cadena de reservas que usa el motor. */
+/** The language's content, with the same fallback chain the engine uses. */
 export function resolveContent(content: any, lang: string): string {
   const map = content || {};
   // Media layers keep their principal under "*" and give an exception its own
@@ -63,9 +63,9 @@ export function resolveContent(content: any, lang: string): string {
 }
 
 /**
- * Una URL `http(s)` ya no cuenta como imagen: el contrato retiro
- * `allow_external_urls` en 1.1.0 y un .oim no conecta con nadie al abrirse.
- * El parametro que lo permitia se pasaba siempre a `false`.
+ * An `http(s)` URL no longer counts as an image: the contract retired
+ * `allow_external_urls` in 1.1.0, and a .oim does not connect to anyone when
+ * opened. The parameter that allowed it was always passed as `false`.
  */
 export function isImageContent(slot: any, content: string): boolean {
   if (slot && slot.type === "image") return true;
@@ -88,26 +88,27 @@ function normalizeSize(value: any, fallback: any): string {
 }
 
 /**
- * Los valores EFECTIVOS, no los resueltos. La diferencia importa: una capa de
- * fondo ignora `maxWidths` porque si no el fondo se queda al 80% y deja una
- * franja sin cubrir. Si `setLang` escribiera el valor resuelto, el resultado
- * dependeria de por que camino llegaste.
+ * The EFFECTIVE values, not the resolved ones. The difference matters: a
+ * background layer ignores `maxWidths` because otherwise the background would
+ * stay at 80% and leave an uncovered strip. If `setLang` wrote the resolved
+ * value, the result would depend on which path you took to get there.
  */
 export function localizedEntries(
   slot: any,
   lang: string
 ): LocalizedEntries {
-  // Short aliases (st, c) retired in 1.12.0: one name per concept.
+  // Short aliases (st, c) were retired in 1.12.0: one name per concept.
   const style = (slot && slot.style) || {};
   const content = resolveContent(slot && slot.content, lang);
   const isImage = isImageContent(slot, content);
 
   const size = normalizeSize(
-    // `||` y no `??` A PROPOSITO: es lo que hace el motor, y un size 0 debe
-    // caer al principal igual que alli. Con `??` un 0 daria "0px" y este modulo
-    // dejaria de ser una copy fiel de lo que sustituye.
-    // Solo `fontSizes`: `fontSizeOverrides` se retiro en el contrato 1.5.0 y
-    // el compilador lo funde en `fontSizes`.
+    // `||` and not `??` ON PURPOSE: that is what the engine does, and a size 0
+    // must fall back to the main value there too. With `??`, a 0 would give
+    // "0px" and this module would stop being a faithful copy of what it
+    // replaces.
+    // Only `fontSizes`: `fontSizeOverrides` was retired in contract 1.5.0 and
+    // the compiler folds it into `fontSizes`.
     resolveByLang(style.fontSizes, lang) || style.fontSize,
     style.fontSize || "16px"
   );
@@ -123,11 +124,11 @@ export function localizedEntries(
 }
 
 /**
- * Que hay que hacerle a esta capa al pasar de un idioma a otro.
+ * What must be done to this layer when switching from one language to another.
  *
- * `content` gana siempre porque decide QUE se construye —text, imagen, SVG o
- * Lottie—; el size y el ancho solo acaban en `slotEl.style.*` y del reflujo se
- * encarga el navegador.
+ * `content` always wins because it decides WHAT gets built -text, image, SVG or
+ * Lottie-; the size and width only end up in `slotEl.style.*`, and the browser
+ * takes care of the reflow.
  */
 export function compareLangs(
   slot: any,

@@ -5,12 +5,12 @@
  */
 
 /**
- * La curva del texto artistico, ahora en un solo sitio.
+ * The artistic text curve, now in a single place.
  *
- * Las cifras de aqui son las que el editor venia dibujando. Si alguien
- * «mejora» la curva, esta prueba dice que acaba de cambiar el aspecto de las
- * obras ya guardadas — que es justo la conversacion que hay que tener antes,
- * no despues.
+ * The figures here are the ones the editor had been drawing. If someone
+ * "improves" the curve, this test says that the look of already-saved works
+ * has just changed -which is exactly the conversation to have beforehand, not
+ * afterwards.
  */
 
 import { describe, it, expect } from "vitest";
@@ -22,10 +22,10 @@ describe("calculateTextCurvePath", () => {
     expect(calculateTextCurvePath(360, 120, 0, "wave")).toBe("M 0 60 L 360 60");
   });
 
-  // Los valores por defecto de un cartel nuevo: 360x120, curva 15, arco.
+  // The default values of a new poster: 360x120, curve 15, arc.
   it("el arco por defecto mantiene el texto centrado en la caja", () => {
     // deltaY = 15/100 * 120*0.45 = 8.1
-    // extremos en 60 + 4.05, control en 60 - 8.1
+    // endpoints at 60 + 4.05, control point at 60 - 8.1
     expect(calculateTextCurvePath(360, 120, 15, "arc")).toBe(
       "M 0 64.05 Q 180 51.9 360 64.05"
     );
@@ -53,7 +53,7 @@ describe("calculateTextCurvePath", () => {
     const arriba = calculateTextCurvePath(360, 120, 50, "arc");
     const abajo = calculateTextCurvePath(360, 120, -50, "arc");
     expect(arriba).not.toBe(abajo);
-    // deltaY = ±27: control en 60∓27, extremos en 60±13.5
+    // deltaY = ±27: control point at 60∓27, endpoints at 60±13.5
     expect(arriba).toBe("M 0 73.5 Q 180 33 360 73.5");
     expect(abajo).toBe("M 0 46.5 Q 180 87 360 46.5");
   });
@@ -67,14 +67,14 @@ describe("calculateTextCurvePath", () => {
     );
   });
 
-  // Esta es la razon de haber elegido la geometria del editor. Se mide el
-  // vertice a partir del trazado DEVUELTO, no de la formula, y se compara con
-  // el que producia el player.
+  // This is the reason the editor's geometry was chosen. The apex is measured
+  // from the RETURNED path, not from the formula, and compared with the one the
+  // player used to produce.
   it("ni con la curvatura al maximo el trazado se sale de la caja", () => {
     const ALTO = 120;
     const d = calculateTextCurvePath(360, ALTO, 100, "arc");
 
-    // `M 0 y0 Q cx cy 360 y1` -> el vertice de una Bezier cuadratica esta en
+    // `M 0 y0 Q cx cy 360 y1` -> the apex of a quadratic Bézier is at
     // (P0 + 2*P1 + P2) / 4.
     const m = d.match(/^M 0 (\S+) Q \S+ (\S+) \S+ (\S+)$/);
     expect(m).not.toBeNull();
@@ -84,8 +84,8 @@ describe("calculateTextCurvePath", () => {
     expect(vertice).toBeGreaterThanOrEqual(0);
     expect(vertice).toBeLessThanOrEqual(ALTO);
 
-    // Lo que devolvia el player: extremos en la linea base y el control a
-    // `sagitta * 1.8`. Su vertice se salia por arriba de una caja de 120.
+    // What the player returned: endpoints on the baseline and the control at
+    // `sagitta * 1.8`. Its apex went above a 120 px box.
     const sagitta = ALTO * 0.45;
     const verticePlayer = (ALTO / 2 + 2 * (ALTO / 2 - sagitta * 1.8) + ALTO / 2) / 4;
     expect(verticePlayer).toBeLessThan(vertice);
@@ -94,10 +94,10 @@ describe("calculateTextCurvePath", () => {
 
 describe("artisticTextLines", () => {
   /**
-   * El `<text>` de SVG no parte lineas: un "\n" se pinta como un espacio. Por
-   * eso pulsar Enter en el texto 3D no hacia nada. Cada linea se dibuja por
-   * separado a `offset` px del centro, y el editor y el player tienen que
-   * apilarlas igual: por eso vive aqui y no en cada uno.
+   * SVG `<text>` does not break lines: a "\n" is painted as a space. That is
+   * why pressing Enter in 3D text did nothing. Each line is drawn separately at
+   * `offset` px from the centre, and the editor and the player must stack them
+   * the same way: that is why it lives here and not in each one.
    */
   it("una sola linea queda en el centro", () => {
     expect(artisticTextLines("HOLA", 40, 1.25)).toEqual([{ text: "HOLA", offset: 0 }]);

@@ -15,7 +15,7 @@ describe("dimensions - resolución de unidades hacia ViewBox y CSS", () => {
   });
 
   it("convierte numeros puros de usuario a cqw relativo al canvas", () => {
-    // 250 sobre canvas de 1000 = 25cqw
+    // 250 on a 1000 canvas = 25cqw
     expect(resolveDimensionToCss(250, 1000)).toBe("25cqw");
     expect(resolveDimensionToCss(400, 800)).toBe("50cqw");
   });

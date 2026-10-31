@@ -118,8 +118,8 @@ describe("Renderizado de Colores Dinamicos en ImageEngine", () => {
       height_px: 50,
       content: { es: "Hola Dinamico" },
       style: {
-        // `fillColor` y no `color`: el contrato 1.5.0 retiro `color` y en un
-        // texto `fillColor` es la letra.
+        // `fillColor` and not `color`: contract 1.5.0 removed `color`, and in a
+        // text, `fillColor` is the letter's color.
         fillColor: "#18181B",
         colorRole: "on-surface",
         fontSize: "16px",
@@ -187,11 +187,11 @@ describe("Renderizado de Colores Dinamicos en ImageEngine", () => {
   });
 
   it("un color del archivo no puede inyectar declaraciones CSS en el atributo style", async () => {
-    // El color sale del .oim y el esquema NO valida su formato. Cuando no hay
-    // rol semantico -el caso comun-, `resolveCssColor` devuelve el valor CRUDO.
-    // Si ese valor se pega al atributo `style`, el navegador lo parsea como
-    // lista de declaraciones y un archivo ajeno consigue que el visor pida un
-    // recurso a un tercero al abrirlo.
+    // The color comes from the .oim and the schema does NOT validate its format.
+    // When there is no semantic role -the common case-, `resolveCssColor` returns
+    // the RAW value. If that value is pasted into the `style` attribute, the
+    // browser parses it as a list of declarations, and a foreign file gets the
+    // viewer to request a resource from a third party when it is opened.
     const cargaMaliciosa = "red; background-image: url(https://tercero.example/baliza)";
     const { motor, shadow } = montarMotor([{
       id: "svg_importado",
@@ -203,8 +203,8 @@ describe("Renderizado de Colores Dinamicos en ImageEngine", () => {
       content: { es: '<svg width="10" height="10"><circle cx="5" cy="5" r="4"/></svg>' },
       style: {
         strokeColor: cargaMaliciosa,
-        // sin `strokeColorRole` a proposito: es el camino que NO pasa por la
-        // lista blanca y devuelve el color tal cual.
+        // without `strokeColorRole` on purpose: it is the path that does NOT go
+        // through the allowlist and returns the color as-is.
       },
     }]);
 
@@ -221,10 +221,10 @@ describe("Renderizado de Colores Dinamicos en ImageEngine", () => {
 });
 
 describe("allow-dynamic-colors: eximir una imagen concreta", () => {
-  // La funcion ya es opt-in a nivel de pagina: si la web no define
-  // `--oim-color-*`, `var(--x, respaldo)` cae al respaldo del autor. Este
-  // atributo cubre el otro caso: una web que SI las define globalmente y
-  // embebe una obra publica que no debe adoptar su paleta.
+  // The function is already opt-in at the page level: if the page does not
+  // define `--oim-color-*`, `var(--x, fallback)` falls back to the author's
+  // fallback. This attribute covers the other case: a page that DOES define
+  // them globally and embeds a public work that must not adopt its palette.
   it("por defecto los deja pasar", async () => {
     const { motor } = montarMotor([]);
     expect(motor.allowDynamicColors).toBe(true);
@@ -240,7 +240,7 @@ describe("allow-dynamic-colors: eximir una imagen concreta", () => {
 
     const viewport = document.createElement("div");
     motor._viewport = viewport;
-    // Se aplica el mismo apagado que hace el motor al montar el visor.
+    // The same switch-off that the engine applies when mounting the viewer is applied here.
     for (const rol of DYNAMIC_COLOR_ROLES) {
       viewport.style.setProperty("--oim-color-" + rol, "initial");
     }
@@ -251,7 +251,7 @@ describe("allow-dynamic-colors: eximir una imagen concreta", () => {
   });
 
   // SVG attributes do not take var(): the role colour went nowhere and the icon
-  // kept its fixed colour under a host palette (26 Oct).
+  // kept its fixed colour under a host palette.
   it("paints an svg icon's currentColor stroke with the role through CSS, not the attribute", async () => {
     const { motor, shadow } = montarMotor([{
       id: "icon",

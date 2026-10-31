@@ -5,59 +5,58 @@
  */
 
 /**
- * El interlineado: cuanto ocupa de alto una linea de texto.
+ * Line height: how tall a line of text is.
  *
- * Vive aqui porque el fallo ES que el editor y el player no coincidian. Medido
- * el 27 de agosto de 2026, habia CUATRO opiniones sobre la misma propiedad:
+ * It lives here because the fault IS that the editor and the player did not
+ * agree. Measured at the time, there were FOUR opinions about the same property:
  *
- *   - el editor pinta con `lineHeight ?? 1.25` en el lienzo;
- *   - el player no tenia ni una linea que nombrara `lineHeight`, pero un
- *     bucle generico volcaba CADA clave de `style` como propiedad CSS, asi
- *     que el valor del archivo llegaba al elemento sin validar -un `0`
- *     colapsaba las lineas, un `99` tapaba el documento- y una capa que no lo
- *     traia se quedaba con el `normal` del navegador, que segun la fuente
- *     ronda 1.15-1.2 y no es un numero fijo. Ese ultimo es el caso comun, y
- *     la divergencia de verdad;
- *   - los `.oim` publicados traen `"1.2"`, y como CADENA, no como numero;
- *   - `styleSchema` ni siquiera declaraba el campo, asi que `z.object` lo
- *     descartaba al validar y el contrato publicado no lo mencionaba.
+ *   - the editor paints with `lineHeight ?? 1.25` on the canvas;
+ *   - the player had no line naming `lineHeight`, but a generic loop dumped
+ *     EVERY key of `style` as a CSS property, so the file's value reached the
+ *     element unvalidated -a `0` collapsed the lines, a `99` covered the
+ *     document- and a layer without one kept the browser's `normal`, which
+ *     depends on the font and is around 1.15-1.2 and not a fixed number. That
+ *     last case is the common one, and the real divergence;
+ *   - published .oim files carry `"1.2"`, as a STRING, not as a number;
+ *   - `styleSchema` did not even declare the field, so `z.object` discarded it
+ *     when validating and the published contract did not mention it.
  *
- * La consecuencia se veia: la caja del texto salia mas baja de lo que el
- * editor habia previsto y los descendentes -la «j», la «p», la «g»- quedaban
- * cortados por el `overflow: hidden` del slot.
+ * The consequence was visible: the text box came out lower than the editor had
+ * planned, and the descenders -the "j", the "p", the "g"- were cut off by the
+ * slot's `overflow: hidden`.
  *
- * ## Por que se acota en vez de descartar
+ * ## Why it is clamped instead of discarded
  *
- * El control del editor declara `min="0.5" max="3"`, pero `<input
- * type="number">` no impide teclear fuera de rango: el atributo solo bloquea
- * el envio de un formulario, y aqui no hay ninguno. Un archivo puede traer 99.
+ * The editor's control declares `min="0.5" max="3"`, but `<input
+ * type="number">` does not stop typing outside the range: the attribute only
+ * blocks submitting a form, and there is no form here. A file can carry 99.
  *
- * Acotar conserva la intencion -quien escribio 5 queria «muy alto» y recibe el
- * maximo que el editor ofrece-. Descartar y volver al 1.25 daria un resultado
- * que nadie pidio y que ademas se parece al de no haber escrito nada.
+ * Clamping keeps the intent -whoever wrote 5 wanted "very tall" and receives the
+ * maximum the editor offers. Discarding it and falling back to 1.25 would give a
+ * result nobody asked for, one that also looks like nothing was ever written.
  *
- * ## Por que sin unidad
+ * ## Why unitless
  *
- * Un `line-height` sin unidad es un factor y se hereda como factor: cada
- * descendiente lo multiplica por SU tamano de fuente. Con `px` o `em` se
- * hereda ya calculado, asi que un hijo mas pequeno recibiria el alto de linea
- * del padre y las lineas se separarian de mas.
+ * A unitless `line-height` is a factor and is inherited as a factor: each
+ * descendant multiplies it by ITS OWN font size. With `px` or `em` it is
+ * inherited already computed, so a smaller child would receive the parent's
+ * line height and the lines would spread too far apart.
  */
 
-/** Lo que pinta el editor cuando la capa no dice nada. */
+/** What the editor paints when the layer says nothing. */
 export const DEFAULT_LINE_HEIGHT = 1.25;
 
-/** Los limites que declara el control del editor. */
+/** The limits declared by the editor's control. */
 export const MIN_LINE_HEIGHT = 0.5;
 export const MAX_LINE_HEIGHT = 3;
 
 /**
- * El interlineado de un estilo, como factor sin unidad.
+ * A style's line height, as a unitless factor.
  *
- * Acepta el numero y la cadena numerica porque los `.oim` publicados traen la
- * segunda. Cualquier otra cosa -vacio, texto, cero, negativo, infinito- vuelve
- * al valor por defecto: un cero colapsaria las lineas unas sobre otras, y un
- * texto ilegible es peor que uno con el interlineado de siempre.
+ * It accepts the number and the numeric string because published .oim files
+ * carry the second. Anything else -empty, text, zero, negative, infinite- falls
+ * back to the default: a zero would collapse the lines onto each other, and
+ * unreadable text is worse than text with the usual line height.
  */
 export function resolveLineHeight(style: any): number {
   const crudo = style && style.lineHeight;
@@ -73,55 +72,54 @@ export function resolveLineHeight(style: any): number {
 }
 
 /**
- * El alto que declara una fuente, en multiplos de su tamano, para la peor de
- * las que se midieron.
+ * The height a font declares, in multiples of its size, for the worst of the
+ * ones measured.
  *
- * Medido en un navegador real el 27/08/2026 con `fontBoundingBox`, a 48 px:
+ * Measured in a real browser with `fontBoundingBox`, at 48 px:
  *
- *     Poppins            1.396 em   <- la mayor
+ *     Poppins            1.396 em   <- the largest
  *     Playfair Display   1.333
  *     Inter              1.229
  *     Montserrat         1.208
  *     Georgia            1.146
  *     Arial              1.104
  *
- * Se usa el maximo y no el promedio a proposito: quedarse corto deja media
- * letra sin color, y pasarse solo agranda un area invisible.
+ * The maximum is used, not the average, on purpose: falling short leaves half
+ * a letter without color, while overshooting only enlarges an invisible area.
  */
 export const MAX_FONT_HEIGHT = 1.4;
 
 /**
- * Cuanto sobresale la tinta por ARRIBA y por ABAJO de la caja de linea, en
- * `em`, para un interlineado dado.
+ * How far the ink protrudes ABOVE and BELOW the line box, in `em`, for a given
+ * line height.
  *
- * ## Que arregla
+ * ## What it fixes
  *
- * `background-clip: text` recorta la pintura al area de fondo del elemento, y
- * esa area es la caja de linea. Cuando la tinta de un descendente -la «j», la
- * «p», la «g»- sobresale de ella, esa parte de la letra se queda SIN RELLENO:
- * transparente. Con un borde de texto se ve clarisimo, porque el contorno
- * sigue donde el color ya no llega.
+ * `background-clip: text` clips the paint to the element's background area, and
+ * that area is the line box. When the ink of a descendant -the "j", the "p", the
+ * "g"- protrudes out of it, that part of the letter is left WITHOUT FILL:
+ * transparent. With a text stroke it looks very clear, because the outline
+ * stays where the color no longer reaches.
  *
- * Es el mismo hecho geometrico que ya causo otras dos cosas hoy -que
- * `overflow: hidden` cortara los glifos, y que el interlineado del editor y el
- * del player no coincidieran- vista por tercera vez. Un solo hecho, tres
- * sintomas que no se parecen.
+ * It is the same geometric fact that already caused two other things -that
+ * `overflow: hidden` would cut off the glyphs, and that the editor's and the
+ * player's line heights did not match- seen for a third time. One fact, three
+ * symptoms that do not look alike.
  *
- * ## Por que devuelve CERO cuando ya cabe
+ * ## Why it returns ZERO when the ink already fits
  *
- * Anadir margen de mas no es gratis: agranda el area de fondo, y un degradado
- * VERTICAL se reparte sobre ella, asi que sus colores se desplazan. Con un
- * interlineado holgado la tinta ya cabe y no hay nada que compensar; devolver
- * un valor fijo cambiaria el degradado sin reason.
+ * Adding extra margin is not free: it enlarges the background area, and a
+ * VERTICAL gradient is spread over it, so its colors shift. With a generous
+ * line height the ink already fits and there is nothing to compensate; returning
+ * a fixed value would change the gradient for no reason.
  */
 export function inkMargin(altura: number): number {
   if (!Number.isFinite(altura) || altura <= 0) altura = DEFAULT_LINE_HEIGHT;
   const sobra = MAX_FONT_HEIGHT - altura;
   if (sobra <= 0) return 0;
-  // Redondeado a la diezmilesima porque este numero acaba LITERAL en el CSS:
-  // `1.4 - 1.25` da 0.15000000000000002 en coma flotante, y de ahi salia un
-  // `padding-top: 0.07499999999999996em`. Es valido y es ridiculo, y cuatro
-  // decimales de `em` son mas precision de la que ningun tamano de fuente
-  // necesita.
+  // Rounded to the ten-thousandth because this number ends up LITERALLY in the
+  // CSS: `1.4 - 1.25` gives 0.15000000000000002 in floating point, and from that
+  // came a `padding-top: 0.07499999999999996em`. It is valid and it is absurd,
+  // and four decimals of `em` are more precision than any font size needs.
   return Math.round((sobra / 2) * 10000) / 10000;
 }

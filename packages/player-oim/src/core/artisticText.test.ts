@@ -5,10 +5,11 @@
  */
 
 /**
- * Saltos de linea en el texto 3D del player.
+ * Line breaks in the player's 3D text.
  *
- * El editor y el player pintan este texto por separado. Si solo se arreglara
- * el editor, el autor veria dos lineas y quien abriera el .oim veria una.
+ * The editor and the player paint this text separately. If only the editor
+ * were fixed, the author would see two lines and whoever opened the .oim
+ * would see one.
  */
 
 import { describe, it, expect } from "vitest";
@@ -24,7 +25,7 @@ const slot = (style: Record<string, unknown> = {}) => ({
   style: { lineHeight: 1.25, ...style },
 });
 
-// El texto visible de cada `<text>`, sin las etiquetas `<textPath>` de dentro.
+// The visible text of each `<text>`, without the nested `<textPath>` tags.
 const textos = (svg: string) =>
   [...svg.matchAll(/<text\b[^>]*>([\s\S]*?)<\/text>/g)].map((m) => m[1].replace(/<[^>]+>/g, ""));
 
@@ -43,8 +44,9 @@ describe("generateArtisticTextSvgString con saltos de linea", () => {
   });
 
   it("usa el mismo interlineado por defecto que el editor", () => {
-    // El editor usa `resolveLineHeight` (1.25); el player caia a 1.2. Con una
-    // sola linea no se notaba; con varias, el .oim saldria mas apretado.
+    // The editor uses `resolveLineHeight` (1.25); the player fell back to 1.2.
+    // With one line this was not noticeable; with several, the .oim would
+    // come out tighter.
     const model = buildArtisticTextModelFromSlot({ ...slot(), style: {} }, "es");
     expect(model.lineHeight).toBe(1.25);
   });

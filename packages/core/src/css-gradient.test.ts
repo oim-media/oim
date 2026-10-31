@@ -53,7 +53,7 @@ describe("gradientes de un .oim: lista blanca", () => {
 
 describe("getFillCss no deja pasar un gradiente que pida recursos", () => {
   it("un url() dentro de fillGradient no llega al estilo", () => {
-    // Until 24 Sept 2026 this went straight to `style.backgroundImage`, and
+    // Until recently this went straight to `style.backgroundImage`, and
     // CSSOM accepts an image list: opening a crafted file pinged a third party.
     const css = getFillCss({
       width: 10, height: 10, fillType: "gradient",

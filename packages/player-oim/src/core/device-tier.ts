@@ -16,25 +16,25 @@ export interface DeviceProfile {
 }
 
 /**
- * Detecta si el dispositivo es un móvil o tableta táctil.
+ * Detects whether the device is a mobile or touch tablet.
  */
 export function isMobileDevice(nav?: Navigator, win?: Window): boolean {
   const n = nav ?? (typeof navigator !== 'undefined' ? navigator : undefined);
   const w = win ?? (typeof window !== 'undefined' ? window : undefined);
   if (!n) return false;
 
-  // 1. User Agent regex estándar
+  // 1. Standard User Agent regex
   const ua = n.userAgent || '';
   if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)) {
     return true;
   }
 
-  // 2. iPadOS en Safari simula MacIntel con múltiples puntos táctiles
+  // 2. iPadOS in Safari reports itself as MacIntel with several touch points
   if (n.platform === 'MacIntel' && n.maxTouchPoints > 1) {
     return true;
   }
 
-  // 3. Pantalla táctil sin ratón fino
+  // 3. Touch screen without a fine pointer (mouse)
   if (n.maxTouchPoints > 1 && w && typeof w.matchMedia === 'function') {
     try {
       const hasFinePointer = w.matchMedia('(pointer: fine)').matches;
@@ -43,7 +43,7 @@ export function isMobileDevice(nav?: Navigator, win?: Window): boolean {
         return true;
       }
     } catch {
-      // Ignorar si matchMedia falla en entornos restringidos
+      // Ignore if matchMedia fails in restricted environments
     }
   }
 
@@ -51,7 +51,7 @@ export function isMobileDevice(nav?: Navigator, win?: Window): boolean {
 }
 
 /**
- * Detecta si el sistema operativo tiene activada la preferencia de movimiento reducido.
+ * Detects whether the operating system has the reduced-motion preference enabled.
  */
 export function prefersReducedMotion(win?: Window): boolean {
   const w = win ?? (typeof window !== 'undefined' ? window : undefined);
@@ -64,29 +64,29 @@ export function prefersReducedMotion(win?: Window): boolean {
 }
 
 /**
- * Determina el nivel de rendimiento (tier) del hardware disponible.
- * - 'low': móviles gama baja, <=2 núcleos, <=2GB RAM, o ahorro de datos activo.
- * - 'medium': móviles estándar, 4-6 núcleos, portátiles en batería.
- * - 'high': PCs de escritorio con >=8 núcleos y >=8GB RAM.
+ * Determines the performance level (tier) of the available hardware.
+ * - 'low': low-end phones, <=2 cores, <=2GB RAM, or data saver active.
+ * - 'medium': standard phones, 4-6 cores, laptops on battery.
+ * - 'high': desktop PCs with >=8 cores and >=8GB RAM.
  */
 export function getDeviceTier(nav?: Navigator, win?: Window): DeviceTier {
   const n = nav ?? (typeof navigator !== 'undefined' ? navigator : undefined);
   const w = win ?? (typeof window !== 'undefined' ? window : undefined);
   if (!n) return 'high';
 
-  // 1. Modo ahorro de datos activo -> 'low'
+  // 1. Data saver mode active -> 'low'
   const conn = (n as any).connection;
   if (conn && conn.saveData === true) {
     return 'low';
   }
 
-  // 2. Memoria del dispositivo (API deviceMemory en Chrome/Edge)
+  // 2. Device memory (deviceMemory API in Chrome/Edge)
   const memory = (n as any).deviceMemory;
   if (typeof memory === 'number' && memory <= 2) {
     return 'low';
   }
 
-  // 3. Concurrencia de hardware (núcleos de CPU)
+  // 3. Hardware concurrency (CPU cores)
   const cores = n.hardwareConcurrency || 4;
   if (cores <= 2) {
     return 'low';
@@ -95,15 +95,15 @@ export function getDeviceTier(nav?: Navigator, win?: Window): DeviceTier {
   const isMobile = isMobileDevice(n, w);
 
   if (isMobile) {
-    // En móviles, incluso con 8 núcleos pequeños, el presupuesto térmico
-    // y de shaders corresponde a medium/low frente a una PC de escritorio.
+    // On phones, even with 8 small cores, the thermal and shader budget
+    // belongs to medium/low, compared with a desktop PC.
     if (cores <= 4 || (typeof memory === 'number' && memory <= 4)) {
       return 'low';
     }
     return 'medium';
   }
 
-  // En PC de escritorio o portátiles potentes
+  // On desktop PCs or powerful laptops
   if (cores >= 8 && (typeof memory !== 'number' || memory >= 8)) {
     return 'high';
   }
@@ -112,7 +112,7 @@ export function getDeviceTier(nav?: Navigator, win?: Window): DeviceTier {
 }
 
 /**
- * Retorna el perfil consolidado del dispositivo.
+ * Returns the consolidated profile of the device.
  */
 export function getDeviceProfile(nav?: Navigator, win?: Window): DeviceProfile {
   const n = nav ?? (typeof navigator !== 'undefined' ? navigator : undefined);

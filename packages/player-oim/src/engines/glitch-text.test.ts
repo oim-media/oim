@@ -32,10 +32,10 @@ describe("Typewriter, Glitch, Highlight, and DropCap in ImageEngine", () => {
     const wrap = makeWrap();
     const anim = applyTypewriterText(wrap, "Antigravity", 10, 0, true);
 
-    // En t = 0 con animación activa, empieza en vacío + cursor
+    // At t = 0 with the animation active, it starts empty + cursor
     expect(wrap.textContent).toContain("|");
 
-    // Avanzar 250ms (2-3 caracteres a 10 cps)
+    // Advance 250ms (2-3 characters at 10 cps)
     vi.advanceTimersByTime(250);
     expect(wrap.textContent?.startsWith("An") || wrap.textContent?.startsWith("Ant")).toBe(true);
 
@@ -52,7 +52,7 @@ describe("Typewriter, Glitch, Highlight, and DropCap in ImageEngine", () => {
     expect(ghosts).toHaveLength(2);
     expect(wrap.querySelector('span:not([aria-hidden])')?.textContent).toBe("Cyberpunk");
 
-    // Avanzar a la ventana de ráfaga (>= 700ms en ciclo de 1s)
+    // Advance to the burst window (>= 700ms in a 1s cycle)
     vi.advanceTimersByTime(800);
     expect(wrap.style.display).toBe("inline-block");
     expect(ghosts.map((g) => g.style.opacity)).toEqual(["0.85", "0.85"]);

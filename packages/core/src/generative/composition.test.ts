@@ -11,7 +11,7 @@ import type { GeneratorSpec } from "./types.js";
 
 describe("generador compuesto por layers", () => {
   it("dos layers emiten dos grupos con su modo de fusion", () => {
-    // Añadimos temporalmente un spec de prueba al catálogo para ejercitar la composición
+    // Temporarily add a test spec to the catalog to exercise the composition
     const testSpec: GeneratorSpec = {
       id: "prueba-dos-layers",
       layers: [
@@ -36,8 +36,8 @@ describe("generador compuesto por layers", () => {
   });
 
   it("el grano va en MOSAICO, no a pantalla completa", () => {
-    // Medido: a pantalla completa cuesta el triple (3,3 ms contra 1,1); en
-    // mosaico de 128 no cuesta nada medible.
+    // Measured: full screen costs three times as much (3.3 ms vs 1.1); in
+    // 128px tiles it costs nothing measurable.
     const testSpec: GeneratorSpec = {
       id: "prueba-con-grano",
       layers: [
@@ -63,9 +63,9 @@ describe("generador compuesto por layers", () => {
   });
 
   it("una capa con opacidad y desenfoque emite ambos, y el filtro se deduplica", () => {
-    // `luz-difusa`, el primer generador compuesto del repertorio, es un radial
-    // translucido en `screen` DESENFOCADO. Esta rama del envoltorio no la
-    // ejercitaba ninguna prueba, y es la que ese generador estrena.
+    // `luz-difusa`, the first composed generator in the repertoire, is a translucent radial
+    // in `screen` BLURRED. No test exercised this branch of the wrapper, and it is the
+    // one that generator debuts.
     const testSpec: GeneratorSpec = {
       id: "prueba-desenfoque",
       layers: [
@@ -85,14 +85,14 @@ describe("generador compuesto por layers", () => {
       expect(svg).toContain("opacity:0.5");
       expect(svg).toContain('<feGaussianBlur stdDeviation="4"');
 
-      // Dos layers con el mismo desenfoque comparten un solo <filter>, igual que
-      // ya hacen los gradientes. Sin esto, un generador de seis layers emite seis
+      // Two layers with the same blur share a single <filter>, as gradients already do.
+      // Without this, a six-layer generator emits six identical filters.
       // filtros identicos.
       expect(svg.match(/<filter id=/g)).toHaveLength(1);
       expect(svg.match(/filter="url\(#/g)).toHaveLength(2);
 
-      // Una capa con desenfoque pero sin fusion ni opacidad se envuelve igual,
-      // y no debe inventarse un style vacio.
+      // A layer with blur but no blend or opacity is wrapped anyway, and an empty
+      // style must not be invented.
       expect(svg).not.toContain('style=""');
     } finally {
       const idx = GENERATOR_CATALOG.indexOf(testSpec);
@@ -101,7 +101,7 @@ describe("generador compuesto por layers", () => {
   });
 
   it("una capa sin fusion declarada no emite mix-blend-mode", () => {
-    // Para no ensuciar el SVG de los generadores de una sola capa.
+    // So as not to clutter the SVG of single-layer generators.
     const svg = decodeURIComponent(renderGenerativeSVG(
       { generatorId: "stacked-waves", seed: 1 },
       { width: 200, height: 200 }

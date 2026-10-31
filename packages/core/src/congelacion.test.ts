@@ -5,47 +5,47 @@
  */
 
 /**
- * La superficie del contrato esta CONGELADA: cada clave declara que concepto
- * cubre, y dos claves no pueden cubrir el mismo sin decirlo.
+ * The contract surface is FROZEN: every key declares which concept it covers,
+ * and two keys cannot cover the same one without saying so.
  *
- * ## Por que existe
+ * ## Why it exists
  *
- * El contrato acumulo ocho nombres repetidos para cosas que ya tenian nombre
- * -`size` y `fontSize`, `font` y `fontFamily`, `color` y `fillColor`- y nada
- * lo impidio, porque anadir una clave nueva nunca ha costado nada. Mientras se
- * paga esa deuda, esto evita que crezca: para anadir una clave hay que decir
- * que concepto cubre, y si ese concepto ya lo cubre otra, la prueba se pone
- * roja y obliga a elegir.
+ * The contract accumulated eight repeated names for things that already had a
+ * name -`size` and `fontSize`, `font` and `fontFamily`, `color` and `fillColor`-
+ * and nothing stopped it, because adding a new key has never cost anything.
+ * While that debt is being paid, this keeps it from growing: to add a key you
+ * must say which concept it covers, and if another key already covers that
+ * concept, the test turns red and forces a choice.
  *
- * No es una lista de claves prohibidas. Es una pregunta obligatoria.
+ * It is not a list of forbidden keys. It is a mandatory question.
  *
- * ## Los dos tipos de repeticion, que no son lo mismo
+ * ## The two kinds of repetition, which are not the same
  *
- *   DUPLICADO PURO  dos formas de decir exactamente lo mismo. Sobra una.
+ *   PURE DUPLICATE  two ways of saying exactly the same thing. One is redundant.
  *                   `size`/`fontSize`, `font`/`fontFamily`,
  *                   `color`/`fillColor`, `fontSizes`/`fontSizeOverrides`.
  *
- *   ATAJO           un booleano que resume una clave mas expresiva y PIERDE
- *                   informacion: `italic: true` no puede decir `oblique`, y
- *                   `bold` no puede decir `fontWeight: 600`. Gana el completo;
- *                   el atajo sobrevive como alias de solo lectura.
+ *   SHORTCUT        a boolean that summarizes a more expressive key and LOSES
+ *                   information: `italic: true` cannot say `oblique`, and
+ *                   `bold` cannot say `fontWeight: 600`. The full key wins;
+ *                   the shortcut survives as a read-only alias.
  *
- * Y lo que NO es repeticion, aunque lo parezca:
+ * And what is NOT repetition, although it may look like it:
  *
- *   `fontSize` (una cadena) y `fontSizes` (un mapa por idioma) son cosas
- *   distintas, igual que `maxWidth` y `maxWidths`. Un texto SI cambia de
- *   tamano segun el idioma -una palabra alemana no ocupa lo que una
- *   espanola-, asi que el mapa por idioma es dato de dibujo y se queda.
- *   `grain` enciende y `grainIntensity` gradua. Confundirlos costaria
- *   capacidad real.
+ *   `fontSize` (a string) and `fontSizes` (a per-language map) are different
+ *   things, just as `maxWidth` and `maxWidths` are. A text DOES change size
+ *   depending on the language -a German word does not take up the space a
+ *   Spanish one does-, so the per-language map is drawing data and stays.
+ *   `grain` switches it on and `grainIntensity` sets its amount. Confusing them
+ *   would cost real capability.
  *
- * ## Por que `fontSizeOverrides` SI es alias, aunque el nombre prometa mas
+ * ## Why `fontSizeOverrides` IS an alias, even though the name promises more
  *
- * Su nombre promete distinguir que tamanos eligio la persona de los que
- * salieron del default. Esa informacion existe en el editor y **se pierde al
- * exportar**: `backend-stage.ts` escribe el MISMO valor en `fontSizes` y en
- * `fontSizeOverrides`. Es peor que un duplicado — es un campo que aparenta
- * llevar intencion y no la lleva.
+ * Its name promises to distinguish which sizes the person chose from those that
+ * came from the default. That information exists in the editor and **is lost on
+ * export**: `backend-stage.ts` writes the SAME value into `fontSizes` and into
+ * `fontSizeOverrides`. It is worse than a duplicate -it is a field that appears
+ * to carry intent and does not.
  *
  * Decision: **the file carries the resolved size, nothing more**. A `.oim` is
  * a DRAWING artifact; it needs to know what to paint, not why. What is lost
@@ -59,14 +59,14 @@ import { z } from "zod";
 import { styleSchema } from "./schema";
 
 /**
- * Que concepto cubre cada clave de `style`.
+ * Which concept each `style` key covers.
  *
- * Añadir una clave al esquema sin añadirla aqui pone la prueba en rojo. Es el
- * punto del ejercicio: la decision se toma al escribirla, no tres meses
- * despues cuando alguien mide.
+ * Adding a key to the schema without adding it here turns the test red. That is
+ * the point of the exercise: the decision is made when the key is written, not
+ * months later when someone measures.
  */
 const CONCEPTO: Record<string, string> = {
-  // -- tipografia
+  // -- typography
   fontFamily: "typeface",
   fontSize: "font-size",
   fontSizes: "font-size-per-language",
@@ -79,7 +79,7 @@ const CONCEPTO: Record<string, string> = {
   verticalAlign: "vertical-align",
   textRuns: "precomputed-text-runs-per-language",
 
-  // -- caja
+  // -- box
   width: "box-width",
   height: "box-height",
   maxWidth: "box-max-width",
@@ -87,7 +87,7 @@ const CONCEPTO: Record<string, string> = {
   borderRadius: "corner-radius",
   objectFit: "content-fit",
 
-  // -- pintura
+  // -- paint
   fillColor: "fill-color",
   strokeStyle: "stroke-style",
   textStrokeColor: "text-stroke-color",
@@ -95,7 +95,7 @@ const CONCEPTO: Record<string, string> = {
   blendMode: "blend-mode",
   layerBlur: "layer-blur",
 
-  // -- sombra: no son duplicados, son las componentes de un mismo efecto
+  // -- shadow: not duplicates, they are the components of a single effect
   shadowEnabled: "shadow-enabled",
   shadowColor: "shadow-color",
   shadowBlur: "shadow-blur",
@@ -103,21 +103,21 @@ const CONCEPTO: Record<string, string> = {
   shadowOffsetY: "shadow-offset-y",
   shadowOpacity: "shadow-opacity",
 
-  // -- grano: `grain` enciende, `grainIntensity` gradua
+  // -- grain: `grain` switches it on, `grainIntensity` sets the amount
   grain: "grain-enabled",
   grainIntensity: "grain-intensity",
   grainSize: "grain-size",
   grainBlend: "grain-blend",
 
-  // -- efecto heredado (resplandor y similares)
+  // -- inherited effect (glow and similar)
   effect: "effect-kind",
   effectColor: "effect-color",
   effectRadius: "effect-radius",
 
-  // -- stack canónico de efectos modulares (Spec 2026-10-07)
+  // -- canonical stack of modular effects
   effects: "unified-effects-stack",
 
-  // -- mascara
+  // -- mask
   maskCoverage: "mask-coverage",
   maskInvert: "mask-invert",
   maskMode: "mask-mode",
@@ -126,7 +126,7 @@ const CONCEPTO: Record<string, string> = {
   maskStrokeColor: "mask-stroke-color",
   maskStrokeWidth: "mask-stroke-width",
 
-  // -- trazos y siluetas
+  // -- strokes and silhouettes
   strokeColor: "stroke-color",
   strokeWidth: "stroke-width",
   textStrokeWidth: "text-stroke-width",
@@ -136,7 +136,7 @@ const CONCEPTO: Record<string, string> = {
   svgViewBox: "custom-svg-view-box",
   svgRawXml: "svg-raw-xml",
 
-  // -- texto vectorial y relieve 3d (artistic-text)
+  // -- vector text and 3D relief (artistic-text)
   artisticPreset: "artistic-text-preset",
   curveAmount: "artistic-text-curve-amount",
   curveType: "artistic-text-curve-type",
@@ -149,7 +149,7 @@ const CONCEPTO: Record<string, string> = {
   innerStrokeColor: "artistic-text-inner-stroke-color",
   innerStrokeWidth: "artistic-text-inner-stroke-width",
 
-  // -- filtros y animacion css
+  // -- filters and CSS animation
   filterPreset: "filter-preset",
   filterBlur: "filter-blur",
   filterBrightness: "filter-brightness",
@@ -166,18 +166,18 @@ const CONCEPTO: Record<string, string> = {
   marks: "text-marks",
   dropCap: "drop-cap",
 
-  // -- formas organicas y mascaras avanzadas
+  // -- organic shapes and advanced masks
   customBlobPath: "custom-blob-path",
   maskFeather: "mask-feather",
   maskSvgPath: "mask-svg-path",
 
-  // -- recorte de video/tiempo
+  // -- video/time clipping
   cuts: "video-cuts",
   trimStart: "video-trim-start",
   trimEnd: "video-trim-end",
   trimDuration: "video-trim-duration",
 
-  // -- transformacion, visibilidad y jerarquia
+  // -- transform, visibility and hierarchy
   groupId: "group-id",
   rotation: "rotation",
   flipX: "flip-horizontal",
@@ -193,7 +193,7 @@ const CONCEPTO: Record<string, string> = {
   opacity: "opacity",
   isVisible: "is-visible",
 
-  // -- fondos, gradientes y roles de color
+  // -- backgrounds, gradients and color roles
   textGradientType: "text-gradient-type",
   fillColorRole: "fill-color-role",
   strokeColorRole: "stroke-color-role",
@@ -219,7 +219,7 @@ const CONCEPTO: Record<string, string> = {
   fillPatternCounts: "fill-pattern-counts",
   fillPatternDispersions: "fill-pattern-dispersions",
 
-  // -- fondo y rellenos
+  // -- background and fills
   backgroundType: "background-type",
   backgroundPatternColor: "background-pattern-color",
   backgroundPatternColorRole: "background-pattern-color-role",
@@ -228,7 +228,7 @@ const CONCEPTO: Record<string, string> = {
   backgroundPatternColors: "background-pattern-colors",
   fillType: "fill-type",
 
-  // -- movimiento e interaccion
+  // -- motion and interaction
   animation: "animation",
   reveal: "reveal",
   states: "interactive-states",
@@ -236,7 +236,7 @@ const CONCEPTO: Record<string, string> = {
   shader_fx: "shader-effects",
 };
 
-/** Las claves que hoy son alias. Documentadas, no toleradas en silencio. */
+/** The keys that are aliases today. Documented, not silently tolerated. */
 const ALIAS = Object.entries(CONCEPTO)
   .filter(([, c]) => c.endsWith("/alias"))
   .map(([k]) => k);
@@ -264,8 +264,8 @@ describe("la superficie de `style` esta congelada", () => {
   });
 
   it("ningun concepto tiene dos claves canonicas", () => {
-    // El corazon de la congelacion. Un concepto puede tener UNA canonica y los
-    // alias que haga falta; dos canonicas es la deuda que estamos pagando.
+    // The heart of the freeze. A concept may have ONE canonical key plus whatever
+    // aliases are needed; two canonical keys is the debt we are paying down.
     const porConcepto = new Map<string, string[]>();
     for (const [clave, concepto] of Object.entries(CONCEPTO)) {
       if (concepto.endsWith("/alias")) continue;
@@ -291,11 +291,11 @@ describe("la superficie de `style` esta congelada", () => {
     // All seven were removed before 1.0 with no deprecation phase: no
     // production .oim files existed yet, so there was no compatibility to keep.
     //
-    // El compilador ya no los emite -`canonizar_estilo` los traduce-, asi que
-    // el contrato dejaria de describir algo que nadie escribe.
+    // The compiler no longer emits them -`canonizar_estilo` translates them-, so
+    // the contract would stop describing something nobody writes.
     //
-    // Este cero es el que hay que defender: si vuelve a subir, alguien esta
-    // creando un segundo nombre para un concepto que ya lo tenia.
+    // This zero is the one to defend: if it rises again, someone is creating a
+    // second name for a concept that already had one.
     expect(ALIAS).toEqual([]);
   });
 });

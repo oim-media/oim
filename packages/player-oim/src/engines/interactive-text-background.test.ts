@@ -8,12 +8,12 @@
  */
 
 /**
- * Un text interactivo no se pinta un fondo con el color de su propia letra.
+ * An interactive text must not paint a background with the colour of its own letter.
  *
- * El comentario de `ImageEngine.ts` ya dice lo que debe pasar: «For text,
+ * The comment in `ImageEngine.ts` already says what must happen: "For text,
  * lottie, and image slots, the editor stores a highlight/selection color that
- * must NOT be rendered». La condicion de debajo lo incumplia, porque
- * `isGeoLike` se traga la interactividad:
+ * must NOT be rendered". The condition below broke it, because
+ * `isGeoLike` swallows the interactivity:
  *
  * ```
  * const isInteractiveSlot = slot.isInteractive === true || … || Boolean(slot.states);
@@ -21,23 +21,23 @@
  * if (style.fillColor && isGeoLike && !isWindowMask) el.style.backgroundColor = style.fillColor;
  * ```
  *
- * En una capa de text `fillColor` ES el color de la letra —lo dice el propio
- * editor al crearla—, asi que el slot quedaba pintado del mismo color que su
- * text: un bloque liso, con la letra dentro e invisible.
+ * In a text layer `fillColor` IS the colour of the letter (the editor itself says so when
+ * creating it), so the slot was painted with the same colour as its text: a flat block with
+ * the letter inside it, invisible.
  *
- * **Como se encontro.** Exportando un .oim real el 28 de agosto: un boton rojo
- * que en el editor era text rojo sobre blanco, y en el player un rectangulo
- * rojo. El text estaba en el DOM —`textContent` lo confirmaba— con
- * `color` y `background-color` identicos.
+ * **How it was found.** By exporting a real .oim: a red button that in the editor was red
+ * text on white, and in the player a red rectangle. The text was in the DOM (`textContent`
+ * confirmed it) with
+ * identical `color` and `background-color`.
  *
- * **Es anterior al enganche del clic.** `isInteractiveSlot` cuenta tambien
- * `Boolean(slot.states)`, asi que cualquier text con estado hover ya salia
- * asi. Con los colores por defecto del editor seria letra oscura sobre fondo
- * oscuro: igual de invisible, y mas dificil de notar.
+ * **It predates the click hook-up.** `isInteractiveSlot` also counts
+ * `Boolean(slot.states)`, so any text with a hover state already came out like this. With the
+ * editor's default colours it would be dark letters on a dark background: equally invisible,
+ * and harder to notice.
  *
- * `isGeoLike` mezcla dos preguntas: «se pinta fondo?» y «necesita caja con
- * medidas?». Los interactivos entraron por la segunda y se llevaron la
- * primera de propina. Estas pruebas fijan las dos por separado.
+ * `isGeoLike` mixes two questions: "is a background painted?" and "does it need a box with
+ * dimensions?". The interactive slots came in through the second and took the first as a
+ * freebie. These tests pin the two separately.
  */
 
 import { describe, it, expect } from "vitest";
@@ -45,9 +45,9 @@ import ImageEngine from "./ImageEngine";
 
 function montar(slots: any[]) {
   const host = document.createElement("div");
-  // `mode="full"` es OBLIGATORIO aqui desde que el defecto pasó a ser la
-  // imagen quieta: sin el, ningun slot es interactivo y estas pruebas -que van
-  // justamente de slots interactivos- pasarian sin comprobar nada.
+  // `mode="full"` is REQUIRED here since the default became the still image: without it,
+  // no slot is interactive and these tests (which are about interactive slots) would pass
+  // without checking anything.
   host.setAttribute("mode", "full");
   const shadow = (host as any).attachShadow({ mode: "open" });
   document.body.appendChild(host);
@@ -68,11 +68,11 @@ async function slotDe(slot: any): Promise<HTMLElement> {
 
 const ROJO = "#b91c1c";
 
-// Medidas copiadas de un .oim real —el boton de `prueba_clic_y_esquinas`,
-// exportado el 28 de agosto—. Importa que sean las de verdad: la caja del slot
-// se calcula desde `style.width`/`height` en `cqw`, que es lo que emite el
-// backend, y NO desde `width_px`, que es lo que el editor envia. Un fixture con
-// `width_px` deja el ancho vacio y cualquier prueba sobre la caja mediria humo.
+// Measurements copied from a real .oim (the button of `prueba_clic_y_esquinas`,
+// exported from the editor). It matters that they are the real ones: the slot's box is
+// computed from `style.width`/`height` in `cqw`, which is what the backend emits, and NOT
+// from `width_px`, which is what the editor sends. A fixture with `width_px` leaves the
+// width empty and any test on the box would measure nothing.
 const text = (extra: any = {}) => ({
   id: "s", type: "text", align: "center",
   position: [7.5, 53.3333],
@@ -99,8 +99,8 @@ describe("el fondo de un text interactivo", () => {
   });
 
   /**
-   * El camino que ya existia antes del clic: basta que traiga `states` para
-   * que `isInteractiveSlot` lo cuente, sin `isInteractive` de por medio.
+   * The path that already existed before the click: it is enough for it to carry `states`
+   * so that `isInteractiveSlot` counts it, without `isInteractive` in the middle.
    */
   it("y uno con states tampoco, aunque nadie lo marcara", async () => {
     const el = await slotDe(text(ACCION));
@@ -110,7 +110,7 @@ describe("el fondo de un text interactivo", () => {
   it("el text sigue estando, y con SU color", async () => {
     const el = await slotDe(text({ isInteractive: true }));
     expect(el.textContent).toContain("PULSAME");
-    // Lo que hacia el text invisible no era perderlo: era igualar los dos.
+    // What made the text invisible was not losing it: it was making the two equal.
     expect(el.style.backgroundColor).not.toBe(el.style.color);
   });
 
@@ -122,8 +122,8 @@ describe("el fondo de un text interactivo", () => {
 
 describe("lo que el arreglo NO puede llevarse por delante", () => {
   it("una FORMA interactiva conserva su fill", async () => {
-    // Aqui `fillColor` si es el fill de la figura: quitarlo a todos los
-    // interactivos habria cambiado un fallo por otro.
+    // Here `fillColor` IS the fill of the shape: removing it from all the interactive
+    // ones would have traded one bug for another.
     const el = await slotDe(forma({ isInteractive: true, ...ACCION }));
     expect(el.style.backgroundColor).toBeTruthy();
   });
@@ -134,12 +134,12 @@ describe("lo que el arreglo NO puede llevarse por delante", () => {
   });
 
   /**
-   * Un slot pulsable necesita area, o no hay donde pulsar. Lo garantiza
-   * `applyMinHitArea` —WCAG 2.5.8, 24x24— y se dispara por `isInteractiveSlot`,
-   * la misma bandera que el arreglo toca. Se comprueba que siga puesta.
+   * An activatable slot needs area, or there is nowhere to press. It is guaranteed by
+   * `applyMinHitArea` (WCAG 2.5.8, 24x24), and it is triggered by `isInteractiveSlot`,
+   * the same flag that the fix touches. It is checked that it stays set.
    *
-   * Se mide el minimo y no el ancho: el ancho sale de `style.width` por otra
-   * rama que este banco no ejercita, asi que afirmar sobre el seria medir humo.
+   * The minimum is measured, not the width: the width comes from `style.width` through
+   * another branch that this bench does not exercise, so asserting on it would be measuring nothing.
    */
   it("un text interactivo conserva su area minima de contacto", async () => {
     const el = await slotDe(text({ isInteractive: true }));

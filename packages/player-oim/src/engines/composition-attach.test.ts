@@ -1,16 +1,16 @@
 /**
  * @vitest-environment happy-dom
  *
- * Cubre el camino `results` -> `elByCompositionId` -> `attachCompositionNode`,
- * que no tenía ninguna prueba.
+ * Covers the `results` -> `elByCompositionId` -> `attachCompositionNode` path,
+ * which had no test at all.
  *
- * El invariante que protege: para un proyecto que NO usa máscaras ni filtros
- * (es decir, todos los .oim publicados antes de esta feature), el fragmento
- * resultante debe llevar exactamente un hijo por slot, en el mismo orden que la
- * lista de slots de entrada. Durante esta feature el bucle de append pasó de
- * "según resuelve cada promesa" a un mapa indexado por id, y ese cambio llegó a
- * tirar slots del DOM en silencio; sólo lo cazó una revisión humana. Esta
- * prueba es la red para esa clase de fallo.
+ * The invariant it protects: for a project that does NOT use masks or filters
+ * (that is, all the .oim files published before this feature), the resulting fragment
+ * must carry exactly one child per slot, in the same order as the input slot list.
+ * During this feature the append loop changed from "as each promise resolves" to a map
+ * indexed by id, and that change ended up silently dropping slots from the DOM; only a
+ * human review caught it.
+ * This test is the safety net for that class of failure.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -21,7 +21,7 @@ function makeSlot(id: string): Slot {
   return { id: id, type: 'text', style: {} };
 }
 
-/** Reproduce el mapa id -> elemento que construye `renderSlots`. */
+/** Reproduces the id -> element map that `renderSlots` builds. */
 function buildElementMap(slots: Slot[]): Map<string, HTMLElement> {
   const map = new Map<string, HTMLElement>();
   slots.forEach(function (s) {
@@ -60,7 +60,7 @@ describe('attachCompositionNode (no-mask / no-filter projects)', () => {
     });
 
     const children = Array.from(fragment.children) as HTMLElement[];
-    // Los propios elementos del slot, no envoltorios de grupo de filtro.
+    // The slot's own elements, not filter-group wrappers.
     expect(children[0]).toBe(elById.get('first'));
     expect(children[1]).toBe(elById.get('second'));
     children.forEach(function (el) {

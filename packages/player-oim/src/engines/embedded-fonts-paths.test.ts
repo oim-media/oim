@@ -5,13 +5,14 @@
  */
 
 /**
- * Las fuentes incrustadas se registran en los DOS caminos de carga.
+ * Embedded fonts are registered on BOTH loading paths.
  *
- * El player carga por un worker cuando el navegador lo permite y por el hilo
- * principal cuando no. Las pruebas en happy-dom solo ven el segundo, y ahi se
- * enganchaba el registro: en Chrome el .oim llevaba sus fuentes y el player las
- * seguia pidiendo a Google. Montar el worker aqui exigiria un .oim firmado;
- * esto al menos fija que ninguno de los dos caminos se quede sin el registro.
+ * The player loads through a worker when the browser allows it and through the
+ * main thread when it does not. The happy-dom tests only see the second path,
+ * and that is where registration was hooked: in Chrome the .oim carried its
+ * fonts but the player kept requesting them from Google. Mounting the worker
+ * here would require a signed .oim; this at least pins down that neither path
+ * is left without registration.
  */
 
 import { describe, it, expect } from "vitest";

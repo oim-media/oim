@@ -10,8 +10,8 @@
 /**
  * The ways to request a resource from CSS that do not spell `url(`.
  *
- * `neutralizeExternalCssUrls` only rewrote `url(...)`. Measured on 24 Sept
- * 2026, these three went through untouched, and the `style` attributes that
+ * `neutralizeExternalCssUrls` only rewrote `url(...)`. Measured, these three
+ * went through untouched, and the `style` attributes that
  * `sanitizeHtml` keeps still use it:
  *
  *   @import "https://x"            a string, no url()

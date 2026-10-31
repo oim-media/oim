@@ -23,8 +23,8 @@ describe("stateStyles", () => {
   });
 
   it("la opacidad viaja en 0-100 y sale en 0-1", () => {
-    // El editor la guarda en 0-100 (`types.ts`). Emitir "50" en vez de "0.5"
-    // deja el slot visible, y el fallo se ve como "no pasa nada".
+    // The editor stores it as 0-100 (`types.ts`). Emitting "50" instead of "0.5"
+    // leaves the slot visible, and the failure looks like "nothing happens".
     expect(stateStyles({ opacity: 50 })).toEqual({ opacity: "0.5" });
     expect(stateStyles({ opacity: 0 })).toEqual({ opacity: "0" });
   });
@@ -38,7 +38,7 @@ describe("stateStyles", () => {
 });
 
 describe("bindStates", () => {
-  /** Escribe de inmediato, como haría `queueUpdate` tras vaciar su cola. */
+  /** Writes immediately, as `queueUpdate` would after draining its queue. */
   const escribirYa = (el: HTMLElement, styles: Record<string, string>) => {
     for (const [k, v] of Object.entries(styles)) {
       if (k.startsWith("--")) {
@@ -65,9 +65,9 @@ describe("bindStates", () => {
   });
 
   it("el valor base se captura ANTES de pisarlo, no despues", () => {
-    // Si se capturara despues, salir del hover devolveria el valor del hover y
-    // la capa se quedaria agrandada para siempre. Se comprueba con dos entradas
-    // seguidas: la segunda no debe re-capturar.
+    // If it were captured later, leaving the hover would return the hover value
+    // and the layer would stay enlarged forever. It is checked with two
+    // consecutive entries: the second must not capture again.
     const el = document.createElement("div");
     el.style.setProperty("--oim-slot-hover-scale", "1");
     bindStates(el, { hover: { scale: 2 } }, escribirYa);
@@ -163,7 +163,7 @@ describe("bindStates", () => {
     el.dispatchEvent(touchEvent);
     expect(el.style.getPropertyValue("--oim-slot-hover-scale")).toBe("1.5");
 
-    // Simulamos que el listener del container detecta toque fuera y llama a salirCallback
+    // Simulate the container's listener detecting a touch outside and calling salirCallback
     expect(salirCallback).toBeTypeOf("function");
     salirCallback!();
 
@@ -171,8 +171,8 @@ describe("bindStates", () => {
   });
 
   it("bindStates NO toca el tamaño: no es asunto suyo", () => {
-    // Estuvo puesto aqui y en el motor a la vez. Esta prueba fija que el
-    // enganche se ocupa de CUANDO se entra y se sale de un estado, y nada mas.
+    // It was once here and in the engine at the same time. This test pins down
+    // that the hook handles only WHEN a state is entered and exited, nothing more.
     const el = document.createElement("div");
     bindStates(el, { hover: { scale: 1.2 } }, escribirYa);
     expect(el.style.minWidth).toBe("");
@@ -218,14 +218,14 @@ describe("resolveActions", () => {
 
 describe("paridad entre vocabularios de interaccion", () => {
   it("states (show/hide) y toggle_elements producen el mismo resultado de visibilidad", () => {
-    // Vocabulario nuevo: states con acciones show / hide
+    // New vocabulary: states with show / hide actions
     const accionesNuevas = [
       { target: "precio", type: "show" },
       { target: "actionEvent", type: "hide" }
     ];
     const resNuevo = resolveActions(accionesNuevas, { precio: false, actionEvent: true });
 
-    // Vocabulario viejo: interaction con show_slots / hide_slots
+    // Old vocabulary: interaction with show_slots / hide_slots
     const configVieja = {
       show_slots: ["precio"],
       hide_slots: ["actionEvent"]
@@ -259,9 +259,9 @@ describe("paridad entre vocabularios de interaccion", () => {
 
 describe("readInteraction — la forma REAL del archivo", () => {
   /**
-   * Este slot está copiado literalmente de `precio_al_pasar_el_cursor.oim.png`,
-   * el primer .oim con interacción que se exportó (17 ago). Los campos viajan
-   * dentro de `style`, no en la raíz.
+   * This slot is copied verbatim from `precio_al_pasar_el_cursor.oim.png`, the
+   * first .oim with interaction that was exported. Its fields travel inside
+   * `style`, not at the root.
    */
   const slotDelArchivo = {
     id: "shape_geo_5cfwlr9tk",
@@ -297,19 +297,19 @@ describe("readInteraction — la forma REAL del archivo", () => {
 describe("el toque fuera no puede fiarse de e.target", () => {
   it("el motor usa composedPath para decidir si el toque fue fuera", () => {
     /**
-     * El escuchador de "tocar fuera" vive en el host, FUERA del shadow root, y
-     * al cruzar esa frontera el navegador reescribe `e.target` al propio host
-     * para no filtrar los internos. Con `e.target`, la comprobación veía el
-     * host, concluía "fue fuera" y salía del estado justo después de que el
-     * slot acabara de entrar: en un móvil, el toque se encendía y se apagaba
-     * en el mismo gesto.
+     * The "tap outside" listener lives on the host, OUTSIDE the shadow root, and
+     * when crossing that boundary the browser rewrites `e.target` to the host
+     * itself so as not to leak the internals. With `e.target`, the check saw the
+     * host, concluded "it was outside" and left the state right after the slot
+     * had just entered: on a phone, the tap switched on and off in the same
+     * gesture.
      *
-     * No se vio en las pruebas ni con eventos sintéticos normales, porque un
-     * `new PointerEvent(...)` sin `composed: true` nunca llega al host. Lo
-     * enseñó el primer .oim real, tocado con un evento compuesto de verdad.
+     * The tests did not catch it, even with ordinary synthetic events, because a
+     * `new PointerEvent(...)` without `composed: true` never reaches the host. It
+     * was revealed by the first real .oim, tapped with a genuinely composed event.
      *
-     * Es una guardia de código fuente porque el escuchador vive en el motor,
-     * donde no se puede cubrir sin montarlo entero.
+     * It is a source-code guard because the listener lives in the engine, where it
+     * cannot be covered without mounting the whole thing.
      */
     const fuente = fs.readFileSync(
       path.join(__dirname, "ImageEngine.ts"),
@@ -318,7 +318,7 @@ describe("el toque fuera no puede fiarse de e.target", () => {
     const inicio = fuente.indexOf("stage.addEventListener('pointerdown'");
     expect(inicio, "no encuentro el escuchador de tocar fuera").toBeGreaterThan(-1);
     const bloque = fuente.slice(inicio, inicio + 900);
-    // Sin comentarios: si no, la propia explicacion hace pasar la prueba.
+    // Without comments: otherwise the explanation itself would make the test pass.
     const codigo = bloque.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
     expect(codigo, "el toque fuera debe decidirse con composedPath()").toContain("composedPath()");
     expect(codigo, "el toque fuera volvio a decidirse con e.target").not.toContain("e.target");
@@ -326,9 +326,9 @@ describe("el toque fuera no puede fiarse de e.target", () => {
 });
 
 describe("readInteraction — avisa de lo que no puede hacer", () => {
-  // El mode de fallo de esta feature es el silencio: el player no engancha nada
-  // y quien abre el archivo no sabe por que. Estas pruebas fijan que deje de
-  // serlo. Verifican el AVISO, no el valor devuelto, que no cambia.
+  // This feature's failure mode is silence: the player hooks nothing and whoever
+  // opens the file does not know why. These tests pin down that it stops being
+  // silent. They verify the NOTICE, not the returned value, which does not change.
 
   it("avisa cuando el slot se declara interactivo y no trae states", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -354,9 +354,9 @@ describe("readInteraction — avisa de lo que no puede hacer", () => {
   });
 
   /**
-   * Desde que el clic existe, `hover` dejo de ser el unico estado util. Un
-   * actionEvent que siga diciendo que la capa "no respondera" seria peor que no
-   * avisar: manda a buscar un fallo que no esta.
+   * Now that the click exists, `hover` is no longer the only useful state. An
+   * actionEvent that kept saying the layer "will not respond" would be worse than
+   * saying nothing: it sends people looking for a fault that is not there.
    */
   it("NO avisa de una capa que solo trae acciones de clic", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -371,7 +371,7 @@ describe("readInteraction — avisa de lo que no puede hacer", () => {
     }
   });
 
-  /** Pero un `active` SIN acciones no hace nada: sus styles no se aplican. */
+  /** But an `active` WITHOUT actions does nothing: its styles are not applied. */
   it("y si avisa de un active vacio, que no hace nada", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
@@ -398,8 +398,8 @@ describe("readInteraction — avisa de lo que no puede hacer", () => {
     try {
       readInteraction({ style: { isInteractive: true, states: { hover: { scale: 1.2 } } } } as never, "ok");
       readInteraction({}, "quieto");
-      // `states: {}` es un objeto vacio que el editor puede escribir sin querer
-      // decir nada; no merece actionEvent si el slot no es interactivo.
+      // `states: {}` is an empty object the editor may write without meaning
+      // anything; it does not earn an actionEvent if the slot is not interactive.
       readInteraction({ states: {} }, "vacio");
       expect(warn).not.toHaveBeenCalled();
     } finally {
@@ -409,9 +409,9 @@ describe("readInteraction — avisa de lo que no puede hacer", () => {
 });
 
 describe("el motor tampoco calla lo que no puede hacer", () => {
-  // No hay prueba que monte el gestor de acciones -esa ausencia es justo el
-  // hueco por el que paso el fallo original-, asi que se fija sobre la fuente,
-  // igual que el guardia de `composedPath`.
+  // No test mounts the action manager -that absence is exactly the gap through
+  // which the original fault slipped-, so it is pinned against the source, just
+  // like the `composedPath` guard.
   const fuente = () => fs.readFileSync(path.join(__dirname, "ImageEngine.ts"), "utf8");
   const sinComentarios = (t: string) =>
     t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
@@ -427,9 +427,9 @@ describe("el motor tampoco calla lo que no puede hacer", () => {
     const codigo = sinComentarios(fuente());
     const i = codigo.indexOf("warnedTargets");
     expect(i, "el destino inexistente volvio a fallar en silencio").toBeGreaterThan(-1);
-    // Hasta el final de `run`, y no 900 caracteres fijos: esa ventana
-    // caduco en cuanto se anadio el actionEvent `oim:action` en medio, y la prueba
-    // fallo por moverse el codigo, no por romperse.
+    // Up to the end of `run`, not a fixed 900 characters: that window expired as
+    // soon as the `oim:action` actionEvent was added in the middle, and the test
+    // failed because the code moved, not because it broke.
     const fin = codigo.indexOf("revert:", i);
     const bloque = codigo.slice(i, fin > i ? fin : i + 2000);
     expect(bloque, "el actionEvent debe condicionarse a que el destino no exista").toContain("!targetEl");
@@ -439,18 +439,18 @@ describe("el motor tampoco calla lo que no puede hacer", () => {
 });
 
 /**
- * El clic, que hasta ahora no existia.
+ * The click, which did not exist until now.
  *
- * El editor ofrece una pestaña «Active (Clic)» con acciones, las guarda en
- * `states.active.actions` y las exporta dentro de `style` —lo hace
- * `buildSlotStyle` en el editor—. El player las recibia y las tiraba:
- * `bindStates` enganchaba `mouseenter`, `mouseleave` y `pointerdown`, y
- * en los tres aplicaba `states.hover`. Su firma declaraba `{ hover?: ... }`, de
- * mode que `active` no es que fallara: no estaba contemplado.
+ * The editor offers an "Active (Click)" tab with actions, stores them in
+ * `states.active.actions` and exports them inside `style` -`buildSlotStyle` does
+ * this in the editor. The player received them and threw them away:
+ * `bindStates` hooked `mouseenter`, `mouseleave` and `pointerdown`, and in all
+ * three it applied `states.hover`. Its signature declared `{ hover?: ... }`, so
+ * `active` was not that it failed: it was simply not accounted for.
  *
- * La asimetria con el hover es deliberada. El hover tiene una salida natural
- * -el cursor se va- y por eso REVIERTE. El clic no la tiene, y un alternado que
- * se deshiciera solo no seria un alternado.
+ * The asymmetry with hover is deliberate. Hover has a natural exit -the cursor
+ * leaves- and that is why it REVERTS. The click has no such exit, and a toggle
+ * that undid itself on its own would not be a toggle.
  */
 describe("las acciones al hacer clic", () => {
   const gestorFalso = () => ({ run: vi.fn(), revert: vi.fn() });
@@ -465,7 +465,7 @@ describe("las acciones al hacer clic", () => {
     expect(gestor.run).toHaveBeenCalledWith(ACCIONES, "click");
   });
 
-  /** Lo que separa un alternado de un «mostrar»: que persista. */
+  /** What separates a toggle from a "show": persistence. */
   it("y NO las revierte nunca", () => {
     const el = document.createElement("div");
     const gestor = gestorFalso();
@@ -476,7 +476,7 @@ describe("las acciones al hacer clic", () => {
     expect(gestor.revert).not.toHaveBeenCalled();
   });
 
-  /** Sin cursor, nada indica que la capa se pueda pulsar. */
+  /** Without a cursor, nothing indicates that the layer can be clicked. */
   it("la capa se señala como pulsable", () => {
     const el = document.createElement("div");
     bindStates(el, { active: { actions: ACCIONES } }, vi.fn(), gestorFalso());
@@ -484,17 +484,17 @@ describe("las acciones al hacer clic", () => {
   });
 
   /**
-   * Estas dos fijaban el contrato ANTERIOR: sin acciones no se enganchaba nada.
-   * Cambio a proposito, y son la unica senal de que cambio.
+   * These two pinned the PREVIOUS contract: without actions, nothing was hooked.
+   * The change was deliberate, and these are the only signal that it changed.
    *
-   * El enganche va ahora por SER interactivo. `bindStates` solo se llama cuando
-   * el slot ya lo es, asi que comprobar las acciones dejaba mudo el caso que
-   * mas lo pide: un boton que el autor pone para que navegue la PAGINA, sin
-   * ningun efecto local. Antes tenia que declarar una accion falsa.
+   * Hooking now depends on BEING interactive. `bindStates` is only called when
+   * the slot already is, so checking the actions silenced the case that calls for
+   * it most: a button the author places so that the PAGE navigates, with no local
+   * effect. Previously it had to declare a fake action.
    *
-   * El precio, y hay que decirlo: una capa interactiva con solo estilos de
-   * hover tambien se señala pulsable. Es defendible —el autor la declaro
-   * interactiva— pero es un cambio visible.
+   * The cost, and it must be stated: an interactive layer with only hover styles
+   * is also signalled as clickable. That is defensible -the author declared it
+   * interactive- but it is a visible change.
    */
   it("una capa interactiva SIN acciones tambien se señala pulsable", () => {
     const el = document.createElement("div");
@@ -507,29 +507,30 @@ describe("las acciones al hacer clic", () => {
     const gestor = gestorFalso();
     bindStates(el, { active: { actions: [] } }, vi.fn(), gestor);
     el.dispatchEvent(new Event("click"));
-    // Se anuncia con la lista vacia: `resolveActions([])` no cambia ninguna
-    // visibilidad, asi que la pagina se entera y la imagen no se mueve.
+    // It is announced with the empty list: `resolveActions([])` changes no
+    // visibility, so the page is told and the image does not move.
     expect(gestor.run).toHaveBeenCalledWith([], "click");
   });
 
   /**
-   * El clic SIGUE su camino hacia arriba.
+   * The click KEEPS ITS PATH UP.
    *
-   * Nacio con `stopPropagation`, copiado del otro camino de clic del motor
-   * (`interaction.toggle_elements`). Paridad con algo peor no es una razon.
+   * It was born with `stopPropagation`, copied from the engine's other click path
+   * (`interaction.toggle_elements`). Parity with something worse is not a reason.
    *
-   * Un .oim va embebido en paginas de terceros, y la galeria de la propia
-   * landing es el caso: una tarjeta con su `onClick` para abrir la ficha, y un
-   * `<oim-player>` vivo dentro. Tragarse el clic dejaba al usuario pulsando una
-   * miniatura que alterna una capa que casi no se ve, y NO abre la ficha.
+   * A .oim is embedded in third-party pages, and the gallery on the landing page
+   * is the case in point: a card with its own `onClick` to open the detail view,
+   * and a live `<oim-player>` inside. Swallowing the click left the user pressing
+   * a thumbnail that toggles a layer barely visible, and it did NOT open the
+   * detail view.
    *
-   * `stopPropagation` es una afirmacion de propiedad: «este clic es mio». El
-   * player no sabe que hay a su alrededor, asi que no le toca decidirlo. Hace
-   * su efecto local y deja mandar a la pagina.
+   * `stopPropagation` is a claim of ownership: "this click is mine". The player
+   * does not know what surrounds it, so it is not for it to decide. It applies
+   * its local effect and lets the page take over.
    *
-   * Hoy la galeria no se rompia por accidente —una capa de hover sin
-   * `pointer-events: none` se come los clics antes de llegar al slot—. Esta
-   * prueba es lo que impide que el arreglo dependa de ese accidente.
+   * Today the gallery did not break by accident -a hover layer without
+   * `pointer-events: none` eats the clicks before they reach the slot. This test
+   * is what keeps the fix from depending on that accident.
    */
   it("el clic sigue subiendo: la pagina de alrededor manda", () => {
     const padre = document.createElement("div");
@@ -542,14 +543,14 @@ describe("las acciones al hacer clic", () => {
     bindStates(el, { active: { actions: ACCIONES } }, vi.fn(), gestor);
     el.dispatchEvent(new Event("click", { bubbles: true }));
 
-    // Las dos cosas pasan: la accion local Y el clic del anfitrion.
+    // Both things happen: the local action AND the host's click.
     expect(gestor.run).toHaveBeenCalledWith(ACCIONES, "click");
     expect(enElPadre).toHaveBeenCalledTimes(1);
   });
 
   /**
-   * Las dos mitades conviven: enganchar el clic no puede haber roto el hover,
-   * que es lo unico que funcionaba antes de esto.
+   * The two halves coexist: hooking the click cannot have broken the hover, which
+   * was the only thing that worked before this.
    */
   it("el hover sigue reviertiendo lo suyo, con las dos declaradas", () => {
     const el = document.createElement("div");
@@ -561,7 +562,7 @@ describe("las acciones al hacer clic", () => {
     expect(gestor.run).toHaveBeenCalledWith(deHover, "hover");
     el.dispatchEvent(new Event("mouseleave"));
     expect(gestor.revert).toHaveBeenCalledWith(deHover);
-    // y el revertir del hover no puede llevarse por delante lo del clic
+    // and the hover's revert must not take the click's effect away with it
     expect(gestor.revert).not.toHaveBeenCalledWith(ACCIONES);
   });
 });

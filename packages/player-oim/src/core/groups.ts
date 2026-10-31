@@ -5,38 +5,37 @@
  */
 
 /**
- * El grupo como wrapper, no como caja vacía.
+ * The group as a wrapper, not as an empty box.
  *
- * Fase 3 de `docs/superpowers/specs/2026-08-23-el-grupo-como-nodo-design.md`.
+ * Phase 3 of the group-as-node design (see the design spec).
  *
- * Hasta ahora el `.oim` traía el slot `group` y el player no sabía qué era —no
- * había ni una línea que mencionara `group`—, así que construía **un elemento
- * vacío con la caja del grupo, encima de sus hijos**. No pintaba nada, pero
- * ocupaba: peso muerto dentro de un archivo firmado.
+ * Until now the `.oim` carried the `group` slot and the player did not know what it was
+ * (there was not even one line mentioning `group`), so it built **an empty element with the
+ * group's box, on top of its children**. It painted nothing, but it took up room: dead
+ * weight inside a signed file.
  *
- * El modelo es el mismo que el del editor: un wrapper del tamaño del lienzo
- * y en su origen, con la transformada del grupo aplicada sobre su propio
- * centro. Los hijos van **dentro**, conservando sus coordenadas absolutas de
- * siempre. Así la opacidad, el filtro y la visibilidad del grupo alcanzan a lo
- * que hay dentro por CSS, sin que nadie las propague a mano.
+ * The model is the same as the editor's: a wrapper the size of the canvas and
+ * at its origin, with the group's transform applied around its own center. The
+ * children go **inside**, keeping their absolute coordinates as always. So the
+ * group's opacity, filter and visibility reach what is inside through CSS, without
+ * anyone propagating them by hand.
  *
- * **Degrada en las dos direcciones, que es lo que decide si se puede publicar:**
- * un archivo antiguo no trae `style.groupId` en ningún slot, así que
- * `childrenByGroup` sale vacío y no se anida nada — el visor pinta lo de siempre.
- * Y un player antiguo con un archivo nuevo ignora el campo y pinta los hijos
- * sueltos, que es exactamente lo que se ve hoy: los hijos llevan sus
- * coordenadas de lienzo, no coordenadas relativas al grupo.
+ * **It degrades in both directions, which is what decides whether it can be published:**
+ * an old file has no `style.groupId` on any slot, so `childrenByGroup` comes out empty and
+ * nothing is nested: the viewer paints what it always did.
+ * And an old player with a new file ignores the field and paints the children loose,
+ * which is exactly what is seen today: the children carry their canvas coordinates, not
+ * coordinates relative to the group.
  */
 
 /**
- * La regla de pertenencia se delega en `@oim-media/core`, fuente unica para el
- * player y el editor. Si cada uno respondiera por su cuenta a «que capas van
- * dentro de este grupo», el mismo archivo se pintaria distinto segun quien lo
- * abra, y su autor no tendria forma de saber cual tiene razon.
+ * The membership rule is delegated to `@oim-media/core`, the single source for the
+ * player and the editor. If each one answered on its own «which layers go inside this
+ * group», the same file would paint differently depending on who opened it, and its
+ * author would have no way to know which one is right.
  *
- * Se importa el fichero del modulo y no el indice del paquete, igual que en
- * `binary.ts`: asi el bundle del player incorpora solo estas tres funciones y
- * nunca arrastra el esquema ni zod.
+ * The module file is imported, not the package index, as in `binary.ts`: that way the
+ * player bundle includes only these three functions and never drags in the schema or zod.
  */
 export { isGroup, slotParent, childrenByGroup } from '../../../core/src/groups.js';
 
@@ -53,24 +52,24 @@ export interface WrapperStyle {
 }
 
 /**
- * Cómo se coloca el wrapper.
+ * How the wrapper is placed.
  *
- * Cubre el lienzo entero y se ancla en su origen, para que los hijos —que
- * traen coordenadas de lienzo— caigan donde siempre. La transformada del grupo
- * (rotación, scale) se aplica sobre el **centro del grupo**, no sobre el
- * centro del lienzo: rotar un grupo tiene que girarlo sobre sí mismo.
+ * It covers the whole canvas and is anchored at its origin, so the children (which carry
+ * canvas coordinates) land where they always did. The group's transform (rotation, scale)
+ * is applied around the **center of the group**, not the center of the canvas:
+ * rotating a group has to turn it around itself.
  *
- * `pointer-events: none` porque el wrapper cubre TODO el lienzo: sin esto,
- * un grupo pequeño se tragaría los clics de cualquier capa que estuviera por
- * debajo en la pila. Los hijos lo vuelven a encender solos — `.oim-slot` ya
- * declara `pointer-events: auto`.
+ * `pointer-events: none` because the wrapper covers the WHOLE canvas: without this,
+ * a small group would swallow the clicks of any layer below it in the stack. The
+ * children turn it back on by themselves (`.oim-slot` already declares
+ * `pointer-events: auto`).
  *
- * La caja llega YA resuelta en píxeles de lienzo, no como el `position` crudo
- * del slot. Ese campo viene unas veces en 0..1 y otras en 0..100 según la
- * antigüedad del archivo, y `ImageEngine` ya lo normaliza junto con `width_px`
- * y `height_px` para colocar cualquier capa. Volver a interpretarlo aquí sería
- * una segunda lectura del mismo dato con su propio criterio — que es la forma
- * exacta que tienen de aparecer los fallos en este formato.
+ * The box arrives ALREADY resolved in canvas pixels, not as the raw `position` of
+ * the slot. That field comes sometimes in 0..1 and sometimes in 0..100 depending on the
+ * age of the file, and `ImageEngine` already normalizes it together with `width_px`
+ * and `height_px` to place any layer. Interpreting it again here would be a second
+ * reading of the same data with its own criterion, which is exactly how failures
+ * tend to appear in this format.
  */
 export function wrapperStyle(
   box: CanvasBox,

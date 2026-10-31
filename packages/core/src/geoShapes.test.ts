@@ -5,22 +5,22 @@
  */
 
 /**
- * TABLA COMPARTIDA, y CANONICA. Se copy tal cual al editor: los mismos casos
- * corren en los dos lados. Que la tabla viaje con el modulo es lo que impide
- * que una copy "ajuste un poco" sus numeros, que es como llegamos aqui.
+ * SHARED and CANONICAL TABLE. It is copied as-is to the editor: the same cases
+ * run on both sides. The table travelling with the module is what prevents
+ * a copy from "adjusting" its numbers a little, which is how we got here.
  */
 
 import { describe, it, expect } from "vitest";
 import { GEO_SHAPES, shapeDrawing, pointsToAttribute } from "./geoShapes";
 
 /**
- * El catalogo del editor, a mano. Es la lista de botones de «Formas y
- * geometricos» en la biblioteca de presets.
+ * The editor's catalogue, by hand. It is the list of buttons under "Shapes and
+ * geometric" in the presets library.
  *
- * A mano y no importada porque este archivo corre TAMBIEN en el player, que no
- * ve el catalogo del editor. La comparacion contra el catalogo de verdad la
- * hace una prueba local del editor; esta fija el numero para que anadir una
- * forma al catalogo sin anadirla a la tabla no pase inadvertido.
+ * Written by hand and not imported because this file ALSO runs in the player, which
+ * cannot see the editor's catalogue. The comparison against the real catalogue is made by
+ * a local test in the editor; this one pins the number so that adding a shape to the
+ * catalogue without adding it to the table does not go unnoticed.
  */
 const CATALOGO = [
   "rectangle", "circle", "triangle", "star",
@@ -29,8 +29,8 @@ const CATALOGO = [
 
 describe("la tabla cubre TODO el catalogo", () => {
   it("ninguna forma se queda sin dibujo", () => {
-    // Sin esto, el player conocia 3 de 8 y las otras 5 se publicaban como
-    // rectangulos de color. En silencio: no habia nada que lo detectara.
+    // Without this, the player knew 3 of 8 and the other 5 were published as
+    // coloured rectangles. Silently: nothing would detect it.
     const sinDibujo = CATALOGO
       .filter((f) => f !== "rectangle")
       .filter((f) => !shapeDrawing(f));
@@ -38,8 +38,8 @@ describe("la tabla cubre TODO el catalogo", () => {
   });
 
   it("el rectangulo NO esta en la tabla, y es a proposito", () => {
-    // Se dibuja con ancho, alto y radio en pixeles reales: un radio de esquina
-    // dentro de un viewBox estirado sale ovalado.
+    // It is drawn with width, height and radius in real pixels: a corner radius
+    // inside a stretched viewBox comes out oval.
     expect(shapeDrawing("rectangle")).toBeUndefined();
     expect(shapeDrawing("rect")).toBeUndefined();
   });
@@ -52,8 +52,8 @@ describe("la tabla cubre TODO el catalogo", () => {
 
 describe("la geometria, numero a numero", () => {
   it("el triangulo va metido un 5%, no a sangre", () => {
-    // El player lo dibujaba `50,0 0,100 100,100` y el editor `50,5 95,90 5,90`:
-    // el mismo archivo, dos triangulos distintos.
+    // The player drew it as `50,0 0,100 100,100` and the editor as `50,5 95,90 5,90`:
+    // the same file, two different triangles.
     expect(shapeDrawing("triangle")).toEqual({
       tipo: "polygon",
       puntos: [[50, 5], [95, 90], [5, 90]],

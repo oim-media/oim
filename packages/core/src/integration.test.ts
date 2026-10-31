@@ -3,17 +3,17 @@ import { OimMetadataSchema } from './schema';
 import { compressAndEncodeJSON, extractOIM } from './binary';
 
 /**
- * Round-trip del formato: validar -> comprimir -> incrustar en el chunk tEXt
- * -> extraer -> decodificar.
+ * Format round-trip: validate -> compress -> embed in the tEXt chunk -> extract
+ * -> decode.
  *
- * Antes este test empezaba llamando a `mapLayersToOimSlots`, el compilador de
- * medidas que vivía en `./serialize`. Se eliminó por emitir un dialecto
- * distinto al del backend (anclaba la posición al centro del slot), así que
- * los slots de entrada son ahora un fixture literal en el formato REAL: el
- * que produce `POST /v1/oim/compile` y el que lee el player.
+ * This test used to start by calling `mapLayersToOimSlots`, the measurement
+ * compiler that lived in `./serialize`. It was removed because it emitted a
+ * dialect different from the backend's (it anchored the position to the center
+ * of the slot), so the input slots are now a literal fixture in the REAL format:
+ * the one that `POST /v1/oim/compile` produces and the player reads.
  *
- * Que sea un fixture y no una función es deliberado — así el test fija el
- * contrato del archivo, no la implementación de quien lo escribe.
+ * Being a fixture and not a function is deliberate — that way the test pins the
+ * file's contract, not the implementation of whoever writes it.
  */
 describe('Integration Flow: Package -> Play', () => {
   const pngHeader = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -35,9 +35,9 @@ describe('Integration Flow: Package -> Play', () => {
   }
 
   it('validates, encodes into PNG, extracts and decodes without losing fields', async () => {
-    // Slot tal y como lo emite el compilador del backend para un lienzo de
-    // 1000x1000: posición en porcentaje del lienzo, medidas en `cqw`
-    // (proporcionales al ANCHO), y `width_px`/`height_px` con el crudo.
+    // Slot as the backend compiler emits it for a 1000x1000 canvas: position as
+    // a percentage of the canvas, sizes in `cqw` (proportional to the WIDTH),
+    // and `width_px`/`height_px` with the raw values.
     const slots = [
       {
         id: 'header-slot',
@@ -88,8 +88,8 @@ describe('Integration Flow: Package -> Play', () => {
     expect(finalSlots?.[0].content?.en).toBe('Main Title');
     expect(finalSlots?.[0].content?.es).toBe('Título Principal');
 
-    // La geometría es lo que el player necesita para situar la capa, y es
-    // justo lo que se perdía cuando el .oim llegaba en el otro dialecto.
+    // Geometry is what the player needs to place the layer, and it is exactly
+    // what was lost when the .oim arrived in the other dialect.
     expect(finalSlots?.[0].position).toEqual([10, 5]);
     expect(finalSlots?.[0].width_px).toBe(800);
     expect(finalSlots?.[0].style?.fontSize).toBe('3.2000cqw');

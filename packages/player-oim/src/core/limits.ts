@@ -5,8 +5,8 @@
  */
 
 /**
- * El tope de slots por archivo se delega en `@oim-media/core`.
+ * The per-file slot cap is delegated to `@oim-media/core`.
  *
- * Se reexporta desde el modulo de limites sin arrastrar el esquema ni zod.
+ * It is re-exported from the limits module without dragging in the schema or zod.
  */
 export { MAX_SLOTS } from '../../../core/src/limits.js';

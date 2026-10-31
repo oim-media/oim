@@ -5,19 +5,19 @@
  */
 
 /**
- * La geometria de las formas del catalogo se delega en `@oim-media/core`.
+ * The geometry of the catalogue's shapes is delegated to `@oim-media/core`.
  *
- * Vivia aqui, y el editor tenia una COPIA en `src/lib/parallax/` -con su
- * fichero de bloqueo `parallax.lock`, que registraba el commit de origen y un
- * hash por fichero, y una guardia que los comparaba-. Toda esa maquinaria
- * existia para mantener iguales dos copies que ya no hacen falta.
+ * It used to live here, and the editor had a COPY in its own library folder, with
+ * a lock file (`parallax.lock`) recording the source commit and a hash per file, and a guard
+ * that compared them. All that machinery existed to keep two copies in sync
+ * that no longer need to exist.
  *
- * Se reexporta SOLO lo que el player usa. Un reexporte generoso es una puerta
- * por la que entra lo que hay al otro lado: al mover el motor generativo, un
- * `export` «por comodidad» metio el catalogo entero -1,7 KB- en el bundle del
- * CDN.
+ * Only what the player uses is re-exported. A generous re-export is a door through which
+ * whatever is on the other side comes in: when the generative engine was moved, an
+ * `export` "for convenience" pulled the whole catalogue (1.7 KB) into the bundle
+ * served from the CDN.
  *
- * Se importa el fichero del modulo y no el indice del paquete, para no
- * arrastrar el esquema ni zod.
+ * The module file is imported, not the package index, so as not to
+ * drag in the schema or zod.
  */
 export { shapeDrawing, pointsToAttribute } from '../../../core/src/geoShapes.js';

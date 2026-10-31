@@ -5,57 +5,57 @@
  */
 
 /**
- * Quien recorta y quien no.
+ * Who clips and who does not.
  *
- * ## El fallo, medido en un navegador real el 27/08/2026
+ * ## The failure, measured in a real browser
  *
- * Un texto se recortaba sus propios descendentes -la «j», la «p», la «g»-.
- * No por la caja del slot: los slots de texto NO traen altura -se comprobo
- * sobre tres `.oim` publicados: ni `height_px` ni `style.height`- y el motor
- * ya les pone `height: auto`.
+ * A text was clipping its own descenders (the "j", the "p", the "g").
+ * Not by the slot's box: text slots do NOT carry a height (checked on three
+ * published `.oim` files: neither `height_px` nor `style.height`), and the engine
+ * already sets them to `height: auto`.
  *
- * Se recortaban por la CAJA DE LINEA. Cuando `line-height x tamano` es menor
- * que el alto que declara la fuente, la tinta sobresale de la caja, y
- * `overflow: hidden` la corta. Medido a 48 px con `line-height: 1.2`:
+ * They were being clipped by the LINE BOX. When `line-height x size` is smaller
+ * than the height the font declares, the ink sticks out of the box, and
+ * `overflow: hidden` cuts it. Measured at 48 px with `line-height: 1.2`:
  *
- *     Poppins            corta 0,70 px por abajo
- *     Playfair Display   corta 0,20 px
- *     Montserrat, Inter, Georgia, Arial    no cortan
+ *     Poppins            clips 0.70 px at the bottom
+ *     Playfair Display   clips 0.20 px
+ *     Montserrat, Inter, Georgia, Arial    do not clip
  *
- * Depende de la fuente y crece con el tamano. Las dos que cortan son las que
- * usan los archivos reales.
+ * It depends on the font and grows with the size. The two that clip are the ones
+ * that the real files use.
  *
- * ## Por que no se arregla subiendo el interlineado
+ * ## Why it is not fixed by raising the line height
  *
- * Porque el interlineado lo elige el autor. Un titular apretado a 1.0 es una
- * decision de diseno legitima, y el player no puede corregirla: cambiaria el
- * documento. Lo que si puede es no CORTAR lo que decidio dibujar.
+ * Because the line height is chosen by the author. A headline set tight at 1.0 is a
+ * legitimate design decision, and the player cannot correct it: that would change the
+ * document. What it can do is not CLIP what the author chose to draw.
  *
- * Un texto no tiene nada que recortar. Su caja es `width: max-content` y
- * `height: auto`, o sea que ya se ajusta a su contenido; lo unico que sobra de
- * ella es la tinta que legitimamente excede la caja de linea. Cortarla no
- * protege de nada y pierde parte de una letra.
+ * A text has nothing to clip. Its box is `width: max-content` and `height: auto`,
+ * so it already fits its content; the only thing left over from it is the ink that
+ * legitimately exceeds the line box. Clipping it protects against nothing and loses
+ * part of a letter.
  *
- * ## Lo que si tiene que seguir recortando
+ * ## What must keep clipping
  *
- * El grupo de parallax. Su recorte es el que hace el efecto: la pista se
- * desplaza y la caja es la ventana por la que se ve. Sin `hidden` se veria la
- * cinta entera y el bucle dejaria de existir. Por eso gana a todo lo demas.
+ * The parallax group. Its clipping is what makes the effect: the track moves and the
+ * box is the window through which it is seen. Without `hidden` the whole ribbon would
+ * show and the loop would stop existing. That is why it wins over everything else.
  */
 
 export type Clipping = 'visible' | 'hidden';
 
 export interface WhoClips {
-  /** `slot.type === 'text'`, el mismo criterio que usa la sombra. */
+  /** `slot.type === 'text'`, the same criterion the shadow uses. */
   isText: boolean;
-  /** Su recorte ES el efecto: la caja es la ventana del bucle. */
+  /** Its clipping IS the effect: the box is the loop's window. */
   isParallaxGroup: boolean;
-  /** Sombra o filtro se pintan FUERA de la caja; recortarlos los amputa. */
+  /** Shadow or filter are painted OUTSIDE the box; clipping them cuts them off. */
   hasFilterOrShadow: boolean;
 }
 
 export function slotClipping(slot: WhoClips): Clipping {
-  // Primero, porque es el unico caso en que recortar es el objetivo.
+  // First, because it is the only case where clipping is the goal.
   if (slot.isParallaxGroup) return 'hidden';
   if (slot.isText) return 'visible';
   if (slot.hasFilterOrShadow) return 'visible';

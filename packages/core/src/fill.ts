@@ -5,13 +5,13 @@
  */
 
 /**
- * Todos los valores que produce `getFillCss` son CADENAS: se comprobaron los
- * catorce sitios donde asigna uno -colores, `url(...)`, `cover`, `center`,
- * `text`, `transparent`- y ninguno es un numero.
+ * Every value that `getFillCss` produces is a STRING: the fourteen places where it assigns one
+ * were checked (colours, `url(...)`, `cover`, `center`,
+ * `text`, `transparent`) and none of them is a number.
  *
- * El `| number` que traia la copy del player era holgura que nadie usaba, y
- * la pagaba cada consumidor: en `rasterize.ts` del editor obligaba a comprobar
- * si un `backgroundImage` era un numero antes de llamar a `.startsWith`.
+ * The `| number` that the player's copy carried was slack that nobody used, and
+ * every consumer paid for it: in the editor's `rasterize.ts` it forced a check of
+ * whether a `backgroundImage` was a number before calling `.startsWith`.
  */
 export type CSSProperties = Record<string, string>;
 import { renderGenerativeSVG } from "./generative/index.js";
@@ -34,12 +34,12 @@ export interface Shape {
   fillPatternSpeed?: number;
   fillPatternScale?: number;
   /**
-   * Hacia donde se desplaza el patron de una capa `pattern`.
+   * Which way the pattern of a `pattern` layer moves.
    *
-   * Los ocho valores son EXACTAMENTE los sufijos de los `@keyframes
-   * background-animation-*` que el player define en `core/styles.ts`. Ni uno
-   * mas: un valor sin animacion correspondiente daria una capa quieta sin
-   * decir por que.
+   * The eight values are EXACTLY the suffixes of the `@keyframes
+   * background-animation-*` that the player defines in `core/styles.ts`. Not one
+   * more: a value without a matching animation would give a still layer without
+   * saying why.
    */
   fillPatternDirection?:
     | "right" | "left" | "up" | "down"
@@ -52,7 +52,7 @@ export interface Shape {
   [key: string]: any;
 }
 
-/** Las direcciones con `@keyframes` propios. Ver `player-oim/src/core/styles.ts`. */
+/** The directions with their own `@keyframes`. See `player-oim/src/core/styles.ts`. */
 const DIRECCIONES = new Set([
   "right", "left", "up", "down", "zoom-in", "zoom-out", "pulse",
 ]);
@@ -90,16 +90,16 @@ function patternTileCss(shape: Shape): CSSProperties {
 }
 
 /**
- * Traduce los campos de relleno de una capa a CSS.
+ * Translates a layer's fill fields into CSS.
  *
- * Esta función es la ÚNICA fuente de verdad del relleno y la llaman los tres
- * renderizadores: editor, visor y exportación estática. No la dupliques.
+ * This function is the ONLY source of truth for the fill, and the three renderers call it:
+ * editor, viewer and static export. Do not duplicate it.
  */
 export function getFillCss(shape: Shape): CSSProperties {
-  // El tipo se DEDUCE cuando falta pero hay color. Estaba solo en la copy del
-  // editor: una capa con `fillColor` y sin `fillType` se pintaba alli y salia
-  // sin relleno en el visor. Se toma esta version porque la otra descarta un
-  // dato que el archivo si trae.
+  // The type is DEDUCED when it is missing but there is a colour. It was only in the
+  // editor's copy: a layer with `fillColor` and no `fillType` was painted there and came
+  // out with no fill in the viewer. This version is taken because the other discards a
+  // datum that the file does carry.
   const tipo = shape.fillType || (shape.fillColor ? "color" : "none");
   if (tipo === "none") return {};
   const isText = shape.type === "text";
@@ -129,7 +129,7 @@ export function getFillCss(shape: Shape): CSSProperties {
         ? isText ? { color: shape.fillColor } : { backgroundColor: shape.fillColor }
         : {};
     } else {
-      // Tiles and moves, like the pattern layer (12 Sept). It used to stretch
+      // Tiles and moves, like the pattern layer. It used to stretch
       // ONE tile over the shape and ignore speed and direction.
       res = patternTileCss(shape);
     }
@@ -144,10 +144,10 @@ export function getFillCss(shape: Shape): CSSProperties {
       : {};
   }
 
-  // El texto con relleno NO PLANO deja de pintarse como texto: pasa a ser una
-  // mascara sobre un fondo. Aqui usaba `shape.fillType` mientras las ramas de
-  // arriba usaban el deducido -en la copy del editor-, una incoherencia que no
-  // se notaba porque la deduccion solo produce "color".
+  // Text with a NON-FLAT fill stops being painted as text: it becomes a mask over a
+  // background. Here it used `shape.fillType` while the branches above used the deduced
+  // one (in the editor's copy), an inconsistency that did not show because the deduction
+  // only ever produces "color".
   if (isText && (tipo === "gradient" || (tipo === "generative" && shape.fillGenerative) || (tipo === "pattern" && shape.fillPatternType))) {
     return {
       ...res,
@@ -221,14 +221,14 @@ export function svgSilhouetteMaskCss(svgXml: string): CSSProperties {
 export const patternShapeMask = shapeMaskCss;
 
 /**
- * El CSS de una capa `pattern`: tesela, se repite y se mueve.
+ * The CSS of a `pattern` layer: tile, repeat and move.
  *
- * Es la hermana de `getFillCss` y vive aparte a proposito. La regla que las
- * separa: `type: "pattern"` significa «tesela y se mueve»; el patron como
- * RELLENO de otro tipo significa «se ajusta una vez y se queda quieto».
- * Mezclarlas en una funcion con un `if` seria la duplicacion al reves.
+ * It is the sister of `getFillCss` and lives apart on purpose. The rule that
+ * separates them: `type: "pattern"` means "tile and move"; the pattern as a
+ * FILL of another type means "adjusts once and stays still".
+ * Mixing them in one function with an `if` would be duplication in reverse.
  *
- * La llaman el editor y el player, y ninguno calcula esto por su cuenta.
+ * The editor and the player both call it, and neither computes this on its own.
  */
 export function patternLayerCss(shape: Shape): CSSProperties {
   const css = patternTileCss(shape);

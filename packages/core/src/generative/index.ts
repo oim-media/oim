@@ -43,10 +43,10 @@ export function renderGenerativeSVG(config: GenerativeConfig, canvas: CanvasDime
       warnedUnknownGenerators.add(config.generatorId);
       console.warn(`[GenerativeEngine] Unknown generatorId "${config.generatorId}", falling back to "stacked-waves"`);
     }
-    spec = GENERATOR_CATALOG[0]; // fallback a stacked-waves
+    spec = GENERATOR_CATALOG[0]; // fall back to stacked-waves
   }
 
-  // 1. Clamp y resolver parámetros validados contra el esquema
+  // 1. Clamp and resolve parameters validated against the schema
   const baseParams: Record<string, unknown> = {};
 
   for (const schemaItem of spec.schema) {
@@ -62,7 +62,7 @@ export function renderGenerativeSVG(config: GenerativeConfig, canvas: CanvasDime
     }
   }
 
-  // 2. Construir servicios transversales (RNG, DefsRegistry, OKLab Color Ramp)
+  // 2. Build cross-cutting services (RNG, DefsRegistry, OKLab color ramp)
   const rng = createRng(config.seed || 42);
   const defs = createDefsRegistry();
 
@@ -81,7 +81,7 @@ export function renderGenerativeSVG(config: GenerativeConfig, canvas: CanvasDime
     ramp: colorRamp
   };
 
-  // 3. Renderizar cada capa
+  // 3. Render each layer
   let contentMarkup = spec.layers
     .map((capa) => {
       const resolvedParams = { ...capa.fixed, ...baseParams };
@@ -95,8 +95,8 @@ export function renderGenerativeSVG(config: GenerativeConfig, canvas: CanvasDime
         .filter(Boolean)
         .join(";");
 
-      // Sin estilos ni desenfoque no se envuelve: un generador de una capa produce el mismo
-      // SVG que antes, byte a byte.
+      // Without styles or blur the layer is not wrapped: a single-layer generator produces
+      // the same SVG as before, byte for byte.
       if (!estilos && !capa.desenfoque) return marcas;
 
       const filtro = capa.desenfoque ? ` filter="url(#${ctx.defs.registerBlur(capa.desenfoque)})"` : "";
@@ -105,13 +105,13 @@ export function renderGenerativeSVG(config: GenerativeConfig, canvas: CanvasDime
     })
     .join("");
 
-  // 4. Grano en mosaico de 128px
+  // 4. Tiled grain, 128px
   if (spec.grano && spec.grano.intensidad > 0) {
     const grainPatternId = defs.registerGrain(spec.grano.intensidad);
     contentMarkup += `<rect width="100%" height="100%" fill="url(#${grainPatternId})" opacity="${spec.grano.intensidad}"/>`;
   }
 
-  // 5. Ensamblar documento SVG con viewBox dinámico
+  // 5. Assemble the SVG document with a dynamic viewBox
   return buildSvgDocument({
     width: ctx.width,
     height: ctx.height,

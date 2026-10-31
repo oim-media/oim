@@ -5,20 +5,20 @@
  */
 
 /**
- * El veredicto de seguridad, en UN solo sitio.
+ * The security verdict, in ONE single place.
  *
- * Habia dos copias, una por camino de carga, y ya no decian lo mismo: la del
- * hilo principal distinguia «firmado sin autoria» y la del worker -la que usan
- * casi todos los navegadores- decia siempre «verificado».
+ * There were two copies, one per loading path, and they no longer said the same
+ * thing: the main thread distinguished "signed without authorship", while the
+ * worker's -the one almost all browsers use- always said "verified".
  *
- * Y la firma no miraba la imagen: metadatos firmados sobre otra imagen salian
- * «verificados». Ahora el sello `image_hash` se compara con el hash real, y un
- * archivo alterado no se muestra.
+ * And the signature did not check the image: signed metadata over a different
+ * image came out "verified". Now the `image_hash` seal is compared with the real
+ * hash, and an altered file is not shown.
  *
- * PERO solo si el archivo declara `image_hash_alg: "sha256-idat"`. En junio de
- * 2026 un cliente mandaba su propio `image_hash` y el backend lo firmaba sin
- * mirarlo: `object_view.oim` lleva el SHA-256 de una entrada VACIA. Exigir esos
- * hashes rechazaria como alterados archivos legitimos.
+ * BUT only if the file declares `image_hash_alg: "sha256-idat"`. Once, a client
+ * sent its own `image_hash` and the backend signed it without checking it:
+ * `object_view.oim` carries the SHA-256 of an EMPTY input. Requiring those
+ * hashes would reject legitimate files as altered.
  */
 
 import { describe, it, expect } from "vitest";
@@ -26,7 +26,7 @@ import { securityVerdict, isRefused } from "./security";
 
 const HASH = "a".repeat(64);
 const ALG = "sha256-idat";
-/** SHA-256 de nada: lo que lleva firmado `object_view.oim`, de junio. */
+/** SHA-256 of nothing: what `object_view.oim` carries signed. */
 const HASH_DE_NADA = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 const base = { isSigned: true, isSigValid: true, imageHash: HASH };
 const sellado = (extra: object = {}) => ({ image_hash: HASH, image_hash_alg: ALG, ...extra });
@@ -74,9 +74,9 @@ describe("securityVerdict", () => {
     expect(securityVerdict({ ...base, isSigned: false, metadata: {} })).toBe("unsigned");
   });
 
-  // «dominio bloqueado gana a todo» se retiro con `allowed_domains` (sandbox,
-  // 24 sept 2026): el player ya no mira en que sitio se abre un archivo.
-  // Lo protege sandbox-sin-red.test.ts.
+  // "a blocked domain beats everything" was removed together with
+  // `allowed_domains` (the sandbox): the player no longer checks which site a
+  // file is opened on. `sandbox-sin-red.test.ts` protects this.
 });
 
 describe("isRefused", () => {

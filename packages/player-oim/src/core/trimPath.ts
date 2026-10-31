@@ -5,22 +5,22 @@
  */
 
 /**
- * Nombre del @keyframes compartido que dibuja el contorno.
+ * Name of the shared @keyframes that draws the outline.
  *
- * Una sola regla para todas las capas: los extremos del recorrido viajan en
- * dos variables CSS por elemento, asi que no hace falta un @keyframes por
- * figura. Mismo patron que `ensureWaveKeyframes` en la animacion de ola.
+ * A single rule for all layers: the ends of the path travel in two CSS
+ * variables per element, so there is no need for a @keyframes per shape. Same
+ * pattern as `ensureWaveKeyframes` in the wave animation.
  */
 export const TRIM_KEYFRAMES_NAME = 'oim-trim-draw';
 
-/** La regla en si. Se inyecta una vez por shadow root. */
+/** The rule itself. It is injected once per shadow root. */
 export const TRIM_KEYFRAMES_CSS =
   '@keyframes ' + TRIM_KEYFRAMES_NAME + ' {\n' +
   '  from { stroke-dashoffset: var(--oim-trim-from); }\n' +
   '  to { stroke-dashoffset: var(--oim-trim-to); }\n' +
   '}';
 
-/** Estilo de recorte, que puede llevar ademas la animacion de dibujado. */
+/** Trim style, which may also carry the draw animation. */
 export interface TrimCss {
   strokeDasharray?: string;
   strokeDashoffset?: number;
@@ -50,12 +50,12 @@ export function getTrimCss(
   const end = style.trimEnd ?? 100;
   const duration = style.trimDuration ?? 0;
 
-  // Contorno completo y sin animacion: no hay nada que recortar, y un
-  // dasharray inutil solo añadiria trabajo al compositor.
+  // Full outline with no animation: there is nothing to trim, and a useless
+  // dasharray would only add work for the compositor.
   //
-  // Con animacion SI hay trabajo que hacer aunque el recorte sea completo:
-  // dibujar un icono entero de principio a fin es justamente el caso mas
-  // habitual, y antes ese `return {}` lo dejaba sin animar.
+  // WITH animation there IS work to do even when the trim is complete: drawing
+  // a whole icon from start to finish is exactly the most common case, and
+  // before, that `return {}` left it unanimated.
   if (start <= 0 && end >= 100 && duration <= 0) return {};
 
   const visible = Math.max(0, (end - start) / 100) * length;
@@ -68,9 +68,9 @@ export function getTrimCss(
   };
 
   if (duration > 0) {
-    // El trazo arranca desplazado justo su propia longitud —invisible— y
-    // recorre hasta su posicion final. `forwards` lo deja dibujado al acabar,
-    // no lo devuelve al estado inicial.
+    // The stroke starts offset by exactly its own length —invisible— and travels
+    // to its final position. `forwards` leaves it drawn when it ends, rather
+    // than returning it to the initial state.
     css['--oim-trim-from'] = `${offsetFinal + visible}px`;
     css['--oim-trim-to'] = `${offsetFinal}px`;
     css.animation = `${TRIM_KEYFRAMES_NAME} ${duration}s ease-out forwards`;
@@ -79,7 +79,7 @@ export function getTrimCss(
   return css;
 }
 
-/** Inyecta el @keyframes del dibujado una sola vez por shadow root. */
+/** Injects the draw @keyframes once per shadow root. */
 export function ensureTrimKeyframes(shadowRoot: ShadowRoot | null): void {
   if (!shadowRoot) return;
   const styleId = 'oim-trim-keyframes';
@@ -91,20 +91,20 @@ export function ensureTrimKeyframes(shadowRoot: ShadowRoot | null): void {
 }
 
 /**
- * Aplica trim path a todos los <path> dentro de un elemento del DOM.
- * Pensado para llamarse después de inyectar el SVG inline en el slot.
+ * Applies trim path to every <path> inside a DOM element.
+ * Meant to be called after the SVG is injected inline into the slot.
  */
 export function applyTrimToSvgPaths(
   container: Element,
   style: { strokeWidth?: number; trimStart?: number; trimEnd?: number; trimDuration?: number }
 ): void {
-  // `SVGGeometryElement` y no `Element`: es el tipo que declara
-  // `getTotalLength()` y `style`, que es lo que este bucle usa. Sin el, los
-  // seis accesos de aqui abajo eran seis errores de `typecheck` -sobre codigo
-  // correcto- y `querySelectorAll` no tiene forma de saberlo sola.
+  // `SVGGeometryElement` and not `Element`: it is the type that declares
+  // `getTotalLength()` and `style`, which is what this loop uses. Without it,
+  // the six accesses down here were six `typecheck` errors -on correct code- and
+  // `querySelectorAll` has no way of knowing that on its own.
   //
-  // Los siete selectores son todos elementos de geometria SVG, asi que la
-  // afirmacion es cierta por construccion: no hay ninguno que no lo cumpla.
+  // The seven selectors are all SVG geometry elements, so the claim is true by
+  // construction: none of them fails to meet it.
   const paths = container.querySelectorAll<SVGGeometryElement>(
     'path, circle, rect, polygon, polyline, ellipse, line'
   );
@@ -116,8 +116,8 @@ export function applyTrimToSvgPaths(
         path.style.strokeDasharray = css.strokeDasharray;
         path.style.strokeDashoffset = String(css.strokeDashoffset ?? 0);
       }
-      // Animacion de dibujado: las variables llevan los extremos del recorrido
-      // y el @keyframes compartido hace el resto.
+      // Draw animation: the variables carry the ends of the path,
+      // and the shared @keyframes does the rest.
       if (css.animation) {
         path.style.setProperty('--oim-trim-from', css['--oim-trim-from'] || '0px');
         path.style.setProperty('--oim-trim-to', css['--oim-trim-to'] || '0px');

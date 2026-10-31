@@ -17,7 +17,8 @@ const base = process.argv[2] ?? "main";
 
 const printer = ts.createPrinter({ removeComments: true });
 const code = (text, file) =>
-  printer.printFile(ts.createSourceFile(file, text, ts.ScriptTarget.Latest, false)).split("\n");
+  // Line endings are not code: git normalizes them, but template literals keep them.
+  printer.printFile(ts.createSourceFile(file, text.replace(/\r\n/g, "\n"), ts.ScriptTarget.Latest, false)).split("\n");
 
 const changed = execFileSync("git", ["diff", "--name-only", base, "--", "*.ts", "*.js", "*.mjs"], { encoding: "utf8" })
   .split("\n").filter(Boolean).filter(existsSync);

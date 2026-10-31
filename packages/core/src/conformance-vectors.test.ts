@@ -5,25 +5,24 @@
  */
 
 /**
- * Los vectores de conformidad: que cumplirlos signifique algo.
+ * Conformance vectors: what it means to meet them.
  *
- * `packages/spec` promete que una implementacion en cualquier lenguaje puede
- * ser correcta sin leer el TypeScript. El JSON Schema dice que FORMA tiene un
- * .oim; los vectores dicen que RESULTADO debe producir un lector al abrir uno
- * concreto. Sin ellos «cumple la spec» no se puede comprobar, solo afirmar.
+ * `packages/spec` promises that an implementation in any language can be
+ * correct without reading the TypeScript. The JSON Schema says what SHAPE a
+ * .oim has; the vectors say what RESULT a reader must produce when opening a
+ * specific one. Without them, "meets the spec" cannot be checked, only asserted.
  *
- * Esta prueba los ejecuta contra NUESTRO lector. No es circular por accidente,
- * es circular a proposito y en una direccion: la implementacion de referencia
- * define el resultado esperado, y esta prueba impide que la referencia se
- * mueva sin que los vectores se muevan con ella. El dia que un lector en Swift
- * discrepe, hay un fichero concreto sobre el que discutir en vez de dos
- * opiniones.
+ * This test runs them against OUR reader. It is not circular by accident, it
+ * is circular on purpose and in one direction: the reference implementation
+ * defines the expected result, and this test prevents the reference from moving
+ * without the vectors moving with it. The day a reader in Swift disagrees, there
+ * is a concrete file to argue about instead of two opinions.
  *
- * Se comprueba lo que dos implementaciones pueden discrepar DE VERDAD: la
- * geometria ya normalizada a `cqw`, la jerarquia de grupos, la profundidad del
- * parallax y la interactividad declarada. No el metadato entero — un volcado
- * completo se rompe cada vez que el compilado añade un campo, y entonces se
- * regenera sin mirar, que es un vector que ya no comprueba nada.
+ * It checks what two implementations can REALLY disagree about: the geometry
+ * already normalized to `cqw`, the group hierarchy, the parallax depth, and the
+ * declared interactivity. Not the whole metadata — a full dump breaks every
+ * time the compiled output adds a field, and then it gets regenerated without a
+ * look, which is a vector that no longer checks anything.
  */
 
 import { describe, it, expect } from "vitest";
@@ -38,7 +37,7 @@ const CASOS = existsSync(VECTORES)
   ? readdirSync(VECTORES).filter((f) => f.endsWith(".oim.png")).sort()
   : [];
 
-/** Lo mismo que emite `tools/generar-vectores.mjs`. Si divergen, el vector miente. */
+/** The same thing that `tools/generar-vectores.mjs` emits. If they diverge, the vector lies. */
 const DEL_ESTILO = [
   "width", "height", "fontSize", "borderRadius", "fillColor",
   "groupId", "childIds", "isInteractive", "states", "parallax",
@@ -83,9 +82,9 @@ function loQueSeEspera(m: any) {
 
 describe("los vectores de conformidad", () => {
   /**
-   * Sin esto la suite pasaria en verde el dia que alguien mueva el directorio:
-   * cero vectores, cero comprobaciones, todo correcto.
-   * Ahora exigimos la matriz canónica completa de 20 vectores normativos.
+   * Without this, the suite would pass green the day someone moves the
+   * directory: zero vectors, zero checks, all correct.
+   * Now we require the full canonical matrix of 20 normative vectors.
    */
   it("hay al menos 20 vectores de conformidad normativos", () => {
     expect(CASOS.length).toBeGreaterThanOrEqual(20);
@@ -97,7 +96,7 @@ describe("los vectores de conformidad", () => {
     );
     const { metadata } = await extractOIM(new Blob([readFileSync(join(VECTORES, fichero))]));
     const obtenido = loQueSeEspera(metadata);
-    // `description` es para quien lee el vector, no parte del resultado.
+    // `description` is for whoever reads the vector, not part of the result.
     const { description, ...resto } = esperado;
     expect(obtenido).toEqual(resto);
   });
@@ -110,8 +109,8 @@ describe("los vectores de conformidad", () => {
   });
 
   /**
-   * Un vector sin firma comprobaria la mitad del formato. Todos salieron de
-   * `/v1/oim/package`, que es lo que firma en produccion.
+   * A vector without a signature would check only half the format. All of them
+   * came out of `/v1/oim/package`, which is what signs in production.
    */
   it.each(CASOS)("%s viene firmado, como un .oim real", async (fichero) => {
     const { metadata } = await extractOIM(new Blob([readFileSync(join(VECTORES, fichero))]));
@@ -119,7 +118,7 @@ describe("los vectores de conformidad", () => {
     expect(metadata.key_version).toBe("v1");
   });
 
-  /** Una suite amplia verifica dimensiones ortogonales del formato. */
+  /** A broad suite checks orthogonal dimensions of the format. */
   it("cubren interactividad, jerarquia, profundidad, multilingüe, tipografía y efectos", async () => {
     const cubre = {
       interactivo: false,

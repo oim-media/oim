@@ -8,21 +8,21 @@
  */
 
 /**
- * El fill de un text: degradado, patrón o fondo generativo.
+ * The fill of a text: gradient, pattern or generative background.
  *
- * `getFillCss` contemplaba el text desde el principio —devuelve
- * `background-clip: text` para esos tres tipos— pero **nadie lo llamaba para
- * un slot de text**: su única llamada en todo el monorepo era para
- * `slotType === 'container'`. La rama existía y era inalcanzable.
+ * `getFillCss` handled text from the start: it returns `background-clip: text` for
+ * those three types, but **nobody called it for a text slot**: its only call in the
+ * whole monorepo was for `slotType === 'container'`. The branch existed and was
+ * unreachable.
  *
- * Eso explica que ningún `.oim` publicado use text con degradado mucho mejor
- * que «el editor no lo ofrecía»: es que nadie lo pintaba.
+ * That explains why no published `.oim` has gradient text: it was not offered by the
+ * editor, and nobody was painting it either.
  *
- * **Lo que estas pruebas NO son.** happy-dom no maqueta ni compone: no se
- * puede ver aquí si el degradado sale dentado ni si el color llega al
- * descendente. Eso se midió en un navegador real —Poppins declara 1,396 em de
- * alto, así que con interlineado 1.2 su tinta se sale 0,098 em por lado— y así
- * seguirá teniendo que medirse.
+ * **What these tests are NOT.** happy-dom does not lay out or composite: it cannot tell
+ * here whether the gradient comes out jagged or whether the colour reaches the descender.
+ * That was measured in a real browser: Poppins declares a 1.396 em height, so with a
+ * line-height of 1.2 its ink spills 0.098 em to each side.
+ * It will keep having to be measured that way.
  */
 
 import { describe, it, expect } from "vitest";
@@ -69,9 +69,9 @@ describe("un text con fill de degradado", () => {
   });
 
   /**
-   * Los tres juntos son lo que convierte el text en una máscara: el fondo se
-   * ve solo por donde hay glifo. Sin `color: transparent` se pintaría el text
-   * ENCIMA de su propio degradado y no se vería ninguno.
+   * The three together are what turns the text into a mask: the background shows
+   * only where there is a glyph. Without `color: transparent` the text would be painted
+   * ON TOP of its own gradient and none of it would show.
    */
   it("se convierte en mascara: recorte al text y color transparente", async () => {
     const el = await hoverDe({ fillType: "gradient", fillGradient: DEG });
@@ -82,15 +82,15 @@ describe("un text con fill de degradado", () => {
 
 describe("el color plano NO se convierte en mascara", () => {
   /**
-   * La mitad que suele olvidarse. Un fill sólido se pinta como color de
-   * text normal: convertirlo en máscara le costaría el suavizado que conoce
-   * la forma de la letra, y a cambio de nada.
+   * The half that is often forgotten. A solid fill is painted as the normal text
+   * colour: turning it into a mask would cost the smoothing that knows the shape of
+   * the letter, and in return for nothing.
    */
   it("un fill solido pinta el color, sin recorte", async () => {
     const el = await slotDe({ fillType: "color", fillColor: "#1b3a6b" });
-    // happy-dom conserva el hexadecimal; un navegador lo normaliza a `rgb()`.
-    // Se compara con lo que ESTE entorno produce, no con lo que produciria
-    // Chrome, o la prueba estaria comprobando el entorno y no el motor.
+    // happy-dom keeps the hexadecimal; a browser normalizes it to `rgb()`.
+    // It is compared with what THIS environment produces, not with what
+    // Chrome would produce, or the test would be checking the environment and not the engine.
     expect(el.style.color.toLowerCase()).toBe("#1b3a6b");
     expect(el.style.backgroundClip).not.toBe("text");
   });
@@ -104,10 +104,10 @@ describe("el color plano NO se convierte en mascara", () => {
 
 describe("el inkMargin para la tinta de los descendentes", () => {
   /**
-   * Con `background-clip: text` la pintura se recorta al área de fondo, que es
-   * la caja de línea. La tinta de la «j», la «p» y la «g» sobresale de ella y
-   * se queda SIN RELLENO —transparente—, y con un borde de text se ve el
-   * contorno continuar donde el color ya no llega.
+   * With `background-clip: text` the paint is cropped to the background area, which is
+   * the line box. The ink of the "j", the "p" and the "g" sticks out of it and is left
+   * WITHOUT FILL (transparent), and with a text border the outline is seen to continue
+   * where the colour no longer reaches.
    */
   it("se anade cuando el text es una mascara", async () => {
     const el = await slotDe({ fillType: "gradient", fillGradient: "linear-gradient(90deg,#000,#fff)" });
@@ -117,9 +117,9 @@ describe("el inkMargin para la tinta de los descendentes", () => {
   });
 
   /**
-   * `.oim-slot` declara `padding` con `!important`, y una regla de hoja gana a
-   * un style en línea normal. Sin `important` aquí, el inkMargin no llegaría a
-   * aplicarse y esta prueba pasaría igual mirando solo `style.paddingTop`.
+   * `.oim-slot` declares `padding` with `!important`, and a sheet rule beats a normal
+   * inline style. Without `important` here, the inkMargin would never get applied and
+   * this test would pass anyway by only looking at `style.paddingTop`.
    */
   it("va con important, o la hoja de styles lo pisa", async () => {
     const el = await slotDe({ fillType: "gradient", fillGradient: "linear-gradient(90deg,#000,#fff)" });
@@ -128,9 +128,9 @@ describe("el inkMargin para la tinta de los descendentes", () => {
   });
 
   /**
-   * Y NO se añade cuando no hace falta: con interlineado holgado la tinta ya
-   * cabe, y agrandar el área de fondo desplazaría un degradado vertical sin
-   * motivo.
+   * And it is NOT added when it is not needed: with a generous line height the ink already
+   * fits, and enlarging the background area would shift a vertical gradient.
+   * for no reason.
    */
   it("no se anade con un interlineado que ya da de si", async () => {
     const el = await slotDe({
@@ -139,7 +139,7 @@ describe("el inkMargin para la tinta de los descendentes", () => {
     expect(el.style.paddingTop).toBe("");
   });
 
-  /** Ni cuando el fill es sólido, que no recorta nada. */
+  /** Nor when the fill is solid, which clips nothing. */
   it("no se anade a un fill solido", async () => {
     const el = await slotDe({ fillType: "color", fillColor: "#111" });
     expect(el.style.paddingTop).toBe("");

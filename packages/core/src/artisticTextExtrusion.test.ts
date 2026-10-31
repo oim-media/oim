@@ -5,19 +5,19 @@
  */
 
 /**
- * El relieve 3D del texto artistico, ahora en un solo sitio.
+ * The 3D relief of artistic text, now in a single place.
  *
- * El editor y el player tenian cada uno su `shadeHexColor`, y hacian lo
- * contrario: el editor oscurecia hacia el negro y el player aclaraba hacia el
- * blanco. Con el mismo `#111827`, el autor veia un relieve casi negro y quien
- * abria el .oim lo veia blanco. Se conserva el del editor: es lo que el autor
- * diseno, y lo que decia la prueba del editor que nunca lo comprobo.
+ * The editor and the player each had their own `shadeHexColor`, and they did the
+ * opposite: the editor darkened toward black and the player lightened toward
+ * white. With the same `#111827`, the author saw an almost black relief and
+ * whoever opened the .oim saw it white. The editor's version is kept: it is what
+ * the author designed, and what the editor's test claimed but never verified.
  */
 
 import { describe, it, expect } from "vitest";
 import { shadeHexColor, calculate3DExtrusionLayers } from "./artisticTextExtrusion.js";
 
-// Suma de los tres canales: basta para decir cual de dos colores es mas oscuro.
+// Sum of the three channels: enough to tell which of two colors is darker.
 const luz = (hex: string) => {
   const n = parseInt(hex.slice(1), 16);
   return ((n >> 16) & 255) + ((n >> 8) & 255) + (n & 255);

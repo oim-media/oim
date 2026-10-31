@@ -5,10 +5,10 @@
  */
 
 /**
- * El trazado del texto curvado se importa de `@oim-media/core`: estaba escrito aqui
- * y otra vez en el editor, y las dos copias habian divergido -el arco salia un
- * 80% mas curvado al publicarse que al editarlo, y la onda un 29% mas plana-.
- * Se conservo la geometria del editor; el porque esta en el fichero del core.
+ * The curved-text path is imported from `@oim-media/core`: it was written here
+ * and again in the editor, and the two copies had diverged (the arc came out 80%
+ * more curved when published than when edited, and the wave 29% flatter).
+ * The editor's geometry was kept; the reason is in the core's file.
  */
 import { calculateTextCurvePath, artisticTextLines } from '../../../core/src/artisticTextCurve.js';
 // The extrusion comes from the core, shared with the editor. The player's own
@@ -39,7 +39,7 @@ export interface ArtisticTextRenderModel {
 
 
 /**
- * Construye el modelo completo de renderizado vectorial a partir del slot del visor.
+ * Builds the full vector rendering model from the viewer's slot.
  */
 export function buildArtisticTextModelFromSlot(
   slot: any,
@@ -113,7 +113,7 @@ export function buildArtisticTextModelFromSlot(
 }
 
 /**
- * Genera el marcado SVG vectorial completo para una forma artistic-text.
+ * Generates the full vector SVG markup for an artistic-text shape.
  */
 export function generateArtisticTextSvgString(
   model: ArtisticTextRenderModel,

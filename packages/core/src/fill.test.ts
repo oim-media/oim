@@ -62,8 +62,8 @@ describe("patternLayerCss", () => {
     ({ id: "p", type: "pattern", width: 200, height: 200,
        fillPatternType: "clouds", ...extra }) as any;
 
-  // Lo que SEPARA la capa del relleno: el relleno ajusta una vez («cover»,
-  // «no-repeat»); la capa tesela.
+  // What SEPARATES the layer from the fill: the fill adjusts once ("cover",
+  // "no-repeat"); the layer tiles.
   it("tesela: repeat y un tamaño, nunca cover", () => {
     const css = patternLayerCss(capa());
     expect(css.backgroundRepeat).toBe("repeat");
@@ -91,7 +91,7 @@ describe("patternLayerCss", () => {
       .toContain("background-animation-right");
   });
 
-  // Una capa quieta NO debe pagar un ciclo de composicion.
+  // A still layer must NOT pay for a composition cycle.
   it.each([
     ["direccion none", { fillPatternDirection: "none", fillPatternSpeed: 8 }],
     ["velocidad 0",    { fillPatternSpeed: 0 }],
@@ -101,7 +101,7 @@ describe("patternLayerCss", () => {
     expect(patternLayerCss(capa(extra)).animation).toBeUndefined();
   });
 
-  // Un `.oim` ajeno puede traer cualquier cosa.
+  // A foreign `.oim` can carry anything.
   it("una direccion desconocida no emite animacion y no lanza", () => {
     expect(patternLayerCss(capa({ fillPatternDirection: "diagonal", fillPatternSpeed: 8 } as any)).animation)
       .toBeUndefined();
@@ -112,8 +112,8 @@ describe("patternLayerCss", () => {
       .toBe("320px");
   });
 
-  // Un tipo de patron que el generador no conozca: la capa sale transparente,
-  // pero NO se lanza. Un `.oim` ajeno no debe poder tumbar el visor.
+  // A pattern type that the generator does not know: the layer comes out transparent,
+  // but it is NOT thrown. A foreign `.oim` must not be able to bring the viewer down.
   it("un tipo de patron desconocido no lanza", () => {
     expect(() => patternLayerCss(capa({ fillPatternType: "no-existe" }))).not.toThrow();
   });
@@ -123,9 +123,9 @@ describe("la capa de patron es una VENTANA, no un lienzo que estira", () => {
   const capa = (extra: Record<string, unknown> = {}) =>
     ({ id: "p", type: "pattern", fillPatternType: "clouds", ...extra }) as any;
 
-  // El invariante que define la capa: redimensionarla enseña MAS o MENOS
-  // patron, no un patron mas grande o mas pequeño. El motivo lo fija la
-  // escala, no el tamaño del nodo -igual que el fondo en movimiento-.
+  // The invariant that defines the layer: resizing it shows MORE or LESS
+  // pattern, not a bigger or smaller one. What fixes it is the
+  // scale, not the node's size -just like the moving background-.
   it("el tamaño del motivo NO depende del tamaño de la capa", () => {
     const pequena = patternLayerCss(capa({ width: 120, height: 90 }));
     const grande = patternLayerCss(capa({ width: 960, height: 720 }));
@@ -133,14 +133,14 @@ describe("la capa de patron es una VENTANA, no un lienzo que estira", () => {
     expect(pequena.backgroundSize).toBe("160px 160px");
   });
 
-  // Y lo que SI lo cambia es la escala, que es el control del autor.
+  // What DOES change it is the scale, which is the author's control.
   it("pero la escala si lo cambia", () => {
     expect(patternLayerCss(capa({ width: 120, fillPatternScale: 2 })).backgroundSize)
       .toBe("320px 320px");
   });
 
-  // `repeat` es lo que hace que al agrandar la ventana aparezca mas patron en
-  // vez de un hueco.
+  // `repeat` is what makes enlarging the window show more pattern instead of
+  // a gap.
   it("y al agrandarla aparece mas patron, no un hueco", () => {
     expect(patternLayerCss(capa({ width: 960, height: 720 })).backgroundRepeat)
       .toBe("repeat");
@@ -252,7 +252,7 @@ describe("svgSilhouetteMaskCss", () => {
     decodeURIComponent(String(css.maskImage).replace(/^url\("data:image\/svg\+xml,/, "").replace(/"\)$/, ""));
 
   it("every fill turns black (as a gradient fill paints them all), strokes keep `none`", () => {
-    // A pattern or generative fill on an icon painted its whole box (27 Sept 2026).
+    // A pattern or generative fill on an icon painted its whole box.
     const icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 1" fill="transparent" style="stroke:#f00;fill:none"/><circle r="1" stroke="none"/></svg>`;
     const svg = decode(svgSilhouetteMaskCss(icon) as Record<string, unknown>);
     expect(svg).not.toMatch(/fill="(none|transparent)"|fill:none/);

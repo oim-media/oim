@@ -5,39 +5,38 @@
  */
 
 /**
- * El trazado sobre el que corre un texto artistico curvado.
+ * The path along which curved artistic text runs.
  *
- * Vive aqui por el mismo motivo que `typography.ts` y `fill.ts`: estaba
- * escrito DOS VECES —una en el editor, otra en el player— y las dos copias
- * habian divergido en las dos formas que el editor ofrece:
+ * It lives here for the same reason as `typography.ts` and `fill.ts`: it was
+ * written TWICE -once in the editor, once in the player- and the two copies
+ * had diverged in both forms the editor offers:
  *
- *   arco: el control quedaba un 80% mas alto en el player, y sus extremos
- *         4 px por encima de los del editor.
- *   onda: la amplitud del editor era un 29% mayor.
+ *   arc: the control point sat 80% higher in the player, and its endpoints
+ *        4 px above the editor's.
+ *   wave: the editor's amplitude was 29% larger.
  *
- * Se conserva la geometria del EDITOR, no la del player, y no por antiguedad:
- * la del editor mantiene el arco centrado en la caja —el vertice sube
- * `deltaY/4` y los extremos bajan `deltaY/2`—, mientras que la del player
- * anclaba los extremos a la linea base y empujaba el vertice hacia arriba.
- * Con la curva al maximo eso dejaba el texto a 11 px del borde superior de
- * una caja de 120: recortado.
+ * The EDITOR's geometry is kept, not the player's, and not out of seniority:
+ * the editor's keeps the arc centred in the box -the apex rises by `deltaY/4`
+ * and the endpoints drop by `deltaY/2`-, whereas the player's anchored the
+ * endpoints to the baseline and pushed the apex upward. With the curve at its
+ * maximum, that left the text 11 px from the top edge of a 120 px box: clipped.
  *
- * Que se copiara y luego divergiera no es casualidad. La extrusion 3D se
- * copio tambien y sigue identica; la curva es lo que alguien retoca «para que
- * se vea mejor», y se retoca en UN lado.
+ * It is no accident that it was copied and then diverged. The 3D extrusion was
+ * also copied and is still identical; the curve is what someone tweaks "to make
+ * it look better", and it gets tweaked on ONE side only.
  */
 
-/** Las formas de trazado. `arch` no la ofrece el editor; se acepta y se
- *  trata como arco, que es lo que ya hacia. */
+/** The path shapes. The editor does not offer `arch`; it is accepted and
+ *  treated as an arc, which is what it already did. */
 export type TextCurveType = "arc" | "wave" | "arch";
 
 /**
- * Devuelve el atributo `d` del trazado que sigue el texto.
+ * Returns the `d` attribute of the path that the text follows.
  *
- * @param width  ancho de la caja, en px
- * @param height alto de la caja, en px
- * @param curveAmount curvatura de -100 a 100; 0 es una recta
- * @param curveType forma del trazado
+ * @param width  width of the box, in px
+ * @param height height of the box, in px
+ * @param curveAmount curvature from -100 to 100; 0 is a straight line
+ * @param curveType shape of the path
  */
 export function calculateTextCurvePath(
   width: number,
@@ -52,12 +51,12 @@ export function calculateTextCurvePath(
     return `M 0 ${midY} L ${width} ${midY}`;
   }
 
-  // Desplazamiento vertical maximo proporcional a la altura y curvatura
+  // Maximum vertical displacement, proportional to the height and curvature
   const maxDelta = height * 0.45;
   const deltaY = (clampedCurve / 100) * maxDelta;
 
   if (curveType === "wave") {
-    // Onda cubica senoidal
+    // Cubic sinusoidal wave
     const cp1x = width * 0.25;
     const cp1y = midY - deltaY;
     const cp2x = width * 0.75;
@@ -65,7 +64,7 @@ export function calculateTextCurvePath(
     return `M 0 ${midY} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${width} ${midY}`;
   }
 
-  // Arco cuadratico
+  // Quadratic arc
   const yStartEnd = midY + deltaY * 0.5;
   const yControl = midY - deltaY;
 

@@ -5,29 +5,28 @@
  */
 
 /**
- * Los límites del FORMATO. Módulo aparte, y por una razón concreta.
+ * The FORMAT's limits. A separate module, for a specific reason.
  *
- * `MAX_SLOTS` vivía en `schema.ts` con un comentario que decía que se
- * declaraba ahí «para que el número exista una vez y llegue a los dos sitios
- * sin copiarse». No funcionó: el player lo copió como literal `150` en
- * `security.ts` porque importar de `schema.ts` arrastra zod a su paquete, y el
- * player no quiere zod. La deuda no era del que copió, era del sitio donde
- * estaba la constante.
+ * `MAX_SLOTS` used to live in `schema.ts` with a comment saying it was declared there
+ * «so the number exists once and reaches both places without being copied». It did not work:
+ * the player copied it as the literal `150` in `security.ts`, because importing from
+ * `schema.ts` drags zod into its package, and the player does not want zod. The debt
+ * was not the copier's; it was the place where the constant lived.
  *
- * Aquí no hay dependencias. Cualquiera puede importarlo sin arrastrar nada.
+ * Nothing here has dependencies. Anyone can import it without dragging anything in.
  *
- * Y el número es del formato, no del despliegue: el backend podía subirlo con
- * una variable de entorno, lo que le permitía firmar archivos que el player
- * rechaza como corruptos. Un archivo legítimamente firmado que ningún lector
- * muestra. Ahora el backend solo puede BAJARLO.
+ * And the number belongs to the format, not to the deployment: the backend could raise
+ * it with an environment variable, which let it sign files that the player
+ * rejects as corrupt. A legitimately signed file that no reader
+ * displays. Now the backend can only LOWER it.
  */
 
 /**
- * Cuántas capas admite un `.oim`.
+ * How many layers a `.oim` supports.
  *
- * Lo aplican tres sitios y los tres deben decir lo mismo: el esquema de
- * `@oim-media/core`, la validación del player antes de pintar, y el backend antes
- * de firmar.
+ * Three places enforce it, and all three must say the same thing: the schema of
+ * `@oim-media/core`, the player's validation before painting, and the backend before
+ * signing.
  */
 export const MAX_SLOTS = 150;
 

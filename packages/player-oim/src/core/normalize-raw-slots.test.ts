@@ -17,7 +17,7 @@ const meta = () => ({
   ],
 });
 
-// Variante W (worker y backend media.py:440): ancla en x_px e y_px tal cual.
+// Variant W (worker and backend media.py:440): anchors at x_px and y_px as-is.
 const ESPERADO = { c: [50, 25], r: [12.5, 50], l: [12.5, 75] };
 
 describe("normalizeRawSlots", () => {

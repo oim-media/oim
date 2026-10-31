@@ -16,10 +16,10 @@
  * CANONICAL: the editor and the player both use this module; never fork it.
  */
 
-/** Como se mueve una capa. Igual que `ParallaxSlotItem.axis`. */
+/** How a layer moves. Same as `ParallaxSlotItem.axis`. */
 export type ParallaxAxis = "both" | "x_only" | "y_only";
 
-/** La capa en pixeles del lienzo, con el origen arriba a la izquierda. */
+/** The layer in canvas pixels, with the origin at the top left. */
 export interface LayerBox {
   left: number;
   top: number;
@@ -33,21 +33,21 @@ export interface CanvasSize {
 }
 
 /**
- * Tope del factor. Una capa pequeña pegada al borde pediria un factor enorme
- * -una de 20px que necesita 15px por lado saldria a 2.5- y agrandarla tanto la
- * convierte en otra cosa. Por encima de esto se prefiere que asome el recorte
- * antes que deformar la composicion: es un fallo visible y honesto en vez de
- * una capa que ya no es la que se dibujo.
+ * Cap on the factor. A small layer stuck to the edge would ask for a huge factor
+ * (a 20px one that needs 15px per side would come out at 2.5), and enlarging it that much
+ * turns it into something else. Above this it is preferred that the crop shows
+ * rather than deforming the composition: it is a visible, honest failure instead of
+ * a layer that is no longer the one that was drawn.
  */
 export const MAX_SCALE = 1.35;
 
 /**
- * Desplazamiento maximo en pixeles de una capa con parallax de raton.
+ * Maximum pixel offset of a layer with mouse parallax.
  *
- * `30` y no `60`: el motor multiplica `60 * depth` por la posicion normalizada
- * del raton, que esta ACOTADA a [-0.5, +0.5]. El comentario del controlador
- * dice "Max +- 60px" y es falso; el maximo es la mitad. Si algun dia se amplia
- * el rango del raton, este numero tiene que subir con el.
+ * `30` and not `60`: the engine multiplies `60 * depth` by the normalized pointer
+ * position, which is CLAMPED to [-0.5, +0.5]. The controller's comment says
+ * "Max +- 60px" and is false; the maximum is half. If the pointer range is ever
+ * widened, this number must go up with it.
  */
 export function maxOffset(depth: number): number {
   const d = Number(depth);
@@ -56,14 +56,14 @@ export function maxOffset(depth: number): number {
 }
 
 /**
- * El factor de escala que necesita la capa, o `1` si no lo necesita.
+ * The scale factor the layer needs, or `1` if it does not need one.
  *
- * Solo se mira el eje en el que la capa SE MUEVE: una capa con `y_only` pegada
- * al borde izquierdo no descubre nada por ese lado.
+ * Only the axis the layer MOVES on is checked: a layer with `y_only` stuck to the
+ * left edge uncovers nothing on that side.
  *
- * El factor es UNICO para los dos ejes -el mayor de los dos- y no uno por eje.
- * Escalar en x distinto que en y deforma la capa, y deformar los grupos de
- * parallax ya fue un fallo real de este editor.
+ * The factor is SINGLE for both axes (the larger of the two), not one per axis.
+ * Scaling x differently from y deforms the layer, and deforming parallax groups
+ * was already a real bug in this editor.
  */
 export function oversizeScale(
   caja: LayerBox,
@@ -71,21 +71,21 @@ export function oversizeScale(
   depth: number,
   eje: ParallaxAxis = "both",
   /**
-   * La capa va envuelta en una pista de bucle infinito.
+   * The layer is wrapped in an infinite-loop track.
    *
-   * Entonces NO se sobredimensiona, y no es un caso especial gratuito: la
-   * pista ya resuelve el borde por construccion. `infiniteLayerPlan` calcula
-   * las piezas como `ceil((unidad + lienzo) / unidad)` justamente para que la
-   * capa cubra el lienzo durante toda la vuelta, asi que nunca deja ver el
-   * fondo. Agrandarla no arregla nada y si hace daño: cada pieza se ve mas
-   * grande de lo que se dibujo, y el numero de piezas se calculo para el
-   * tamaño SIN escalar.
+   * So it is NOT oversized. This is not a gratuitous special case: the track already
+   * solves the edge by construction. `infiniteLayerPlan` computes the pieces as
+   * `ceil((unit + canvas) / unit)` precisely so the layer covers the canvas for the
+   * whole loop and never shows the background. Enlarging it fixes nothing and does
+   * harm: each piece looks larger than what was drawn, and the number of pieces was
+   * computed for the size
+   * WITHOUT scaling.
    *
-   * Va aqui y no en cada motor porque el player y el editor deciden "esta capa
-   * tiene pista" con condiciones DISTINTAS -el player mira la velocidad sin
-   * mirar el modo; el editor mira el modo o `inf.enabled`- y esa diferencia ya
-   * existe. Si ademas cada uno decidiera por su cuenta si sobredimensionar,
-   * serian dos reglas en vez de una.
+   * It lives here, not in each engine, because the player and the editor decide 'this layer
+   * has a track' with DIFFERENT conditions (the player checks the speed without
+   * checking the mode; the editor checks the mode or `inf.enabled`), and that difference already
+   * exists. If each one also decided on its own whether to oversize, there would be two rules
+   * instead of one.
    */
   tienePistaInfinita: boolean = false
 ): number {
@@ -98,19 +98,19 @@ export function oversizeScale(
   const seMueveEnY = eje === "both" || eje === "y_only";
 
   /**
-   * Lo que hay que anadir por un lado, o 0 si ese lado no esta anclado.
+   * What must be added on one side, or 0 if that side is not anchored.
    *
-   * `margen` es la distancia del borde de la capa al del lienzo; NEGATIVO si la
-   * capa ya sobresale.
+   * `margen` is the distance from the layer's edge to the canvas edge; NEGATIVE if the
+   * layer already overhangs.
    *
-   * Dos cosas distintas, y confundirlas fue el primer error de esta funcion:
+   * Two different things, and confusing them was the first bug of this function:
    *
-   * - **Anclado**: solo se corrige el lado que LLEGA al borde, `margen <= d`.
-   *   Una capa a 300px del borde tiene un hueco de diseno; separarse un poco
-   *   mas al moverse es el efecto, no un fallo.
-   * - **Cuanto**: `d + margen`. Con la capa pegada (`margen = 0`) hace falta
-   *   `d`; si ya sobresale 50px y solo se mueve 15, no hace falta NADA, y con
-   *   la resta ingenua `d - margen` habria pedido 65.
+   * - **Anchored**: only the side that REACHES the edge is corrected, `margen <= d`.
+   *   A layer 300px from the edge has a design gap; moving apart a bit more while moving
+   *   is the effect, not a bug.
+   * - **How much**: `d + margen`. With the layer flush (`margen = 0`) `d` is needed;
+   *   if it already overhangs 50px and only moves 15, NOTHING is needed, and with the naive
+   *   subtraction `d - margen` it would have asked for 65.
    */
   const porUnLado = (margen: number) => (margen <= d ? Math.max(0, d + margen) : 0);
   const falta = (margenA: number, margenB: number) =>
@@ -125,7 +125,7 @@ export function oversizeScale(
 
   if (faltaX <= 0 && faltaY <= 0) return 1;
 
-  // La escala es centrada, asi que crece `width * (s - 1) / 2` por cada lado.
+  // The scale is centered, so it grows `width * (s - 1) / 2` per side.
   const escala = Math.max(1 + (2 * faltaX) / caja.width, 1 + (2 * faltaY) / caja.height);
   return Math.min(MAX_SCALE, Number(escala.toFixed(4)));
 }

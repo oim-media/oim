@@ -8,16 +8,16 @@
  */
 
 /**
- * El player habla el contrato de 1.5.0 en adelante: un nombre por concepto.
+ * The player speaks the 1.5.0 contract onwards: one name per concept.
  *
- * El compilador (`canonizar_estilo`) ya solo emite los canonicos. Un player
- * que siguiera leyendo los alias tendria DOS lecturas del mismo archivo, y un
- * segundo lector escrito solo con el contrato pintaria distinto que el
- * oficial.
+ * The compiler (`canonizar_estilo`) now emits only the canonical names. A player
+ * that kept reading the aliases would have TWO readings of the same file, and a
+ * second reader written only from the contract would paint differently from the
+ * official one.
  *
- * Y habia un fallo real escondido ahi: el compilador convierte `color` en
- * `fillColor`, pero el motor pintaba la letra con `style.color`. Un texto
- * nuevo del editor -`fillColor` sin `fillType`- salia firmado sin color.
+ * And there was a real bug hidden there: the compiler converts `color` into
+ * `fillColor`, but the engine painted the letter with `style.color`. A new text
+ * from the editor (`fillColor` without `fillType`) came out signed with no colour.
  */
 
 import { describe, it, expect, vi } from "vitest";
@@ -52,13 +52,13 @@ describe("el color de la letra sale de fillColor", () => {
   it("un texto con fillColor y sin fillType se pinta de ese color", async () => {
     const el = await textoCon({ fillColor: "#1b3a6b" });
     expect(el.style.color.toLowerCase()).toBe("#1b3a6b");
-    // Y no como fondo: en un texto, fillColor es la letra.
+    // And not as background: in a text, fillColor is the letter.
     expect(el.style.backgroundColor).toBe("");
   });
 
   it("con rol dinamico, el rol manda y fillColor es el respaldo", async () => {
-    // happy-dom descarta `var()` al leer `style.color`: se mira lo que el
-    // motor ESCRIBE, como en dynamic-colors-render.test.ts.
+    // happy-dom discards `var()` when reading `style.color`: what is checked is what the
+    // engine WRITES, as in dynamic-colors-render.test.ts.
     const escritas: [string, string][] = [];
     const crear = document.createElement.bind(document);
     vi.spyOn(document, "createElement").mockImplementation((tag: string) => {

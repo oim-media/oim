@@ -82,7 +82,7 @@ export interface GlitchCopy {
 }
 
 /**
- * A glitch frame as portable primitives (contract audit, 10 Oct 2026): the
+ * A glitch frame as portable primitives (contract audit): the
  * text with a skew, plus a fixed number of copies — 2 colour ghosts for
  * `glitch-cyberpunk`, 1 shifted band for `glitch-slice` — offset, faded and
  * cut by a rectangle. No text-shadow, no free clip-path: any renderer, web or

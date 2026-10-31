@@ -11,7 +11,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 
 import ImageEngine from "./ImageEngine";
 
-/** Sandbox (24 sept 2026): no font is ever requested from a font host. */
+/** Sandbox: no font is ever requested from a font host. */
 const pideTipografias = () =>
   Array.from(document.querySelectorAll("link")).some((l) => /fonts\.(googleapis|gstatic)\.com/.test(l.href));
 
@@ -48,9 +48,9 @@ describe("una capa cuya familia va incrustada", () => {
     expect(pideTipografias()).toBe(false);
   });
 
-  // Antes: «sin fuente incrustada se pide a Google como antes». El player es un
-  // sandbox desde el 24 sept 2026: la familia se nombra y el navegador cae a lo
-  // que tenga instalado, sin ninguna peticion.
+  // Before: "without an embedded font it is requested from Google, as before". The player is a
+  // sandbox: the family is named and the browser falls back to whatever is installed,
+  // with no request at all.
   it("sin fuente incrustada se nombra la familia y NO se pide a nadie", async () => {
     const capa = await pintar(new Map());
     expect(capa.style.fontFamily).toContain("Lora");

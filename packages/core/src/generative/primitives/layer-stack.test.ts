@@ -22,7 +22,7 @@ function createMockContext(width = 900, height = 600, bleed = 2): RenderContext 
 }
 
 describe("LayerStack Primitive (primitives/layer-stack.ts)", () => {
-  /** Extrae los pares de coordenadas de cada atributo `d` en orden de aparición. */
+  /** Extracts the coordinate pairs of each `d` attribute, in order of appearance. */
   function extractPathPoints(markup: string): Array<Array<[number, number]>> {
     return (markup.match(/d="([^"]+)"/g) || []).map((attr) => {
       const nums = (attr.match(/-?\d+(\.\d+)?/g) || []).map(Number);
@@ -34,10 +34,11 @@ describe("LayerStack Primitive (primitives/layer-stack.ts)", () => {
     });
   }
 
-  // Este es EL invariante del modo `shared`: la capa N cierra regresando por los
-  // puntos exactos de la N−1, desplazados por el sangrado. Si se rompe aparecen
-  // fisuras o solapes aleatorios entre layers — el defecto visual más visible, y
-  // el que regresa en silencio. Contar <path> no lo detecta.
+  // This is THE invariant of the `shared` mode: layer N closes by returning
+  // through the exact points of layer N-1, offset by the bleed. If it breaks,
+  // random gaps or overlaps appear between layers -the most visible visual
+  // defect, and the one that comes back silently. Counting <path> elements
+  // does not detect it.
   it("closes each shared layer along the previous layer's exact points", () => {
     const ctx = createMockContext();
     const bleed = 2;
@@ -54,7 +55,7 @@ describe("LayerStack Primitive (primitives/layer-stack.ts)", () => {
     const layers = extractPathPoints(markup);
     expect(layers).toHaveLength(3);
 
-    // La capa 0 cierra contra el marco: sus 2 últimos pares son el borde.
+    // Layer 0 closes against the frame: its last 2 pairs are the border.
     const pointsPerLayer = layers[0].length - 2;
     expect(pointsPerLayer).toBeGreaterThan(1);
 
@@ -67,7 +68,7 @@ describe("LayerStack Primitive (primitives/layer-stack.ts)", () => {
       returnOfCurrent.forEach(([x, y], i) => {
         const [prevX, prevY] = forwardOfPrevious[i];
         expect(x).toBeCloseTo(prevX, 6);
-        // anchor 'bottom' desplaza el retorno hacia abajo exactamente el sangrado
+        // anchor 'bottom' shifts the return downward by exactly the bleed
         expect(y).toBeCloseTo(prevY + bleed, 6);
       });
     }
@@ -81,7 +82,7 @@ describe("LayerStack Primitive (primitives/layer-stack.ts)", () => {
     );
 
     const layers = extractPathPoints(markup);
-    // Cada capa cierra con los 2 puntos del marco, no con una vuelta completa.
+    // Each layer closes with the 2 points of the frame, not with a full loop.
     for (const layer of layers) {
       expect(layer[layer.length - 1]).toEqual([0, 602]);
       expect(layer[layer.length - 2]).toEqual([900, 602]);

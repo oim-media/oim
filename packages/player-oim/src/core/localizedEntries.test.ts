@@ -21,9 +21,9 @@ describe("localizedEntries", () => {
     expect(localizedEntries(capa, "es").size).toBe("16px");
   });
 
-  // Cambio de comportamiento DECLARADO: antes se leia `fontSizeOverrides`.
-  // El contrato 1.5.0 lo retiro sin fase de deprecacion y el compilador lo
-  // funde en `fontSizes`, asi que un archivo firmado nunca lo trae.
+  // DECLARED behaviour change: `fontSizeOverrides` used to be read.
+  // Contract 1.5.0 retired it with no deprecation phase, and the compiler
+  // merges it into `fontSizes`, so a signed file never carries it.
   it("ignora fontSizeOverrides, retirado en el contrato 1.5.0", () => {
     const capa = capaDeTexto({ fontSizeOverrides: { de: "11px" } });
     expect(localizedEntries(capa, "de").size).toBe("16px");
@@ -39,8 +39,8 @@ describe("localizedEntries", () => {
   });
 
   it("un size 0 cae al principal, como hace el motor", () => {
-    // El motor encadena con `||`, asi que un 0 se descarta. Si aqui se usara
-    // `??` daria "0px" y este modulo dejaria de reproducir lo que sustituye.
+    // The engine chains with `||`, so a 0 is discarded. If `??` were used here it
+    // would give "0px" and this module would stop reproducing what it replaces.
     expect(localizedEntries(capaDeTexto({ fontSizes: { de: 0 } }), "de").size).toBe("16px");
   });
 
@@ -73,7 +73,7 @@ describe("localizedEntries", () => {
 
 describe("compareLangs", () => {
   it("si la terna es identica, la capa no puede verse distinta", () => {
-    // 'fr' tiene el mismo text que 'es' a proposito.
+    // 'fr' has the same text as 'es' on purpose.
     expect(compareLangs(capaDeTexto(), "es", "fr")).toBe("none");
   });
 
@@ -107,8 +107,8 @@ describe("el motor no puede tener su propia copy de la regla", () => {
   );
 
   it("ImageEngine ya no declara resolveLangValue ni _getContent", () => {
-    // La regla vive en localizedEntries.ts. Una segunda copy aqui es como
-    // se rompio el parallax: dos sitios decidiendo lo mismo y divergiendo.
+    // The rule lives in localizedEntries.ts. A second copy here is how
+    // the parallax broke: two places deciding the same thing and diverging.
     expect(fuente).not.toMatch(/function\s+resolveLangValue/);
     expect(fuente).not.toMatch(/function\s+_getContent/);
   });
@@ -124,8 +124,8 @@ describe("resolveContent con el principal bajo *", () => {
   });
 
   it("una excepcion en ingles no se cuela en los idiomas que heredan", () => {
-    // La trampa del orden antiguo: sin * delante, fr caia en `en` y recibia
-    // la excepcion inglesa en vez del principal.
+    // The trap of the old order: without a * in front, fr fell through to `en` and got
+    // the English exception instead of the main one.
     expect(resolveContent({ "*": "A", en: "B" }, "fr")).toBe("A");
   });
 

@@ -8,15 +8,15 @@
  */
 
 /**
- * La prueba que faltaba.
+ * The test that was missing.
  *
- * El player tiene un `IntersectionObserver` con `rootMargin: 200px` escrito
- * para no cargar lo que no se ve. No se usa nunca: `attributeChangedCallback`
- * llama a `_initPlayer()` en cuanto se parsea el `src`, antes de que
- * `connectedCallback` monte el observador.
+ * The player has an `IntersectionObserver` with `rootMargin: 200px` written to
+ * avoid loading what is not visible. It is never used: `attributeChangedCallback`
+ * calls `_initPlayer()` as soon as the `src` is parsed, before
+ * `connectedCallback` mounts the observer.
  *
- * Medido en el navegador el 21 de agosto: 12 players, 1 visible, 12 motores.
- * Ninguna prueba lo veia.
+ * Measured in the browser: 12 players, 1 visible, 12 engines.
+ * No test saw it.
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
@@ -26,12 +26,12 @@ import path from "node:path";
 const oim = fs.readFileSync(path.resolve(process.cwd(), "test/fixtures/object_view.oim.png"));
 
 /**
- * Un observador que solo avisa: quien decide es la geometria.
+ * An observer that only reports: geometry is the one that decides.
  *
- * Desde que `_decidir` lee `getBoundingClientRect()` en vez de fiarse del
- * informe del observador, "esta lejos" es un hecho geometrico y no una
- * propiedad del doble. Es lo correcto: el informe del observador puede nacer
- * antes de la maquetacion y mentir, que es justo el fallo que se arreglo.
+ * Since `_decidir` reads `getBoundingClientRect()` instead of trusting the
+ * observer's report, "is far away" is a geometric fact and not a property of
+ * the double. That is correct: the observer's report can be born before layout
+ * and lie, which is exactly the failure that was fixed.
  */
 const OBSERVADOR = class {
   constructor(cb) { this._cb = cb; }
@@ -40,7 +40,7 @@ const OBSERVADOR = class {
   disconnect() {}
 };
 
-/** Coloca el elemento donde queramos. happy-dom devuelve ceros para todo. */
+/** Places the element wherever we want. happy-dom returns zeros for everything. */
 function situar(el, { top, height = 400 }) {
   el.getBoundingClientRect = () => ({
     top, bottom: top + height, left: 0, right: 800, width: 800, height,
@@ -50,7 +50,7 @@ function situar(el, { top, height = 400 }) {
 const LEJOS = (el) => situar(el, { top: 5000 });
 const CERCA = (el) => situar(el, { top: 10 });
 
-/** Deja pasar el frame que `_programarDecision` espera. */
+/** Lets through the frame that `_programarDecision` waits for. */
 const pasarUnFrame = () => new Promise((r) => setTimeout(r, 60));
 
 function servirElArchivo() {
@@ -65,14 +65,14 @@ function servirElArchivo() {
 describe("un player que nadie ve no se carga", () => {
   beforeEach(async () => {
     document.body.innerHTML = "";
-    // El elemento se registra al importar el paquete construido, igual que en
-    // `oim-player.test.js`. `dist-up-to-date.test.js` vigila que no sea viejo.
+    // The element is registered when the built package is imported, as in
+    // `oim-player.test.js`. `dist-up-to-date.test.js` checks that it is not stale.
     if (!customElements.get("oim-player")) await import("../dist/oim-player.js");
   });
 
   it("fuera del viewport NO crea motor", async () => {
-    // happy-dom no implementa IntersectionObserver: se pone uno que nunca
-    // reporta interseccion, que es justo el caso "esta lejos".
+    // happy-dom does not implement IntersectionObserver: a stub is installed that
+    // never reports an intersection, which is exactly the "far away" case.
     window.IntersectionObserver = OBSERVADOR;
     const el = document.createElement("oim-player");
     LEJOS(el);
@@ -127,9 +127,9 @@ describe("el contrato del estado de actividad", () => {
   });
 
   it("al desconectarlo no queda ningun listener de mousemove en window", async () => {
-    // El ParallaxController mete uno en `window` en su constructor y solo lo
-    // quita en `destroy()`. Medido en el navegador: 12 players, 1 visible, 12
-    // listeners vivos.
+    // The ParallaxController adds one to `window` in its constructor and only
+    // removes it in `destroy()`. Measured in the browser: 12 players, 1 visible,
+    // 12 live listeners.
     window.IntersectionObserver = OBSERVADOR;
     let vivos = 0;
     const add = window.addEventListener.bind(window);
@@ -149,8 +149,8 @@ describe("el contrato del estado de actividad", () => {
   });
 
   it("`getMetadata()` despierta a un player dormido", async () => {
-    // Sin esto, la carga perezosa romperia a quien use la API: devolveria
-    // `null` donde antes devolvia datos.
+    // Without this, lazy loading would break whoever uses the API: it would
+    // return `null` where it used to return data.
     window.IntersectionObserver = OBSERVADOR;
     const el = montar({}, LEJOS);
     await new Promise((r) => setTimeout(r, 50));
@@ -161,11 +161,11 @@ describe("el contrato del estado de actividad", () => {
   });
 
   it("el atributo `lang` NO lo despierta", async () => {
-    // `<oim-player src lang="es">` es la forma normal de escribirlo, y el
-    // atributo pasaba por `setLang()` publico, que despierta. Los 24 de una
-    // lista se cargaban igual: 23 dormidos y 24 con motor, medido en el
-    // navegador. Un atributo es configuracion; una llamada de JS es una
-    // peticion, y solo la segunda justifica una descarga.
+    // `<oim-player src lang="es">` is the normal way to write it, and the
+    // attribute went through the public `setLang()`, which wakes the player.
+    // All 24 in a list loaded anyway: 23 dormant and 24 with an engine, measured
+    // in the browser. An attribute is configuration; a JS call is a request, and
+    // only the second justifies a download.
     window.IntersectionObserver = OBSERVADOR;
     const el = document.createElement("oim-player");
     LEJOS(el);
@@ -234,7 +234,7 @@ describe("el contrato del estado de actividad", () => {
   });
 
   it("en tactil, `hover` se comporta como `visible`", async () => {
-    // Sin cursor, exigirlo dejaria el archivo quieto para siempre en un movil.
+    // Without a cursor, requiring it would leave the file still forever on a phone.
     window.IntersectionObserver = OBSERVADOR;
     window.matchMedia = (q) => ({ matches: false, media: q,
       addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
@@ -242,8 +242,8 @@ describe("el contrato del estado de actividad", () => {
     await new Promise((r) => setTimeout(r, 150));
     expect(el.classList.contains("oim-player-paused")).toBe(false);
   });
-  // 11 Oct 2026: a carousel animates only its centred card; visibility must
-  // not restart the cards beside it.
+  // A carousel animates only its centred card; visibility must not restart the
+  // cards beside it.
   it("con `activate-on=manual`, visible se carga pero solo se anima con play()", async () => {
     window.IntersectionObserver = OBSERVADOR;
     const el = montar({ "activate-on": "manual" });
@@ -274,10 +274,10 @@ describe("un player sin cargar reserva su hueco", () => {
   });
 
   it("la regla se apaga con una señal que SOLO existe tras cargar", () => {
-    // Se probo con `.oim-player-host` y no valia: esa clase se pone en
-    // `connectedCallback`, antes de cargar nada, asi que el hueco no se
-    // reservaba NUNCA. Medido en el navegador: 24 players apilados en el mismo
-    // pixel y los 24 descargandose. Las 358 pruebas pasaban con el fallo.
+    // It was tried with `.oim-player-host` and it was no good: that class is set
+    // in `connectedCallback`, before anything is loaded, so the gap was NEVER
+    // reserved. Measured in the browser: 24 players stacked on the same pixel and
+    // all 24 downloading. The 358 tests passed with the bug in place.
     const el = document.createElement("oim-player");
     document.body.appendChild(el);
     const regla = document.getElementById("oim-player-hueco").textContent;

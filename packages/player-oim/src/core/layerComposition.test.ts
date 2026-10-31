@@ -15,13 +15,13 @@ describe("getMaskClipPathD", () => {
   const artboard = { width: 800, height: 600 };
 
   /**
-   * La geometria de un slot del .oim NO vive en `style`: la posicion viaja en
-   * `position: [xPorcentaje, yPorcentaje]` y el size en `width_px`/`height_px`.
-   * Estas pruebas usan esa forma real, no la del editor — es la unica manera de
-   * que verifiquen lo que el visor recibe de verdad.
+   * The geometry of a .oim slot does NOT live in `style`: the position travels in
+   * `position: [xPorcentaje, yPorcentaje]` and the size in `width_px`/`height_px`.
+   * These tests use that real shape, not the editor's: it is the only way to
+   * verify what the viewer actually receives.
    *
-   * Los porcentajes elegidos son exactos sobre 800x600 (12.5% -> 100px,
-   * 10% -> 60px) para que la comparacion no dependa de coma flotante.
+   * The chosen percentages are exact over 800x600 (12.5% -> 100px,
+   * 10% -> 60px) so the comparison does not depend on floating point.
    */
   function makeMask(extra: Record<string, any> = {}) {
     return {
@@ -246,9 +246,9 @@ describe("computeLayerComposition con calado (feather)", () => {
 /**
  * Mirrors the editor's dedicated-mask suites. Same cases, same values.
  *
- * El visor no conocia el tipo 'mask': un slot asi caia en el `return null` de
- * ImageEngine y desaparecia por completo, aunque el .oim lo llevara y el PNG
- * exportado lo mostrara. Estas pruebas fijan el contrato en ambos lados.
+ * The viewer did not know the 'mask' type: such a slot fell through to the
+ * `return null` of ImageEngine and disappeared entirely, even though the .oim
+ * carried it and the exported PNG showed it. These tests pin the contract on both sides.
  */
 describe("computeLayerComposition con mascara dedicada (type 'mask')", () => {
   it("en mode window genera su propio nodo visible sin recortar al predecesor", () => {
@@ -328,7 +328,7 @@ describe("getWindowMaskCanvasD — marco en espacio de lienzo", () => {
   const artboard = { width: 800, height: 1200 };
 
   it("el marco cubre SIEMPRE el lienzo entero, no la caja de la mascara", () => {
-    // Mascara pequena y descentrada: el marco debe seguir siendo el lienzo.
+    // Small, off-centre mask: the frame must still be the canvas.
     const slot: any = {
       id: "m", type: "mask", position: [25, 25],
       width_px: 100, height_px: 100,
@@ -339,8 +339,8 @@ describe("getWindowMaskCanvasD — marco en espacio de lienzo", () => {
   });
 
   it("no deja hueco aunque la mascara sea mas pequena que el lienzo", () => {
-    // Este era el fallo: con el modelo viejo el marco medía lo que la caja,
-    // así que una máscara pequeña dejaba el resto del lienzo sin cubrir.
+    // This was the bug: with the old model the frame measured what the box did,
+    // so a small mask left the rest of the canvas uncovered.
     const chica: any = {
       id: "m", type: "mask", position: [10, 10], width_px: 50, height_px: 50,
       style: { maskMode: "window", maskShape: "circle" }
@@ -373,7 +373,7 @@ describe("getWindowMaskCanvasD — marco en espacio de lienzo", () => {
     };
     const d = getWindowMaskCanvasD(slot, artboard);
     expect(d.startsWith("M0 0H800V1200H0Z ")).toBe(true);
-    // Dos siluetas => mas de un subtrazado despues del marco
+    // Two silhouettes => more than one sub-path after the frame
     expect(d.split("Z").length).toBeGreaterThan(3);
   });
 

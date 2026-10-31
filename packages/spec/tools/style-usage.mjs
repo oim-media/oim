@@ -25,7 +25,7 @@
  * corpus can judge, and the report says so instead of guessing.
  *
  *   node tools/style-usage.mjs <fichero-o-url> [...]
- *   node tools/style-usage.mjs --vectors        # los vectores del contrato
+ *   node tools/style-usage.mjs --vectors        # the contract's vectors
  */
 
 import { readFileSync, readdirSync } from "node:fs";

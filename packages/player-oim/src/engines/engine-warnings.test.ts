@@ -8,14 +8,14 @@
  */
 
 /**
- * Que el actionEvent salga, y que NO salga cuando no toca.
+ * Whether the actionEvent comes out, and whether it does NOT come out when it should not.
  *
- * `compatibilidad.test.ts` fija la decision; esto fija que el motor la cuenta,
- * por los tres sitios y sin tumbar nada.
+ * `compatibilidad.test.ts` pins the decision; this pins that the engine reports it,
+ * across the three places and without breaking anything.
  *
- * El silencio se comprueba con el mismo cuidado que el actionEvent. Todos los `.oim`
- * publicados hasta hoy carecen de `min_player`: si el actionEvent saltara con ellos,
- * seria ruido de fondo desde el primer dia y nadie lo leeria cuando importara.
+ * Silence is checked with the same care as the actionEvent. Every `.oim` published to date
+ * lacks `min_player`: if the actionEvent fired with them, it would be background noise from
+ * day one and nobody would read it when it mattered.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -111,13 +111,13 @@ describe("avisar nunca puede ser lo que rompa la carga", () => {
 });
 
 /**
- * Comprobacion ESTRUCTURAL, y se dice para no exagerar lo que prueba.
+ * STRUCTURAL check, and it says so so as not to exaggerate what it proves.
  *
- * Hay dos caminos de carga -uno por worker y otro en el hilo principal- y cual
- * se toma lo decide el navegador. Un actionEvent cableado en uno solo aparece o no
- * segun donde se abra el archivo, que es peor que no tenerlo: parece que el
- * problema va y viene. Montar los dos caminos aqui exigiria un worker y un
- * `.oim` firmado; esto al menos fija que ninguno se quede sin el.
+ * There are two load paths (one through a worker and one on the main thread), and which
+ * one is taken is decided by the browser. An actionEvent wired into only one of them
+ * appears or not depending on where the file is opened, which is worse than not having it:
+ * the problem seems to come and go. Mounting both paths here would require a worker and a
+ * signed `.oim`; this at least pins that neither is left without it.
  */
 describe("los dos caminos de carga lo cuentan", () => {
   it("hay una llamada en cada uno", () => {

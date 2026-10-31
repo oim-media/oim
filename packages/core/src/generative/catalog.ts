@@ -7,7 +7,7 @@
 import { GeneratorSpec } from "./types.js";
 
 export const GENERATOR_CATALOG: GeneratorSpec[] = [
-  // 1. ONDAS Y TERRENOS (layer-stack)
+  // 1. WAVES AND TERRAINS (layer-stack)
   {
     id: "stacked-waves",
     layers: [{ primitive: "layer-stack", fixed: { interpolation: "wave", boundary: "shared" } }],
@@ -81,7 +81,7 @@ export const GENERATOR_CATALOG: GeneratorSpec[] = [
     ]
   },
 
-  // 2. DISPERSIONES Y ORGÁNICOS (scatter, blob, mesh)
+  // 2. SCATTERS AND ORGANICS (scatter, blob, mesh)
   {
     id: "circle-scatter",
     layers: [{ primitive: "scatter", fixed: { element: "circle" } }],
@@ -133,7 +133,7 @@ export const GENERATOR_CATALOG: GeneratorSpec[] = [
     ]
   },
 
-  // 3. RADIALES Y GRADIENTES (radial, gradient, iso-grid)
+  // 3. RADIALS AND GRADIENTS (radial, gradient, iso-grid)
   {
     id: "bullseye-gradient",
     layers: [{ primitive: "radial", fixed: { kind: "rings" } }],
@@ -178,7 +178,7 @@ export const GENERATOR_CATALOG: GeneratorSpec[] = [
     ]
   },
 
-  // 4. COMPUESTOS (Nuevos fondos dinámicos)
+  // 4. COMPOSITES (new dynamic backgrounds)
   {
     id: "luz-difusa",
     layers: [
@@ -204,10 +204,11 @@ export const GENERATOR_CATALOG: GeneratorSpec[] = [
     ]
   },
   {
-    // Sin tilde a proposito: el id se persiste y se compara con `===`. "retícula"
-    // tiene dos formas Unicode distintas (NFC y NFD) que NO son iguales como
-    // cadena, asi que una capa que normalice diferente haria fallar
-    // getGeneratorSpec y caer al fondo por defecto sin ningun error visible.
+    // No accent mark on purpose: the id is persisted and compared with `===`.
+    // "retícula" has two different Unicode forms (NFC and NFD) that are NOT
+    // equal as strings, so a layer that normalizes differently would make
+    // getGeneratorSpec fail and fall back to the default background with no
+    // visible error.
     id: "reticula",
     layers: [
       { primitive: "gradient", fixed: { kind: "linear" } },

@@ -5,38 +5,39 @@
  */
 
 /**
- * Que el paquete principal del player no cargue lo que no necesita.
+ * The player's main package must not load what it does not need.
  *
- * El player se incrusta en paginas de terceros. Cada kilobyte lo paga alguien
- * que no eligio usarlo, en una conexion que no controlamos, y una biblioteca
- * de mas es ademas superficie de ataque en un sitio ajeno.
+ * The player is embedded in third-party pages. Every kilobyte is paid by someone
+ * who did not choose to use it, on a connection we do not control, and an extra
+ * library is also attack surface on a foreign site.
  *
- * Hoy se esquivan dos pesos, y las dos maniobras son invisibles al leer:
+ * Today two weights are avoided, and both maneuvers are invisible when reading:
  *
- *   - **zod** entra por el indice de `@oim-media/core`, que reexporta `schema.js`.
- *     Lo evitan DOS cosas, y conviene no confundirlas porque solo una es
- *     imprescindible: `binary.ts` y `grupos.ts` importan el FICHERO del modulo
- *     en vez del paquete, y `@oim-media/core` declara `sideEffects: false`, que es
- *     lo que autoriza al empaquetador a podar lo que nadie usa.
+ *   - **zod** comes in through the index of `@oim-media/core`, which re-exports
+ *     `schema.js`. Two things avoid it, and it is worth not confusing them,
+ *     because only one is indispensable: `binary.ts` and `grupos.ts` import the
+ *     module FILE instead of the package, and `@oim-media/core` declares
+ *     `sideEffects: false`, which is what authorizes the bundler to prune what
+ *     nobody uses.
  *
- *     Medido: importar el indice a secas NO engorda el paquete -la poda se lo
- *     lleva-. Pero quitando ademas `sideEffects: false`, el paquete pasa de
- *     302.606 a 451.956 bytes, un 49 % mas, con zod dentro. La linea del
- *     manifiesto es la que sostiene esto, y era la que nadie vigilaba.
+ *     Measured: importing the bare index does NOT bloat the package -pruning
+ *     takes care of it-. But removing `sideEffects: false` as well, the package
+ *     goes from 302,606 to 451,956 bytes, 49% more, with zod inside. The line in
+ *     the manifest is the one that holds this up, and it was the one nobody watched.
  *   - **lottie-web**: a dynamic `import()` does NOT split it here. The CDN
  *     build is a single `iife`, which inlines every `import()`. It stays out
  *     because the package build aliases `lottie_light` to `lottie-external.ts`,
  *     which loads it as a separate file (vendor/) only when a .oim needs it.
  *
- * Las dos se sostenian en un comentario. Un comentario no impide que el
- * proximo cambio escriba `from '@oim-media/core'` y anada zod entero al paquete que
- * sirve el CDN, sin que nada proteste y sin que nadie lo mida.
+ * The two were held up only by a comment. A comment does not stop the next
+ * change from writing `from '@oim-media/core'` and adding all of zod to the
+ * package the CDN serves, with nothing objecting and nobody measuring it.
  *
- * En `.js` y no en `.ts`, por lo mismo que su vecino `dist-up-to-date.test.js`:
- * este paquete no tiene `@types/node`, asi que un `import "node:fs"` en
- * TypeScript suma errores al `typecheck`. Nacio en `.ts` el 27 de agosto y
- * anadio CINCO, que pasaron desapercibidos porque el filtro de aquel dia solo
- * miraba los ficheros que se estaban tocando.
+ * In `.js` and not `.ts`, for the same reason as its neighbor `dist-up-to-date.test.js`:
+ * this package has no `@types/node`, so an `import "node:fs"` in TypeScript adds
+ * errors to the `typecheck`. It was first written in `.ts` and added FIVE errors,
+ * which went unnoticed because the filter at the time only looked at the files
+ * being touched.
  */
 
 import { describe, it, expect } from "vitest";
@@ -62,18 +63,18 @@ const FUENTES = fuentes(SRC).map((path) => ({ path, text: readFileSync(path, "ut
 
 describe("por donde puede colarse el peso", () => {
   it("hay fuentes que revisar", () => {
-    // Sin esto la prueba pasaria en verde si la carpeta cambiara de sitio.
+    // Without this, the test would pass green if the folder moved.
     expect(FUENTES.length).toBeGreaterThan(10);
   });
 
   /**
-   * `@oim-media/core` a secas arrastra `schema.js`, y con el zod entero. Las rutas
-   * al fichero del modulo y el subcamino `/api` son las dos formas seguras.
+   * `@oim-media/core` bare drags in `schema.js`, and with it all of zod. The
+   * paths to the module file and the `/api` subpath are the two safe forms.
    */
   it("nadie importa el indice de @oim-media/core", () => {
     const culpables = [];
     for (const { path, text } of FUENTES) {
-      // Solo el paquete pelado: `@oim-media/core/api` y `@oim-media/core/loQueSea` no.
+      // Only the bare package: `@oim-media/core/api` and `@oim-media/core/loQueSea` (a placeholder name) are not.
       if (/from\s+["']@oim\/core["']/.test(text)) culpables.push(path);
       if (/import\s*\(\s*["']@oim\/core["']\s*\)/.test(text)) culpables.push(path);
     }
@@ -81,10 +82,10 @@ describe("por donde puede colarse el peso", () => {
   });
 
   /**
-   * La linea de la que depende todo lo anterior. Sin ella, el empaquetador no
-   * puede podar lo que el indice reexporta y basta UNA importacion del paquete
-   * -que la regla de arriba impide, pero las reglas se editan- para meter zod
-   * entero en lo que sirve el CDN.
+   * The line that everything above depends on. Without it, the bundler cannot
+   * prune what the index re-exports, and it takes just ONE import of the package
+   * -which the rule above prevents, but rules get edited- to put all of zod
+   * into what the CDN serves.
    */
   it("@oim-media/core sigue declarando sideEffects: false", () => {
     const manifiesto = JSON.parse(
@@ -94,8 +95,8 @@ describe("por donde puede colarse el peso", () => {
   });
 
   /**
-   * Un `import` estatico de lottie lo mete en el paquete principal aunque
-   * ningun `.oim` lo use nunca. Dinamico, viaja en su propio trozo.
+   * A static `import` of lottie pulls it into the main package even if no
+   * `.oim` ever uses it. Dynamic, it travels in its own chunk.
    */
   it("lottie solo se importa de forma dinamica", () => {
     const culpables = [];
@@ -115,18 +116,17 @@ describe("por donde puede colarse el peso", () => {
 });
 
 /**
- * La comprobacion sobre el artefacto. Es secundaria a proposito: un `dist`
- * viejo puede pasar mientras la fuente ya esta rota, y por eso las reglas de
- * arriba son las que mandan. Pero si el paquete construido lleva zod dentro,
- * eso es cierto pase lo que pase.
+ * The check on the artifact. It is secondary on purpose: an old `dist` can pass
+ * while the source is already broken, which is why the rules above take
+ * precedence. But if the built package carries zod inside, that is true no
+ * matter what passes.
  */
 describe("el paquete construido, si existe", () => {
   const hayPaquete = existsSync(BUNDLE);
   const bundle = hayPaquete ? readFileSync(BUNDLE, "utf8") : "";
 
   it.skipIf(!hayPaquete)("no contiene zod", () => {
-    // Varias huellas: los nombres de clase se pueden minificar, las cadenas de
-    // los codigos de error no.
+    // Several fingerprints: class names can be minified, error-code strings cannot.
     const huellas = ["ZodError", "invalid_union_discriminator", "too_big", "$ZodType"];
     const encontradas = huellas.filter((h) => bundle.includes(h));
     expect(encontradas).toEqual([]);

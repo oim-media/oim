@@ -31,7 +31,7 @@ export const renderIsoGrid: Primitive = (rawParams, ctx) => {
   const colorStart = ctx.ramp(0, 2);
   const colorEnd = ctx.ramp(1, 2);
 
-  // Registrar UN SOLO gradiente compartido en DefsRegistry para todas las celdas de la cuadrícula
+  // Register ONE shared gradient in DefsRegistry for all cells of the grid
   const sharedGradId = ctx.defs.registerLinearGradient(
     [
       { offset: 0, color: colorStart, opacity: 1 },
@@ -56,14 +56,14 @@ export const renderIsoGrid: Primitive = (rawParams, ctx) => {
       const strokeAttr = strokeW > 0 ? ` stroke="${colorEnd}" stroke-width="${strokeW}"` : "";
 
       if (hollow) {
-        // Marco de caja calada (Hollow Box Frame)
+        // Hollow box frame
         const inset = stepX * 0.2;
         markup += `
           <rect x="${x}" y="${y}" width="${stepX}" height="${stepY}" fill="none"${strokeAttr} />
           <rect x="${x + inset}" y="${y + inset}" width="${stepX - inset * 2}" height="${stepY - inset * 2}" fill="${faceColor}" opacity="0.65" />
         `;
       } else {
-        // Cubo 3D extruido con caras en perspectiva
+        // 3D extruded cube with faces in perspective
         markup += `
           <rect x="${x}" y="${y}" width="${stepX}" height="${stepY}" fill="url(#${sharedGradId})"${strokeAttr} />
           <polygon points="${x},${y} ${x + extrudeOffset},${y - extrudeOffset} ${x + stepX + extrudeOffset},${y - extrudeOffset} ${x + stepX},${y}" fill="${faceColor}" opacity="0.75" />

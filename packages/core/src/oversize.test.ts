@@ -5,9 +5,9 @@
  */
 
 /**
- * TABLA COMPARTIDA, y CANONICA. Se copy tal cual al editor: los mismos casos
- * y los mismos numeros corren en los dos lados. Que la tabla viaje con el
- * modulo es lo que impide que una copy se ajuste "solo un poco".
+ * SHARED, and CANONICAL TABLE. It is copied as-is into the editor: the same
+ * cases and the same numbers run on both sides. Having the table travel with
+ * the module is what prevents a copy from being adjusted "just a little".
  */
 
 import { describe, it, expect } from "vitest";
@@ -39,8 +39,8 @@ const CASOS: Caso[] = [
     nombre: "el horizonte, que llega de lado a lado y toca el suelo",
     caja: { left: 0, top: 450, width: 800, height: 150 },
     depth: 0.6,
-    // d = 18. Por x hace falta 18 sobre 800 -> 1.045; por y, 18 sobre 150 ->
-    // 1.24. Manda el mayor: un factor unico, o la capa se deforma.
+    // d = 18. For x it takes 18 over 800 -> 1.045; for y, 18 over 150 ->
+    // 1.24. The larger one wins: a single factor, or the layer gets distorted.
     esperado: 1.24,
   },
   {
@@ -61,7 +61,7 @@ const CASOS: Caso[] = [
     caja: { left: 0, top: 250, width: 200, height: 100 },
     depth: 0.5,
     eje: "both",
-    // d = 15, pegada a la izquierda: 15 sobre 200 -> 1 + 30/200
+    // d = 15, anchored to the left: 15 over 200 -> 1 + 30/200
     esperado: 1.15,
   },
   {
@@ -74,22 +74,22 @@ const CASOS: Caso[] = [
     nombre: "una capa que YA sobresale del lienzo se deja en paz",
     caja: { left: -50, top: 200, width: 900, height: 200 },
     depth: 0.5,
-    // Sobresale 50 por cada lado y solo se mueve 15: ya cubre de sobra.
+    // It overhangs by 50 on each side and only moves 15: that already covers it with room to spare.
     esperado: 1,
   },
   {
     nombre: "una capa diminuta en la esquina se acota en vez de deformarse",
     caja: { left: 0, top: 0, width: 20, height: 20 },
     depth: 1,
-    // Pediria 1 + 60/20 = 4. Agrandar una capa cuatro veces no la arregla.
+    // It would ask for 1 + 60/20 = 4. Enlarging a layer four times does not fix it.
     esperado: MAX_SCALE,
   },
   {
     nombre: "una capa CASI pegada tambien cuenta, no solo la que toca",
     caja: { left: 5, top: 250, width: 200, height: 100 },
     depth: 0.5,
-    // d = 15 y el margen es 5, menor que d: esta anclada. Hace falta 15 + 5 =
-    // 20 para que ni en el peor desplazamiento se vea el fondo.
+    // d = 15 and the margin is 5, less than d: it is anchored. It takes 15 + 5 =
+    // 20 so that not even at the worst displacement is the background visible.
     esperado: 1.2,
   },
 ];
@@ -110,23 +110,23 @@ describe("una capa con pista de bucle infinito no se toca", () => {
   });
 
   it("con pista, NO: la pista ya cubre el lienzo toda la vuelta", () => {
-    // Y agrandarla haria daño: cada pieza se veria mas grande de lo dibujado,
-    // y el numero de piezas se calculo para el tamaño sin escalar.
+    // And enlarging it would do harm: each piece would look bigger than drawn,
+    // and the number of pieces was calculated for the unscaled size.
     expect(oversizeScale(horizonte, LIENZO, 0.6, "both", true)).toBe(1);
   });
 
   it("por defecto se asume que NO hay pista", () => {
-    // El parametro es el ultimo y opcional: quien no lo pase se comporta como
-    // antes. Si el defecto fuera `true`, añadir una llamada nueva desactivaria
-    // el sobredimensionado sin que nadie lo notara.
+    // The parameter is the last and optional one: whoever does not pass it
+    // behaves as before. If the default were `true`, adding a new call would
+    // disable the oversizing without anyone noticing.
     expect(oversizeScale(horizonte, LIENZO, 0.6, "both")).toBe(1.24);
   });
 });
 
 describe("el desplazamiento maximo", () => {
   it("es 30 por la profundidad, no 60", () => {
-    // El comentario del controlador dice "Max +- 60px scaled by depth" y es
-    // falso: el raton normalizado esta acotado a [-0.5, +0.5].
+    // The controller's comment says "Max +- 60px scaled by depth" and it is
+    // false: the normalized mouse is bounded to [-0.5, +0.5].
     expect(maxOffset(1)).toBe(30);
     expect(maxOffset(0.5)).toBe(15);
   });

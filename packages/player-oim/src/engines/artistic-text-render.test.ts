@@ -57,11 +57,11 @@ describe("ImageEngine — artistic-text rendering", () => {
     const svgEl = slotEl.querySelector("svg");
     expect(svgEl).not.toBeNull();
 
-    // Comprobar que contiene elementos <text> correspondientes a la extrusión y cara frontal
+    // Check that it contains <text> elements for the extrusion and the front face
     const textEls = svgEl!.querySelectorAll("text");
-    expect(textEls.length).toBeGreaterThanOrEqual(12); // 12 capas de extrusión + cara frontal
+    expect(textEls.length).toBeGreaterThanOrEqual(12); // 12 extrusion layers + front face
 
-    // Comprobar contenido en español
+    // Check content in Spanish
     expect(svgEl!.textContent).toContain("HOLA 3D");
   });
 
@@ -117,7 +117,7 @@ describe("ImageEngine — artistic-text rendering", () => {
     let slotEl = host.shadowRoot!.querySelector('[data-slot-id="art3"]') as HTMLElement;
     expect(slotEl.textContent).toContain("¡EXPLOSIÓN!");
 
-    // Conmutar idioma a inglés (el cambio ocurre con transición de desenfoque a los 180ms)
+    // Switch the language to English (the change happens with a blur transition at 180ms)
     motor.setLang("en");
     await new Promise((r) => setTimeout(r, 250));
 

@@ -151,16 +151,16 @@ describe('keyframeSchema validation', () => {
   });
 
   it('rejects out-of-range opacity or scale', () => {
-    // La opacidad de un fotograma admite hasta 2 desde el 18 de septiembre de
-    // 2026: una curva que rebota se pasa del destino antes de volver, y los
-    // archivos publicados llegan a 1.367. El tope estaba puesto pensando en el
-    // valor de llegada, no en el camino. 1.1 es un valor REAL y debe pasar.
+    // A frame's opacity accepts values up to 2: a bouncing curve overshoots its
+    // target before settling back, and published files reach 1.367. The cap was
+    // set with the arrival value in mind, not the path. 1.1 is a REAL value and
+    // must pass.
     expect(keyframeSchema.safeParse({ t: 10, o: 1.1 }).success).toBe(true);
     expect(keyframeSchema.safeParse({ t: 10, o: 1.367 }).success).toBe(true);
     expect(keyframeSchema.safeParse({ t: 10, o: 2.1 }).success).toBe(false);
 
-    // `s` es la escala DEL FOTOGRAMA y sigue siendo un multiplicador: no se
-    // toco. No confundir con `states.hover.scale`, que va en porcentaje.
+    // `s` is the FRAME's scale and remains a multiplier: it was not changed.
+    // Do not confuse it with `states.hover.scale`, which is a percentage.
     expect(keyframeSchema.safeParse({ t: 10, s: 11 }).success).toBe(false);
   });
 
@@ -208,9 +208,9 @@ describe('styleSchema keyframes validation', () => {
 });
 
 describe('slotSchema — tipos de capa anadidos despues del schema original', () => {
-  // Sin esto, el enum se queda atras cada vez que se anade una capa y nadie
-  // se entera: nada valida con Zod en tiempo de ejecucion, asi que el unico
-  // sitio donde el desfase puede salir a la luz es una prueba.
+  // Without this, the enum falls behind every time a layer is added and nobody
+  // notices: nothing validates with Zod at runtime, so the only place the drift
+  // can come to light is a test.
   const nuevos = ['filter', 'container', 'group', 'component', 'mask'] as const;
 
   for (const tipo of nuevos) {
@@ -227,12 +227,12 @@ describe('slotSchema — tipos de capa anadidos despues del schema original', ()
 });
 
 /**
- * La interactividad, ahora en el contrato.
+ * Interactivity, now in the contract.
  *
- * Viajaba en el archivo desde hace meses pero dentro de `style`, que este
- * esquema declara abierto. Un lector escrito en Python o Swift veia un
- * diccionario opaco: para reproducir el comportamiento tenia que DEDUCIRLO
- * leyendo el player, que es la divergencia que un contrato existe para evitar.
+ * It travelled in the file for months, but inside `style`, which this
+ * schema declares open. A reader written in Python or Swift saw an opaque
+ * dictionary: to reproduce the behaviour it had to DEDUCE it by reading the
+ * player, which is the divergence a contract exists to prevent.
  */
 describe('la interactividad declarada', () => {
   it('acepta una capa interactiva con sus acciones', () => {
@@ -244,11 +244,11 @@ describe('la interactividad declarada', () => {
   });
 
   /**
-   * EL RANGO IMPORTA, y esta prueba existe por un fallo real. El editor
-   * guardaba la opacidad de estado en 0..1 y el player la divide entre 100
-   * -`stateStyles`-, asi que un 50% acababa pintando `opacity: 0.005`:
-   * cualquier capa con opacidad de hover se volvia invisible. Lo destapo
-   * declarar el rango aqui, no una prueba de comportamiento.
+   * THE RANGE MATTERS, and this test exists because of a real bug. The editor
+   * stored the state opacity as 0..1 and the player divides it by 100
+   * (`stateStyles`), so a 50% ended up painting `opacity: 0.005`:
+   * any layer with hover opacity became invisible. It was uncovered by
+   * declaring the range here rather than in a behaviour test.
    */
   it('la opacidad va de 0 a 100, como la de capa', () => {
     expect(interactiveStateSchema.safeParse({ opacity: 100 }).success).toBe(true);
@@ -270,12 +270,12 @@ describe('la interactividad declarada', () => {
   });
 
   /**
-   * Un .oim no declara a donde te lleva un clic. Se quitaron del backend y del
-   * espejo del editor el 28 de agosto; el esquema era el tercer sitio.
+   * A .oim does not declare where a click takes you. These were removed from the
+   * backend and the editor's mirror; the schema was the third place.
    */
   it('un slot ya no puede declarar una redireccion', () => {
     const r = slotSchema.safeParse({ id: "s1", link: "https://ejemplo.com", target: "_blank" });
-    expect(r.success).toBe(true);           // no se rechaza: se ignora
+    expect(r.success).toBe(true);           // it is not rejected: it is ignored
     expect(r.data).not.toHaveProperty("link");
     expect(r.data).not.toHaveProperty("target");
   });
@@ -326,7 +326,7 @@ describe('la interactividad declarada', () => {
         textRuns: {
           es: {
             lines: [
-              { text: "Invalido", width: -5, yOffset: 0 }, // width negativo no permitido
+              { text: "Invalido", width: -5, yOffset: 0 }, // negative width is not allowed
             ],
           },
         },
@@ -341,8 +341,8 @@ describe("el tope de slots", () => {
     expect(MAX_SLOTS).toBe(150);
   });
 
-  // Es el tope que hace util todo lo demas: si el esquema no lo acota, el
-  // contrato no lo publica y el editor no puede avisar antes de tiempo.
+  // It is the cap that makes everything else useful: if the schema does not bound
+  // it, the contract does not publish it and the editor cannot warn in advance.
   it("el esquema acepta 150 slots y rechaza 151", () => {
     const slot = () => ({ id: "s", type: "text", position: [0, 0], content: {} });
     const conN = (n: number) => ({ slots: Array.from({ length: n }, slot) });
@@ -353,14 +353,14 @@ describe("el tope de slots", () => {
   });
 
   /**
-   * `elements` NO es herencia: el player lo lee en tres sitios
-   * (`this.metadata.slots || this.metadata.elements`) y el backend lo cuenta
-   * primero (`media.py:396`). Acotar solo `slots` dejaba el contrato
-   * prometiendo un tope que un campo equivalente no cumplia — y el contrato es
-   * justo lo que existe para que un lector en otro lenguaje pueda fiarse.
+   * `elements` is NOT inheritance: the player reads it in three places
+   * (`this.metadata.slots || this.metadata.elements`) and the backend counts it
+   * first (`media.py:396`). Bounding only `slots` left the contract promising a
+   * cap that an equivalent field did not meet, and the contract is precisely what
+   * exists so that a reader in another language can rely on it.
    *
-   * `layers` hoy no lo lee nadie, pero esta declarado y publicado: se acota por
-   * coherencia, para que los tres campos que llevan slots digan lo mismo.
+   * `layers` is not read by anyone today, but it is declared and published: it is
+   * bounded for consistency, so that the three fields that carry slots say the same.
    */
   it.each(["elements", "layers"] as const)(
     "el tope alcanza tambien a `%s`, que lleva los mismos slots",
@@ -426,7 +426,7 @@ describe("el tope de slots", () => {
         fillPatternBgColor: "#000000",
         fillPatternSpeed: 10,
         fillPatternScale: 1.5,
-        // Was "left_to_right", which the editor never writes here: that is the
+        // It was "left_to_right", which the editor never writes here: that is the
         // INFINITE PARALLAX direction, another field. Pattern directions are
         // left/right/up/down/zoom-in/zoom-out/pulse/none (pattern-value.ts).
         fillPatternDirection: "left",

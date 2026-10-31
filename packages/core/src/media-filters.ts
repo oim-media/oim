@@ -5,15 +5,15 @@
  */
 
 /**
- * CSS de los filtros de los medios (imagen y relleno de imagen).
+ * CSS for media filters (image and image fill).
  *
- * Una sola función para los tres renderizadores (editor, player y exportación):
- * si cada uno componía el filtro por su cuenta, divergirían. Los valores
- * neutros (blur 0, hue 0, brillo/contraste/saturación 100, preset `none`) no
- * generan CSS, así que una imagen sin ajustes no lleva `filter` en el DOM.
+ * A single function serves all three renderers (editor, player and export):
+ * if each one composed the filter on its own, they would diverge. Neutral
+ * values (blur 0, hue 0, brightness/contrast/saturation 100, preset `none`)
+ * produce no CSS, so an image with no adjustments carries no `filter` in the DOM.
  */
 
-/** Tabla única de presets de filtro: la usan el player y el resto de renderizadores vía esta función. */
+/** Single table of filter presets: the player and the other renderers use it through this function. */
 export const FILTER_PRESET_CSS: Record<string, string> = {
   grayscale: "grayscale(1)",
   sepia: "sepia(0.8)",
@@ -32,7 +32,7 @@ export const FILTER_PRESET_CSS: Record<string, string> = {
   vhs: "sepia(0.2) contrast(1.2) saturate(1.5) hue-rotate(30deg) brightness(1.05)",
 };
 
-/** Valor numérico acotado al rango del esquema; NaN, Infinity o no numérico → undefined (neutro). */
+/** Numeric value clamped to the schema range; NaN, Infinity or non-numeric → undefined (neutral). */
 function acotado(valor: unknown, min: number, max: number): number | undefined {
   if (typeof valor !== "number" || !Number.isFinite(valor)) return undefined;
   return Math.min(max, Math.max(min, valor));
@@ -47,7 +47,7 @@ interface AjustesNormalizados {
   hue: number;
 }
 
-/** Los ajustes ya acotados y con neutros donde falta o no es válido. */
+/** The settings, already clamped, with neutral values where one is missing or invalid. */
 function normalizar(style: Record<string, unknown>): AjustesNormalizados {
   const { filterPreset: preset } = style;
   return {
@@ -60,7 +60,7 @@ function normalizar(style: Record<string, unknown>): AjustesNormalizados {
   };
 }
 
-/** Orden fijo: preset, blur, brillo, contraste, saturación, hue-rotate. `undefined` si todo es neutro. */
+/** Fixed order: preset, blur, brightness, contrast, saturation, hue-rotate. `undefined` if everything is neutral. */
 export function mediaFilterCss(style: Record<string, unknown>): string | undefined {
   const a = normalizar(style);
   const parts: string[] = [];
@@ -75,7 +75,7 @@ export function mediaFilterCss(style: Record<string, unknown>): string | undefin
   return parts.length > 0 ? parts.join(" ") : undefined;
 }
 
-/** Si el estilo aplica algún filtro (los neutros no cuentan). */
+/** Whether the style applies any filter (neutral values do not count). */
 export function hasMediaFilter(style: Record<string, unknown>): boolean {
   return mediaFilterCss(style) !== undefined;
 }

@@ -490,10 +490,10 @@ describe("el sobredimensionado llega al nodo", () => {
 
 describe("una capa con bucle infinito no se sobredimensiona", () => {
   it("la pista ya cubre el lienzo; agrandarla la deformaria", async () => {
-    // Josue lo vio antes que las pruebas: el player monta la pista si la
-    // velocidad no es cero -sin mirar el mode-, asi que una capa con
-    // `mode: mouse` E `infinite.enabled` recibia LAS DOS COSAS. El editor solo
-    // le monta la pista. Divergencia introducida el mismo 21 de agosto.
+    // Seen by eye before any test caught it: the player mounted the track
+    // whenever speed was non-zero, ignoring the mode, so a layer with
+    // `mode: mouse` AND `infinite.enabled` got BOTH. The editor mounts only
+    // the track.
     const host = document.createElement("div");
     const shadow = (host as any).attachShadow({ mode: "open" });
     document.body.appendChild(host);

@@ -5,21 +5,19 @@
  */
 
 /**
- * Que `@oim-media/core` no publique nada que no deba salir del repositorio.
+ * That `@oim-media/core` publishes nothing it should not.
  *
- * Este paquete deja de ser `private: true` para que OIM-Studio pueda
- * depender de una VERSION en vez de copiar los ficheros. Esa copy es la
- * causa medida de la divergencia: `grupos.ts` llego a 546 lineas distintas
- * entre los dos repositorios, y `layerComposition.ts` a 775.
+ * This package is published so every renderer depends on a VERSION instead
+ * of copying files. Copies were the measured cause of divergence: one module
+ * reached 546 differing lines between two copies, another 775.
  *
- * Pero publicar invierte el sentido del error. Hoy, meter algo sensible en
- * este paquete es un fallo que se arregla borrandolo. Publicado, es un fallo
- * que ya se distribuyo: se puede despublicar, no se puede des-copiar.
+ * Publishing inverts the cost of a mistake. Unpublished, something sensitive
+ * in here is fixed by deleting it. Published, it has already been
+ * distributed: you can unpublish, you cannot un-copy.
  *
- * El contenido actual se audito y no tiene secretos —el parser binario ya es
- * publico dentro del player del CDN, y los endpoints son los de
- * `api.oim.media`—. Lo que estas pruebas vigilan no es el hoy: es que la
- * superficie no crezca sin que alguien lo decida a proposito.
+ * The current contents were audited and hold no secrets. These tests guard
+ * the future instead: the public surface must not grow unless someone
+ * decides it on purpose.
  */
 
 import { describe, it, expect } from "vitest";
@@ -44,7 +42,7 @@ function fuentesPublicadas(): { nombre: string; texto: string }[] {
  * del propio indice, no vigilaria nada.
  */
 const SUPERFICIE = [
-  // text-marks.ts: text marks, contract 1.11.0 (spec 2026-10-10-marcas-de-texto, approved by Josué).
+  // text-marks.ts: text marks, contract 1.11.0.
   "MARK_NAME",
   "MAX_MARKS",
   "parseMarks",
@@ -57,8 +55,8 @@ const SUPERFICIE = [
   "withoutMark",
   "markStyle",
   "textMarkSchema",
-  // drop-cap.ts: one drop-cap style for the three renderers (spec 2026-10-10-retirar-resaltado-y-capitular, approved by Josué).
-  // effects/texture-mask.ts: a layer texture goes on its own pixels (Josué, 10 Oct 2026).
+  // drop-cap.ts: one drop-cap style for the three renderers.
+  // effects/texture-mask.ts: a layer texture goes on its own pixels.
   "layerTextureMask",
   "dropCapStyle",
   "splitDropCap",
@@ -69,7 +67,7 @@ const SUPERFICIE = [
   "GLITCH_CALM_RATIO",
   "calculateGlitchState",
   "glitchLayers",
-  // text-effects.ts: entrance text effects as data (spec 2026-10-10-efectos-de-texto, approved by Josué).
+  // text-effects.ts: entrance text effects as data.
   "ENTRANCE_EFFECTS",
   "ENTRANCE_SECONDS",
   "DEFAULT_ENTRANCE_STAGGER",
@@ -114,7 +112,7 @@ const SUPERFICIE = [
   "isSafeCssGradient",
   // proceduralNoise.ts — generador de ruido procedural SVG y geometrias de blob.
   "buildSvgNoiseFilter",
-  // Per-layer grain (spec 2026-09-29-grano-por-capa, approved by Josué).
+  // Per-layer grain.
   "GRAIN_BLENDS",
   "GRAIN_LAYER_TYPES",
   "grainFrequency",

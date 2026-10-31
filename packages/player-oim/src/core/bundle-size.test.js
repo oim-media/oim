@@ -145,19 +145,8 @@ describe("lottie viaja aparte del player", () => {
   const DIST = join(__dirname, "..", "..", "dist");
   const hayPaquete = existsSync(BUNDLE);
 
-  // 50 KB until 10 Oct 2026, raised to 52 by Josué: the player already sat at
-  // 50.0 KB and text marks (contract 1.11.0) add ~0.9 KB of real code.
-  // Raised to 53 by Josué on 11 Oct 2026: main sat at 52.40 KB and the text
-  // effects of delivery B (contract 1.13.0) add 0.18 KB.
-  // Raised to 54 by Josué on 17 Oct 2026: screen-reader reading (.oim-a11y)
-  // took main from 52.78 to 53.63 KB.
-  // Raised to 55 by Josué on 17 Oct 2026: image fill (contract 1.17.0) took
-  // main to 54.50 KB locally, which CI rounds to 55.
-  // Raised to 56 by Josué on 23 Oct 2026: media filters (contract 1.18.0)
-  // took it to 55.3 KB.
-  // Raised to 57 by Josué on 24 Oct 2026: frame shapes (contract 1.19.0) measure 56.23 KB.
-  // Raised to 58 on 27 Oct 2026: dynamic color roles in patterns and baked pattern SVG recoloring measure 57.6 KB.
-  // Raised to 59 on 30 Oct 2026: reveal per layer and the play action (contract 1.22.0) measure 58.51 KB.
+  // A budget, not a target: each raise is a deliberate decision recorded in
+  // the commit that makes it. Last raise: 59 KB for reveal and play (1.22.0).
   it.skipIf(!hayPaquete)("el player cabe en 59 KB gzip", async () => {
     const { gzipSync } = await import("node:zlib");
     const kb = gzipSync(readFileSync(BUNDLE)).length / 1024;

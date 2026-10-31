@@ -8,7 +8,7 @@
  */
 
 // A layer's texture goes on its own pixels: the overlay is masked with the
-// layer's SVG (Josué, 10 Oct 2026: a transparent SVG came out as a square).
+// layer's SVG (a transparent SVG used to come out as a square).
 import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine";
 

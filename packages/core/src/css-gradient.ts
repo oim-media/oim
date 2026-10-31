@@ -15,7 +15,7 @@ import { isSafeCssColor } from "./dynamic-colors.js";
  * file would ping a third party. Same class of bug as the colour injection
  * closed on 2 Sept 2026, one sink over.
  *
- * WHITE list, shaped on what OIM-Studio's `toCss` writes: exactly ONE
+ * WHITE list, shaped on what the OIM editor writes: exactly ONE
  * `linear | radial | conic` gradient (optionally `repeating-`), an optional
  * header of words, numbers and units, and stops that are a colour plus up to
  * two positions. Anything else is dropped, and the shape paints without fill.

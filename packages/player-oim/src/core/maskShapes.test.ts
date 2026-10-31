@@ -2,15 +2,13 @@ import { describe, it, expect } from "vitest";
 import { MASK_SHAPE_PATHS } from "./layerComposition";
 
 /**
- * El player NO comparte modulo con el editor: su tabla de siluetas es una
- * copy literal de la de OIM-Studio (src/lib/layerComposition.ts), donde los
- * poligonos se derivan de `PUNTOS_GEO`.
+ * The player's mask silhouette table is a literal copy of the editor's, where
+ * the polygons are derived from the shared shape table.
  *
- * Esa copy ya se desincronizo una vez: el editor gano triangle, line, arrow y
- * diamond y el player no, de mode que una mascara triangular se veia triangulo
- * al disenarla y CIRCULO al reproducirla. El lookup cae a `circle` cuando no
- * conoce un nombre, y lo hace sin avisar, asi que el fallo solo aparecia
- * mirando el resultado.
+ * That copy already drifted once: the editor gained triangle, line, arrow and
+ * diamond and the player did not, so a triangular mask was a triangle while
+ * designing and a CIRCLE when played. The lookup silently falls back to
+ * `circle` for an unknown name, so the bug only showed in the output.
  *
  * Estas pruebas no pueden comparar contra el editor -son repos distintos- pero
  * si fijan el contrato: si alguien anade una figura alli y olvida esta tabla,

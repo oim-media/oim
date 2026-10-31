@@ -8,7 +8,7 @@ import { describe, it, expect } from "vitest";
 import { isSafeCssGradient } from "./css-gradient";
 import { getFillCss } from "./fill";
 
-// What OIM-Studio's `toCss` (src/lib/gradient.ts) actually writes, plus the
+// What the OIM editor's gradient serializer actually writes, plus the
 // shapes the player's own tests and older files use.
 const DEL_EDITOR = [
   "linear-gradient(135deg, #f59e0b 0%, #7c3aed 100%)",

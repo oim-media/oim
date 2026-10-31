@@ -27,8 +27,7 @@ describe("styleSchema 1.10.0: per-layer grain", () => {
   });
 
   // Was pinned to "1.10.0"; text marks raised the contract to 1.11.0. What
-  // this test guards is that the grain exists since 1.10.0 (changed with
-  // Josue's approval, spec 2026-10-10-marcas-de-texto).
+  // this test guards is that the grain exists since 1.10.0.
   it("the contract is at least 1.10.0", () => {
     const [major, minor] = CONTRACT_VERSION.split(".").map(Number);
     expect(major * 1000 + minor).toBeGreaterThanOrEqual(1010);

@@ -11,7 +11,7 @@
 // rectangle: inside a transformed parent (the landing's 3D carousel, a centre
 // card at translateZ(120px)) getBoundingClientRect is bigger than the box, so
 // a cover-fitted image came out zoomed, «sometimes» — depending on where the
-// card was when the .oim finished loading (Josué, 10 Oct 2026).
+// card was when the .oim finished loading.
 import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine";
 

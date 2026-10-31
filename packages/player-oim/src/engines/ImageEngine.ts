@@ -299,17 +299,17 @@ function hexChannel(hex: string, channelIndex: 0 | 1 | 2): number {
   return Math.round((value / 255) * 1000) / 1000;
 }
 
-// Mirrors OIM-Studio's <LayerCompositionDefs> (React/JSX) 1:1, but built with
+// Mirrors the editor's <LayerCompositionDefs> (React/JSX) 1:1, but built with
 // document.createElementNS since this package has no JSX. Only invoked when
 // at least one mask or duotone-filter slot exists, so projects using neither
 // feature never get this extra <svg> node in their output.
 /**
- * Marco de una mascara dedicada en mode "ventana".
+ * Frame of a dedicated mask in "window" mode.
  *
- * Gemelo del bloque equivalente en OIM-Studio/src/components/CanvasArea.tsx.
- * El primer <path> lleva el rectangulo de cobertura total mas la silueta, y
- * con `fill-rule="evenodd"` los dos subtrazados se restan: queda el marco
- * pintado y el hueco transparente. El segundo delinea el troquel si se pidio.
+ * Twin of the editor's equivalent block. The first <path> holds the
+ * full-coverage rectangle plus the silhouette, and `fill-rule="evenodd"`
+ * subtracts one from the other: the frame is painted and the hole stays
+ * transparent. The second outlines the die-cut when requested.
  */
 function buildWindowMaskSvg(slot: any, artboard: { width: number; height: number }): SVGSVGElement {
   const svgNs = 'http://www.w3.org/2000/svg';
@@ -364,12 +364,11 @@ function buildWindowMaskSvg(slot: any, artboard: { width: number; height: number
 }
 
 /**
- * Definiciones SVG de mascara, en coordenadas de lienzo.
+ * Mask SVG definitions, in canvas coordinates.
  *
- * Gemelo de OIM-Studio/src/components/LayerCompositionDefs.tsx. El cambio
- * decisivo es `userSpaceOnUse`: antes se usaba `objectBoundingBox`, que
- * estiraba la silueta sobre la caja de la capa recortada e ignoraba la
- * geometria de la propia mascara.
+ * Twin of the editor's LayerCompositionDefs. The key choice is
+ * `userSpaceOnUse`: `objectBoundingBox` stretched the silhouette over the
+ * clipped layer's box and ignored the mask's own geometry.
  */
 function buildLayerCompositionDefs(
   slots: CompositionSlot[],
@@ -2482,7 +2481,7 @@ export class ImageEngine {
                 slotEl.style.color = 'transparent';
                 // Same margin as a clipped fill: without it the descenders of a
                 // tight line height (a «p» at line height 1) were left unfilled
-                // while the text stroke still drew them (Josué, 10 Oct 2026).
+                // while the text stroke still drew them.
                 const texInk = inkMargin(resolveLineHeight(style));
                 if (texInk > 0) {
                   slotEl.style.setProperty('padding-top', texInk + 'em', 'important');

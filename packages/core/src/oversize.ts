@@ -5,18 +5,15 @@
  */
 
 /**
- * Cuanto hay que agrandar una capa con parallax para que al moverse no
- * descubra el vacio que hay detras.
+ * How much to enlarge a parallax layer so that moving it never uncovers the
+ * empty space behind it.
  *
- * El problema: una capa de parallax se desplaza con el raton. Si su borde
- * coincide con el del lienzo -un horizonte que llega de lado a lado, un suelo
- * pegado abajo-, al desplazarse deja al descubierto una franja del ancho del
- * desplazamiento. Es el "recorte de las layers" que se ve en el visor y no en el
- * editor, porque el editor no mueve nada mientras editas.
+ * The problem: a parallax layer follows the pointer. If its edge meets the
+ * canvas edge (a horizon spanning side to side, a floor along the bottom),
+ * moving it uncovers a strip as wide as the offset. It shows in the player
+ * and not in the editor, because the editor moves nothing while you edit.
  *
- * CANONICO. La copy del editor (`OIM-Studio/src/lib/parallax/`) sale de aqui
- * por `scripts/sincronizar-parallax.mjs` y su hash esta en `parallax.lock`. No
- * se edita la copy: se edita esto y se resincroniza.
+ * CANONICAL: the editor and the player both use this module; never fork it.
  */
 
 /** Como se mueve una capa. Igual que `ParallaxSlotItem.axis`. */

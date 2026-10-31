@@ -5,18 +5,16 @@
  */
 
 /**
- * Quién puede reeditar un `.oim`.
+ * Who may re-edit a `.oim`.
  *
- * CANONICO. La copy del editor (`OIM-Studio/src/lib/parallax/`) sale de aqui
- * por `scripts/sincronizar-parallax.mjs` y su hash esta en `parallax.lock`.
- * Vive aqui y no en el editor porque **el visor tambien necesita esta regla**
- * para decidir que sello enseña, y dos implementaciones de «que significa un
- * valor desconocido» es exactamente la divergencia que llevamos dos dias
- * cerrando.
+ * CANONICAL: it lives here and not in the editor because **the viewer needs
+ * this rule too**, to decide which seal to show, and two implementations of
+ * "what an unknown value means" is exactly the kind of divergence this
+ * package exists to prevent.
  *
- * Las dos preguntas de Josue —«¿el autor permite reeditar?» y «¿quien
- * puede?»— son la misma con tres respuestas. Los dos extremos ya existian: el
- * `immutable_lock` es el «nadie» y no habia forma de expresar el «cualquiera».
+ * "Does the author allow re-editing?" and "who may?" are one question with
+ * three answers. Both ends already existed: `immutable_lock` is "nobody", and
+ * there was no way to say "anyone".
  */
 
 export type ReeditPermission = "publico" | "solo_autor" | "sellado";

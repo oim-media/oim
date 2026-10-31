@@ -5,16 +5,14 @@
  */
 
 /**
- * La geometria de las formas del catalogo, en el `viewBox 0 0 100 100` del
- * editor.
+ * Geometry of the catalogue shapes, in the editor's `viewBox 0 0 100 100`.
  *
- * CANONICO. La copy del editor (`OIM-Studio/src/lib/parallax/`) sale de aqui
- * por `scripts/sincronizar-parallax.mjs` y su hash esta en `parallax.lock`.
+ * CANONICAL: the editor and the player both use this module; never fork it.
  *
- * **Existe porque estos numeros ya divergieron.** Estaban escritos a mano en
- * los dos lados: el triangulo del editor va metido un 5% por cada lado y el del
- * player iba a sangre; los diez puntos de la estrella no coincidian en ninguno.
- * El mismo archivo se veia distinto segun donde se abriera.
+ * **It exists because these numbers already diverged.** They were written by
+ * hand on both sides: the editor's triangle was inset 5% on each side and the
+ * player's was full bleed; not one of the star's ten points matched. The same
+ * file looked different depending on where it was opened.
  */
 
 export type ShapeDrawing =

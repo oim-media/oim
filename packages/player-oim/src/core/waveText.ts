@@ -1,13 +1,12 @@
 /**
- * Animación de text "ola" (wave-chars) declarada como CSS nativo.
+ * The "wave" text animation (wave-chars), declared as native CSS.
  *
- * Gemelo portado de OIM-Studio/src/animation/waveText.ts. Los dos repos no
- * comparten paquete, así que la fórmula está duplicada a propósito, igual que
- * layerComposition. Si cambian las constantes allí, hay que replicarlas aquí.
+ * Twin of the editor's waveText; the formula is duplicated on purpose, like
+ * layerComposition. If the constants change there, they change here.
  *
- * Se declara como @keyframes en vez de muestrear la curva a keyframes
- * discretos: el navegador interpola nativamente, así que la ola se ve fluida y
- * continua, la compone la GPU, y cicla infinitamente sin un bucle de JS.
+ * Declared as @keyframes rather than sampling the curve into discrete
+ * keyframes: the browser interpolates natively, so the wave stays smooth, is
+ * GPU-composited, and loops forever without a JS loop.
  */
 
 const WAVE_ANGULAR_FREQUENCY = 6;

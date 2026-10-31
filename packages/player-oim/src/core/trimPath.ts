@@ -30,17 +30,14 @@ export interface TrimCss {
 }
 
 /**
- * Traduce el recorte de contorno a `stroke-dasharray` / `stroke-dashoffset`,
- * y la animacion de dibujado cuando `trimDuration` es mayor que 0.
+ * Turns the stroke trim into `stroke-dasharray` / `stroke-dashoffset`, plus
+ * the draw animation when `trimDuration` is above 0.
  *
- * Gemela de OIM-Studio/src/lib/trimPath.ts. Los dos repos no comparten
- * paquete, asi que la funcion esta duplicada a proposito — y por eso su
- * prueba tambien. El editor y el visor implementaron por separado la misma
- * onda senoidal y salieron en direcciones opuestas; las 224 pruebas pasaron
- * porque coincidian en el primer caracter.
+ * Twin of the editor's trimPath, duplicated on purpose and pinned by a twin
+ * test (see trimPath.test.ts for why parity matters).
  *
- * `longitud` la mide quien llama, con getTotalLength() sobre el <path>. Se
- * pasa como parametro para que esta funcion no necesite DOM y sea probable.
+ * The caller measures `longitud` with getTotalLength() on the <path>; it is a
+ * parameter so this function needs no DOM and stays testable.
  */
 export function getTrimCss(
   style: { strokeWidth?: number; trimStart?: number; trimEnd?: number; trimDuration?: number },

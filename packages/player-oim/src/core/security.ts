@@ -190,7 +190,7 @@ export async function verifyMetadataSignature(metadata: any, origin?: string): P
         { name: "ECDSA", hash: { name: "SHA-256" } },
         pubKey,
         sigBytes,
-        bytes
+        bytes as Uint8Array<ArrayBuffer> // never a SharedArrayBuffer here; TS 6 types require saying so
       );
     };
 

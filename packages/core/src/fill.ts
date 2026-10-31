@@ -172,9 +172,11 @@ export const PATTERN_SHAPES = ["rectangle", "circle", "triangle", "star", "diamo
  * corner radius, as always. Used for pattern layers and complex fills of shapes.
  */
 export function shapeMaskCss(geoShape?: string): CSSProperties {
-  if (!geoShape || geoShape === "rectangle" || !(PATTERN_SHAPES as readonly string[]).includes(geoShape)) return {};
+  if (!geoShape || geoShape === "rectangle") return {};
+  // Every closed catalogue shape, not a fixed list: shapes added later (arch,
+  // cloud...) painted their fill colour over the whole box.
   const drawing = GEO_SHAPES[geoShape];
-  if (!drawing) return {};
+  if (!drawing || (drawing.tipo === "path" && !drawing.rellenable)) return {};
   const body = drawing.tipo === "polygon"
     ? `<polygon points="${pointsToAttribute(drawing.puntos)}" fill="black"/>`
     : `<path d="${drawing.d}" fill="black"/>`;

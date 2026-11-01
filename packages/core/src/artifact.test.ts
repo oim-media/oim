@@ -50,11 +50,11 @@ function contenido(dir: string, prefijo = ""): string[] {
   return salida.sort();
 }
 
-function masReciente(dir: string): number {
+function newestMtime(dir: string): number {
   let max = 0;
   for (const entrada of readdirSync(dir, { withFileTypes: true })) {
     const ruta = join(dir, entrada.name);
-    if (entrada.isDirectory()) max = Math.max(max, masReciente(ruta));
+    if (entrada.isDirectory()) max = Math.max(max, newestMtime(ruta));
     else if (entrada.name.endsWith(".ts") && !entrada.name.endsWith(".test.ts")) {
       max = Math.max(max, statSync(ruta).mtimeMs);
     }
@@ -86,9 +86,9 @@ function modulosDe(dir: string, prefijo = ""): string[] {
 
 const MODULOS = modulosDe(SRC);
 
-describe("el artefacto que se empaqueta", () => {
+describe("the packaged artifact", () => {
   it("existe", () => {
-    expect(existsSync(DIST), "no hay dist/. Ejecuta `pnpm --filter @oim-media/core build`").toBe(true);
+    expect(existsSync(DIST), "dist/ is missing. Run `pnpm --filter @oim-media/core build`").toBe(true);
   });
 
   /**
@@ -96,12 +96,12 @@ describe("el artefacto que se empaqueta", () => {
    * the source, an old tree) shows up here as a name that `src` does not
    * have.
    */
-  it("contiene exactamente los modulos de src, ni uno mas", () => {
+  it("contains exactly the modules of src, no more", () => {
     const esperado = MODULOS.flatMap((m) => [`${m}.d.ts`, `${m}.js`]).sort();
     expect(contenido(DIST)).toEqual(esperado);
   });
 
-  it("no lleva pruebas compiladas", () => {
+  it("does not ship compiled tests", () => {
     expect(contenido(DIST).filter((f) => /\.test\.(js|d\.ts)$/.test(f))).toEqual([]);
   });
 
@@ -113,7 +113,7 @@ describe("el artefacto que se empaqueta", () => {
    * so it checks that whatever is there comes out of `src`. A `dist/src/` has no counterpart
    * there and still fails.
    */
-  it("sus subdirectorios son los de src, y no otros", () => {
+  it("its subdirectories are the ones in src, and no others", () => {
     const enDist = new Set(
       contenido(DIST).filter((f) => f.includes("/")).map((f) => f.split("/")[0]),
     );
@@ -126,13 +126,13 @@ describe("el artefacto que se empaqueta", () => {
    * says something else. It is the same failure that `dist-al-dia.test.js` watches for in the
    * player.
    */
-  it("no es mas viejo que src", () => {
-    const construido = Math.max(...contenido(DIST).map((f) => statSync(join(DIST, f)).mtimeMs));
-    const fuente = masReciente(SRC);
-    const atraso = Math.round((fuente - construido) / 1000);
+  it("is not older than src", () => {
+    const built = Math.max(...contenido(DIST).map((f) => statSync(join(DIST, f)).mtimeMs));
+    const source = newestMtime(SRC);
+    const lag = Math.round((source - built) / 1000);
     expect(
-      construido >= fuente,
-      `dist/ va ${atraso}s por detras de src/. Ejecuta \`pnpm --filter @oim-media/core build\``,
+      built >= source,
+      `dist/ va ${lag}s por detras de src/. Ejecuta \`pnpm --filter @oim-media/core build\``,
     ).toBe(true);
   });
 });

@@ -31,10 +31,10 @@ import { join } from "node:path";
 import { extractOIM } from "./binary";
 import { OimMetadataSchema } from "./schema";
 
-const VECTORES = join(__dirname, "..", "..", "spec", "vectors");
+const VECTORS = join(__dirname, "..", "..", "spec", "vectors");
 
-const CASOS = existsSync(VECTORES)
-  ? readdirSync(VECTORES).filter((f) => f.endsWith(".oim.png")).sort()
+const CASES = existsSync(VECTORS)
+  ? readdirSync(VECTORS).filter((f) => f.endsWith(".oim.png")).sort()
   : [];
 
 /** The same thing the vector generator (run by the signing service) emits. If they diverge, the vector lies. */
@@ -59,7 +59,7 @@ const DEL_ESTILO = [
   "backgroundPatternBgColor", "backgroundPatternBgColorRole", "shadowColorRole",
 ];
 
-function loQueSeEspera(m: any) {
+function expectedOutput(m: any) {
   return {
     canvas: m.canvas,
     languages: m.languages,
@@ -80,29 +80,29 @@ function loQueSeEspera(m: any) {
   };
 }
 
-describe("los vectores de conformidad", () => {
+describe("the conformance vectors", () => {
   /**
    * Without this, the suite would pass green the day someone moves the
    * directory: zero vectors, zero checks, all correct.
    * Now we require the full canonical matrix of 20 normative vectors.
    */
-  it("hay al menos 20 vectores de conformidad normativos", () => {
-    expect(CASOS.length).toBeGreaterThanOrEqual(20);
+  it("there are at least 20 normative conformance vectors", () => {
+    expect(CASES.length).toBeGreaterThanOrEqual(20);
   });
 
-  it.each(CASOS)("%s produce el resultado que declara", async (fichero) => {
-    const esperado = JSON.parse(
-      readFileSync(join(VECTORES, fichero.replace(".oim.png", ".expected.json")), "utf8"),
+  it.each(CASES)("%s produces the result it declares", async (file) => {
+    const expected = JSON.parse(
+      readFileSync(join(VECTORS, file.replace(".oim.png", ".expected.json")), "utf8"),
     );
-    const { metadata } = await extractOIM(new Blob([readFileSync(join(VECTORES, fichero))]));
-    const obtenido = loQueSeEspera(metadata);
+    const { metadata } = await extractOIM(new Blob([readFileSync(join(VECTORS, file))]));
+    const actual = expectedOutput(metadata);
     // `description` is for whoever reads the vector, not part of the result.
-    const { description, ...resto } = esperado;
-    expect(obtenido).toEqual(resto);
+    const { description, ...rest } = expected;
+    expect(actual).toEqual(rest);
   });
 
-  it.each(CASOS)("%s valida contra el JSON Schema publicado", async (fichero) => {
-    const { metadata } = await extractOIM(new Blob([readFileSync(join(VECTORES, fichero))]));
+  it.each(CASES)("%s validates against the published JSON Schema", async (file) => {
+    const { metadata } = await extractOIM(new Blob([readFileSync(join(VECTORS, file))]));
     const r = OimMetadataSchema.safeParse(metadata);
     const problemas = r.success ? [] : r.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`);
     expect(problemas).toEqual([]);
@@ -112,45 +112,45 @@ describe("los vectores de conformidad", () => {
    * A vector without a signature would check only half the format. All of them
    * came out of `/v1/oim/package`, which is what signs in production.
    */
-  it.each(CASOS)("%s viene firmado, como un .oim real", async (fichero) => {
-    const { metadata } = await extractOIM(new Blob([readFileSync(join(VECTORES, fichero))]));
+  it.each(CASES)("%s is signed, like a real .oim", async (file) => {
+    const { metadata } = await extractOIM(new Blob([readFileSync(join(VECTORS, file))]));
     expect(metadata.signature).toBeTruthy();
     expect(metadata.key_version).toBe("v1");
   });
 
   /** A broad suite checks orthogonal dimensions of the format. */
-  it("cubren interactividad, jerarquia, profundidad, multilingüe, tipografía y efectos", async () => {
-    const cubre = {
-      interactivo: false,
-      grupo: false,
+  it("they cover interactivity, hierarchy, depth, multilingual text, typography and effects", async () => {
+    const covers = {
+      interactive: false,
+      group: false,
       parallax: false,
       multilang: false,
-      tipografia: false,
-      sombra: false,
+      typography: false,
+      shadow: false,
       blend: false,
       textRuns: false,
     };
-    for (const f of CASOS) {
-      const { metadata } = await extractOIM(new Blob([readFileSync(join(VECTORES, f))]));
-      if (metadata.languages && metadata.languages.length >= 3) cubre.multilang = true;
+    for (const f of CASES) {
+      const { metadata } = await extractOIM(new Blob([readFileSync(join(VECTORS, f))]));
+      if (metadata.languages && metadata.languages.length >= 3) covers.multilang = true;
       for (const s of metadata.slots || []) {
-        if (s.content && Object.keys(s.content).length >= 3) cubre.multilang = true;
-        if (s.style?.isInteractive) cubre.interactivo = true;
-        if (s.style?.childIds?.length) cubre.grupo = true;
-        if (s.style?.parallax?.enabled) cubre.parallax = true;
-        if (s.style?.fontFamily && s.style?.fontWeight) cubre.tipografia = true;
-        if (s.style?.shadowEnabled) cubre.sombra = true;
-        if (s.style?.blendMode) cubre.blend = true;
-        if (s.style?.textRuns) cubre.textRuns = true;
+        if (s.content && Object.keys(s.content).length >= 3) covers.multilang = true;
+        if (s.style?.isInteractive) covers.interactive = true;
+        if (s.style?.childIds?.length) covers.group = true;
+        if (s.style?.parallax?.enabled) covers.parallax = true;
+        if (s.style?.fontFamily && s.style?.fontWeight) covers.typography = true;
+        if (s.style?.shadowEnabled) covers.shadow = true;
+        if (s.style?.blendMode) covers.blend = true;
+        if (s.style?.textRuns) covers.textRuns = true;
       }
     }
-    expect(cubre).toEqual({
-      interactivo: true,
-      grupo: true,
+    expect(covers).toEqual({
+      interactive: true,
+      group: true,
       parallax: true,
       multilang: true,
-      tipografia: true,
-      sombra: true,
+      typography: true,
+      shadow: true,
       blend: true,
       textRuns: true,
     });

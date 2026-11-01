@@ -140,7 +140,7 @@ describe("what the player declares it implements", () => {
    * code: zero occurrences, measured. Declaring them would promise what is not
    * done, which is the silence that all of this is meant to break.
    */
-  it("no promete path_morph ni physics_2d", () => {
+  it("does not promise path_morph or physics_2d", () => {
     expect(PLAYER_CAPABILITIES).not.toContain("path_morph");
     expect(PLAYER_CAPABILITIES).not.toContain("physics_2d");
   });
@@ -177,8 +177,8 @@ describe("minVersionFor", () => {
   });
 
   it("with several, keeps the highest", () => {
-    const mapa = { a: "1.2.0", b: "1.10.0", c: "1.3.0" };
-    expect(minVersionFor({ capabilities: ["a", "b", "c"] }, mapa)).toBe("1.10.0");
+    const versionMap = { a: "1.2.0", b: "1.10.0", c: "1.3.0" };
+    expect(minVersionFor({ capabilities: ["a", "b", "c"] }, versionMap)).toBe("1.10.0");
   });
 
   it("an unknown capability does not invent a requirement", () => {

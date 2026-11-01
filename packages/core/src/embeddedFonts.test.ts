@@ -9,40 +9,40 @@ import { EMBEDDED_FONT_NAME, embeddedFontName } from "./embeddedFonts.js";
 import { OimMetadataSchema } from "./schema.js";
 
 const WOFF2 = Buffer.from("wOF2" + "x".repeat(40)).toString("base64");
-const fuente = (cambios: Record<string, unknown> = {}) => ({
-  family: "Lora", name: "oim-3f9a1c2b-Lora", weight: 700, style: "italic", format: "woff2", data: WOFF2, ...cambios,
+const font = (changes: Record<string, unknown> = {}) => ({
+  family: "Lora", name: "oim-3f9a1c2b-Lora", weight: 700, style: "italic", format: "woff2", data: WOFF2, ...changes,
 });
 
 describe("embeddedFontName", () => {
-  it("usa los 8 primeros hex del hash y la familia", () => {
+  it("uses the first 8 hex digits of the hash and the family", () => {
     expect(embeddedFontName("Lora", "3f9a1c2bdeadbeef")).toBe("oim-3f9a1c2b-Lora");
   });
 
-  it("el nombre que produce cumple el patron", () => {
+  it("the name it produces matches the pattern", () => {
     expect(EMBEDDED_FONT_NAME.test(embeddedFontName("Noto Sans", "abcdef0123456789"))).toBe(true);
   });
 
-  it("el patron rechaza lo que no sale de embeddedFontName", () => {
+  it("the pattern rejects anything not produced by embeddedFontName", () => {
     expect(EMBEDDED_FONT_NAME.test("Lora")).toBe(false);
     expect(EMBEDDED_FONT_NAME.test("oim-XYZ-Lora")).toBe(false);
     expect(EMBEDDED_FONT_NAME.test("oim-3f9a1c2b-Lora;color:red")).toBe(false);
   });
 });
 
-describe("fonts en la raiz del contrato", () => {
-  it("una entrada correcta valida", () => {
-    expect(OimMetadataSchema.safeParse({ slots: [], fonts: [fuente()] }).success).toBe(true);
+describe("fonts at the root of the contract", () => {
+  it("a correct entry validates", () => {
+    expect(OimMetadataSchema.safeParse({ slots: [], fonts: [font()] }).success).toBe(true);
   });
 
-  it("un formato distinto de woff2 no valida", () => {
-    expect(OimMetadataSchema.safeParse({ slots: [], fonts: [fuente({ format: "ttf" })] }).success).toBe(false);
+  it("a format other than woff2 does not validate", () => {
+    expect(OimMetadataSchema.safeParse({ slots: [], fonts: [font({ format: "ttf" })] }).success).toBe(false);
   });
 
-  it("un nombre fuera del patron no valida", () => {
-    expect(OimMetadataSchema.safeParse({ slots: [], fonts: [fuente({ name: "Lora" })] }).success).toBe(false);
+  it("a name outside the pattern does not validate", () => {
+    expect(OimMetadataSchema.safeParse({ slots: [], fonts: [font({ name: "Lora" })] }).success).toBe(false);
   });
 
-  it("un archivo sin fonts valida igual que antes", () => {
+  it("a file without fonts validates as before", () => {
     expect(OimMetadataSchema.safeParse({ slots: [] }).success).toBe(true);
   });
 });

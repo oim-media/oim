@@ -18,12 +18,12 @@ describe("palettes en oim.schema.json", () => {
     (d) => d.propertyNames?.enum && d.additionalProperties?.maxLength === 128,
   );
 
-  it("las claves de cada paleta son exactamente los doce roles", () => {
+  it("the keys of each palette are exactly the twelve roles", () => {
     expect(palette).toBeDefined();
     expect([...palette.propertyNames.enum].sort()).toEqual([...DYNAMIC_COLOR_ROLES].sort());
   });
 
-  it("el valor de cada rol es una cadena de como mucho 128 caracteres", () => {
+  it("the value of each role is a string of at most 128 characters", () => {
     expect(palette.additionalProperties).toEqual({ type: "string", maxLength: 128 });
   });
 });

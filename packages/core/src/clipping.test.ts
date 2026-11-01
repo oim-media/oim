@@ -21,15 +21,15 @@ const slot = (p: Partial<Parameters<typeof slotClipping>[0]> = {}) => ({
 });
 
 describe("slotClipping", () => {
-  it("un texto no se recorta: la tinta que sobresale de la caja de linea es suya", () => {
+  it("text is not clipped: the ink that overhangs its line box is its own", () => {
     expect(slotClipping(slot({ isText: true }))).toBe("visible");
   });
 
-  it("una capa cualquiera si se recorta", () => {
+  it("any other layer is clipped", () => {
     expect(slotClipping(slot())).toBe("hidden");
   });
 
-  it("con sombra o filtro no se recorta: se pintan fuera de la caja", () => {
+  it("with a shadow or filter it is not clipped: it is painted outside the box", () => {
     expect(slotClipping(slot({ hasFilterOrShadow: true }))).toBe("visible");
   });
 
@@ -37,15 +37,15 @@ describe("slotClipping", () => {
    * The combination that decides the order. Without this, putting the text rule
    * before the parallax one passed in green and broke the loop in production.
    */
-  it("un grupo de parallax DE TEXTO sigue recortando", () => {
+  it("a TEXT parallax group keeps clipping", () => {
     expect(slotClipping(slot({ isText: true, isParallaxGroup: true }))).toBe("hidden");
   });
 
-  it("un grupo de parallax con sombra tambien sigue recortando", () => {
+  it("a parallax group with a shadow also keeps clipping", () => {
     expect(slotClipping(slot({ hasFilterOrShadow: true, isParallaxGroup: true }))).toBe("hidden");
   });
 
-  it("un texto con sombra no se recorta por partida doble", () => {
+  it("text with a shadow is not clipped twice", () => {
     expect(slotClipping(slot({ isText: true, hasFilterOrShadow: true }))).toBe("visible");
   });
 });

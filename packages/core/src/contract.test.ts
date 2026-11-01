@@ -10,7 +10,7 @@
  * `schema.ts` defines the `.oim` format in Zod, which only serves TypeScript.
  * A player in Swift, Kotlin or Rust cannot read it: it would have to be translated
  * by hand, and that translation is a copy. Copies drift -measured in this same
- * project: `grupos.ts` accumulated 546 lines that differed between the player and
+ * project: `groups.ts` accumulated 546 lines that differed between the player and
  * the editor, `layerComposition.ts` 775-. A JSON Schema contract is the part that
  * survives the language.
  *
@@ -112,36 +112,36 @@ function contrato(esquema: z.ZodType, id: string, titulo: string) {
  */
 function inlinarPrimitivos(esquema: any): any {
   const defs = esquema.$defs ?? {};
-  const triviales = new Set(
+  const trivial = new Set(
     Object.keys(defs).filter((k) => {
-      const claves = Object.keys(defs[k]);
-      return claves.length === 1 && claves[0] === "type";
+      const keys = Object.keys(defs[k]);
+      return keys.length === 1 && keys[0] === "type";
     }),
   );
-  if (triviales.size === 0) return esquema;
+  if (trivial.size === 0) return esquema;
 
   const sustituir = (nodo: any): any => {
     if (Array.isArray(nodo)) return nodo.map(sustituir);
     if (!nodo || typeof nodo !== "object") return nodo;
     const ref: string | undefined = nodo.$ref;
     if (ref) {
-      const nombre = ref.replace("#/$defs/", "");
+      const name = ref.replace("#/$defs/", "");
       // The SIBLING keys of the `$ref` are kept. Returning only the primitive
       // dropped `deprecated` and `description`: marking a key as retired left no
       // trace in the published contract, and the failure was silent -the file
       // came out well-formed, just without the warning-.
-      if (triviales.has(nombre)) {
-        const { $ref: _descartado, ...hermanas } = nodo;
-        return { ...defs[nombre], ...hermanas };
+      if (trivial.has(name)) {
+        const { $ref: _discarded, ...siblings } = nodo;
+        return { ...defs[name], ...siblings };
       }
     }
     return Object.fromEntries(Object.entries(nodo).map(([k, v]) => [k, sustituir(v)]));
   };
 
-  const limpio = sustituir(esquema);
-  for (const nombre of triviales) delete limpio.$defs[nombre];
-  if (Object.keys(limpio.$defs).length === 0) delete limpio.$defs;
-  return limpio;
+  const clean = sustituir(esquema);
+  for (const name of trivial) delete clean.$defs[name];
+  if (Object.keys(clean.$defs).length === 0) delete clean.$defs;
+  return clean;
 }
 
 /**
@@ -179,23 +179,23 @@ function comoFichero(objeto: unknown): string {
 }
 
 describe("el contrato en JSON Schema", () => {
-  it("oim.schema.json esta al dia con schema.ts", async () => {
+  it("oim.schema.json is up to date with schema.ts", async () => {
     await expect(comoFichero(contrato(OimMetadataSchema, "oim", "OIM document metadata")))
       .toMatchFileSnapshot("../../spec/schema/oim.schema.json");
   });
 
-  it("ovm.schema.json esta al dia con schema.ts", async () => {
+  it("ovm.schema.json is up to date with schema.ts", async () => {
     await expect(comoFichero(contrato(OvmMetadataSchema, "ovm", "OVM document metadata")))
       .toMatchFileSnapshot("../../spec/schema/ovm.schema.json");
   });
 });
 
-describe("propiedades que el contrato promete a otros lenguajes", () => {
+describe("properties the contract promises to other languages", () => {
   /**
    * `slots` is the only required field of the format. A player that did not
    * require it would accept an empty `.oim` as valid.
    */
-  it("declara slots como obligatorio y nada mas", () => {
+  it("declares slots as required and nothing else", () => {
     const s = contrato(OimMetadataSchema, "oim", "x") as any;
     expect(s.required).toEqual(["slots"]);
   });
@@ -206,7 +206,7 @@ describe("propiedades que el contrato promete a otros lenguajes", () => {
    * compatibility -the other half, warning that something was not understood, is
    * covered by `min_player`-.
    */
-  it("admite claves desconocidas, que es como sobrevive a versiones futuras", () => {
+  it("accepts unknown keys, which is how it survives future versions", () => {
     const s = contrato(OimMetadataSchema, "oim", "x") as any;
     expect(s.additionalProperties).not.toBe(false);
   });
@@ -226,7 +226,7 @@ describe("propiedades que el contrato promete a otros lenguajes", () => {
    * paints. And the author of the file would have no way of knowing which of the
    * two is right.
    */
-  it("no prohibe claves desconocidas en ningun objeto, porque Zod tampoco", () => {
+  it("does not forbid unknown keys in any object, because Zod does not either", () => {
     const conCanvasExtendido = {
       slots: [],
       canvas: { natural_width: 100, natural_height: 50, clave_de_una_version_futura: 7 },
@@ -235,18 +235,18 @@ describe("propiedades que el contrato promete a otros lenguajes", () => {
     expect(OimMetadataSchema.safeParse(conCanvasExtendido).success).toBe(true);
 
     // ...so the published contract cannot forbid it anywhere.
-    const cerrados: string[] = [];
-    (function recorrer(nodo: any, ruta: string) {
+    const closed: string[] = [];
+    (function walk(nodo: any, route: string) {
       if (!nodo || typeof nodo !== "object") return;
-      if (nodo.additionalProperties === false) cerrados.push(ruta || "(raiz)");
-      for (const [clave, hijo] of Object.entries(nodo)) recorrer(hijo, ruta ? `${ruta}.${clave}` : clave);
+      if (nodo.additionalProperties === false) closed.push(route || "(raiz)");
+      for (const [key, child] of Object.entries(nodo)) walk(child, route ? `${route}.${key}` : key);
     })(contrato(OimMetadataSchema, "oim", "x"), "");
 
-    expect(cerrados).toEqual([]);
+    expect(closed).toEqual([]);
   });
 });
 
-describe("1.1.0 retira allow_external_urls sin romper lo ya publicado", () => {
+describe("1.1.0 retires allow_external_urls without breaking what is already published", () => {
   /**
    * The promise of this version bump: retiring the field does NOT invalidate a
    * file that carries it. The schemas are `.passthrough()`, so the field simply
@@ -254,7 +254,7 @@ describe("1.1.0 retira allow_external_urls sin romper lo ya publicado", () => {
    *
    * Without this test, the promise lives only in a comment.
  */
-  it("un .oim de la era 1.0.0 con el campo sigue validando", () => {
+  it("a .oim from the 1.0.0 era with the field still validates", () => {
     const antiguo = {
       version: "1.0.0",
       allow_external_urls: true,
@@ -264,15 +264,15 @@ describe("1.1.0 retira allow_external_urls sin romper lo ya publicado", () => {
     expect(r.success).toBe(true);
   });
 
-  it("pero el contrato ya no lo declara", () => {
+  it("but the contract no longer declares it", () => {
     const s = contrato(OimMetadataSchema, "oim", "x") as any;
     expect(Object.keys(s.properties)).not.toContain("allow_external_urls");
     expect(s.specVersion).toBe(CONTRACT_VERSION);
   });
 });
 
-describe("1.2.0: el principal bajo * no cambia el esquema", () => {
-  it("un content con * y una excepcion valida", () => {
+describe("1.2.0: the principal under * does not change the schema", () => {
+  it("a content with * and one valid exception", () => {
     expect(contentSchema.safeParse({ "*": "oim-media:a", pt: "oim-media:b" }).success).toBe(true);
   });
 
@@ -282,8 +282,8 @@ describe("1.2.0: el principal bajo * no cambia el esquema", () => {
   });
 });
 
-describe("1.4.0 cierra la deriva y marca lo retirado", () => {
-  it("la raiz declara `reedicion`, y con sus tres valores", () => {
+describe("1.4.0 closes the drift and marks what was retired", () => {
+  it("the root declares `reedicion`, with its three values", () => {
     // It was the worst gap in the contract: it decides a PERMISSION -who may
     // re-edit the work- and was not declared anywhere. A foreign player ignored
     // it and treated as re-editable something that is not.
@@ -296,7 +296,7 @@ describe("1.4.0 cierra la deriva y marca lo retirado", () => {
     expect(s.properties.name).toBeDefined();
   });
 
-  it("las dos que `allow_external_urls` dejo atras van marcadas, no borradas", () => {
+  it("the two that `allow_external_urls` left behind are marked, not deleted", () => {
     // Marked and not deleted on purpose: the backend still honors them if a file
     // carries the retired key, so removing them from the contract would make it
     // lie in the other direction.
@@ -305,7 +305,7 @@ describe("1.4.0 cierra la deriva y marca lo retirado", () => {
     expect(s.properties.redirect_membership_verified.deprecated).toBe(true);
   });
 
-  it("inlinar un primitivo no se lleva por delante lo que lo acompana", () => {
+  it("inlining a primitive does not take down what accompanies it", () => {
     // `reused: "ref"` moves every repeated primitive to `$defs`, and the property
     // is left as `{ deprecated, description, $ref }`. The inliner returned ONLY
     // the primitive, so marking a key as retired left no trace in the published
@@ -315,12 +315,12 @@ describe("1.4.0 cierra la deriva y marca lo retirado", () => {
     // Today the real schema puts the metadata BEFORE `.optional()` and does not
     // generate that `$ref`, so this test is the only place that walks that path.
     // Without it, the fix can be reverted and nothing will complain.
-    const conRef = z.object({
+    const withRef = z.object({
       marcada: z.boolean().optional().meta({ deprecated: true, description: "retirada" }),
-      otra: z.boolean().optional(),
+      other: z.boolean().optional(),
       tercera: z.boolean().optional(),
     });
-    const s = contrato(conRef, "prueba", "x") as any;
+    const s = contrato(withRef, "probe", "x") as any;
     expect(s.properties.marcada.deprecated).toBe(true);
     expect(s.properties.marcada.description).toBe("retirada");
     expect(s.properties.marcada.type).toBe("boolean");
@@ -330,13 +330,13 @@ describe("1.4.0 cierra la deriva y marca lo retirado", () => {
   // applies it"), because that was the case. In 1.7.0 the player stops applying
   // it (sandbox, a product decision) and the test changes with the fact:
   // sandbox-no-network.test.ts, in the player, pins that it is no longer applied.
-  it("`allowed_domains` va marcada desde 1.7.0: el player ya no la aplica", () => {
+  it("`allowed_domains` is marked from 1.7.0: the player no longer applies it", () => {
     const s = contrato(OimMetadataSchema, "oim", "x") as any;
     expect(s.properties.allowed_domains.deprecated).toBe(true);
   });
 });
 
-describe("1.12.0 marca lo que nadie usa, sin borrarlo (auditoria del 10 oct)", () => {
+describe("1.12.0 marks what nobody uses, without deleting it (audit of 10 Oct)", () => {
   const raiz = () => contrato(OimMetadataSchema, "oim", "x") as any;
   const estilo = () => {
     const r = raiz();
@@ -356,36 +356,36 @@ describe("1.12.0 marca lo que nadie usa, sin borrarlo (auditoria del 10 oct)", (
     return v?.$ref ? { ...r.$defs[v.$ref.split("/").pop()], ...v } : v;
   };
 
-  it("en el estilo: textTransform, verticalAlign, shader_fx, el grano por capa y blendMode", () => {
+  it("in style: textTransform, verticalAlign, shader_fx, per-layer grain and blendMode", () => {
     for (const k of ["textTransform", "verticalAlign", "shader_fx", "grain", "grainIntensity", "grainSize", "grainBlend", "blendMode"]) {
       expect(prop(k)?.deprecated, k).toBe(true);
     }
   });
 
-  it("blendMode queda cerrado a los nueve valores que ofrecia el editor", () => {
+  it("blendMode is closed to the nine values the editor offered", () => {
     expect([...prop("blendMode").enum].sort()).toEqual(
       ["color-burn", "color-dodge", "darken", "difference", "lighten", "multiply", "normal", "overlay", "screen"]);
   });
 
-  it("en la raiz: elements, layers, grain y effects; slots no", () => {
+  it("at the root: elements, layers, grain and effects; slots does not", () => {
     const p = raiz().properties;
     for (const k of ["elements", "layers", "grain", "effects"]) expect(p[k]?.deprecated, k).toBe(true);
     expect(p.slots.deprecated).toBeUndefined();
   });
 
-  it("un archivo que aun lleve lo retirado sigue validando", () => {
+  it("a file that still carries what was retired keeps validating", () => {
     const r = OimMetadataSchema.safeParse({ slots: [{ id: "a", style: { blendMode: "multiply", textTransform: "uppercase", grain: true } }], grain: { enabled: true } });
     expect(r.success).toBe(true);
   });
 });
 
-describe("1.3.0 documenta las fuentes incrustadas sin exigirlas", () => {
-  it("el contrato declara las fuentes incrustadas", () => {
+describe("1.3.0 documents embedded fonts without requiring them", () => {
+  it("the contract declares embedded fonts", () => {
     const s = contrato(OimMetadataSchema, "oim", "x") as any;
     expect(Object.keys(s.properties)).toContain("fonts");
   });
 
-  it("usar fonts no sube min_player: un lector antiguo la ignora y pide la fuente a Google", () => {
+  it("using fonts does not raise min_player: an old reader ignores it and fetches the font from Google", () => {
     expect(minVersionFor({ capabilities: [] })).toBe(BASE_CONTRACT_VERSION);
   });
 });

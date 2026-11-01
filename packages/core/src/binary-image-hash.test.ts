@@ -40,31 +40,31 @@ async function sha256Hex(bytes: Uint8Array): Promise<string> {
 
 const A = new Uint8Array([1, 2, 3]);
 const B = new Uint8Array([4, 5]);
-const texto = chunk("tEXt", new TextEncoder().encode("Comment\0hola"));
+const textChunk = chunk("tEXt", new TextEncoder().encode("Comment\0hola"));
 
 describe("imageDataHash", () => {
-  it("es el SHA-256 de todos los IDAT concatenados", async () => {
+  it("is the SHA-256 of all IDAT chunks concatenated", async () => {
     const file = png(chunk("IDAT", A), chunk("IDAT", B));
     expect(await imageDataHash(file.buffer)).toBe(await sha256Hex(new Uint8Array([1, 2, 3, 4, 5])));
   });
 
-  it("los chunks de texto no cuentan", async () => {
-    expect(await imageDataHash(png(texto, chunk("IDAT", A)).buffer))
+  it("text chunks do not count", async () => {
+    expect(await imageDataHash(png(textChunk, chunk("IDAT", A)).buffer))
       .toBe(await imageDataHash(png(chunk("IDAT", A)).buffer));
   });
 
-  it("otros pixeles, otro hash", async () => {
+  it("other pixels, other hash", async () => {
     expect(await imageDataHash(png(chunk("IDAT", A)).buffer))
       .not.toBe(await imageDataHash(png(chunk("IDAT", B)).buffer));
   });
 
-  it("sin IDAT no hay hash", async () => {
-    expect(await imageDataHash(png(texto).buffer)).toBeNull();
+  it("without IDAT there is no hash", async () => {
+    expect(await imageDataHash(png(textChunk).buffer)).toBeNull();
   });
 });
 
 describe("extractOIM", () => {
-  it("devuelve el hash de la imagen junto a los metadatos", async () => {
+  it("returns the image hash alongside the metadata", async () => {
     const file = png(chunk("IDAT", A));
     const res = await extractOIM(new Blob([file]));
     expect(res.imageHash).toBe(await sha256Hex(A));

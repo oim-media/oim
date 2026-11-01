@@ -93,7 +93,7 @@ describe("the CSS that gives meaning to what the generator emits", () => {
     expect(CSS_PARALLAX).toContain("prefers-reduced-motion");
   });
 
-  it("el generador y el CSS usan la MISMA clase", () => {
+  it("the generator and the CSS use the SAME class", () => {
     expect(CSS_PARALLAX).toContain(`.${TRACK_CLASS}`);
   });
 });

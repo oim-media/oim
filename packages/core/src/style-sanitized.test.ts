@@ -24,7 +24,7 @@ const GRADIENT = new RegExp(CSS_GRADIENT_PATTERN);
 
 // Measured over the real .oim files on disk, plus the shapes
 // `resolveCssColor` writes for dynamic colours.
-const COLORES_REALES = [
+const REAL_COLORS = [
   "#f59e0b", "#FFF", "#00000080", "rgb(0, 0, 0)", "rgba(255,255,255,0.5)",
   "hsl(210 40% 50%)", "transparent", "none", "currentColor",
   "var(--primary)", "var(--text)", "var(--oim-color-accent, #f59e0b)",
@@ -32,7 +32,7 @@ const COLORES_REALES = [
   "var(--a, var(--b, #000))",
 ];
 
-const COLORES_HOSTILES = [
+const HOSTILE_COLORS = [
   "red; background-image: url(https://tercero.example/b)",
   "url(https://tercero.example/b)",
   "var(--x, url(https://tercero.example/b))",
@@ -43,7 +43,7 @@ const COLORES_HOSTILES = [
   "",
 ];
 
-const GRADIENTES_REALES = [
+const REAL_GRADIENTS = [
   "linear-gradient(135deg, #f59e0b 0%, #7c3aed 100%)",
   "radial-gradient(circle 40px at 50% 50%, #000 0%, #fff 100%)",
   "radial-gradient(circle closest-side at 30% 70%, rgba(0, 0, 0, 0.5) 0%, transparent 100%)",
@@ -51,7 +51,7 @@ const GRADIENTES_REALES = [
   "linear-gradient(90deg, var(--oim-color-accent, #f59e0b) 0%, #000 100%)",
 ];
 
-const GRADIENTES_HOSTILES = [
+const HOSTILE_GRADIENTS = [
   "linear-gradient(red, blue), url(https://tercero.example/baliza)",
   "linear-gradient(red, url(https://tercero.example/b))",
   "linear-gradient(90deg, image-set(1x) 0%, #000 100%)",
@@ -60,29 +60,29 @@ const GRADIENTES_HOSTILES = [
 ];
 
 describe("colors of the 1.8.0 contract", () => {
-  it.each(COLORES_REALES)("el contrato y el player aceptan %s", (c) => {
+  it.each(REAL_COLORS)("the contract and the player accept %s", (c) => {
     expect(COLOR.test(c)).toBe(true);
     expect(isSafeCssColor(c)).toBe(true);
   });
 
-  it.each(COLORES_HOSTILES)("el contrato rechaza %s", (c) => {
+  it.each(HOSTILE_COLORS)("the contract rejects %s", (c) => {
     expect(COLOR.test(c)).toBe(false);
   });
 
   it("nothing the contract accepts is rejected by the player", () => {
-    for (const c of [...COLORES_REALES, ...COLORES_HOSTILES]) {
+    for (const c of [...REAL_COLORS, ...HOSTILE_COLORS]) {
       if (COLOR.test(c)) expect(isSafeCssColor(c), c).toBe(true);
     }
   });
 });
 
 describe("gradients of the 1.8.0 contract", () => {
-  it.each(GRADIENTES_REALES)("el contrato y el player aceptan %s", (g) => {
+  it.each(REAL_GRADIENTS)("the contract and the player accept %s", (g) => {
     expect(GRADIENT.test(g)).toBe(true);
     expect(isSafeCssGradient(g)).toBe(true);
   });
 
-  it.each(GRADIENTES_HOSTILES)("el contrato rechaza %s", (g) => {
+  it.each(HOSTILE_GRADIENTS)("the contract rejects %s", (g) => {
     expect(GRADIENT.test(g)).toBe(false);
   });
 });

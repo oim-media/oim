@@ -40,23 +40,23 @@ const SRC = join(RAIZ, "src");
 const DIST = join(RAIZ, "dist");
 
 /** Relative paths of everything inside, including subdirectories. */
-function contenido(dir: string, prefijo = ""): string[] {
-  const salida: string[] = [];
-  for (const entrada of readdirSync(dir, { withFileTypes: true })) {
-    const rel = prefijo ? `${prefijo}/${entrada.name}` : entrada.name;
-    if (entrada.isDirectory()) salida.push(...contenido(join(dir, entrada.name), rel));
-    else salida.push(rel);
+function listing(dir: string, prefijo = ""): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const rel = prefijo ? `${prefijo}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) out.push(...listing(join(dir, entry.name), rel));
+    else out.push(rel);
   }
-  return salida.sort();
+  return out.sort();
 }
 
 function newestMtime(dir: string): number {
   let max = 0;
-  for (const entrada of readdirSync(dir, { withFileTypes: true })) {
-    const ruta = join(dir, entrada.name);
-    if (entrada.isDirectory()) max = Math.max(max, newestMtime(ruta));
-    else if (entrada.name.endsWith(".ts") && !entrada.name.endsWith(".test.ts")) {
-      max = Math.max(max, statSync(ruta).mtimeMs);
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const filePath = join(dir, entry.name);
+    if (entry.isDirectory()) max = Math.max(max, newestMtime(filePath));
+    else if (entry.name.endsWith(".ts") && !entry.name.endsWith(".test.ts")) {
+      max = Math.max(max, statSync(filePath).mtimeMs);
     }
   }
   return max;
@@ -72,19 +72,19 @@ function newestMtime(dir: string): number {
  * Files that are not `.ts` (such as `__baseline_snapshots__.json`, which a test reads)
  * are not compiled, so they do not appear in `dist` and do not count.
  */
-function modulosDe(dir: string, prefijo = ""): string[] {
-  const salida: string[] = [];
-  for (const entrada of readdirSync(dir, { withFileTypes: true })) {
-    const rel = prefijo ? `${prefijo}/${entrada.name}` : entrada.name;
-    if (entrada.isDirectory()) salida.push(...modulosDe(join(dir, entrada.name), rel));
-    else if (entrada.name.endsWith(".ts") && !entrada.name.endsWith(".test.ts")) {
-      salida.push(rel.replace(/\.ts$/, ""));
+function modulesOf(dir: string, prefijo = ""): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const rel = prefijo ? `${prefijo}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) out.push(...modulesOf(join(dir, entry.name), rel));
+    else if (entry.name.endsWith(".ts") && !entry.name.endsWith(".test.ts")) {
+      out.push(rel.replace(/\.ts$/, ""));
     }
   }
-  return salida.sort();
+  return out.sort();
 }
 
-const MODULOS = modulosDe(SRC);
+const MODULES = modulesOf(SRC);
 
 describe("the packaged artifact", () => {
   it("existe", () => {
@@ -97,12 +97,12 @@ describe("the packaged artifact", () => {
    * have.
    */
   it("contains exactly the modules of src, no more", () => {
-    const esperado = MODULOS.flatMap((m) => [`${m}.d.ts`, `${m}.js`]).sort();
-    expect(contenido(DIST)).toEqual(esperado);
+    const expected = MODULES.flatMap((m) => [`${m}.d.ts`, `${m}.js`]).sort();
+    expect(listing(DIST)).toEqual(expected);
   });
 
   it("does not ship compiled tests", () => {
-    expect(contenido(DIST).filter((f) => /\.test\.(js|d\.ts)$/.test(f))).toEqual([]);
+    expect(listing(DIST).filter((f) => /\.test\.(js|d\.ts)$/.test(f))).toEqual([]);
   });
 
   /**
@@ -114,11 +114,11 @@ describe("the packaged artifact", () => {
    * there and still fails.
    */
   it("its subdirectories are the ones in src, and no others", () => {
-    const enDist = new Set(
-      contenido(DIST).filter((f) => f.includes("/")).map((f) => f.split("/")[0]),
+    const inDist = new Set(
+      listing(DIST).filter((f) => f.includes("/")).map((f) => f.split("/")[0]),
     );
-    const enSrc = new Set(MODULOS.filter((m) => m.includes("/")).map((m) => m.split("/")[0]));
-    expect([...enDist].sort()).toEqual([...enSrc].sort());
+    const inSrc = new Set(MODULES.filter((m) => m.includes("/")).map((m) => m.split("/")[0]));
+    expect([...inDist].sort()).toEqual([...inSrc].sort());
   });
 
   /**
@@ -127,12 +127,12 @@ describe("the packaged artifact", () => {
    * player.
    */
   it("is not older than src", () => {
-    const built = Math.max(...contenido(DIST).map((f) => statSync(join(DIST, f)).mtimeMs));
+    const built = Math.max(...listing(DIST).map((f) => statSync(join(DIST, f)).mtimeMs));
     const source = newestMtime(SRC);
     const lag = Math.round((source - built) / 1000);
     expect(
       built >= source,
-      `dist/ va ${lag}s por detras de src/. Ejecuta \`pnpm --filter @oim-media/core build\``,
+      `dist/ is ${lag}s behind src/. Run \`pnpm --filter @oim-media/core build\``,
     ).toBe(true);
   });
 });

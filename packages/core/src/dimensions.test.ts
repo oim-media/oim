@@ -30,7 +30,7 @@ describe("dimensions - unit resolution to ViewBox and CSS", () => {
     expect(resolveDimensionToCss("", 1000, "none")).toBe("none");
   });
 
-  it("resolveNumericDimension extrae pixeles absolutos a partir de cqw o %", () => {
+  it("resolveNumericDimension extracts absolute pixels from cqw or %", () => {
     expect(resolveNumericDimension("25cqw", 1000)).toBe(250);
     expect(resolveNumericDimension("50%", 800)).toBe(400);
     expect(resolveNumericDimension(350, 1000)).toBe(350);

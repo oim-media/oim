@@ -9,7 +9,7 @@ import { renderGenerativeSVG } from "./index.js";
 import { GENERATOR_CATALOG } from "./catalog.js";
 import type { GeneratorSpec } from "./types.js";
 
-describe("generador compuesto por layers", () => {
+describe("generator composed of layers", () => {
   it("two layers emit two groups with their blend mode", () => {
     // Temporarily add a test spec to the catalog to exercise the composition
     const testSpec: GeneratorSpec = {
@@ -39,7 +39,7 @@ describe("generador compuesto por layers", () => {
     // Measured: full screen costs three times as much (3.3 ms vs 1.1); in
     // 128px tiles it costs nothing measurable.
     const testSpec: GeneratorSpec = {
-      id: "probe-con-grano",
+      id: "probe-with-grain",
       layers: [
         { primitive: "gradient", fixed: { kind: "linear" } }
       ],
@@ -50,7 +50,7 @@ describe("generador compuesto por layers", () => {
 
     try {
       const svg = decodeURIComponent(renderGenerativeSVG(
-        { generatorId: "probe-con-grano", seed: 1 },
+        { generatorId: "probe-with-grain", seed: 1 },
         { width: 800, height: 600 }
       ));
       expect(svg).toContain("<pattern");

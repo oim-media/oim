@@ -14,7 +14,7 @@ describe("mediaFilterCss", () => {
     expect(mediaFilterCss({ filterBrightness: 100, filterBlur: 0 })).toBeUndefined();
   });
 
-  it("une preset, blur y hue-rotate en orden fijo", () => {
+  it("joins preset, blur and hue-rotate in a fixed order", () => {
     expect(mediaFilterCss({ filterPreset: "grayscale", filterBlur: 4, filterHueRotate: 30 }))
       .toBe(FILTER_PRESET_CSS.grayscale + " blur(4px) hue-rotate(30deg)");
   });

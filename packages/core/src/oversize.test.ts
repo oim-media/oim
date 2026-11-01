@@ -22,82 +22,82 @@ const CANVAS = { width: 800, height: 600 };
 
 interface Caso {
   name: string;
-  caja: { left: number; top: number; width: number; height: number };
+  box: { left: number; top: number; width: number; height: number };
   depth: number;
-  eje?: ParallaxAxis;
-  esperado: number;
+  axis?: ParallaxAxis;
+  expected: number;
 }
 
 const CASOS: Caso[] = [
   {
     name: "a layer in the middle of the canvas is left alone",
-    caja: { left: 300, top: 200, width: 200, height: 200 },
+    box: { left: 300, top: 200, width: 200, height: 200 },
     depth: 0.5,
-    esperado: 1,
+    expected: 1,
   },
   {
     name: "the horizon, which runs from side to side and touches the ground",
-    caja: { left: 0, top: 450, width: 800, height: 150 },
+    box: { left: 0, top: 450, width: 800, height: 150 },
     depth: 0.6,
     // d = 18. For x it takes 18 over 800 -> 1.045; for y, 18 over 150 ->
     // 1.24. The larger one wins: a single factor, or the layer gets distorted.
-    esperado: 1.24,
+    expected: 1.24,
   },
   {
     name: "the moon, loose at the top right, needs nothing",
-    caja: { left: 600, top: 60, width: 100, height: 100 },
+    box: { left: 600, top: 60, width: 100, height: 100 },
     depth: 0.2,
-    esperado: 1,
+    expected: 1,
   },
   {
     name: "a layer that only moves vertically ignores the side edge",
-    caja: { left: 0, top: 250, width: 200, height: 100 },
+    box: { left: 0, top: 250, width: 200, height: 100 },
     depth: 0.5,
-    eje: "y_only",
-    esperado: 1,
+    axis: "y_only",
+    expected: 1,
   },
   {
     name: "...but the same layer with a free axis does correct it",
-    caja: { left: 0, top: 250, width: 200, height: 100 },
+    box: { left: 0, top: 250, width: 200, height: 100 },
     depth: 0.5,
-    eje: "both",
+    axis: "both",
     // d = 15, anchored to the left: 15 over 200 -> 1 + 30/200
-    esperado: 1.15,
+    expected: 1.15,
   },
   {
     name: "without depth there is no movement and nothing to cover",
-    caja: { left: 0, top: 0, width: 800, height: 600 },
+    box: { left: 0, top: 0, width: 800, height: 600 },
     depth: 0,
-    esperado: 1,
+    expected: 1,
   },
   {
     name: "a layer that ALREADY overhangs the canvas is left alone",
-    caja: { left: -50, top: 200, width: 900, height: 200 },
+    box: { left: -50, top: 200, width: 900, height: 200 },
     depth: 0.5,
     // It overhangs by 50 on each side and only moves 15: that already covers it with room to spare.
-    esperado: 1,
+    expected: 1,
   },
   {
     name: "a tiny layer in the corner is clamped instead of distorted",
-    caja: { left: 0, top: 0, width: 20, height: 20 },
+    box: { left: 0, top: 0, width: 20, height: 20 },
     depth: 1,
     // It would ask for 1 + 60/20 = 4. Enlarging a layer four times does not fix it.
-    esperado: MAX_SCALE,
+    expected: MAX_SCALE,
   },
   {
     name: "a layer that is ALMOST touching also counts, not only one that touches",
-    caja: { left: 5, top: 250, width: 200, height: 100 },
+    box: { left: 5, top: 250, width: 200, height: 100 },
     depth: 0.5,
     // d = 15 and the margin is 5, less than d: it is anchored. It takes 15 + 5 =
     // 20 so that not even at the worst displacement is the background visible.
-    esperado: 1.2,
+    expected: 1.2,
   },
 ];
 
 describe("the parallax oversize scale", () => {
   for (const c of CASOS) {
     it(c.name, () => {
-      expect(oversizeScale(CANVAS && c.caja, CANVAS, c.depth, c.eje)).toBe(c.esperado);
+      expect(oversizeScale(CANVAS && c.box, CANVAS, c.depth, c.axis)).toBe(c.expected);
     });
   }
 });
@@ -123,7 +123,7 @@ describe("a layer with an infinite-loop track is left alone", () => {
   });
 });
 
-describe("el desplazamiento maximo", () => {
+describe("the maximum displacement", () => {
   it("it is 30 because of the depth, not 60", () => {
     // The controller's comment says "Max +- 60px scaled by depth" and it is
     // false: the normalized mouse is bounded to [-0.5, +0.5].

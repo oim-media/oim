@@ -62,10 +62,10 @@ describe("published .oim files validate against their own schema", () => {
 
   it.each(FILES)("%s validates", async (file) => {
     const { metadata } = await extractOIM(new Blob([readFileSync(file)]));
-    const resultado = OimMetadataSchema.safeParse(metadata);
-    const problemas = resultado.success
+    const result = OimMetadataSchema.safeParse(metadata);
+    const problemas = result.success
       ? []
-      : resultado.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`);
+      : result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`);
     expect(problemas).toEqual([]);
   });
 });

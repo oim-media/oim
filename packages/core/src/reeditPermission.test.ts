@@ -62,7 +62,7 @@ describe("reading the permission from the file", () => {
   it("without metadata it does not blow up", () => {
     expect(permissionOf(null)).toBe(DEFAULT_PERMISSION);
     expect(permissionOf(undefined)).toBe(DEFAULT_PERMISSION);
-    expect(permissionOf("una cadena")).toBe(DEFAULT_PERMISSION);
+    expect(permissionOf("a string")).toBe(DEFAULT_PERMISSION);
   });
 });
 

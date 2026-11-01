@@ -10,7 +10,7 @@ import { DYNAMIC_COLOR_ROLES } from "./dynamic-colors.js";
 
 // The published JSON contract must reject a role key that the TypeScript
 // contract rejects. Checked on the file other readers actually load.
-describe("palettes en oim.schema.json", () => {
+describe("palettes in oim.schema.json", () => {
   const json = JSON.parse(
     readFileSync(join(__dirname, "..", "..", "spec", "schema", "oim.schema.json"), "utf8"),
   );

@@ -46,7 +46,7 @@ const validarConZod = (doc: unknown) => OimMetadataSchema.safeParse(doc).success
 
 /** Cases chosen for what they separate, not for covering fields. */
 const CASES: [name: string, doc: unknown, expected: boolean][] = [
-  ["el minimo valido", { slots: [] }, true],
+  ["the minimum valid", { slots: [] }, true],
   ["no slots", {}, false],
   ["slots that is not a list", { slots: "dos" }, false],
 
@@ -78,12 +78,12 @@ const CASES: [name: string, doc: unknown, expected: boolean][] = [
    * means "the first two like this, the rest whatever". A foreign player
    * would have accepted a malformed position and painted wherever it liked.
    */
-  ["posicion de tres elementos", { slots: [{ id: "a", position: [10, 20, 30] }] }, false],
+  ["position of three elements", { slots: [{ id: "a", position: [10, 20, 30] }] }, false],
   ["position of an element", { slots: [{ id: "a", position: [10] }] }, false],
-  ["canvas de anchura cero", { slots: [], canvas: { natural_width: 0, natural_height: 5 } }, false],
+  ["canvas of zero width", { slots: [], canvas: { natural_width: 0, natural_height: 5 } }, false],
 ];
 
-describe("el contrato publicado y Zod coinciden", () => {
+describe("the published contract and Zod agree", () => {
   it.each(CASES)("%s", (_nombre, doc, expected) => {
     const zod = validarConZod(doc);
     const json = validarConElContrato(doc) as boolean;
@@ -95,15 +95,15 @@ describe("el contrato publicado y Zod coinciden", () => {
 describe("real .oim files pass both gates", () => {
   it("the contract accepts what the system produces", async () => {
     const { extractOIM } = await import("./binary");
-    const rutas = [
+    const files = [
       join(__dirname, "..", "test", "fixtures", "object_sport.oim"),
       join(__dirname, "..", "test", "fixtures", "flyer_cafe.oim.png"),
     ];
-    for (const ruta of rutas) {
-      const { metadata } = await extractOIM(new Blob([readFileSync(ruta)]));
+    for (const file of files) {
+      const { metadata } = await extractOIM(new Blob([readFileSync(file)]));
       const json = validarConElContrato(metadata) as boolean;
-      const problemas = json ? [] : (validarConElContrato.errors ?? []).map((e) => `${e.instancePath} ${e.message}`);
-      expect(problemas, ruta).toEqual([]);
+      const problems = json ? [] : (validarConElContrato.errors ?? []).map((e) => `${e.instancePath} ${e.message}`);
+      expect(problems, file).toEqual([]);
       expect(validarConZod(metadata)).toBe(true);
     }
   });

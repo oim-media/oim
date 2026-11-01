@@ -16,7 +16,7 @@ describe("dynamic-colors (Core)", () => {
     }
   });
 
-  it("rechaza roles invalidos o peligrosos", () => {
+  it("rejects invalid or dangerous roles", () => {
     expect(isValidDynamicColorRole("malicious-role")).toBe(false);
     expect(isValidDynamicColorRole("")).toBe(false);
     expect(isValidDynamicColorRole(null)).toBe(false);
@@ -87,7 +87,7 @@ describe("isSafeCssColor — allowlist of colors in the file", () => {
   });
 });
 
-describe("resolveCssColor DESCARTA el color invalido", () => {
+describe("resolveCssColor DISCARDS the invalid color", () => {
   it("without a role, a malicious color never reaches the renderer", () => {
     expect(resolveCssColor(undefined, "red; background-image: url(//evil)")).toBe("");
   });

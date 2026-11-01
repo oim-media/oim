@@ -11,7 +11,7 @@ import { generatePatternSVG, PATTERN_PRESET_SVGS, recolorPatternSvg } from "./pa
 const svgDe = (uri: string) => decodeURIComponent(uri.replace(/^data:image\/svg\+xml;utf8,/, ""));
 const base = { type: "stars", bgColor: "#0F172A", fgColor: "#38BDF8", scale: 1 };
 
-describe("fase B: cantidad y dispersion por figure", () => {
+describe("phase B: quantity and dispersion per figure", () => {
   it("without per-figure lists, the tile is IDENTICAL to the earlier one", () => {
     const before = readFileSync(new URL("./__fixtures__/pattern-no-lists.txt", import.meta.url), "utf8");
     expect(generatePatternSVG({ ...base, colors: ["#38BDF8", "#EC4899"], svgs: ["stars", "heart"], sizes: [1, 1.5], count: 15, dispersion: 0.5 })).toBe(before);

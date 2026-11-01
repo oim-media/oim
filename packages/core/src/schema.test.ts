@@ -214,7 +214,7 @@ describe('slotSchema — layer types added after the original schema', () => {
   const newTypes = ['filter', 'container', 'group', 'component', 'mask'] as const;
 
   for (const type of newTypes) {
-    it(`acepta type "${type}"`, () => {
+    it(`accepts type "${type}"`, () => {
       const result = slotSchema.safeParse({ id: `slot-${type}`, type: type });
       expect(result.success).toBe(true);
     });
@@ -234,7 +234,7 @@ describe('slotSchema — layer types added after the original schema', () => {
  * dictionary: to reproduce the behaviour it had to DEDUCE it by reading the
  * player, which is the divergence a contract exists to prevent.
  */
-describe('la interactividad declarada', () => {
+describe('the declared interactivity', () => {
   it('accepts an interactive layer with its actions', () => {
     const r = slotStatesSchema.safeParse({
       hover: { scale: 1.2, opacity: 80 },
@@ -285,7 +285,7 @@ describe('la interactividad declarada', () => {
     expect(r.success && r.data.name).toBe("Boton1");
   });
 
-  it('admite textRuns estructurados por idioma en style', () => {
+  it('accepts textRuns structured by language in style', () => {
     const r = slotSchema.safeParse({
       id: "text-runs-1",
       type: "text",
@@ -336,7 +336,7 @@ describe('la interactividad declarada', () => {
   });
 });
 
-describe("el tope de slots", () => {
+describe("the slot cap", () => {
   it("is 150, which is what the backend rejects", () => {
     expect(MAX_SLOTS).toBe(150);
   });

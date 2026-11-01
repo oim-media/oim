@@ -28,7 +28,7 @@ describe("shadeHexColor", () => {
     expect(shadeHexColor("#808080", 0.5)).toBe("#404040");
   });
 
-  it("acepta colores de tres digitos", () => {
+  it("accepts three-digit colors", () => {
     expect(shadeHexColor("#fff", 0.5)).toBe("#7f7f7f");
   });
 
@@ -52,8 +52,8 @@ describe("calculate3DExtrusionLayers", () => {
   });
 
   it("without shading, all layers carry the base color", () => {
-    const colores = new Set(calculate3DExtrusionLayers(6, 45, "#FF0000", false).map((c) => c.color));
-    expect(colores).toEqual(new Set(["#FF0000"]));
+    const colors = new Set(calculate3DExtrusionLayers(6, 45, "#FF0000", false).map((c) => c.color));
+    expect(colors).toEqual(new Set(["#FF0000"]));
   });
 
   it("with depth 0 there are no layers", () => {

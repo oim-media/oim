@@ -76,7 +76,7 @@ describe("patternLayerCss", () => {
       .toBe("400px 400px");
   });
 
-  it("pinta el patron pedido", () => {
+  it("paints the requested pattern", () => {
     const css = patternLayerCss(layer({ fillPatternColor: "#F59E0B" }));
     expect(String(css.backgroundImage)).toContain("data:image/svg+xml");
   });

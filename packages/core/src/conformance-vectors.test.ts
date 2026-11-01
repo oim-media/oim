@@ -104,8 +104,8 @@ describe("the conformance vectors", () => {
   it.each(CASES)("%s validates against the published JSON Schema", async (file) => {
     const { metadata } = await extractOIM(new Blob([readFileSync(join(VECTORS, file))]));
     const r = OimMetadataSchema.safeParse(metadata);
-    const problemas = r.success ? [] : r.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`);
-    expect(problemas).toEqual([]);
+    const problems = r.success ? [] : r.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`);
+    expect(problems).toEqual([]);
   });
 
   /**

@@ -18,11 +18,11 @@ const NEW_SHAPES = [
 const numbers = (d: string): number[] => (d.match(/-?\d+(\.\d+)?/g) ?? []).map(Number);
 
 describe("the twelve new catalog shapes", () => {
-  it("estan todas en GEO_SHAPES", () => {
+  it("they are all in GEO_SHAPES", () => {
     expect(NEW_SHAPES.filter((n) => !(n in GEO_SHAPES))).toEqual([]);
   });
 
-  it("son cerradas y rellenables", () => {
+  it("they are closed and fillable", () => {
     for (const name of NEW_SHAPES) {
       const d = GEO_SHAPES[name];
       if (d.tipo === "path") expect(d.rellenable, name).toBe(true);
@@ -36,15 +36,15 @@ describe("the twelve new catalog shapes", () => {
         ? d.puntos.flat()
         : numbers(d.d);
       for (const v of values) {
-        expect(v, `${name} se sale del viewBox`).toBeGreaterThanOrEqual(0);
-        expect(v, `${name} se sale del viewBox`).toBeLessThanOrEqual(100);
+        expect(v, `${name} overflows the viewBox`).toBeGreaterThanOrEqual(0);
+        expect(v, `${name} overflows the viewBox`).toBeLessThanOrEqual(100);
       }
     }
   });
 });
 
 describe("FRAME_SHAPES", () => {
-  it("empieza por el rectangulo y excluye la linea y el garabato", () => {
+  it("starts with the rectangle and excludes the line and the scribble", () => {
     expect(FRAME_SHAPES[0]).toBe("rectangle");
     expect(FRAME_SHAPES).not.toContain("line");
     expect(FRAME_SHAPES).not.toContain("scribble");
@@ -94,16 +94,16 @@ describe("frameSilhouette", () => {
 });
 
 describe("the svgPath schema", () => {
-  const acepta = (svgPath: string) => styleSchema.safeParse({ svgPath }).success;
+  const accepts = (svgPath: string) => styleSchema.safeParse({ svgPath }).success;
 
   it("rejects markup, quotes and url()", () => {
-    expect(acepta("M0 0<script>")).toBe(false);
-    expect(acepta("url(x)")).toBe(false);
-    expect(acepta('M0 0"')).toBe(false);
+    expect(accepts("M0 0<script>")).toBe(false);
+    expect(accepts("url(x)")).toBe(false);
+    expect(accepts('M0 0"')).toBe(false);
   });
 
   it("accepts a normal path", () => {
-    expect(acepta("M 10,10 L 90 90 Z")).toBe(true);
+    expect(accepts("M 10,10 L 90 90 Z")).toBe(true);
   });
 });
 

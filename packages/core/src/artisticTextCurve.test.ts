@@ -71,24 +71,24 @@ describe("calculateTextCurvePath", () => {
   // from the RETURNED path, not from the formula, and compared with the one the
   // player used to produce.
   it("even at maximum curvature the path stays inside the box", () => {
-    const ALTO = 120;
-    const d = calculateTextCurvePath(360, ALTO, 100, "arc");
+    const HEIGHT = 120;
+    const d = calculateTextCurvePath(360, HEIGHT, 100, "arc");
 
     // `M 0 y0 Q cx cy 360 y1` -> the apex of a quadratic Bézier is at
     // (P0 + 2*P1 + P2) / 4.
     const m = d.match(/^M 0 (\S+) Q \S+ (\S+) \S+ (\S+)$/);
     expect(m).not.toBeNull();
     const [y0, cy, y1] = m!.slice(1).map(Number);
-    const vertice = (y0 + 2 * cy + y1) / 4;
+    const vertex = (y0 + 2 * cy + y1) / 4;
 
-    expect(vertice).toBeGreaterThanOrEqual(0);
-    expect(vertice).toBeLessThanOrEqual(ALTO);
+    expect(vertex).toBeGreaterThanOrEqual(0);
+    expect(vertex).toBeLessThanOrEqual(HEIGHT);
 
     // What the player returned: endpoints on the baseline and the control at
     // `sagitta * 1.8`. Its apex went above a 120 px box.
-    const sagitta = ALTO * 0.45;
-    const verticePlayer = (ALTO / 2 + 2 * (ALTO / 2 - sagitta * 1.8) + ALTO / 2) / 4;
-    expect(verticePlayer).toBeLessThan(vertice);
+    const sagitta = HEIGHT * 0.45;
+    const vertexPlayer = (HEIGHT / 2 + 2 * (HEIGHT / 2 - sagitta * 1.8) + HEIGHT / 2) / 4;
+    expect(vertexPlayer).toBeLessThan(vertex);
   });
 });
 

@@ -22,7 +22,7 @@ const FROM_EDITOR = [
   "repeating-linear-gradient(45deg, #000 0px, #000 10px, #fff 10px, #fff 20px)",
 ];
 
-const ATAQUES = [
+const ATTACKS = [
   // A second image in the list: CSSOM accepts it and the browser fetches it.
   "linear-gradient(red, blue), url(https://tercero.example/baliza)",
   "url(https://tercero.example/baliza)",
@@ -41,7 +41,7 @@ describe("gradients in a .oim: allowlist", () => {
     expect(isSafeCssGradient(g)).toBe(true);
   });
 
-  it.each(ATAQUES)("rechaza: %s", (g) => {
+  it.each(ATTACKS)("rejects: %s", (g) => {
     expect(isSafeCssGradient(g)).toBe(false);
   });
 

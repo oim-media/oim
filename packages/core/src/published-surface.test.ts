@@ -258,7 +258,7 @@ const SUPERFICIE = [
   "oimTextureEffectSchema",
 ].sort();
 
-describe("superficie publica de @oim-media/core", () => {
+describe("public surface of @oim-media/core", () => {
   it("exports exactly what is declared, not one thing more", () => {
     expect(Object.keys(core).sort()).toEqual(SUPERFICIE);
   });
@@ -309,7 +309,7 @@ describe("nothing sensitive travels in the package", () => {
    * `npm publish` packages the WHOLE package directory. NOTICE travels too:
    * Apache-2.0 asks for it to accompany redistributions.
    */
-  it("el manifiesto limita el tarball a dist/", () => {
+  it("the manifest limits the tarball to dist/", () => {
     const pkg = JSON.parse(readFileSync(join(DIR, "..", "package.json"), "utf8"));
     expect(pkg.files).toEqual(["dist", "NOTICE"]);
   });

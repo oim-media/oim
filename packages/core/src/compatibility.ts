@@ -43,7 +43,8 @@
  * the format can change without the player being touched. Tying both numbers
  * together would make an internal fix look like a format break.
  */
-export const CONTRACT_VERSION = "1.23.2";
+export const CONTRACT_VERSION = "1.24.0";
+// 1.24.0: player renders the placeholder image until the .oim paints; no format change.
 // 1.23.2: typings match runtime, license headers, tooling warnings; no format change.
 // 1.23.1: zod 4.6 regenerates the JSON Schema. `signed_at` and `timestamp` now
 // require seconds (the only writer, the backend, always emits them); fixed-length

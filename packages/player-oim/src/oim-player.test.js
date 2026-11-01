@@ -159,7 +159,8 @@ describe('oim-player Web Component', () => {
 
     expect(player.languages).toContain('es');
     expect(player.languages).toContain('en');
-    expect(player.currentLang).toBe('es');
+    // No lang attribute: the player starts in English (1.26.0).
+    expect(player.currentLang).toBe('en');
 
     player.lang = 'en';
     expect(player.getAttribute('lang')).toBe('en');

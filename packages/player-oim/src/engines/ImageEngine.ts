@@ -591,7 +591,7 @@ export class ImageEngine {
   constructor(host: HTMLElement, opts?: ImageEngineOptions) {
     const options = opts || {};
     this.host = host;
-    this.lang = host.getAttribute('lang') || 'es';
+    this.lang = host.getAttribute('lang') || 'en';
     this.showControls = host.getAttribute('show-controls') !== 'false';
     this._deviceProfile = getDeviceProfile();
     

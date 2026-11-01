@@ -53,7 +53,7 @@ changes again.
 |---|---|---|---|
 | `src` | none | URL of the `.oim` file. Setting it again reloads the element. | yes |
 | `placeholder` | none | Thumbnail shown until the engine paints. Only `http:`, `https:`, `blob:` and `data:image/` URLs are used; anything else is ignored. A thumbnail that fails to load is removed. | yes |
-| `lang` | `es` | Language of the text layers. Changing it switches language without reloading. | yes |
+| `lang` | `en` | Language of the text layers. Changing it switches language without reloading. With no `lang`, the player uses English; if the file has no text in that language, it falls back to `en`, then `es`, then the first language present. | yes |
 | `activate-on` | visible | `hover`: the file moves only while the pointer is over it (on devices with a pointer; touch devices behave as `visible`). `manual`: the page decides with `play()` and `pause()`. Visibility still decides when the file is built. | yes |
 | `fit` | `contain` | `contain` or `cover`. | yes |
 | `align` | `center` | `center`, `top` or `bottom`. | yes |
@@ -226,6 +226,14 @@ anyone.
 `dist/oim-player.js` (the classic-script build) is **59.0 KB gzip** at this release
 (60,443 bytes by Node's default gzip). The test budget is 59 KB. The bundle imports
 `@oim-media/core` by file rather than by package index, which keeps zod out of it.
+
+## Changed in 1.26.0
+
+- The default language is **English**. Before 1.26.0 the player defaulted to
+  Spanish when `lang` was not set, so a file with both languages showed Spanish.
+  Now it shows English. Set `lang="es"` to keep Spanish.
+- The fallback order for a file that lacks the requested language is unchanged.
+- No format change.
 
 ## Known gaps
 

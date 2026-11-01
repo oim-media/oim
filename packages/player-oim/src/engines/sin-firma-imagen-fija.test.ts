@@ -23,7 +23,7 @@ vi.mock('../core/security.js', async (importOriginal) => {
 
 import ImageEngine from './ImageEngine';
 
-const oimFilePath = path.resolve(__dirname, '../../test/fixtures/object_view.oim.png');
+const oimFilePath = path.resolve(__dirname, '../../../core/test/fixtures/object_view.oim.png');
 const oimBuffer = fs.readFileSync(oimFilePath);
 
 function blobDePrueba(): Blob {

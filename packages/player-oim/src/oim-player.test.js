@@ -8,7 +8,7 @@ import path from 'path';
  */
 
 // Read the actual example_image.oim file to return in mock fetch requests
-const oimFilePath = path.resolve(__dirname, '../test/fixtures/flyer_festival.oim.png');
+const oimFilePath = path.resolve(__dirname, '../../core/test/fixtures/flyer_festival.oim.png');
 const oimBuffer = fs.readFileSync(oimFilePath);
 
 // Ignore Node.js DecompressionStream unhandled rejection warnings for raw deflate fallback

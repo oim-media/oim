@@ -21,7 +21,7 @@ describe("package versions follow the contract", () => {
   });
 
   it("a release tag must name the contract version", () => {
-    expect(tagMatches("v1.22.0", "1.22.0")).toBe(true);
-    expect(tagMatches("v1.22.1", "1.22.0")).toBe(false);
+    expect(tagMatches("v1.23.2", "1.23.2")).toBe(true);
+    expect(tagMatches("v1.23.1", "1.23.2")).toBe(false);
   });
 });

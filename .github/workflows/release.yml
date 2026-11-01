@@ -30,7 +30,11 @@ jobs:
       - run: pnpm test:tools
       - run: pnpm check:licenses
       - run: node tools/pack-contents.mjs
-      - run: pnpm -r publish --no-git-checks
+      # pnpm 11 does not read the user .npmrc that setup-node writes, so the
+      # token goes into the project one, inside the job only (never committed).
+      - run: |
+          echo "//npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}" >> .npmrc
+          pnpm -r publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # pnpm skips a package silently in some cases; all four must exist.

@@ -55,6 +55,24 @@ function detectMediaType(src: Blob | string, firstBytes: Uint8Array | null): 'im
   return 'image';
 }
 
+/**
+ * The `placeholder` attribute: a thumbnail shown until the engine paints.
+ *
+ * Only http(s), blob: and data:image/ URLs are accepted. Anything else, such as
+ * `javascript:`, is ignored, so the attribute can never run script.
+ */
+function placeholderUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const v = value.trim();
+  if (/^data:image\//i.test(v)) return v;
+  try {
+    const url = new URL(v, document.baseURI);
+    return url.protocol === 'http:' || url.protocol === 'https:' || url.protocol === 'blob:' ? url.href : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 const OimPlayerElement = Object.create(HTMLElement.prototype);
 
 /**
@@ -98,6 +116,7 @@ OimPlayerElement.connectedCallback = function (this: any) {
   if (this.hasAttribute('allow-dynamic-colors')) this._oimOptions.allowDynamicColors = this.getAttribute('allow-dynamic-colors') !== 'false';
   if (this.hasAttribute('placeholder')) this._oimOptions.placeholder = this.getAttribute('placeholder');
   if (this.hasAttribute('allow-zoom')) this._oimOptions.allowZoom = this.getAttribute('allow-zoom') === 'true';
+  this._syncPlaceholder();
 
   // System dark/light mode: live, without reloading. Removed in disconnectedCallback.
   this._mqOscuro = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : null;
@@ -318,6 +337,7 @@ OimPlayerElement.attributeChangedCallback = function (this: any, name: string, o
   if (name === 'placeholder' && oldVal !== newVal) {
     if (!this._oimOptions) this._oimOptions = {};
     this._oimOptions.placeholder = newVal;
+    this._syncPlaceholder();
   } else if (name === 'palette' && oldVal !== newVal) {
     if (this._engine) this._engine.applyPalette();
   } else if (name === 'src' && oldVal !== newVal) {
@@ -350,6 +370,7 @@ OimPlayerElement.attributeChangedCallback = function (this: any, name: string, o
   } else if ((name === 'fit' || name === 'align') && oldVal !== newVal) {
     if (!this._oimOptions) this._oimOptions = {};
     this._oimOptions[name] = newVal;
+    this._syncPlaceholder();
     this._initPlayer();
   } else if (name === 'dropdown-blur' && oldVal !== newVal) {
     if (!this._oimOptions) this._oimOptions = {};
@@ -387,6 +408,45 @@ OimPlayerElement.attributeChangedCallback = function (this: any, name: string, o
       if (this._engine.renderSlots) this._engine.renderSlots();
     }
   }
+};
+
+/**
+ * Keeps the placeholder `<img>` in step with the `placeholder`, `fit` and `align`
+ * options. It lives in the shadow root, where the engine keeps its own tree, and
+ * exists only while there is no engine and nothing has painted yet.
+ */
+OimPlayerElement._syncPlaceholder = function (this: any) {
+  const url = this._engine || this._placeholderSettled
+    ? null
+    : placeholderUrl(this._oimOptions && this._oimOptions.placeholder);
+  if (!url) {
+    this._removePlaceholder();
+    return;
+  }
+  const shadow: ShadowRoot = this.shadowRoot || this.attachShadow({ mode: 'open' });
+  if (!shadow.querySelector('img.oim-placeholder')) {
+    const style = document.createElement('style');
+    style.className = 'oim-placeholder-style';
+    style.textContent = ':host{position:relative}';
+    const img = document.createElement('img');
+    img.className = 'oim-placeholder';
+    img.alt = '';
+    img.decoding = 'async';
+    // A thumbnail that fails must not show a broken-image icon: drop it.
+    img.addEventListener('error', () => this._removePlaceholder());
+    shadow.append(style, img);
+  }
+  const img = shadow.querySelector('img.oim-placeholder') as HTMLImageElement;
+  const fit = this._oimOptions && this._oimOptions.fit === 'cover' ? 'cover' : 'contain';
+  const align = this._oimOptions && this._oimOptions.align;
+  const position = align === 'top' ? 'center top' : align === 'bottom' ? 'center bottom' : 'center center';
+  img.setAttribute('style', `position:absolute;inset:0;width:100%;height:100%;object-fit:${fit};object-position:${position}`);
+  if (img.getAttribute('src') !== url) img.setAttribute('src', url);
+};
+
+OimPlayerElement._removePlaceholder = function (this: any) {
+  if (!this.shadowRoot) return;
+  this.shadowRoot.querySelectorAll('.oim-placeholder, .oim-placeholder-style').forEach((n: Element) => n.remove());
 };
 
 OimPlayerElement._initPlayer = function (this: any) {
@@ -438,9 +498,14 @@ OimPlayerElement._initPlayer = function (this: any) {
     if (self.classList.contains('oim-player-paused')) self._engine.pause();
     setFlag(self, 'data-oim-loaded', 'data-oim-cargado');
 
+    // Settled on success AND failure: a failed load shows the engine's error
+    // UI, never a thumbnail laid over it.
+    const settle = () => { self._placeholderSettled = true; self._syncPlaceholder(); };
     self._engine.load(src).then(() => {
+      settle();
       self._startAutoRotateLang();
     }).catch((err: any) => {
+      settle();
       console.warn('[OimPlayer] Engine load error during auto-rotate initialization:', err);
     });
   });
@@ -544,6 +609,8 @@ if (typeof customElements !== 'undefined' && !customElements.get('oim-player')) 
   OimPlayerClass.prototype.seek = OimPlayerElement.seek;
   OimPlayerClass.prototype.getEngine = OimPlayerElement.getEngine;
   OimPlayerClass.prototype._initPlayer = OimPlayerElement._initPlayer;
+  OimPlayerClass.prototype._syncPlaceholder = OimPlayerElement._syncPlaceholder;
+  OimPlayerClass.prototype._removePlaceholder = OimPlayerElement._removePlaceholder;
   OimPlayerClass.prototype._replantearActividad = OimPlayerElement._replantearActividad;
   OimPlayerClass.prototype._decide = OimPlayerElement._decide;
   OimPlayerClass.prototype._scheduleDecision = OimPlayerElement._scheduleDecision;

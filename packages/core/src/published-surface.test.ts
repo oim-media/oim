@@ -307,13 +307,13 @@ describe("nothing sensitive travels in the package", () => {
   });
 
   /**
-   * `files: ["dist"]` is what keeps the source code, the tests and any loose
-   * file in the directory from ending up in the tarball. Without it,
+   * `files: ["dist", "README.md", "NOTICE"]` keeps the source code, the tests and any
+   * loose file in the directory from ending up in the tarball. Without it,
    * `npm publish` packages the WHOLE package directory. NOTICE travels too:
    * Apache-2.0 asks for it to accompany redistributions.
    */
   it("the manifest limits the tarball to dist/", () => {
     const pkg = JSON.parse(readFileSync(join(DIR, "..", "package.json"), "utf8"));
-    expect(pkg.files).toEqual(["dist", "NOTICE"]);
+    expect(pkg.files).toEqual(["dist", "README.md", "NOTICE"]);
   });
 });

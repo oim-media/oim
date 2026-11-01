@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://oim.media/spec/1.24.0/ovm.schema.json",
+  "$id": "https://oim.media/spec/1.25.0/ovm.schema.json",
   "title": "OVM document metadata",
-  "specVersion": "1.24.0",
+  "specVersion": "1.25.0",
   "type": "object",
   "properties": {
     "ovm_version": {

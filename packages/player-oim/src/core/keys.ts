@@ -42,8 +42,8 @@ export const EMBEDDED_KEYS: PlayerKey[] = [
   {
     // Standby key. Every player shipped from now on already trusts it, so if
     // v1 is ever compromised the backend can switch to v2 at once and a new
-    // player can give v1 a verify_until. Its private half sits unused in
-    // Secret Manager (oim-private-key-v2).
+    // player can give v1 a verify_until. Its private half is a reserve key
+    // held offline by Xue Studios and is not used day to day.
     kid: 'v2',
     jwk: { kty: 'EC', crv: 'P-256', x: 'pRSLtFHe9p8sR8jyqP5eoaBGbHdJgjjrdClda2lNp4A', y: 'oopYYhgja8m2iAlSMPigeWw-F72KJLNCRFQzlyWdt2I' },
   },

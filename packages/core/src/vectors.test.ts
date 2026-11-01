@@ -24,7 +24,7 @@
  * against the JSON Schema would have rejected 100% of the real files, and its author would
  * have had no way of knowing who was right.
  *
- * Only files in `public/` are read, never in `dist/`: `dist/` is build output and in a
+ * Only files in `test/fixtures/` are read, never in `dist/`: `dist/` is build output and in a
  * clean clone it does not exist, so the test would pass
  * without checking anything.
  */

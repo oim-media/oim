@@ -5,11 +5,29 @@ so that an implementation in any language can be correct without reading the
 TypeScript.
 
 ```
-BINARY_SPEC.md    Binary specification of the PNG container, compression and signature.
-CANONICAL_SPEC.md Canonical specification of the metadata (slots, styles, types and options).
-schema/           JSON Schema of the metadata. Generated, never edited by hand.
-vectors/          Example .oim files with their expected result.
+BINARY_SPEC.md      Binary layout of the PNG container, compression and the image seal.
+CANONICAL_SPEC.md   Canonical form of the metadata, the bytes a signature covers.
+schema/             oim.schema.json and ovm.schema.json: JSON Schema, generated from @oim-media/core.
+keys.json           Public keys every player embeds (kid, jwk and key dates). Public parts only.
+marks-cases.json    Known-answer cases for text marks, shared with the backend's validator tests.
+vectors/            20 signed .oim files plus reedit-english, each with <name>.expected.json.
+tools/              Read-only checks: contract-summary.mjs, canonical-check.mjs, style-usage.mjs.
 ```
+
+Published as `@oim-media/spec`. The tarball carries the schema, the vectors, both
+specifications, `keys.json`, `marks-cases.json`, this README, LICENSE and NOTICE.
+
+## Versioning
+
+`CONTRACT_VERSION` in `packages/core/src/compatibility.ts` is the version of the
+**format**, not of any package. Each release tag names it: tag `vX.Y.Z` is valid only
+when `X.Y.Z` equals `CONTRACT_VERSION`. `node tools/versions.mjs vX.Y.Z` checks this,
+and the release workflow runs it before publishing. The `$id` and `specVersion` of
+both schema files carry the same version. Every version has a one-line entry in the
+history comment above `CONTRACT_VERSION`.
+
+Packages can release without a format change. The root README describes what makes
+a minor, a major or a patch.
 
 ## Why it exists
 
@@ -113,6 +131,23 @@ The exported names of the packages are English too. The Spanish ones remain as
 deprecated aliases until 2.0.0. The player's `data-oim-*` attributes are doubled
 in the same contract version: the English names are added and the Spanish ones
 keep working.
+
+## Legacy keys on read
+
+Files signed before 1.23.0 carry Spanish keys. A reader maps them to the English
+ones after it has verified the signature, because the signature covers the keys as
+they were written:
+
+| Legacy key | English key | Legacy value | English value |
+|---|---|---|---|
+| `reedicion` | `reedit` | `publico` | `public` |
+| | | `solo_autor` | `author_only` |
+| | | `sellado` | `sealed` |
+
+A missing or unknown value becomes `author_only`, never `public`. If a file has both
+keys, `reedit` wins. The mapping is `normalizeLegacyKeys` in
+`packages/core/src/legacyKeys.ts`. Writers emit only the English keys, and the
+player's `data-oim-*` attributes keep their Spanish names as aliases until 2.0.0.
 
 ## What is retired is marked, not deleted (since 1.4.0)
 
@@ -240,6 +275,20 @@ Studios' signing service through the production pipeline and committed to this
 repository; the generator itself is not part of it. See
 [`vectors/README.md`](vectors/README.md).
 
+### How conformance uses them
+
+`pnpm conformance`, run from the repository root, executes
+`packages/core/src/conformance-vectors.test.ts`. For each `*.oim.png` in `vectors/`
+the test extracts the metadata with `extractOIM`, parses it with the contract's
+Zod schema, and compares the fields that two implementations can genuinely
+disagree on: geometry already normalised, group hierarchy, parallax depth, typography,
+declared interactivity and, from 1.23.0, the `reedit` permission. The test header
+explains why the whole metadata is not compared.
+
+A reader in another language should make the same comparison against the
+`expected.json` next to each vector. [`vectors/README.md`](vectors/README.md)
+lists the steps.
+
 ## Precedent
 
 Lottie separated its specification from every implementation into `lottie/lottie-spec`
@@ -358,9 +407,23 @@ they **catch a regression in the script, they do not prove that the signer agree
 Proving it for real would require a hand-written vector, with unordered keys and a
 long decimal, signed over its canonical form: a file the real pipeline never produces.
 
+## What each tool prints
+
+| Command | Output |
+|---|---|
+| `node tools/contract-summary.mjs` | The contract's root keys, which are required, whether undeclared keys are accepted and its sub-definitions. Then the keys the vectors carry, and three kinds of drift: keys in the files but not in the contract, retired keys still declared, and keys in force that no vector exercises. It reports and exits 0. |
+| `node tools/contract-summary.mjs --json` | The same data as JSON on standard output. |
+| `node tools/contract-summary.mjs --write` | Writes the JSON to `packages/spec/contract-summary.json`. |
+| `node tools/canonical-check.mjs` | Rebuilds the seven canonical-form rules and verifies each vector's signature with the v1 public key. One line per vector; a vector without a signature is shown as `unsigned`. Exits 1 if any signature fails. |
+| `node tools/style-usage.mjs <file-or-url> ...` | For each file, its date, slot count and style-key count. Then the counts of keys declared in the contract, read by the player and present in the files, and the keys present but undeclared, most used first. `--vectors` runs it on the conformance vectors. |
+
+The scripts are read-only, except `contract-summary.mjs --write`.
+
 ## Embedded player keys
 
 `keys.json` lists the public keys every player embeds (`kid`, `jwk`, and the
-`not_after` / `verify_until` dates where they apply). It is generated from the
-player's key set by `tools/keys-json.mjs`, and a test fails if the two disagree.
-Only public components are ever written.
+`not_after` / `verify_until` dates where they apply). At 1.25.0 it has `v1` and `v2`.
+It is generated from the player's key set by `tools/keys-json.mjs` at the
+repository root. `node tools/keys-json.mjs --check` exits 1 when the file has
+drifted, and a test fails if the two disagree. Only public components are ever
+written.

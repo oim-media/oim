@@ -120,7 +120,7 @@
       self._shadow.appendChild(style);
       self._loader = document.createElement('div');
       self._loader.className = 'loader';
-      self._loader.textContent = 'Extrayendo metadatos\u2026';
+      self._loader.textContent = 'Extracting metadata\u2026';
       self._shadow.appendChild(self._loader);
       self._video = document.createElement('video');
       self._video.preload = 'metadata';
@@ -217,7 +217,7 @@
 
   OvmPlayer.prototype._load = async function (src) {
     var self = this;
-    self._showLoader('Extrayendo metadatos\u2026', false);
+    self._showLoader('Extracting metadata\u2026', false);
     
     try {
       // 1. Try extracting metadata from the video header
@@ -241,12 +241,12 @@
       }
       
       if (!metadata) {
-        throw new Error('No se encontraron metadatos OVM');
+        throw new Error('No OVM metadata found');
       }
       
       var errs = validateOvmMetadata(metadata);
       if (errs.length > 0) {
-        console.error('[ovm-player] Metadata invalida:', errs);
+        console.error('[ovm-player] Invalid metadata:', errs);
         throw new Error('Corrupted or Tampered OVM file: ' + errs[0]);
       }
       

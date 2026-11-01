@@ -16,12 +16,12 @@ export async function decodeAndDecompressJSON(
     const rawText = atob(cleanB64);
     if (rawText.trim().startsWith('{')) {
       if (rawText.length > maxBytes) {
-        throw new Error(`Metadata excede el límite de ${maxBytes / (1024 * 1024)}MB (Zip Bomb Detectado)`);
+        throw new Error(`Metadata exceeds the limit of ${maxBytes / (1024 * 1024)}MB (zip bomb detected)`);
       }
       return JSON.parse(rawText);
     }
   } catch (err: any) {
-    if (err.message && err.message.includes('Zip Bomb Detectado')) {
+    if (err.message && err.message.includes('zip bomb detected')) {
       throw err;
     }
   }
@@ -36,13 +36,13 @@ export async function decodeAndDecompressJSON(
   try {
     return JSON.parse(await decompressBytes(bytes, 'deflate', maxBytes));
   } catch (e1: any) {
-    if (e1.message && e1.message.includes('Zip Bomb Detectado')) {
+    if (e1.message && e1.message.includes('zip bomb detected')) {
       throw e1;
     }
     try {
       return JSON.parse(await decompressBytes(bytes, 'deflate-raw', maxBytes));
     } catch (e2: any) {
-      if (e2.message && e2.message.includes('Zip Bomb Detectado')) {
+      if (e2.message && e2.message.includes('zip bomb detected')) {
         throw e2;
       }
       console.error('[OIM Core] Decompression failed for both deflate and deflate-raw:', e1, e2);
@@ -88,7 +88,7 @@ export async function decompressBytes(
         totalBytes += value.byteLength;
         if (totalBytes > maxBytes) {
           await reader.cancel();
-          throw new Error(`Metadata descompresa excede el límite de ${maxBytes / (1024 * 1024)}MB (Zip Bomb Detectado)`);
+          throw new Error(`Decompressed metadata exceeds the limit of ${maxBytes / (1024 * 1024)}MB (zip bomb detected)`);
         }
         chunks.push(value);
       }

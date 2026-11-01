@@ -168,7 +168,7 @@ export interface MissingSupport {
 }
 
 /** `1.2.10` -> [1, 2, 10]. Anything that is not that shape gives `null`. */
-function partes(version: unknown): [number, number, number] | null {
+function parseVersion(version: unknown): [number, number, number] | null {
   if (typeof version !== "string") return null;
   const m = /^(\d+)\.(\d+)\.(\d+)$/.exec(version.trim());
   if (!m) return null;
@@ -182,8 +182,8 @@ function partes(version: unknown): [number, number, number] | null {
  * there, and shouting about a mistyped field would teach people to ignore the
  * warning exactly when it matters.
  */
-function esPosterior(a: unknown, b: unknown): boolean {
-  const pa = partes(a), pb = partes(b);
+function isNewer(a: unknown, b: unknown): boolean {
+  const pa = parseVersion(a), pb = parseVersion(b);
   if (!pa || !pb) return false;
   for (let i = 0; i < 3; i++) {
     if (pa[i] > pb[i]) return true;
@@ -198,13 +198,13 @@ function esPosterior(a: unknown, b: unknown): boolean {
  * A file without `min_player` requires nothing: that covers every published file
  * so far, and treating them as suspect would turn the warning into background noise.
  */
-export function whatTheReaderCannotDo(metadata: any, lector: Reader): MissingSupport {
-  const exigida = metadata && typeof metadata.min_player === "string" ? metadata.min_player : null;
+export function whatTheReaderCannotDo(metadata: any, reader: Reader): MissingSupport {
+  const required = metadata && typeof metadata.min_player === "string" ? metadata.min_player : null;
 
-  const declaradas: unknown[] = Array.isArray(metadata?.capabilities) ? metadata.capabilities : [];
-  const missingCapabilities = declaradas
+  const declared: unknown[] = Array.isArray(metadata?.capabilities) ? metadata.capabilities : [];
+  const missingCapabilities = declared
     .filter((c): c is string => typeof c === "string" && c !== "")
-    .filter((c) => !lector.capabilities.includes(c))
+    .filter((c) => !reader.capabilities.includes(c))
     .filter((c, i, todas) => todas.indexOf(c) === i)
     .sort();
 
@@ -213,15 +213,15 @@ export function whatTheReaderCannotDo(metadata: any, lector: Reader): MissingSup
     : [];
   const missingRequiredCapabilities = requeridas
     .filter((c): c is string => typeof c === "string" && c !== "")
-    .filter((c) => !lector.capabilities.includes(c))
+    .filter((c) => !reader.capabilities.includes(c))
     .filter((c, i, todas) => todas.indexOf(c) === i)
     .sort();
 
-  const versionTooOld = esPosterior(exigida, lector.version);
+  const versionTooOld = isNewer(required, reader.version);
   const cannotRender = versionTooOld || missingRequiredCapabilities.length > 0;
 
   return {
-    requiredVersion: exigida,
+    requiredVersion: required,
     versionTooOld,
     missingCapabilities,
     missingRequiredCapabilities,
@@ -231,23 +231,23 @@ export function whatTheReaderCannotDo(metadata: any, lector: Reader): MissingSup
 }
 
 /** A readable line for the console of whoever embeds the player. */
-export function describeMissing(falta: MissingSupport): string {
-  const partes: string[] = [];
-  if (falta.versionTooOld) {
-    partes.push(`el archivo pide la version ${falta.requiredVersion} del formato`);
+export function describeMissing(missing: MissingSupport): string {
+  const reasons: string[] = [];
+  if (missing.versionTooOld) {
+    reasons.push(`the file requires format version ${missing.requiredVersion}`);
   }
-  if (falta.missingRequiredCapabilities && falta.missingRequiredCapabilities.length > 0) {
-    partes.push(`requiere ${falta.missingRequiredCapabilities.join(", ")}`);
+  if (missing.missingRequiredCapabilities && missing.missingRequiredCapabilities.length > 0) {
+    reasons.push(`requires ${missing.missingRequiredCapabilities.join(", ")}`);
   }
-  if (falta.missingCapabilities && falta.missingCapabilities.length > 0) {
-    partes.push(`usa ${falta.missingCapabilities.join(", ")}`);
+  if (missing.missingCapabilities && missing.missingCapabilities.length > 0) {
+    reasons.push(`uses ${missing.missingCapabilities.join(", ")}`);
   }
 
-  if (partes.length === 0) return "";
-  const prefijo = falta.missingRequiredCapabilities && falta.missingRequiredCapabilities.length > 0
-    ? "No se puede reproducir completamente"
-    : "Se pinto lo que se pudo";
-  return `${prefijo}: ${partes.join(" y ")}.`;
+  if (reasons.length === 0) return "";
+  const prefix = missing.missingRequiredCapabilities && missing.missingRequiredCapabilities.length > 0
+    ? "It cannot be fully rendered"
+    : "Rendered what was possible";
+  return `${prefix}: ${reasons.join(" and ")}.`;
 }
 
 /**
@@ -269,8 +269,8 @@ export function describeMissing(falta: MissingSupport): string {
 export const VERSION_BY_CAPABILITY: Readonly<Record<string, string>> = { image_fill: "1.17.0", media_filters: "1.18.0", frame_shapes: "1.19.0" };
 
 /** The greater of two readable versions; if either is not readable, the first. */
-function laMayor(a: string, b: string): string {
-  return esPosterior(b, a) ? b : a;
+function higherVersion(a: string, b: string): string {
+  return isNewer(b, a) ? b : a;
 }
 
 /**
@@ -281,14 +281,14 @@ function laMayor(a: string, b: string): string {
  */
 export function minVersionFor(
   metadata: any,
-  mapa: Readonly<Record<string, string>> = VERSION_BY_CAPABILITY,
+  versionMap: Readonly<Record<string, string>> = VERSION_BY_CAPABILITY,
 ): string {
-  const declaradas: unknown[] = Array.isArray(metadata?.capabilities) ? metadata.capabilities : [];
-  let minima = BASE_CONTRACT_VERSION;
-  for (const c of declaradas) {
+  const declared: unknown[] = Array.isArray(metadata?.capabilities) ? metadata.capabilities : [];
+  let minimum = BASE_CONTRACT_VERSION;
+  for (const c of declared) {
     if (typeof c !== "string") continue;
-    const desde = mapa[c];
-    if (typeof desde === "string") minima = laMayor(minima, desde);
+    const from = versionMap[c];
+    if (typeof from === "string") minimum = higherVersion(minimum, from);
   }
-  return minima;
+  return minimum;
 }

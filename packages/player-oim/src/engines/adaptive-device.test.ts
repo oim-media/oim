@@ -78,7 +78,8 @@ describe('Adaptive performance (device tiering)', () => {
     });
     motor._applyLangChange = vi.fn();
 
-    motor.setLang('en');
+    // Starts in English by default (1.26.0), so the change goes to Spanish.
+    motor.setLang('es');
 
     // On desktop high-tier, the soft cinematic blur is applied
     expect(viewport.style.filter).toContain('blur(14px)');

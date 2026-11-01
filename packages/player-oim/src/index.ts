@@ -288,7 +288,7 @@ OimPlayerElement._startAutoRotateLang = function (this: any) {
     const langs = Object.keys(allLangs).sort();
     if (langs.length <= 1) return;
     
-    const currentLang = (self.getAttribute('lang') || (self._engine && self._engine.lang) || 'es').toLowerCase();
+    const currentLang = (self.getAttribute('lang') || (self._engine && self._engine.lang) || 'en').toLowerCase();
     const idx = langs.indexOf(currentLang);
     const nextIdx = (idx + 1) % langs.length;
     const nextLang = langs[nextIdx];
@@ -657,13 +657,13 @@ if (typeof customElements !== 'undefined' && !customElements.get('oim-player')) 
 
   Object.defineProperty(OimPlayerClass.prototype, 'currentLang', {
     get: function (this: any) {
-      return this._engine ? this._engine.lang : (this.getAttribute('lang') || 'es');
+      return this._engine ? this._engine.lang : (this.getAttribute('lang') || 'en');
     }
   });
 
   Object.defineProperty(OimPlayerClass.prototype, 'lang', {
     get: function (this: any) {
-      return this._engine ? this._engine.lang : (this.getAttribute('lang') || 'es');
+      return this._engine ? this._engine.lang : (this.getAttribute('lang') || 'en');
     },
     set: function (this: any, val: string) {
       this.setAttribute('lang', val);

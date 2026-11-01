@@ -43,7 +43,7 @@ export interface ArtisticTextRenderModel {
  */
 export function buildArtisticTextModelFromSlot(
   slot: any,
-  lang: string = "es"
+  lang: string = "en"
 ): ArtisticTextRenderModel {
   // Short aliases (st, c) retired in 1.12.0: one name per concept.
   const style = slot.style || {};

@@ -89,6 +89,27 @@ describe("when the file asks for something this player does not have", () => {
   });
 });
 
+describe("the event carries the message in English and in the legacy key", () => {
+  it("detail.message and detail.mensaje are the same text", () => {
+    const { host, motor } = mount();
+    let recibido: any = null;
+    host.addEventListener("oim:incomplete", (e: any) => { recibido = e.detail; });
+    motor._announceUnsupported({ min_player: "9.0.0" });
+    expect(typeof recibido?.message).toBe("string");
+    expect(recibido.message.length).toBeGreaterThan(0);
+    expect(recibido.mensaje).toBe(recibido.message);
+  });
+
+  it("oim:unsupported carries both keys too", () => {
+    const { host, motor } = mount();
+    let recibido: any = null;
+    host.addEventListener("oim:unsupported", (e: any) => { recibido = e.detail; });
+    motor._announceUnsupported({ capabilities_required: ["physics_2d"] });
+    expect(recibido?.message).toBeTruthy();
+    expect(recibido.mensaje).toBe(recibido.message);
+  });
+});
+
 describe("when there is nothing to say", () => {
   it.each([
     ["a file from today, without min_player", { slots: [] }],

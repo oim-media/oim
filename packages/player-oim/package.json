@@ -1,20 +1,19 @@
 {
   "name": "@oim-media/player-oim",
   "license": "Apache-2.0",
-  "version": "1.0.0",
-  "private": true,
+  "version": "1.22.0",
   "description": "OimPlayer Vanilla JS Plugin for OIM Images",
   "type": "module",
-  "main": "./src/index.ts",
+  "main": "./dist/esm/index.js",
   "types": "./src/index.d.ts",
   "scripts": {
-    "build": "vite build",
+    "build": "vite build && vite build --mode esm && node ../../tools/third-party-notices.mjs @oim-media/player-oim dist",
     "dev": "vite build --watch",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@oim-media/core": "workspace:*",
+    "@oim-media/core": "workspace:1.22.0",
     "lottie-web": "^5.12.2"
   },
   "devDependencies": {
@@ -24,5 +23,30 @@
     "typescript": "~6.0.3",
     "vite": "^8.0.16",
     "vitest": "^4.1.0"
+  },
+  "files": [
+    "dist/esm",
+    "dist/oim-player.js",
+    "dist/vendor",
+    "dist/THIRD_PARTY_NOTICES",
+    "src/index.d.ts",
+    "NOTICE"
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oim-media/oim.git",
+    "directory": "packages/player-oim"
+  },
+  "module": "./dist/esm/index.js",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./dist/esm/index.js"
+    },
+    "./cdn": "./dist/oim-player.js",
+    "./package.json": "./package.json"
   }
 }

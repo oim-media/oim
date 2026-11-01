@@ -814,7 +814,7 @@ export class ImageEngine {
       shadow.innerHTML = '<div class="oim-player-error" part="error"></div>';
       const errorDiv = shadow.querySelector('.oim-player-error') as HTMLElement;
       if (errorDiv) {
-        errorDiv.textContent = 'Error cargando OIM: ' + err.message;
+        errorDiv.textContent = playerString('loadError', this.lang) + err.message;
       }
       host.dispatchEvent(new CustomEvent('error', { detail: err }));
       return false;
@@ -1009,10 +1009,10 @@ export class ImageEngine {
         setFlag(this.host, 'data-oim-unsupported', 'data-oim-sin-soporte', missing.missingCapabilities.join(' '));
       }
       if (missing.missingRequiredCapabilities && missing.missingRequiredCapabilities.length > 0) {
-        this.host.setAttribute('data-oim-requeridas-faltantes', missing.missingRequiredCapabilities.join(' '));
+        setFlag(this.host, 'data-oim-missing-required', 'data-oim-requeridas-faltantes', missing.missingRequiredCapabilities.join(' '));
       }
       if (missing.versionTooOld && missing.requiredVersion) {
-        this.host.setAttribute('data-oim-version-exigida', missing.requiredVersion);
+        setFlag(this.host, 'data-oim-required-version', 'data-oim-version-exigida', missing.requiredVersion);
       }
       this.host.dispatchEvent(new CustomEvent('oim:incomplete', {
         bubbles: true, composed: true,

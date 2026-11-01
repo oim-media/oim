@@ -14,6 +14,7 @@ const TEXTS = {
   },
   button: { es: "Botón", en: "Button" },
   image: { es: "Imagen", en: "Image" },
+  loadError: { es: "Error cargando OIM: ", en: "Could not load OIM: " },
 } as const;
 
 export function playerString(key: keyof typeof TEXTS, lang: string | undefined): string {

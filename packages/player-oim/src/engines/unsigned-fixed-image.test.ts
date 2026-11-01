@@ -9,7 +9,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
-import { REFERENCE_OIM } from '../../../core/test/fixtures/index.ts';
+import { REFERENCE_OIM } from '../../../core/test/fixtures/index';
 
 let currentVerdict: string = 'unsigned';
 

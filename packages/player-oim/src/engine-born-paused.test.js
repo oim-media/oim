@@ -19,7 +19,7 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import fs from "node:fs";
-import { REFERENCE_OIM } from "../../core/test/fixtures/index.ts";
+import { REFERENCE_OIM } from "../../core/test/fixtures/index";
 
 const oim = fs.readFileSync(REFERENCE_OIM);
 

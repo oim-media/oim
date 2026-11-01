@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { extractOIM } from '../../../core/src/binary.js';
 import { verifyMetadataSignature } from './security.js';
-import { REFERENCE_OIM } from '../../../core/test/fixtures/index.ts';
+import { REFERENCE_OIM } from '../../../core/test/fixtures/index';
 
 async function loadReference() {
   const blob = new Blob([readFileSync(REFERENCE_OIM)], { type: 'image/png' });

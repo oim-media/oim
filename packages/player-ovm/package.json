@@ -8,5 +8,9 @@
   "main": "./src/index.js",
   "scripts": {
     "build": "echo \"No build needed for vanilla OVM player\""
-  }
+  },
+  "files": [
+    "src",
+    "NOTICE"
+  ]
 }

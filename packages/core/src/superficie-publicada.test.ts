@@ -37,7 +37,7 @@ function fuentesPublicadas(): { nombre: string; texto: string }[] {
   const roots = ["core/src", "player-oim/src", "player-ovm/src", "spec"].map((r) => join(PACKAGES, r));
   return roots.flatMap((root) =>
     (readdirSync(root, { recursive: true }) as string[])
-      .filter((f) => /\.(ts|md)$/.test(f) && !/\.test\.ts$/.test(f) && !f.includes("node_modules"))
+      .filter((f) => /\.(ts|js|md)$/.test(f) && !/\.test\.ts$/.test(f) && !f.includes("node_modules"))
       .map((f) => ({ nombre: relative(PACKAGES, join(root, f)), texto: readFileSync(join(root, f), "utf8") })),
   );
 }

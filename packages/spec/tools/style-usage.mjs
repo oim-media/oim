@@ -153,15 +153,15 @@ for (const source of sources) {
 const used = new Set(usage.keys());
 const newest = files.map((f) => f.date).filter((d) => d !== "no date").sort().pop() ?? "unknown";
 
-console.log(`\nArchivos medidos: ${files.length}`);
+console.log(`\nFiles measured: ${files.length}`);
 for (const f of files) {
   console.log(`  ${f.date}  ${String(f.slots).padStart(3)} slots  ${String(f.styleKeys).padStart(3)} keys  ${f.name}`);
 }
 
 console.log(`\nClaves de style`);
-console.log(`  declaradas en el contrato        ${declared.size}`);
-console.log(`  leidas por el player             ${read.size}`);
-console.log(`  presentes en estos archivos      ${used.size}`);
+console.log(`  declared in the contract         ${declared.size}`);
+console.log(`  read by the player               ${read.size}`);
+console.log(`  present in these files           ${used.size}`);
 
 const toDeclare = [...used].filter((k) => !declared.has(k)).sort((a, b) => usage.get(b) - usage.get(a));
 console.log(`\nIn the files and NOT declared: ${toDeclare.length}`);

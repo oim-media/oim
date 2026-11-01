@@ -91,7 +91,7 @@ describe("the infinite parallax loop survives the language change", () => {
     const { host, motor } = mount([
       { id: "titulo", type: "text", content: { es: "Hola", en: "Hello" }, position: [50, 20], style: {} },
       {
-        id: "cielo", type: "image",
+        id: "sky", type: "image",
         content: { es: "data:image/png;base64,AAA", en: "data:image/png;base64,AAA" },
         position: [50, 50], width_px: 400,
         style: { parallax: { enabled: true, mode: "infinite_horizontal", infinite: { enabled: true, speedPxSec: 20 } } },

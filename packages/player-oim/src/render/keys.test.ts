@@ -89,7 +89,7 @@ describe('keys', () => {
 
   it('an unparseable signed_at is treated as missing', () => {
     const key = { kid: 'v1', jwk: {}, not_after: '2026-01-01T00:00:00Z' };
-    expect(signatureIsWithinKeyWindow(key, 'ayer por la tarde')).toBe(true);
+    expect(signatureIsWithinKeyWindow(key, 'yesterday afternoon')).toBe(true);
   });
 
   it('the endpoint defaults to api.oim.media and can be configured', () => {

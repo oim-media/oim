@@ -27,9 +27,9 @@ describe("parallaxCss - infiniteLayerPlan", () => {
   });
 
   it("two layers with different speeds give different durations: that is the depth", () => {
-    const cielo = infiniteLayerPlan({ speedPxSec: 15, direction: "right_to_left", mirror: false, pauseOnHover: false }, 600);
+    const sky = infiniteLayerPlan({ speedPxSec: 15, direction: "right_to_left", mirror: false, pauseOnHover: false }, 600);
     const arboles = infiniteLayerPlan({ speedPxSec: 40, direction: "right_to_left", mirror: false, pauseOnHover: false }, 600);
-    expect(cielo.container["animation-duration"]).toBe("40s");
+    expect(sky.container["animation-duration"]).toBe("40s");
     expect(arboles.container["animation-duration"]).toBe("15s");
   });
 
@@ -216,7 +216,7 @@ describe("how many pieces: whatever the canvas requires, not a fixed number", ()
       for (const piece of [120, 180, 300, 800, 1200]) {
         const p = infiniteLayerPlan(cfg(mirror), piece, 800);
         const unit = piece * (mirror ? 2 : 1);
-        expect(p.copies * piece, `piece=${piece} espejo=${mirror}`).toBeGreaterThanOrEqual(800 + unit);
+        expect(p.copies * piece, `piece=${piece} mirror=${mirror}`).toBeGreaterThanOrEqual(800 + unit);
       }
     }
   });

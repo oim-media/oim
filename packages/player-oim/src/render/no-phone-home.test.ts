@@ -14,16 +14,16 @@ describe('el player no llama a casa', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it('verifying a signature with a known key makes no request at all', async () => {
-    const espia = vi.fn(() => Promise.reject(new Error('no deberia salir a la red')));
-    vi.stubGlobal('fetch', espia);
+    const spy = vi.fn(() => Promise.reject(new Error('no deberia salir a la red')));
+    vi.stubGlobal('fetch', spy);
 
     const { verifyMetadataSignature } = await import('./security');
     await verifyMetadataSignature({ slots: [], signature: 'no-vale', key_version: 'v1' });
 
-    expect(espia).not.toHaveBeenCalled();
+    expect(spy).not.toHaveBeenCalled();
   });
 
-  it('el codigo ya no menciona supabase ni la lista de dominios', async () => {
+  it('el code ya no menciona supabase ni la lista de dominios', async () => {
     const fs = await import('node:fs');
     const src = fs.readFileSync(new URL('./security.ts', import.meta.url), 'utf8');
     expect(src).not.toMatch(/supabase/i);

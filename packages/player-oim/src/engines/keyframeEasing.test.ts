@@ -25,8 +25,8 @@
 import { describe, it, expect } from "vitest";
 import { keyframesToWaapi } from "./ImageEngine";
 
-describe("keyframesToWaapi — easing por keyframe", () => {
-  it("pasa hold tal cual: steps(1, end) es CSS valido y WAAPI lo entiende", () => {
+describe("keyframesToWaapi — easing per keyframe", () => {
+  it("passes hold through as is: steps(1, end) is valid CSS and WAAPI understands it", () => {
     const frames = keyframesToWaapi(
       [
         { t: 0, o: 0, e: "steps(1, end)" },
@@ -44,7 +44,7 @@ describe("keyframesToWaapi — easing por keyframe", () => {
     }
   });
 
-  it("convierte la bezier de cuatro numeros a cubic-bezier()", () => {
+  it("converts the four-number bezier to cubic-bezier()", () => {
     const frames = keyframesToWaapi([{ t: 0, o: 0, e: [0.4, 0, 0.2, 1] }], 1);
     expect(frames[0].easing).toBe("cubic-bezier(0.4,0,0.2,1)");
   });

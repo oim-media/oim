@@ -33,25 +33,25 @@ describe("five players of the same file", () => {
   });
 
   it("it is downloaded once, without HEAD or Range, and the five load with their own metadata", async () => {
-    const cargados = [];
+    const loaded = [];
     const players = [1, 2, 3, 4, 5].map(() => {
       const el = document.createElement("oim-player");
       el.getBoundingClientRect = () => ({ top: 0, bottom: 400, left: 0, right: 800, width: 800, height: 400, x: 0, y: 0, toJSON() { return this; } });
-      el.addEventListener("oim:loaded", (e) => cargados.push(e.detail.metadata));
-      el.setAttribute("src", "/mismo.oim");
+      el.addEventListener("oim:loaded", (e) => loaded.push(e.detail.metadata));
+      el.setAttribute("src", "/same.oim");
       document.body.appendChild(el);
       return el;
     });
-    for (let i = 0; i < 40 && cargados.length < 5; i++) await pasar(50);
+    for (let i = 0; i < 40 && loaded.length < 5; i++) await pasar(50);
 
     const llamadas = global.fetch.mock.calls;
     expect(llamadas.filter(([, init]) => init && init.method === "HEAD")).toHaveLength(0);
     expect(llamadas.filter(([, init]) => init && init.headers && init.headers.Range)).toHaveLength(0);
-    expect(llamadas.filter(([url]) => String(url).endsWith("/mismo.oim"))).toHaveLength(1);
-    expect(cargados).toHaveLength(5);
-    expect(new Set(cargados).size).toBe(5); // five distinct metadata objects
-    cargados[0].__tocado = true;
-    expect(cargados[1].__tocado).toBeUndefined();
+    expect(llamadas.filter(([url]) => String(url).endsWith("/same.oim"))).toHaveLength(1);
+    expect(loaded).toHaveLength(5);
+    expect(new Set(loaded).size).toBe(5); // five distinct metadata objects
+    loaded[0].__touched = true;
+    expect(loaded[1].__touched).toBeUndefined();
     expect(players).toHaveLength(5);
     expect(window.__oimCacheStats().verifications).toBe(1);
   });

@@ -53,15 +53,15 @@ afterEach(() => {
 
 describe('key rotation', () => {
   it('a new player, with the old expired key inside, still validates what was signed before — and without network', async () => {
-    const espia = vi.fn(() => Promise.reject(new Error('no deberia salir a la red')));
-    vi.stubGlobal('fetch', espia);
+    const spy = vi.fn(() => Promise.reject(new Error('no deberia salir a la red')));
+    vi.stubGlobal('fetch', spy);
 
     const { EMBEDDED_KEYS } = await import('./keys');
     EMBEDDED_KEYS.push(claveVieja);
 
     const { verifyMetadataSignature } = await import('./security');
     expect(await verifyMetadataSignature(F.firmado_con_la_vieja_antes)).toBe(true);
-    expect(espia).not.toHaveBeenCalled();
+    expect(spy).not.toHaveBeenCalled();
   });
 
   it('rejects what was signed with the old key AFTER retiring it', async () => {

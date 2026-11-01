@@ -21,8 +21,8 @@ import { join } from "node:path";
 
 describe("both loading paths register the embedded fonts", () => {
   it("there is a registration in each one", () => {
-    const fuente = readFileSync(join(__dirname, "ImageEngine.ts"), "utf8");
-    const registros = fuente.split("registerEmbeddedFonts(readEmbeddedFonts(").length - 1;
+    const source = readFileSync(join(__dirname, "ImageEngine.ts"), "utf8");
+    const registros = source.split("registerEmbeddedFonts(readEmbeddedFonts(").length - 1;
     expect(registros).toBe(2);
   });
 });

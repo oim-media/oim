@@ -31,16 +31,16 @@ const textos = (svg: string) =>
 
 describe("generateArtisticTextSvgString with line breaks", () => {
   it("paints each line in its own text", () => {
-    const pintados = textos(generateArtisticTextSvgString(buildArtisticTextModelFromSlot(slot(), "es"), "c"));
-    expect(pintados).toContain("UNO");
-    expect(pintados).toContain("DOS");
-    expect(pintados.some((t) => t.includes("\n"))).toBe(false);
+    const painted = textos(generateArtisticTextSvgString(buildArtisticTextModelFromSlot(slot(), "es"), "c"));
+    expect(painted).toContain("UNO");
+    expect(painted).toContain("DOS");
+    expect(painted.some((t) => t.includes("\n"))).toBe(false);
   });
 
   it("also on curved text", () => {
-    const pintados = textos(generateArtisticTextSvgString(buildArtisticTextModelFromSlot(slot({ curveAmount: 30 }), "es"), "c"));
-    expect(pintados).toContain("UNO");
-    expect(pintados).toContain("DOS");
+    const painted = textos(generateArtisticTextSvgString(buildArtisticTextModelFromSlot(slot({ curveAmount: 30 }), "es"), "c"));
+    expect(painted).toContain("UNO");
+    expect(painted).toContain("DOS");
   });
 
   it("uses the same default line height as the editor", () => {

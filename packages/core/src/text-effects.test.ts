@@ -7,7 +7,7 @@
 /**
  * Entrance text effects as data: one sampling for the editor, the player and
  * any native renderer. Only portable primitives (opacity, translation, scale).
- * Spec: docs/superpowers/specs/2026-10-10-efectos-de-texto-design.md
+ * Spec: docs/superpowers/specs/2026-10-10-text-effects-design.md
  */
 import { describe, it, expect } from "vitest";
 import { ENTRANCE_EFFECTS, entranceUnits, entranceStart, entranceFrame, entranceFrameAt, entranceKeyframes, ENTRANCE_SECONDS, isEntranceEffect, entranceClips } from "./text-effects.js";

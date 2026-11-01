@@ -6,7 +6,7 @@
 
 /**
  * `style.marks` in the contract (1.11.0) and the one resolved style every
- * renderer paints. Spec: docs/superpowers/specs/2026-10-10-marcas-de-texto-design.md
+ * renderer paints. Spec: docs/superpowers/specs/2026-10-10-text-marks-design.md
  */
 
 import { describe, it, expect } from "vitest";

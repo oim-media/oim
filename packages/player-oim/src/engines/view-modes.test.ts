@@ -153,7 +153,7 @@ describe("the mode reaches the slot", () => {
     style: {
       width: "32.5cqw", height: "8.75cqw", fontSize: "2.75cqw",
       fillColor: "#b91c1c", color: "#b91c1c", isInteractive: true,
-      states: { active: { actions: [{ target: "otra", type: "toggle" }] } },
+      states: { active: { actions: [{ target: "other", type: "toggle" }] } },
       ...extra,
     },
   });
@@ -170,12 +170,12 @@ describe("the mode reaches the slot", () => {
 
   it("and a click does nothing", async () => {
     const el = await slotIn({ mode: "image" });
-    const otra = document.createElement("div");
+    const other = document.createElement("div");
     // If something were hooked up, the click would fire the action and touch the DOM.
     const before = el.outerHTML;
     el.dispatchEvent(new Event("click", { bubbles: true }));
     expect(el.outerHTML).toBe(before);
-    otra.remove();
+    other.remove();
   });
 
   it("nor does it reserve the minimum contact area: nothing is clickable", async () => {
@@ -198,7 +198,7 @@ describe("the mode reaches the slot", () => {
       id: "b", type: "geo", align: "center", position: [10, 10],
       content: { es: "" },
       style: { width: "32.5cqw", height: "8.75cqw", fillColor: "#b91c1c" },
-      interaction: { action_type: "toggle_elements", target: { show_slots: ["otra"] } },
+      interaction: { action_type: "toggle_elements", target: { show_slots: ["other"] } },
     };
     expect((await slotIn({ mode: "image" }, conInteraction)).style.cursor).not.toBe("pointer");
   });

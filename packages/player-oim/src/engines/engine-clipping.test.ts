@@ -10,7 +10,7 @@
 /**
  * That the rule reaches the element.
  *
- * `recorte.test.ts` pins the decision; this pins that the engine writes it, and above
+ * `clipping.test.ts` pins the decision; this pins that the engine writes it, and above
  * all that the parallax group STILL CLIPS: it is the only case in which clipping is the
  * effect, and the one that breaks if someone reorders the rules.
  */
@@ -42,7 +42,7 @@ const text = (extra: any = {}) => ({
   style: { fontSize: "48px", ...extra },
 });
 
-describe("el recorte en el motor", () => {
+describe("clipping in the engine", () => {
   /**
    * The measured failure: with `line-height: 1.2`, Poppins cuts 0.70 px of ink off the
    * bottom at 48 px and Playfair Display 0.20. These are the two fonts of the real .oim
@@ -56,7 +56,7 @@ describe("el recorte en el motor", () => {
    * Here it is NOT checked that «any layer clips»: the engine writes `overflow` again later
    * in three other branches (the SVG and shape ones) so that the stroke is not cut, so a
    * geometric figure ends up as `visible` by a different path. Asserting it here would test
-   * those branches, not this rule. `recorte.test.ts` covers the decision; this covers the wire.
+   * those branches, not this rule. `clipping.test.ts` covers the decision; this covers the wire.
    */
 
   /**

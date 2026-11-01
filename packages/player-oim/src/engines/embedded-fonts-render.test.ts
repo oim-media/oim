@@ -25,10 +25,10 @@ describe("a layer whose family is embedded", () => {
     document.body.appendChild(host);
   });
 
-  const capaDeTexto = { id: "t", type: "text", align: "left", position: [0.1, 0.1], width_px: 300, height_px: 60,
+  const textLayer = { id: "t", type: "text", align: "left", position: [0.1, 0.1], width_px: 300, height_px: 60,
                         content: { es: "Hola" }, style: { fontFamily: "Lora" } };
 
-  const pintar = async (familias: Map<string, string>, slots: any[] = [capaDeTexto]) => {
+  const pintar = async (familias: Map<string, string>, slots: any[] = [textLayer]) => {
     const motor = new ImageEngine(host as any);
     motor._viewport = document.createElement("div");
     motor._viewport.className = "oim-viewport";

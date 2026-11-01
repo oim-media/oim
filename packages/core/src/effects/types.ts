@@ -36,7 +36,7 @@ export interface OimTextureEffect {
   intensity: number; // 0..100
   blend: EffectBlend;
   scale?: number; // 0.2..5.0, default 1.0
-  color?: string; // Tinte opcional
+  color?: string; // Optional tint
   colorRole?: DynamicColorRole;
   enabled: boolean;
 }

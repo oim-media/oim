@@ -7,7 +7,7 @@
 /**
  * The drop cap's style, one function for the three renderers (editor canvas,
  * player, static export).
- * Spec: docs/superpowers/specs/2026-10-10-retirar-resaltado-y-capitular-design.md
+ * Spec: docs/superpowers/specs/2026-10-10-remove-highlight-and-drop-cap-design.md
  */
 import { describe, it, expect } from "vitest";
 import { dropCapStyle, splitDropCap } from "./drop-cap.js";

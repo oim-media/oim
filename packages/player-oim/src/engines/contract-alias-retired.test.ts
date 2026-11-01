@@ -37,7 +37,7 @@ function mount(slots: any[]) {
   return { host, motor };
 }
 
-async function textoCon(style: any): Promise<HTMLElement> {
+async function textWith(style: any): Promise<HTMLElement> {
   const { host, motor } = mount([{
     id: "t", type: "text", align: "left",
     position: [50, 50], width_px: 300, height_px: 80,
@@ -50,7 +50,7 @@ async function textoCon(style: any): Promise<HTMLElement> {
 
 describe("the letter colour comes from fillColor", () => {
   it("a text with fillColor and without fillType is painted in that colour", async () => {
-    const el = await textoCon({ fillColor: "#1b3a6b" });
+    const el = await textWith({ fillColor: "#1b3a6b" });
     expect(el.style.color.toLowerCase()).toBe("#1b3a6b");
     // And not as background: in a text, fillColor is the letter.
     expect(el.style.backgroundColor).toBe("");
@@ -63,34 +63,34 @@ describe("the letter colour comes from fillColor", () => {
     const crear = document.createElement.bind(document);
     vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
       const el = crear(tag);
-      const poner = el.style.setProperty.bind(el.style);
+      const put = el.style.setProperty.bind(el.style);
       el.style.setProperty = (prop: string, val: string, prio?: string) => {
         escritas.push([prop, val]);
-        return poner(prop, val, prio);
+        return put(prop, val, prio);
       };
       return el;
     });
-    await textoCon({ fillColor: "#18181B", colorRole: "on-surface" });
+    await textWith({ fillColor: "#18181B", colorRole: "on-surface" });
     vi.restoreAllMocks();
     expect(escritas).toContainEqual(["color", "var(--oim-color-on-surface, var(--oim-palette-on-surface, #18181B))"]);
   });
 
   it("`color`, retired in 1.5.0, no longer paints anything", async () => {
-    const el = await textoCon({ color: "#ff0000" });
+    const el = await textWith({ color: "#ff0000" });
     expect(el.style.color).toBe("");
   });
 });
 
 describe("typography: only the full keys", () => {
   it("fontWeight, fontStyle and textDecoration reach the CSS", async () => {
-    const el = await textoCon({ fontWeight: 700, fontStyle: "italic", textDecoration: "underline" });
+    const el = await textWith({ fontWeight: 700, fontStyle: "italic", textDecoration: "underline" });
     expect(el.style.fontWeight).toBe("700");
     expect(el.style.fontStyle).toBe("italic");
     expect(el.style.textDecoration).toBe("underline");
   });
 
   it("bold, italic and underline, retired in 1.5.0, are ignored", async () => {
-    const el = await textoCon({ bold: true, italic: true, underline: true });
+    const el = await textWith({ bold: true, italic: true, underline: true });
     expect(el.style.fontWeight).toBe("");
     expect(el.style.fontStyle).toBe("");
     expect(el.style.textDecoration).toBe("");

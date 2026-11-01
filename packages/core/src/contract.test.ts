@@ -93,7 +93,7 @@ function contractOf(zodSchema: z.ZodType, id: string, title: string) {
   const generated = z.toJSONSchema(zodSchema, { io: "input", reused: "ref" }) as Record<string, unknown>;
   // Order matters: `$id` and the version must be read before the 21
   // properties, so that a person opening the file knows what they are looking at.
-  return cerrarTuplas(inlinePrimitives({
+  return closeTuples(inlinePrimitives({
     $schema: "https://json-schema.org/draft/2020-12/schema",
     $id: `${BASE}/${CONTRACT_VERSION}/${id}.schema.json`,
     title: title,
@@ -120,10 +120,10 @@ function inlinePrimitives(zodSchema: any): any {
   );
   if (trivial.size === 0) return zodSchema;
 
-  const substitute = (nodo: any): any => {
-    if (Array.isArray(nodo)) return nodo.map(substitute);
-    if (!nodo || typeof nodo !== "object") return nodo;
-    const ref: string | undefined = nodo.$ref;
+  const substitute = (node: any): any => {
+    if (Array.isArray(node)) return node.map(substitute);
+    if (!node || typeof node !== "object") return node;
+    const ref: string | undefined = node.$ref;
     if (ref) {
       const name = ref.replace("#/$defs/", "");
       // The SIBLING keys of the `$ref` are kept. Returning only the primitive
@@ -131,11 +131,11 @@ function inlinePrimitives(zodSchema: any): any {
       // trace in the published contract, and the failure was silent -the file
       // came out well-formed, just without the warning-.
       if (trivial.has(name)) {
-        const { $ref: _discarded, ...siblings } = nodo;
+        const { $ref: _discarded, ...siblings } = node;
         return { ...defs[name], ...siblings };
       }
     }
-    return Object.fromEntries(Object.entries(nodo).map(([k, v]) => [k, substitute(v)]));
+    return Object.fromEntries(Object.entries(node).map(([k, v]) => [k, substitute(v)]));
   };
 
   const clean = substitute(zodSchema);
@@ -161,11 +161,11 @@ function inlinePrimitives(zodSchema: any): any {
  * `items: false` is the 2020-12 way of forbidding extra elements. If the tuple
  * had a rest element, Zod would already emit `items` and nothing here is touched.
  */
-function cerrarTuplas(nodo: any): any {
-  if (Array.isArray(nodo)) return nodo.map(cerrarTuplas);
-  if (!nodo || typeof nodo !== "object") return nodo;
+function closeTuples(node: any): any {
+  if (Array.isArray(node)) return node.map(closeTuples);
+  if (!node || typeof node !== "object") return node;
   const out: any = Object.fromEntries(
-    Object.entries(nodo).map(([k, v]) => [k, cerrarTuplas(v)]),
+    Object.entries(node).map(([k, v]) => [k, closeTuples(v)]),
   );
   if (Array.isArray(out.prefixItems) && out.items === undefined) {
     out.minItems = out.prefixItems.length;
@@ -236,10 +236,10 @@ describe("properties the contract promises to other languages", () => {
 
     // ...so the published contract cannot forbid it anywhere.
     const closed: string[] = [];
-    (function walk(nodo: any, route: string) {
-      if (!nodo || typeof nodo !== "object") return;
-      if (nodo.additionalProperties === false) closed.push(route || "(raiz)");
-      for (const [key, child] of Object.entries(nodo)) walk(child, route ? `${route}.${key}` : key);
+    (function walk(node: any, route: string) {
+      if (!node || typeof node !== "object") return;
+      if (node.additionalProperties === false) closed.push(route || "(root)");
+      for (const [key, child] of Object.entries(node)) walk(child, route ? `${route}.${key}` : key);
     })(contractOf(OimMetadataSchema, "oim", "x"), "");
 
     expect(closed).toEqual([]);
@@ -342,9 +342,9 @@ describe("1.4.0 closes the drift and marks what was retired", () => {
 });
 
 describe("1.12.0 marks what nobody uses, without deleting it (audit of 10 Oct)", () => {
-  const raiz = () => contractOf(OimMetadataSchema, "oim", "x") as any;
-  const estilo = () => {
-    const r = raiz();
+  const root = () => contractOf(OimMetadataSchema, "oim", "x") as any;
+  const styleSchema = () => {
+    const r = root();
     const slot = r.properties.slots.items.$ref ? r.$defs[r.properties.slots.items.$ref.split("/").pop()] : r.properties.slots.items;
     const st = slot.properties.style;
     return st.$ref ? r.$defs[st.$ref.split("/").pop()] : st;
@@ -357,7 +357,7 @@ describe("1.12.0 marks what nobody uses, without deleting it (audit of 10 Oct)",
 
   // A repeated definition goes to $defs and the property keeps a $ref.
   const prop = (k: string) => {
-    const r = raiz(); const v = estilo().properties[k];
+    const r = root(); const v = styleSchema().properties[k];
     return v?.$ref ? { ...r.$defs[v.$ref.split("/").pop()], ...v } : v;
   };
 
@@ -373,7 +373,7 @@ describe("1.12.0 marks what nobody uses, without deleting it (audit of 10 Oct)",
   });
 
   it("at the root: elements, layers, grain and effects; slots does not", () => {
-    const p = raiz().properties;
+    const p = root().properties;
     for (const k of ["elements", "layers", "grain", "effects"]) expect(p[k]?.deprecated, k).toBe(true);
     expect(p.slots.deprecated).toBeUndefined();
   });

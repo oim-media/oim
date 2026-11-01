@@ -18,7 +18,7 @@
  * Painting is lenient (anything malformed is shown as text, an unclosed mark
  * runs to the end) so a view never breaks; signing is strict
  * (`validateMarks`), so a signed .oim only carries well-formed texts.
- * Spec: docs/superpowers/specs/2026-10-10-marcas-de-texto-design.md
+ * Spec: docs/superpowers/specs/2026-10-10-text-marks-design.md
  */
 
 import type { TextMark } from "./schema.js";

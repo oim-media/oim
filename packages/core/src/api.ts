@@ -110,8 +110,8 @@ export interface OimCompileRequest {
  * covers it, but it does not cover `"  "`.
  */
 export function resolveBackendUrl(override?: string | null): string {
-  const limpio = (override || "").trim();
-  return (limpio || OIM_BACKEND_URL_DEFAULT).replace(/\/+$/, "");
+  const clean = (override || "").trim();
+  return (clean || OIM_BACKEND_URL_DEFAULT).replace(/\/+$/, "");
 }
 
 /** Builds an absolute endpoint URL. */

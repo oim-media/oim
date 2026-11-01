@@ -286,7 +286,7 @@ describe("nothing sensitive travels in the package", () => {
     ];
     for (const { name, text } of publishedSources()) {
       for (const pattern of prohibido) {
-        expect(pattern.test(text), `${name} contiene ${pattern}`).toBe(false);
+        expect(pattern.test(text), `${name} contains ${pattern}`).toBe(false);
       }
     }
   });

@@ -153,7 +153,7 @@ describe("screen-reader layer", () => {
   });
 
   it("a scene loop's duplicated track reads each text once", async () => {
-    const trackItem = textItem("pista", 0, 0, { es: "Desfile" }, {
+    const trackItem = textItem("track", 0, 0, { es: "Desfile" }, {
       parallax: { enabled: true, speedPxSec: 40, direction: "left" },
     });
     const { host, motor } = mount([trackItem], { sceneLoop: { enabled: true } });

@@ -14,7 +14,7 @@
  * texture with "source-in" over the layer's alpha.
  *
  * Text layers keep their own path (the texture fills the glyphs).
- * Spec: docs/superpowers/specs/2026-10-10-auditoria-del-contrato-design.md
+ * Spec: docs/superpowers/specs/2026-10-10-contract-audit-design.md
  */
 
 export interface TextureMask {

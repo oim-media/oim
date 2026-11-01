@@ -90,7 +90,7 @@ const forma = (extra: any = {}) => ({
   style: { width: "32.5cqw", height: "8.75cqw", fillColor: ROJO, ...extra },
 });
 
-const ACCION = { states: { active: { actions: [{ target: "otra", type: "toggle" }] } } };
+const ACCION = { states: { active: { actions: [{ target: "other", type: "toggle" }] } } };
 
 describe("the background of an interactive text", () => {
   it("a text marked interactive does NOT paint the background", async () => {

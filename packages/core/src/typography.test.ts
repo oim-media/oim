@@ -38,7 +38,7 @@ describe("resolveLineHeight", () => {
     expect(resolveLineHeight(null)).toBe(DEFAULT_LINE_HEIGHT);
   });
 
-  it.each([0, -1, "0", "-2", "", "   ", "alto", NaN, Infinity, {}, []])(
+  it.each([0, -1, "0", "-2", "", "   ", "tall", NaN, Infinity, {}, []])(
     "falls back to the default value for %p",
     (v) => {
       expect(resolveLineHeight({ lineHeight: v })).toBe(DEFAULT_LINE_HEIGHT);

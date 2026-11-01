@@ -72,7 +72,7 @@ describe("renderSlots parcial", () => {
   });
 });
 
-describe("el controlador de parallax sobrevive al render parcial", () => {
+describe("the parallax controller survives a partial render", () => {
   const conParallax = () => ([
     { id: "titulo", type: "text", content: { es: "Hola", en: "Hello" }, position: [50, 20], style: {},
       parallax: { enabled: true, depth: 0.5, mode: "mouse", axis: "both" } },
@@ -102,14 +102,14 @@ describe("el controlador de parallax sobrevive al render parcial", () => {
     const { motor } = mount(conParallax());
     await motor.renderSlots();
 
-    const primero: any = motor._parallaxController;
+    const first: any = motor._parallaxController;
     let destruido = 0;
-    const originalDestroy = primero.destroy.bind(primero);
-    primero.destroy = () => { destruido++; originalDestroy(); };
+    const originalDestroy = first.destroy.bind(first);
+    first.destroy = () => { destruido++; originalDestroy(); };
 
     await motor.renderSlots();
 
     expect(destruido).toBe(1);
-    expect(motor._parallaxController).not.toBe(primero);
+    expect(motor._parallaxController).not.toBe(first);
   });
 });

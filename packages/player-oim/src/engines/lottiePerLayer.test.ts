@@ -22,7 +22,7 @@ function lottieFalso() {
   };
 }
 
-function motorCon(registros: Array<{ slotId: string; inst: any }>) {
+function engineWith(registros: Array<{ slotId: string; inst: any }>) {
   const host = document.createElement("div");
   (host as any).attachShadow({ mode: "open" });
   const motor = new ImageEngine(host as any);
@@ -31,11 +31,11 @@ function motorCon(registros: Array<{ slotId: string; inst: any }>) {
 }
 
 describe("_destroyLottiesIn", () => {
-  it("destruye solo las capas pedidas y deja vivas las demas", () => {
+  it("destroys only the requested layers and leaves the rest alive", () => {
     // This is the WHOLE reason for this task: rebuilding one layer must not kill
     // the Lottie instances of the rest of the canvas.
     const a = lottieFalso(), b = lottieFalso();
-    const motor = motorCon([
+    const motor = engineWith([
       { slotId: "logo", inst: a.inst },
       { slotId: "fondo", inst: b.inst },
     ]);
@@ -46,11 +46,11 @@ describe("_destroyLottiesIn", () => {
     expect(b.estado.destruido).toBe(0);
   });
 
-  it("saca de la lista las destruidas, y solo esas", () => {
+  it("removes the destroyed ones from the list, and only those", () => {
     // If they stayed in the list, a later destroy() would touch them twice and
     // play()/pause() would keep talking to dead instances.
     const a = lottieFalso(), b = lottieFalso();
-    const motor = motorCon([
+    const motor = engineWith([
       { slotId: "logo", inst: a.inst },
       { slotId: "fondo", inst: b.inst },
     ]);
@@ -60,9 +60,9 @@ describe("_destroyLottiesIn", () => {
     expect(motor._lottieInstances.map((r: any) => r.slotId)).toEqual(["fondo"]);
   });
 
-  it("un id que no esta no destruye nada", () => {
+  it("an id that does not exist destroys nothing", () => {
     const a = lottieFalso();
-    const motor = motorCon([{ slotId: "logo", inst: a.inst }]);
+    const motor = engineWith([{ slotId: "logo", inst: a.inst }]);
 
     motor._destroyLottiesIn(new Set(["no-existe"]));
 
@@ -70,11 +70,11 @@ describe("_destroyLottiesIn", () => {
     expect(motor._lottieInstances).toHaveLength(1);
   });
 
-  it("si una instancia falla al destruirse, las demas se destruyen igual", () => {
+  it("if one instance fails to destroy, the others are destroyed anyway", () => {
     // lottie-web's destroy() can throw on a node that is already unmounted.
     const rota = { destroy() { throw new Error("nodo desmontado"); } } as any;
     const buena = lottieFalso();
-    const motor = motorCon([
+    const motor = engineWith([
       { slotId: "rota", inst: rota },
       { slotId: "buena", inst: buena.inst },
     ]);
@@ -84,12 +84,12 @@ describe("_destroyLottiesIn", () => {
     expect(motor._lottieInstances).toHaveLength(0);
   });
 
-  it("play() y pause() siguen alcanzando a las que quedan", () => {
+  it("play() and pause() still reach the ones that remain", () => {
     // The registry changed from the instance to {slotId, inst}: if any loop
     // was not updated, it shows up here.
     let reproducidas = 0;
     const inst = { destroy() {}, play() { reproducidas++; }, pause() {} } as any;
-    const motor = motorCon([{ slotId: "vive", inst }]);
+    const motor = engineWith([{ slotId: "vive", inst }]);
 
     motor.play();
 

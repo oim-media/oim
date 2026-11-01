@@ -15,7 +15,7 @@ const oim = fs.readFileSync(path.resolve(__dirname, "../../core/test/fixtures/ob
 const pasar = (ms) => new Promise((r) => setTimeout(r, ms));
 window.__OIM_BENCH__ = true;
 
-describe("cinco players del mismo archivo", () => {
+describe("five players of the same file", () => {
   beforeEach(async () => {
     document.body.innerHTML = "";
     window.IntersectionObserver = class {
@@ -32,7 +32,7 @@ describe("cinco players del mismo archivo", () => {
     if (!customElements.get("oim-player")) await import("../dist/oim-player.js");
   });
 
-  it("se descarga una vez, sin HEAD ni Range, y los cinco cargan con sus propios metadatos", async () => {
+  it("it is downloaded once, without HEAD or Range, and the five load with their own metadata", async () => {
     const cargados = [];
     const players = [1, 2, 3, 4, 5].map(() => {
       const el = document.createElement("oim-player");
@@ -56,7 +56,7 @@ describe("cinco players del mismo archivo", () => {
     expect(window.__oimCacheStats().verifications).toBe(1);
   });
 
-  it("cinco players con archivo corrupto terminan con securityStatus corrupt y una sola descarga", async () => {
+  it("five players with a corrupt file end with securityStatus corrupt and a single download", async () => {
     const pngHeader = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
     function buildMockPng(type, data) {
       const totalLen = 8 + 4 + 4 + data.length + 4;

@@ -37,7 +37,7 @@ describe("applyWaveText", () => {
       parseFloat((s as HTMLElement).style.animationDelay)
     );
     // Retraso de idx*speed expresado como adelanto de periodo - idx*speed
-    // (periodo = 2π/6 = 1.0471975511965976); un delay positivo congelaría.
+    // (period = 2π/6 = 1.0471975511965976); a positive delay would freeze it.
     expect(delays[0]).toBeCloseTo(0, 6);
     expect(delays[1]).toBeCloseTo(-0.9971975511965976, 6);
     expect(delays[2]).toBeCloseTo(-0.9471975511965976, 6);

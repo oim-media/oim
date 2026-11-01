@@ -15,7 +15,7 @@
  *
  *   - **zod** comes in through the index of `@oim-media/core`, which re-exports
  *     `schema.js`. Two things avoid it, and it is worth not confusing them,
- *     because only one is indispensable: `binary.ts` and `grupos.ts` import the
+ *     because only one is indispensable: `binary.ts` and `groups.ts` import the
  *     module FILE instead of the package, and `@oim-media/core` declares
  *     `sideEffects: false`, which is what authorizes the bundler to prune what
  *     nobody uses.
@@ -47,11 +47,11 @@ import { join } from "node:path";
 const SRC = join(__dirname, "..");
 const BUNDLE = join(__dirname, "..", "..", "dist", "oim-player.js");
 
-function fuentes(dir) {
+function fontList(dir) {
   const salida = [];
   for (const entrada of readdirSync(dir)) {
     const path = join(dir, entrada);
-    if (statSync(path).isDirectory()) salida.push(...fuentes(path));
+    if (statSync(path).isDirectory()) salida.push(...fontList(path));
     else if (path.endsWith(".ts") && !path.endsWith(".test.ts") && !path.endsWith(".d.ts")) {
       salida.push(path);
     }
@@ -59,10 +59,10 @@ function fuentes(dir) {
   return salida;
 }
 
-const FUENTES = fuentes(SRC).map((path) => ({ path, text: readFileSync(path, "utf8") }));
+const FUENTES = fontList(SRC).map((path) => ({ path, text: readFileSync(path, "utf8") }));
 
-describe("por donde puede colarse el peso", () => {
-  it("hay fuentes que revisar", () => {
+describe("where the weight can creep in", () => {
+  it("there are fonts to review", () => {
     // Without this, the test would pass green if the folder moved.
     expect(FUENTES.length).toBeGreaterThan(10);
   });
@@ -72,13 +72,13 @@ describe("por donde puede colarse el peso", () => {
    * paths to the module file and the `/api` subpath are the two safe forms.
    */
   it("nadie importa el indice de @oim-media/core", () => {
-    const culpables = [];
+    const offenders = [];
     for (const { path, text } of FUENTES) {
       // Only the bare package: `@oim-media/core/api` and `@oim-media/core/loQueSea` (a placeholder name) are not.
-      if (/from\s+["']@oim\/core["']/.test(text)) culpables.push(path);
-      if (/import\s*\(\s*["']@oim\/core["']\s*\)/.test(text)) culpables.push(path);
+      if (/from\s+["']@oim\/core["']/.test(text)) offenders.push(path);
+      if (/import\s*\(\s*["']@oim\/core["']\s*\)/.test(text)) offenders.push(path);
     }
-    expect(culpables).toEqual([]);
+    expect(offenders).toEqual([]);
   });
 
   /**
@@ -87,7 +87,7 @@ describe("por donde puede colarse el peso", () => {
    * -which the rule above prevents, but rules get edited- to put all of zod
    * into what the CDN serves.
    */
-  it("@oim-media/core sigue declarando sideEffects: false", () => {
+  it("@oim-media/core still declares sideEffects: false", () => {
     const manifiesto = JSON.parse(
       readFileSync(join(__dirname, "..", "..", "..", "core", "package.json"), "utf8"),
     );
@@ -98,8 +98,8 @@ describe("por donde puede colarse el peso", () => {
    * A static `import` of lottie pulls it into the main package even if no
    * `.oim` ever uses it. Dynamic, it travels in its own chunk.
    */
-  it("lottie solo se importa de forma dinamica", () => {
-    const culpables = [];
+  it("lottie is only imported dynamically", () => {
+    const offenders = [];
     for (const { path, text } of FUENTES) {
       for (const linea of text.split("\n")) {
         if (!/lottie/i.test(linea)) continue;
@@ -107,11 +107,11 @@ describe("por donde puede colarse el peso", () => {
         // in the bundle. Our own lottie-loader.ts is the gate to it and must be
         // importable statically, so match the package name, not any path that
         // happens to contain "lottie".
-        if (/^\s*import\s+[^(]*from\s+["']lottie-web/.test(linea)) culpables.push(`${path}: ${linea.trim()}`);
-        if (/^\s*import\s+["']lottie-web/.test(linea)) culpables.push(`${path}: ${linea.trim()}`);
+        if (/^\s*import\s+[^(]*from\s+["']lottie-web/.test(linea)) offenders.push(`${path}: ${linea.trim()}`);
+        if (/^\s*import\s+["']lottie-web/.test(linea)) offenders.push(`${path}: ${linea.trim()}`);
       }
     }
-    expect(culpables).toEqual([]);
+    expect(offenders).toEqual([]);
   });
 });
 
@@ -141,7 +141,7 @@ describe("el paquete construido, si existe", () => {
   });
 });
 
-describe("lottie viaja aparte del player", () => {
+describe("lottie ships apart from the player", () => {
   const DIST = join(__dirname, "..", "..", "dist");
   const hayPaquete = existsSync(BUNDLE);
 
@@ -153,7 +153,7 @@ describe("lottie viaja aparte del player", () => {
     expect(Math.round(kb)).toBeLessThanOrEqual(59);
   });
 
-  it.skipIf(!hayPaquete)("el archivo de lottie esta junto a las dos rutas del player", () => {
+  it.skipIf(!hayPaquete)("the lottie file sits next to both player paths", () => {
     const version = JSON.parse(readFileSync(join(__dirname, "..", "..", "node_modules", "lottie-web", "package.json"), "utf8")).version;
     for (const dir of [join(DIST, "vendor"), join(DIST, "player", "v1", "vendor")]) {
       const file = join(dir, `lottie_light-${version}.js`);

@@ -34,7 +34,7 @@ describe("getMaskClipPathD", () => {
     } as any;
   }
 
-  it("lleva los tres subtrazados en orden: lienzo, caja, silueta", () => {
+  it("carries the three sub-paths in order: canvas, box, silhouette", () => {
     const d = getMaskClipPathD(makeMask(), artboard);
     expect(d.startsWith("M0 0H800V600H0Z ")).toBe(true);
     expect(d).toContain("M100 60H300V260H100Z");
@@ -46,13 +46,13 @@ describe("getMaskClipPathD", () => {
     expect(d).toContain("300 260");
   });
 
-  it("una mascara que cubre el lienzo entero deja la caja igual al lienzo", () => {
+  it("a mask covering the entire canvas leaves the box equal to the canvas", () => {
     const mask = { id: "m", type: "mask", position: [0, 0], width_px: 800, height_px: 600, style: { maskShape: "rectangle" } } as any;
     const d = getMaskClipPathD(mask, artboard);
     expect(d.startsWith("M0 0H800V600H0Z M0 0H800V600H0Z")).toBe(true);
   });
 
-  it("usa la silueta circular por defecto cuando no hay maskShape", () => {
+  it("uses the circular silhouette by default when there is no maskShape", () => {
     const mask = { id: "m", type: "mask", position: [0, 0], width_px: 100, height_px: 100, style: {} } as any;
     expect(getMaskClipPathD(mask, artboard).split(" ").length).toBeGreaterThan(10);
   });
@@ -74,7 +74,7 @@ describe("getMaskClipPathD", () => {
     expect(d).toContain("200 200");
   });
 
-  it("un slot sin position ni size no rompe: produce ceros, no NaN", () => {
+  it("a slot without position or size does not break: it produces zeros, not NaN", () => {
     const mask = { id: "m", type: "mask", style: { maskShape: "rectangle" } } as any;
     const d = getMaskClipPathD(mask, artboard);
     expect(d).not.toContain("NaN");
@@ -193,13 +193,13 @@ describe("getMaskPathData", () => {
   });
 });
 
-describe("getMaskPathData con inversion", () => {
-  it("sin invertir devuelve solo la forma", () => {
+describe("getMaskPathData with inversion", () => {
+  it("without inverting it returns only the shape", () => {
     const slot = makeSlot({ style: { isMaskLayer: true, geoShape: "circle" } });
     expect(getMaskPathData(slot).startsWith("M0 0H100V100H0Z")).toBe(false);
   });
 
-  it("invertida antepone el rectangulo del lienzo", () => {
+  it("inverted prepends the canvas rectangle", () => {
     const slot = makeSlot({ style: { isMaskLayer: true, geoShape: "circle", maskInvert: true } });
     expect(getMaskPathData(slot).startsWith("M0 0H100V100H0Z ")).toBe(true);
     expect(getMaskPathData(slot).length).toBeGreaterThan("M0 0H100V100H0Z ".length);
@@ -217,8 +217,8 @@ describe("getMaskPathData con inversion", () => {
  * opposite directions, and 224 tests passed because both agreed on the first
  * character.
  */
-describe("computeLayerComposition con calado (feather)", () => {
-  it("sin calado devuelve clipPath como antes", () => {
+describe("computeLayerComposition with feather", () => {
+  it("without feather it returns clipPath as before", () => {
     const bg = makeSlot({ id: "bg" });
     const mask = makeSlot({ id: "mask", type: "mask", style: { maskMode: "cutout", geoShape: "circle" } });
     const result = computeLayerComposition([bg, mask]);
@@ -226,7 +226,7 @@ describe("computeLayerComposition con calado (feather)", () => {
     expect((result[0] as any).maskStyle).toBeUndefined();
   });
 
-  it("con calado devuelve maskStyle en vez de clipPath", () => {
+  it("with feather it returns maskStyle instead of clipPath", () => {
     const bg = makeSlot({ id: "bg" });
     const mask = makeSlot({ id: "mask", type: "mask", style: { maskMode: "cutout", geoShape: "circle", maskFeather: 10 } });
     const result = computeLayerComposition([bg, mask]);
@@ -234,7 +234,7 @@ describe("computeLayerComposition con calado (feather)", () => {
     expect((result[0] as any).maskStyle).toContain("mask-feather-mask");
   });
 
-  it("un calado de 0 se trata como ausencia de calado", () => {
+  it("a feather of 0 is treated as no feather", () => {
     const bg = makeSlot({ id: "bg" });
     const mask = makeSlot({ id: "mask", type: "mask", style: { maskMode: "cutout", geoShape: "circle", maskFeather: 0 } });
     const result = computeLayerComposition([bg, mask]);
@@ -250,8 +250,8 @@ describe("computeLayerComposition con calado (feather)", () => {
  * `return null` of ImageEngine and disappeared entirely, even though the .oim
  * carried it and the exported PNG showed it. These tests pin the contract on both sides.
  */
-describe("computeLayerComposition con mascara dedicada (type 'mask')", () => {
-  it("en mode window genera su propio nodo visible sin recortar al predecesor", () => {
+describe("computeLayerComposition with a dedicated mask (type 'mask')", () => {
+  it("in mode window it generates its own visible node without clipping the predecessor", () => {
     const bg = makeSlot({ id: "bg" });
     const mask = makeSlot({ id: "mask", type: "mask", style: { maskMode: "window", maskShape: "heart", maskBgColor: "#38BDF8" } });
     const result = computeLayerComposition([bg, mask]);
@@ -261,7 +261,7 @@ describe("computeLayerComposition con mascara dedicada (type 'mask')", () => {
     expect((result[1] as any).maskStyle).toBeUndefined();
   });
 
-  it("en mode window no aplica clipPath al predecesor", () => {
+  it("in mode window does not apply clipPath to the predecessor", () => {
     const bg = makeSlot({ id: "bg" });
     const mask = makeSlot({ id: "mask", type: "mask", style: { maskMode: "window" } });
     const result = computeLayerComposition([bg, mask]);
@@ -269,7 +269,7 @@ describe("computeLayerComposition con mascara dedicada (type 'mask')", () => {
     expect((result[0] as any).maskStyle).toBeUndefined();
   });
 
-  it("en mode cutout recorta al predecesor como una mascara heredada", () => {
+  it("in mode cutout it clips the predecessor like an inherited mask", () => {
     const bg = makeSlot({ id: "bg" });
     const mask = makeSlot({ id: "mask", type: "mask", style: { maskMode: "cutout", maskShape: "star" } });
     const result = computeLayerComposition([bg, mask]);
@@ -278,14 +278,14 @@ describe("computeLayerComposition con mascara dedicada (type 'mask')", () => {
     expect(result[0].clipPath).toContain("mask-clip-mask");
   });
 
-  it("en mode window sin predecesor aun genera su nodo visible", () => {
+  it("in mode window without a predecessor it still generates its visible node", () => {
     const mask = makeSlot({ id: "mask", type: "mask", style: { maskMode: "window" } });
     const result = computeLayerComposition([mask]);
     expect(result).toHaveLength(1);
     expect((result[0] as any).shape.id).toBe("mask");
   });
 
-  it("una mascara dedicada sin maskMode es window por defecto", () => {
+  it("a dedicated mask without maskMode is window by default", () => {
     const mask = makeSlot({ id: "mask", type: "mask", style: {} });
     const result = computeLayerComposition([mask]);
     expect(result).toHaveLength(1);
@@ -293,41 +293,41 @@ describe("computeLayerComposition con mascara dedicada (type 'mask')", () => {
   });
 });
 
-describe("getMaskPathData con mode window vs cutout", () => {
-  it("en mode window antepone el rectangulo del lienzo (paridad evenodd)", () => {
+describe("getMaskPathData with mode window vs cutout", () => {
+  it("in mode window it prepends the canvas rectangle (evenodd parity)", () => {
     const slot = makeSlot({ type: "mask", style: { maskMode: "window", geoShape: "circle" } });
     const d = getMaskPathData(slot);
     expect(d.startsWith("M0 0H100V100H0Z ")).toBe(true);
     expect(d.length).toBeGreaterThan("M0 0H100V100H0Z ".length);
   });
 
-  it("en mode cutout devuelve solo la silueta sin el rectangulo exterior", () => {
+  it("in mode cutout it returns only the silhouette without the outer rectangle", () => {
     const slot = makeSlot({ type: "mask", style: { maskMode: "cutout", geoShape: "circle" } });
     expect(getMaskPathData(slot)).toBe(MASK_SHAPE_PATHS.circle);
   });
 });
 
 describe("getMaskSilhouettePath", () => {
-  it("devuelve la silueta sin el rectangulo exterior aunque la mascara sea window", () => {
+  it("returns the silhouette without the outer rectangle even if the mask is window", () => {
     const slot = makeSlot({ type: "mask", style: { maskMode: "window", maskShape: "star" } });
     expect(getMaskSilhouettePath(slot)).toBe(MASK_SHAPE_PATHS.star);
   });
 
-  it("prefiere maskShape sobre geoShape", () => {
+  it("prefers maskShape over geoShape", () => {
     const slot = makeSlot({ style: { geoShape: "circle", maskShape: "heart" } });
     expect(getMaskSilhouettePath(slot)).toBe(MASK_SHAPE_PATHS.heart);
   });
 
-  it("respeta un maskSvgPath custom cuando maskShape es custom o falta", () => {
+  it("respects a custom maskSvgPath when maskShape is custom or missing", () => {
     const slot = makeSlot({ type: "mask", style: { maskSvgPath: "M0 0 L10 10 Z", maskShape: "custom" } });
     expect(getMaskSilhouettePath(slot)).toBe("M0 0 L10 10 Z");
   });
 });
 
-describe("getWindowMaskCanvasD — marco en espacio de lienzo", () => {
+describe("getWindowMaskCanvasD — frame in canvas space", () => {
   const artboard = { width: 800, height: 1200 };
 
-  it("el marco cubre SIEMPRE el lienzo entero, no la caja de la mascara", () => {
+  it("the frame ALWAYS covers the entire canvas, not the mask's box", () => {
     // Small, off-centre mask: the frame must still be the canvas.
     const slot: any = {
       id: "m", type: "mask", position: [25, 25],
@@ -338,7 +338,7 @@ describe("getWindowMaskCanvasD — marco en espacio de lienzo", () => {
     expect(d.startsWith("M0 0H800V1200H0Z ")).toBe(true);
   });
 
-  it("no deja hueco aunque la mascara sea mas pequena que el lienzo", () => {
+  it("leaves no gap even if the mask is smaller than the canvas", () => {
     // This was the bug: with the old model the frame measured what the box did,
     // so a small mask left the rest of the canvas uncovered.
     const chica: any = {
@@ -354,7 +354,7 @@ describe("getWindowMaskCanvasD — marco en espacio de lienzo", () => {
     expect(getWindowMaskCanvasD(grande, artboard).startsWith(marco)).toBe(true);
   });
 
-  it("el hueco sigue la posicion de la mascara, no el origen del lienzo", () => {
+  it("the gap follows the mask's position, not the canvas origin", () => {
     const a: any = { id: "m", type: "mask", position: [0, 0], width_px: 100, height_px: 100,
       style: { maskMode: "window", maskShape: "rectangle" } };
     const b: any = { id: "m", type: "mask", position: [50, 50], width_px: 100, height_px: 100,
@@ -362,7 +362,7 @@ describe("getWindowMaskCanvasD — marco en espacio de lienzo", () => {
     expect(getWindowMaskCanvasD(a, artboard)).not.toBe(getWindowMaskCanvasD(b, artboard));
   });
 
-  it("soporta multi-recorte (cuts) manteniendo el marco de lienzo", () => {
+  it("supports multi-cut (cuts) while keeping the canvas frame", () => {
     const slot: any = {
       id: "m", type: "mask", position: [0, 0], width_px: 800, height_px: 1200,
       cuts: [
@@ -377,29 +377,29 @@ describe("getWindowMaskCanvasD — marco en espacio de lienzo", () => {
     expect(d.split("Z").length).toBeGreaterThan(3);
   });
 
-  it("no produce NaN cuando faltan posicion y size", () => {
+  it("does not produce NaN when position and size are missing", () => {
     const slot: any = { id: "m", type: "mask", style: { maskMode: "window", maskShape: "circle" } };
     expect(getWindowMaskCanvasD(slot, artboard)).not.toContain("NaN");
   });
 });
 
-describe("getWindowMaskCanvasD — alcance del marco (maskCoverage)", () => {
+describe("getWindowMaskCanvasD — reach of the frame (maskCoverage)", () => {
   const artboard = { width: 800, height: 1200 };
   const base = (st: any = {}) => ({
     id: "m", type: "mask", position: [0, 0], width_px: 719, height_px: 1200,
     style: { maskMode: "window", maskShape: "circle", ...st }
   } as any);
 
-  it("por defecto cubre el lienzo entero aunque la caja sea menor", () => {
+  it("by default covers the entire canvas even if the box is smaller", () => {
     expect(getWindowMaskCanvasD(base(), artboard).startsWith("M0 0H800V1200H0Z ")).toBe(true);
   });
 
-  it("con maskCoverage 'container' se limita a la caja", () => {
+  it("with maskCoverage 'container' it is limited to the box", () => {
     const d = getWindowMaskCanvasD(base({ maskCoverage: "container" }), artboard);
     expect(d.startsWith("M0 0H719V1200H0Z ")).toBe(true);
   });
 
-  it("un valor desconocido cae en 'canvas', nunca deja franjas por un typo", () => {
+  it("an unknown value falls back to 'canvas', never leaving strips due to a typo", () => {
     expect(getWindowMaskCanvasD(base({ maskCoverage: "vaya" }), artboard).startsWith("M0 0H800V1200H0Z ")).toBe(true);
   });
 });

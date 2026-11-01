@@ -11,7 +11,7 @@ import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine.js";
 import { getStylesText } from "../render/styles.js";
 
-function montar(slots: any[]) {
+function mount(slots: any[]) {
   const host = document.createElement("div");
   host.setAttribute("mode", "full");
   const shadow = host.attachShadow({ mode: "open" });
@@ -26,7 +26,7 @@ function montar(slots: any[]) {
 }
 
 describe("pattern color roles in ImageEngine", () => {
-  it("aplica variable CSS semántica de fondo y SVG dual-color cuando background-pattern-slot declara roles", async () => {
+  it("applies a semantic background CSS variable and dual-colour SVG when background-pattern-slot declares roles", async () => {
     const slot = {
       id: "background-pattern-slot",
       name: "Fondo Animado",
@@ -46,7 +46,7 @@ describe("pattern color roles in ImageEngine", () => {
       is_background_pattern: true
     };
 
-    const { host, motor, shadow } = montar([slot]);
+    const { host, motor, shadow } = mount([slot]);
     await motor.renderSlots();
 
     const slotEl = shadow.querySelector('[data-slot-id="background-pattern-slot"]') as HTMLElement;
@@ -61,7 +61,7 @@ describe("pattern color roles in ImageEngine", () => {
     expect(slotEl.style.animation).toBe("background-animation-up 2s linear infinite");
   });
 
-  it("usa backgroundImage sin máscara cuando no hay rol semántico", async () => {
+  it("uses backgroundImage without a mask when there is no semantic role", async () => {
     const slot = {
       id: "background-pattern-slot",
       name: "Fondo Fijo",
@@ -79,7 +79,7 @@ describe("pattern color roles in ImageEngine", () => {
       is_background_pattern: true
     };
 
-    const { host, motor, shadow } = montar([slot]);
+    const { host, motor, shadow } = mount([slot]);
     await motor.renderSlots();
 
     const slotEl = shadow.querySelector('[data-slot-id="background-pattern-slot"]') as HTMLElement;
@@ -108,7 +108,7 @@ describe("pattern color roles in ImageEngine", () => {
       is_background_pattern: true
     };
 
-    const { host, motor, shadow } = montar([slot]);
+    const { host, motor, shadow } = mount([slot]);
     await motor.renderSlots();
 
     const slotEl = shadow.querySelector('[data-slot-id="background-pattern-slot"]') as HTMLElement;
@@ -117,7 +117,7 @@ describe("pattern color roles in ImageEngine", () => {
     expect(slotEl.style.getPropertyValue("--oim-pat-fg")).toContain("var(--oim-color-accent");
   });
 
-  it("aplica cover al fondo cuando fitMode es cover", async () => {
+  it("applies cover to the background when fitMode is cover", async () => {
     const slot = {
       id: "background-pattern-slot",
       type: "geo",
@@ -132,7 +132,7 @@ describe("pattern color roles in ImageEngine", () => {
       is_background_pattern: true
     };
 
-    const { host, motor, shadow } = montar([slot]);
+    const { host, motor, shadow } = mount([slot]);
     await motor.renderSlots();
 
     const slotEl = shadow.querySelector('[data-slot-id="background-pattern-slot"]') as HTMLElement;
@@ -141,7 +141,7 @@ describe("pattern color roles in ImageEngine", () => {
     expect(slotEl.style.backgroundRepeat).toBe("no-repeat");
   });
 
-  it("las animaciones de fondo animan tanto background-position como mask-position", () => {
+  it("background animations animate both background-position and mask-position", () => {
     const css = getStylesText();
     expect(css).toContain("@keyframes background-animation-right");
     expect(css).toContain("-webkit-mask-position");
@@ -150,7 +150,7 @@ describe("pattern color roles in ImageEngine", () => {
     expect(css).toContain("mask-size");
   });
 
-  it("actualiza backgroundImage y backgroundColor al cambiar de paleta con aplicarPaleta", async () => {
+  it("updates backgroundImage and backgroundColor when the palette changes via applyPalette", async () => {
     const slot = {
       id: "background-pattern-slot",
       type: "geo",
@@ -167,7 +167,7 @@ describe("pattern color roles in ImageEngine", () => {
       is_background_pattern: true
     };
 
-    const { host, motor, shadow } = montar([slot]);
+    const { host, motor, shadow } = mount([slot]);
     motor.metadata = {
       slots: [slot],
       width: 1000,
@@ -180,14 +180,14 @@ describe("pattern color roles in ImageEngine", () => {
     await motor.renderSlots();
 
     const slotEl = shadow.querySelector('[data-slot-id="background-pattern-slot"]') as HTMLElement;
-    // The palette reaches the pattern through the variables aplicarPaleta writes.
-    motor.aplicarPaleta();
+    // The palette reaches the pattern through the variables applyPalette writes.
+    motor.applyPalette();
     expect(motor._viewport.style.getPropertyValue("--oim-palette-accent")).toBe("#00ff00");
     expect(slotEl.style.getPropertyValue("--oim-pat-fg")).toContain("--oim-palette-accent");
     expect(slotEl.style.backgroundColor).toContain("--oim-palette-primary");
   });
 
-  it("preserva la geometría exacta de svgRawXml (como rejilla 4x4 de puntos) sin re-aleatorizar", async () => {
+  it("preserves the exact geometry of svgRawXml (as a 4x4 dot grid) without re-randomizing", async () => {
     const rawSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><rect width="100%" height="100%" fill="#18181b"/><g transform="translate(20, 20)" fill="#a3e635"><circle cx="12" cy="12" r="6"/></g><g transform="translate(60, 20)" fill="#a3e635"><circle cx="12" cy="12" r="6"/></g><g transform="translate(100, 20)" fill="#a3e635"><circle cx="12" cy="12" r="6"/></g><g transform="translate(140, 20)" fill="#a3e635"><circle cx="12" cy="12" r="6"/></g></svg>';
     const slot = {
       id: "background-pattern-slot",
@@ -205,7 +205,7 @@ describe("pattern color roles in ImageEngine", () => {
       is_background_pattern: true
     };
 
-    const { host, motor, shadow } = montar([slot]);
+    const { host, motor, shadow } = mount([slot]);
     await motor.renderSlots();
 
     const slotEl = shadow.querySelector('[data-slot-id="background-pattern-slot"]') as HTMLElement;
@@ -239,7 +239,7 @@ describe("pattern color roles in ImageEngine", () => {
       is_background_pattern: true
     };
 
-    const m = montar([slot]);
+    const m = mount([slot]);
     await m.motor.renderSlots();
 
     const slotEl = m.shadow.querySelector('[data-slot-id="background-pattern-slot"]') as HTMLElement;
@@ -262,7 +262,7 @@ describe("pattern color roles in ImageEngine", () => {
       height_px: 200,
       style: { fillPatternType: "dots", fillPatternColor: "#a3e635", fillPatternColorRole: "accent" }
     };
-    const { motor, shadow } = montar([slot]);
+    const { motor, shadow } = mount([slot]);
     await motor.renderSlots();
     const el = shadow.querySelector('[data-slot-id="p1"]') as HTMLElement;
     expect(el.classList.contains("oim-pat-dyn")).toBe(true);

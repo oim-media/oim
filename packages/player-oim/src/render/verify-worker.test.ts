@@ -19,7 +19,7 @@ function fabrica() {
 const responder = (w: any, id: number, extra: object = {}) => w.onmessage({ data: { id, success: true, security: "verified", ...extra } });
 
 describe("verificador compartido", () => {
-  it("cuarenta verificaciones crean un solo worker", async () => {
+  it("forty verifications create a single worker", async () => {
     const f = fabrica();
     const v = createWorkerVerifier(f.make);
     const todas = Array.from({ length: 40 }, () => v.verify(new Blob(["x"]), "h", "o"));
@@ -28,14 +28,14 @@ describe("verificador compartido", () => {
     expect(f.creados).toHaveLength(1);
   });
 
-  it("el mensaje lleva la direccion de las claves: el worker no ve la config de la pagina", async () => {
+  it("the message carries the address of the keys: the worker does not see the page's config", async () => {
     const f = fabrica();
     const v = createWorkerVerifier(f.make);
     v.verify(new Blob(["x"]), "h", "o");
     expect(f.creados[0].mensajes[0].keysUrl).toBe("https://api.oim.media/v1/media/keys");
   });
 
-  it("empareja cada respuesta con su peticion aunque lleguen en orden inverso", async () => {
+  it("pairs each response with its request even when they arrive in reverse order", async () => {
     const f = fabrica();
     const v = createWorkerVerifier(f.make);
     const a = v.verify(new Blob(["a"]), "h", "o");
@@ -47,7 +47,7 @@ describe("verificador compartido", () => {
     expect((await b).security).toBe("B");
   });
 
-  it("si el worker se cae, rechaza las pendientes y la siguiente crea otro", async () => {
+  it("if the worker crashes, it rejects the pending ones and the next one creates another", async () => {
     const f = fabrica();
     const v = createWorkerVerifier(f.make);
     const p = v.verify(new Blob(["x"]), "h", "o");
@@ -60,7 +60,7 @@ describe("verificador compartido", () => {
     await expect(q).resolves.toMatchObject({ success: true });
   });
 
-  it("si no se puede crear (CSP), rechaza y no vuelve a intentarlo", async () => {
+  it("if it cannot be created (CSP), it rejects and does not try again", async () => {
     let intentos = 0;
     const v = createWorkerVerifier(() => { intentos++; throw new Error("CSP"); });
     await expect(v.verify(new Blob(["x"]), "h", "o")).rejects.toBeInstanceOf(WorkerUnavailableError);

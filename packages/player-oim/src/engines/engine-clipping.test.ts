@@ -18,7 +18,7 @@
 import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine";
 
-function montar(slots: any[]) {
+function mount(slots: any[]) {
   const host = document.createElement("div");
   const shadow = (host as any).attachShadow({ mode: "open" });
   document.body.appendChild(host);
@@ -32,7 +32,7 @@ function montar(slots: any[]) {
 }
 
 async function recorteDe(slot: any): Promise<string> {
-  const { host, motor } = montar([{ id: "s", position: [50, 50], ...slot }]);
+  const { host, motor } = mount([{ id: "s", position: [50, 50], ...slot }]);
   await motor.renderSlots();
   return (host.shadowRoot!.querySelector('[data-slot-id="s"]') as HTMLElement).style.overflow;
 }
@@ -48,7 +48,7 @@ describe("el recorte en el motor", () => {
    * bottom at 48 px and Playfair Display 0.20. These are the two fonts of the real .oim
    * files, and the cut grows with the size.
    */
-  it("un text no recorta sus propios glifos", async () => {
+  it("a text does not clip its own glyphs", async () => {
     expect(await recorteDe(text())).toBe("visible");
   });
 
@@ -64,7 +64,7 @@ describe("el recorte en el motor", () => {
    * If the text rule won over this one, a headline loop would show the whole tape
    * and stop being a loop.
    */
-  it("un grupo de parallax DE TEXTO sigue recortando", async () => {
+  it("a PARALLAX group of TEXT keeps clipping", async () => {
     expect(await recorteDe({ ...text(), isParallaxGroup: true })).toBe("hidden");
   });
 });

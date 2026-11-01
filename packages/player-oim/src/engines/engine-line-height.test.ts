@@ -25,7 +25,7 @@ import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine";
 import { DEFAULT_LINE_HEIGHT } from "../../../core/src/typography.js";
 
-function montar(slots: any[]) {
+function mount(slots: any[]) {
   const host = document.createElement("div");
   const shadow = (host as any).attachShadow({ mode: "open" });
   document.body.appendChild(host);
@@ -45,21 +45,21 @@ const text = (style: any = {}) => ({
   style: { fontSize: "24px", ...style },
 });
 
-async function interlineadoDe(style: any = {}): Promise<string> {
-  const { host, motor } = montar([text(style)]);
+async function lineHeightOf(style: any = {}): Promise<string> {
+  const { host, motor } = mount([text(style)]);
   await motor.renderSlots();
   const el = host.shadowRoot!.querySelector('[data-slot-id="t"]') as HTMLElement;
   return el.style.lineHeight;
 }
 
 describe("el interlineado en el motor", () => {
-  it("se escribe en el elemento", async () => {
-    expect(await interlineadoDe({ lineHeight: 1.6 })).toBe("1.6");
+  it("is written to the element", async () => {
+    expect(await lineHeightOf({ lineHeight: 1.6 })).toBe("1.6");
   });
 
   /** What published .oim files carry: a string, not a number. */
-  it("lee la cadena de los archivos reales", async () => {
-    expect(await interlineadoDe({ lineHeight: "1.2" })).toBe("1.2");
+  it("reads the chain from the real files", async () => {
+    expect(await lineHeightOf({ lineHeight: "1.2" })).toBe("1.2");
   });
 
   /**
@@ -67,24 +67,24 @@ describe("el interlineado en el motor", () => {
    * depends on the font, is around 1.15-1.2 and is not fixed- and would again
    * diverge from the editor.
    */
-  it("una capa que no lo dice recibe el mismo valor que pinta el editor", async () => {
-    expect(await interlineadoDe()).toBe(String(DEFAULT_LINE_HEIGHT));
+  it("a layer that does not state it receives the same value the editor paints", async () => {
+    expect(await lineHeightOf()).toBe(String(DEFAULT_LINE_HEIGHT));
   });
 
   /**
    * UNITLESS. With `px` or `em` the value is inherited already computed, so a
    * child with a different font size would receive the parent's line height.
    */
-  it("va sin unidad, para que se herede como factor", async () => {
-    const valor = await interlineadoDe({ lineHeight: 2 });
-    expect(valor).toBe("2");
-    expect(valor).not.toMatch(/px|em|rem|%/);
+  it("is written without a unit, so it is inherited as a factor", async () => {
+    const valueItem = await lineHeightOf({ lineHeight: 2 });
+    expect(valueItem).toBe("2");
+    expect(valueItem).not.toMatch(/px|em|rem|%/);
   });
 
-  it("un valor imposible no llega al DOM", async () => {
-    expect(await interlineadoDe({ lineHeight: 0 })).toBe(String(DEFAULT_LINE_HEIGHT));
-    expect(await interlineadoDe({ lineHeight: "alto" })).toBe(String(DEFAULT_LINE_HEIGHT));
+  it("an impossible value does not reach the DOM", async () => {
+    expect(await lineHeightOf({ lineHeight: 0 })).toBe(String(DEFAULT_LINE_HEIGHT));
+    expect(await lineHeightOf({ lineHeight: "alto" })).toBe(String(DEFAULT_LINE_HEIGHT));
     // Clamped to the maximum the editor offers, not discarded.
-    expect(await interlineadoDe({ lineHeight: 99 })).toBe("3");
+    expect(await lineHeightOf({ lineHeight: 99 })).toBe("3");
   });
 });

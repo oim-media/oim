@@ -7,7 +7,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 describe('el player no llama a casa', () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it('verificar una firma con una clave conocida no hace ninguna peticion', async () => {
+  it('verifying a signature with a known key makes no request at all', async () => {
     const espia = vi.fn(() => Promise.reject(new Error('no deberia salir a la red')));
     vi.stubGlobal('fetch', espia);
 

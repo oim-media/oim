@@ -26,7 +26,7 @@ afterEach(() => {
 });
 
 describe("layer effects in ImageEngine", () => {
-  it("renderiza overlay de textura GPU para un slot con efecto texture", async () => {
+  it("renders a GPU texture overlay for a slot with a texture effect", async () => {
     const slot = {
       id: "card-1",
       type: "container",
@@ -92,7 +92,7 @@ describe("layer effects in ImageEngine", () => {
     expect(slotEl.style.filter).toContain("drop-shadow(0px 8px 14px rgba(0, 0, 0, 0.4))");
   });
 
-  it("resuelve colorRole dinámico en efecto drop-shadow", async () => {
+  it("resolves a dynamic colorRole in a drop-shadow effect", async () => {
     const slot = {
       id: "photo-10",
       type: "container",

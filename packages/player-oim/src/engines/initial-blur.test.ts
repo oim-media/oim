@@ -28,7 +28,7 @@ describe("Efecto de desenfoque (blur 14px) en la carga inicial", () => {
     expect(readyMatch![1]).toContain("opacity: 1");
   });
 
-  it("al cargar con prefers-reduced-motion: reduce se asigna filter: none de forma inline", async () => {
+  it("on load with prefers-reduced-motion: reduce, filter: none is assigned inline", async () => {
     const host = document.createElement("div");
     document.body.appendChild(host);
 
@@ -46,7 +46,7 @@ describe("Efecto de desenfoque (blur 14px) en la carga inicial", () => {
 
     try {
       const motor = new ImageEngine(host as any);
-      // Simular llamada load parcial interceptando antes del fetch
+      // Simulate a partial load call, intercepting before the fetch
       motor.imageUrl = "data:image/png;base64,iVBORw0KGgo=";
       const shadow = (host as any).shadowRoot || host.attachShadow({ mode: "open" });
       shadow.innerHTML =
@@ -56,7 +56,7 @@ describe("Efecto de desenfoque (blur 14px) en la carga inicial", () => {
         '</div>';
       motor._viewport = shadow.querySelector('.oim-player-viewport');
 
-      // Si _prefersLessMotion es true, se fuerza filter = 'none'
+      // If _prefersLessMotion is true, filter = 'none' is forced
       if (motor._prefersLessMotion() && motor._viewport) {
         (motor._viewport as HTMLElement).style.filter = "none";
       }

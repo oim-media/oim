@@ -21,32 +21,32 @@ import { neutralizeExternalCssUrls, isSandboxImageSrc, sanitizeHtml, securityVer
 
 const SRC = path.resolve(__dirname, "..");
 
-function fuentes(dir: string): string[] {
+function fontList(dir: string): string[] {
   const out: string[] = [];
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name);
-    if (e.isDirectory()) out.push(...fuentes(p));
+    if (e.isDirectory()) out.push(...fontList(p));
     else if (/\.(ts|js)$/.test(e.name) && !/\.test\.|\.d\.ts$/.test(e.name)) out.push(p);
   }
   return out;
 }
 
-describe("ninguna fuente del player pide tipografias a Google", () => {
-  it("no queda ninguna referencia a fonts.googleapis.com ni fonts.gstatic.com", () => {
+describe("no player source requests typefaces from Google", () => {
+  it("there is no remaining reference to fonts.googleapis.com or fonts.gstatic.com", () => {
     // The editor embeds its fonts. Requesting missing ones from Google would
     // reveal the IP address of whoever opens the file to a third party.
-    const culpables = fuentes(SRC).filter((f) => /fonts\.(googleapis|gstatic)\.com/.test(fs.readFileSync(f, "utf8")));
-    expect(culpables.map((f) => path.relative(SRC, f))).toEqual([]);
+    const offenders = fontList(SRC).filter((f) => /fonts\.(googleapis|gstatic)\.com/.test(fs.readFileSync(f, "utf8")));
+    expect(offenders.map((f) => path.relative(SRC, f))).toEqual([]);
   });
 });
 
-describe("isSandboxImageSrc: una imagen viaja dentro del archivo o no se pinta", () => {
+describe("isSandboxImageSrc: an image travels inside the file or is not painted", () => {
   it("admite data:image y blob:", () => {
     expect(isSandboxImageSrc("data:image/png;base64,AAAA")).toBe(true);
     expect(isSandboxImageSrc("blob:https://oim.media/1234")).toBe(true);
   });
 
-  it("rechaza cualquier URL de red, tambien las nuestras y localhost", () => {
+  it("rejects any network URL, including ours and localhost", () => {
     // An <img src="https://..."> is a tracking pixel: the author would learn who
     // is viewing their work. Not even assets.oim.media: the file must be
     // self-contained.
@@ -64,38 +64,38 @@ describe("isSandboxImageSrc: una imagen viaja dentro del archivo o no se pinta",
   });
 });
 
-describe("neutralizeExternalCssUrls: el CSS del archivo no puede pedir nada fuera", () => {
-  it("sustituye url() de red por none, con o sin comillas y en mayusculas", () => {
+describe("neutralizeExternalCssUrls: the file's CSS cannot request anything outside", () => {
+  it("replaces network url() with none, with or without quotes and in uppercase", () => {
     expect(neutralizeExternalCssUrls("background:url(https://x.test/p.gif)")).toBe("background:none");
     expect(neutralizeExternalCssUrls('background: url("http://x.test/a")')).toBe("background: none");
     expect(neutralizeExternalCssUrls("background: URL( '//x.test/a' )")).toBe("background: none");
   });
 
-  it("respeta las referencias internas y los data: que genera el propio player", () => {
+  it("respects internal references and the data: URIs the player itself generates", () => {
     expect(neutralizeExternalCssUrls("filter:url(#grano)")).toBe("filter:url(#grano)");
     expect(neutralizeExternalCssUrls('mask:url("data:image/svg+xml,%3Csvg%3E")')).toBe('mask:url("data:image/svg+xml,%3Csvg%3E")');
   });
 
-  it("vale dentro de unos @keyframes completos", () => {
+  it("works inside complete @keyframes", () => {
     const kf = "@keyframes a{0%{background-image:url(https://x.test/1.png)}100%{opacity:1}}";
     expect(neutralizeExternalCssUrls(kf)).toBe("@keyframes a{0%{background-image:none}100%{opacity:1}}");
   });
 });
 
-describe("sanitizeHtml neutraliza url() de red en los atributos style", () => {
-  it("un span con style de fondo remoto conserva el estilo, sin la peticion", () => {
+describe("sanitizeHtml neutralizes network url() in style attributes", () => {
+  it("a span with a remote background style keeps the style, without the request", () => {
     const html = sanitizeHtml('<span style="color:red;background:url(https://x.test/p.gif)">hola</span>');
     expect(html).not.toContain("x.test");
     expect(html).toContain("color:red");
   });
 });
 
-describe("allowed_domains ya no la aplica el player", () => {
-  it("verifyDomainLock desaparece del modulo de seguridad", () => {
+describe("the player no longer enforces allowed_domains", () => {
+  it("verifyDomainLock disappears from the security module", () => {
     expect((security as Record<string, unknown>).verifyDomainLock).toBeUndefined();
   });
 
-  it("un archivo firmado con allowed_domains se verifica igual en cualquier sitio", () => {
+  it("a file signed with allowed_domains is verified the same everywhere", () => {
     const HASH = "a".repeat(64);
     const metadata = { image_hash: HASH, image_hash_alg: "sha256-idat", allowed_domains: ["otro-sitio.example"] };
     expect(securityVerdict({ isSigned: true, isSigValid: true, metadata, imageHash: HASH } as any)).toBe("verified");

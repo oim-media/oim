@@ -29,21 +29,21 @@ const slot = (style: Record<string, unknown> = {}) => ({
 const textos = (svg: string) =>
   [...svg.matchAll(/<text\b[^>]*>([\s\S]*?)<\/text>/g)].map((m) => m[1].replace(/<[^>]+>/g, ""));
 
-describe("generateArtisticTextSvgString con saltos de linea", () => {
-  it("pinta cada linea en su propio texto", () => {
+describe("generateArtisticTextSvgString with line breaks", () => {
+  it("paints each line in its own text", () => {
     const pintados = textos(generateArtisticTextSvgString(buildArtisticTextModelFromSlot(slot(), "es"), "c"));
     expect(pintados).toContain("UNO");
     expect(pintados).toContain("DOS");
     expect(pintados.some((t) => t.includes("\n"))).toBe(false);
   });
 
-  it("tambien en el texto curvo", () => {
+  it("also on curved text", () => {
     const pintados = textos(generateArtisticTextSvgString(buildArtisticTextModelFromSlot(slot({ curveAmount: 30 }), "es"), "c"));
     expect(pintados).toContain("UNO");
     expect(pintados).toContain("DOS");
   });
 
-  it("usa el mismo interlineado por defecto que el editor", () => {
+  it("uses the same default line height as the editor", () => {
     // The editor uses `resolveLineHeight` (1.25); the player fell back to 1.2.
     // With one line this was not noticeable; with several, the .oim would
     // come out tighter.

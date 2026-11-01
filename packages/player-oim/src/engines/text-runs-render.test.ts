@@ -10,7 +10,7 @@
 import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine";
 
-function montar(slots: any[], lang: string = "es") {
+function mount(slots: any[], lang: string = "es") {
   const host = document.createElement("div");
   const shadow = (host as any).attachShadow({ mode: "open" });
   document.body.appendChild(host);
@@ -37,7 +37,7 @@ function montar(slots: any[], lang: string = "es") {
  * line in the editor, came out as two lines pushed to the left.
  */
 describe("ImageEngine — textRuns precalculadas", () => {
-  it("el player web ignora textRuns y maqueta el texto el mismo", async () => {
+  it("the web player ignores textRuns and lays out the text the same way", async () => {
     // The real subtitle of the published work, with the editor's estimate.
     const slot = {
       id: "txt-runs",
@@ -63,7 +63,7 @@ describe("ImageEngine — textRuns precalculadas", () => {
       },
     };
 
-    const { host, motor } = montar([slot], "es");
+    const { host, motor } = mount([slot], "es");
     await motor.renderSlots();
 
     const slotEl = host.shadowRoot!.querySelector('[data-slot-id="txt-runs"]') as HTMLElement;
@@ -74,7 +74,7 @@ describe("ImageEngine — textRuns precalculadas", () => {
     expect(slotEl.textContent).toContain("Multimedia de Objetos Interactivos");
   });
 
-  it("hace fallback a textContent si el idioma actual no tiene textRuns", async () => {
+  it("falls back to textContent if the current language has no textRuns", async () => {
     const slot = {
       id: "txt-fallback",
       type: "text",
@@ -94,7 +94,7 @@ describe("ImageEngine — textRuns precalculadas", () => {
       },
     };
 
-    const { host, motor } = montar([slot], "en");
+    const { host, motor } = mount([slot], "en");
     await motor.renderSlots();
 
     const slotEl = host.shadowRoot!.querySelector('[data-slot-id="txt-fallback"]') as HTMLElement;

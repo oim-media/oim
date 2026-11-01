@@ -10,7 +10,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import ImageEngine from "./ImageEngine";
 
-function montar(slots: any[]) {
+function mount(slots: any[]) {
   const host = document.createElement("div");
   const shadow = (host as any).attachShadow({ mode: "open" });
   document.body.appendChild(host);
@@ -30,18 +30,18 @@ const dosCapas = () => ([
 describe("renderSlots parcial", () => {
   let host: HTMLElement, motor: any;
   beforeEach(async () => {
-    ({ host, motor } = montar(dosCapas()));
+    ({ host, motor } = mount(dosCapas()));
     await motor.renderSlots();
   });
 
-  it("sin opciones reconstruye todo, como siempre", async () => {
-    const antes = host.shadowRoot!.querySelector('[data-slot-id="pie"]');
+  it("without options it rebuilds everything, as always", async () => {
+    const before = host.shadowRoot!.querySelector('[data-slot-id="pie"]');
     await motor.renderSlots();
-    const despues = host.shadowRoot!.querySelector('[data-slot-id="pie"]');
-    expect(despues).not.toBe(antes);
+    const after = host.shadowRoot!.querySelector('[data-slot-id="pie"]');
+    expect(after).not.toBe(before);
   });
 
-  it("con onlyIds NO toca los nodos de las demas capas", async () => {
+  it("with onlyIds it does NOT touch the nodes of the other layers", async () => {
     const pieAntes = host.shadowRoot!.querySelector('[data-slot-id="pie"]');
     const tituloAntes = host.shadowRoot!.querySelector('[data-slot-id="titulo"]');
 
@@ -52,15 +52,15 @@ describe("renderSlots parcial", () => {
     expect(host.shadowRoot!.querySelector('[data-slot-id="titulo"]')).not.toBe(tituloAntes);
   });
 
-  it("la capa reconstruida queda en su sitio del apilado", async () => {
+  it("the rebuilt layer stays in its place in the stacking order", async () => {
     await motor.renderSlots({ onlyIds: new Set(["titulo"]) });
     const ids = Array.from(host.shadowRoot!.querySelectorAll("[data-slot-id]"))
       .map((el) => el.getAttribute("data-slot-id"));
     expect(ids).toEqual(["titulo", "pie"]);
   });
 
-  it("con mascaras se reconstruye todo aunque pidas una sola capa", async () => {
-    const { host: h2, motor: m2 } = montar([
+  it("with masks everything is rebuilt even if you ask for a single layer", async () => {
+    const { host: h2, motor: m2 } = mount([
       ...dosCapas(),
       { id: "mascara", type: "mask", content: {}, position: [50, 50], style: { maskMode: "cutout" } },
     ]);
@@ -79,10 +79,10 @@ describe("el controlador de parallax sobrevive al render parcial", () => {
     { id: "pie", type: "text", content: { es: "Igual", en: "Igual" }, position: [50, 80], style: {} },
   ]);
 
-  it("reapunta la capa reconstruida al nodo nuevo", async () => {
+  it("re-points the rebuilt layer to the new node", async () => {
     // Without this the controller would keep moving the old node, already detached,
     // and the new layer would stay still without anything giving it away.
-    const { host, motor } = montar(conParallax());
+    const { host, motor } = mount(conParallax());
     await motor.renderSlots();
 
     const ctrl: any = motor._parallaxController;
@@ -96,10 +96,10 @@ describe("el controlador de parallax sobrevive al render parcial", () => {
     expect(item.element.isConnected).toBe(true);
   });
 
-  it("un render completo destruye el controlador anterior", async () => {
+  it("a full render destroys the previous controller", async () => {
     // Each render created a new one and left the old one running: a mousemove
     // listener and an rAF loop, forever.
-    const { motor } = montar(conParallax());
+    const { motor } = mount(conParallax());
     await motor.renderSlots();
 
     const primero: any = motor._parallaxController;

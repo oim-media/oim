@@ -13,11 +13,11 @@ const entrada = (cambios: Record<string, unknown> = {}) => ({
 });
 
 describe("readEmbeddedFonts", () => {
-  it("devuelve las entradas validas", () => {
+  it("returns the valid entries", () => {
     expect(readEmbeddedFonts({ fonts: [entrada()] })).toHaveLength(1);
   });
 
-  it("ignora un formato, un nombre, un estilo o un contenido que no cuadran", () => {
+  it("ignores an entry whose format, name, style or content does not match", () => {
     const malas = [
       entrada({ format: "ttf" }),
       entrada({ name: "Lora" }),
@@ -28,13 +28,13 @@ describe("readEmbeddedFonts", () => {
     expect(readEmbeddedFonts({ fonts: malas })).toEqual([]);
   });
 
-  it("sin fonts no devuelve nada", () => {
+  it("without fonts it returns nothing", () => {
     expect(readEmbeddedFonts({ slots: [] })).toEqual([]);
   });
 });
 
 describe("registerEmbeddedFonts", () => {
-  it("registra cada variante con el nombre interno y su peso y estilo", async () => {
+  it("registers each variant with its internal name and its weight and style", async () => {
     const add = vi.fn();
     const make = vi.fn((name: string, _src: string, desc: any) => ({ name, desc, load: async () => {} }) as any);
     const mapa = await registerEmbeddedFonts(readEmbeddedFonts({ fonts: [entrada()] }), { add } as any, make);
@@ -43,7 +43,7 @@ describe("registerEmbeddedFonts", () => {
     expect(mapa.get("Lora")).toBe("oim-3f9a1c2b-Lora");
   });
 
-  it("una fuente que no carga se queda fuera y su capa caera a Google", async () => {
+  it("a font that does not load is left out and its layer falls back to Google", async () => {
     const make = vi.fn(() => ({ load: async () => { throw new Error("rota"); } }) as any);
     const mapa = await registerEmbeddedFonts(readEmbeddedFonts({ fonts: [entrada()] }), { add: vi.fn() } as any, make);
     expect(mapa.size).toBe(0);
@@ -51,11 +51,11 @@ describe("registerEmbeddedFonts", () => {
 });
 
 describe("embeddedFontFamily", () => {
-  it("pone el nombre interno primero y la familia real de respaldo", () => {
+  it("puts the internal name first and the real family as fallback", () => {
     expect(embeddedFontFamily("Lora", new Map([["Lora", "oim-3f9a1c2b-Lora"]]))).toBe("'oim-3f9a1c2b-Lora', 'Lora', sans-serif");
   });
 
-  it("una familia no incrustada devuelve null", () => {
+  it("a non-embedded family returns null", () => {
     expect(embeddedFontFamily("Inter", new Map())).toBeNull();
   });
 });

@@ -21,7 +21,7 @@ import { patternLayerCss } from "../../../core/src/fill.js";
 
 // Harness copied from `text-fill.test.ts`: same `attachShadow`, same
 // `_viewport` and `_overlay`.
-function montar(slots: any[]) {
+function mount(slots: any[]) {
   const host = document.createElement("div");
   const shadow = (host as any).attachShadow({ mode: "open" });
   document.body.appendChild(host);
@@ -53,19 +53,19 @@ const slotPatron = {
 };
 
 async function slotDe(style: any): Promise<HTMLElement> {
-  const { host, motor } = montar([style]);
+  const { host, motor } = mount([style]);
   await motor.renderSlots();
   return host.shadowRoot!.querySelector('[data-slot-id="' + style.id + '"]') as HTMLElement;
 }
 
-describe("la capa de patron en el player", () => {
-  it("tesela y se repite", async () => {
+describe("the pattern layer in the player", () => {
+  it("tiles and repeats", async () => {
     const el = await slotDe(slotPatron);
     expect(el.style.backgroundRepeat).toBe("repeat");
     expect(el.style.backgroundSize).toBe("160px 160px");
   });
 
-  it("usa EXACTAMENTE lo que devuelve el core", async () => {
+  it("uses EXACTLY what the core returns", async () => {
     const el = await slotDe(slotPatron);
     const esperado = patternLayerCss(slotPatron.style as any) as any;
     expect(el.style.animation).toBe(esperado.animation);
@@ -83,7 +83,7 @@ describe("la capa de patron en el player", () => {
   // `div.style.width = '25cqw'` outside the engine, and the value stays ''-. The
   // only way to see which value the engine TRIED to set is to spy on the setter
   // of `CSSStyleDeclaration` before rendering.
-  it("no se estira al 100% del visor: mide lo que declara el slot", async () => {
+  it("does not stretch to 100% of the viewer: it measures what the slot declares", async () => {
     const setWidth = vi.spyOn(CSSStyleDeclaration.prototype, "width", "set");
     const setHeight = vi.spyOn(CSSStyleDeclaration.prototype, "height", "set");
     try {
@@ -97,7 +97,7 @@ describe("la capa de patron en el player", () => {
     }
   });
 
-  it("una capa de patron con forma de circulo lleva la mascara del core", async () => {
+  it("a pattern layer with a circle shape carries the core's mask", async () => {
     const conForma = { ...slotPatron, id: "pc", style: { ...slotPatron.style, geoShape: "circle" } };
     const el = await slotDe(conForma);
     const esperado = patternLayerCss(conForma.style as any) as any;

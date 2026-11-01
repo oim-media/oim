@@ -21,7 +21,7 @@ const meta = () => ({
 const ESPERADO = { c: [50, 25], r: [12.5, 50], l: [12.5, 75] };
 
 describe("normalizeRawSlots", () => {
-  it("coloca cada capa segun la variante decidida", () => {
+  it("places each layer according to the variant decided", () => {
     const m: any = meta();
     normalizeRawSlots(m);
     const pos = Object.fromEntries(m.slots.map((s: any) => [s.id, s.position]));
@@ -46,7 +46,7 @@ describe("normalizeRawSlots", () => {
     }
   });
 
-  it("copia languages a lang y conserva el contenido y dimensiones", () => {
+  it("copies languages to lang and keeps the content and dimensions", () => {
     const m: any = meta();
     normalizeRawSlots(m);
     expect(m.lang).toEqual(["es", "en"]);
@@ -57,13 +57,13 @@ describe("normalizeRawSlots", () => {
     expect(m.slots[0].style).toMatchObject({ width: "600px", height: "80px" });
   });
 
-  it("no toca un archivo que ya trae slots", () => {
+  it("does not touch a file that already carries slots", () => {
     const m: any = { slots: [{ id: "ya" }], slots_raw: [{ id: "otro" }] };
     normalizeRawSlots(m);
     expect(m.slots).toEqual([{ id: "ya" }]);
   });
 
-  it("los dos caminos usan la funcion y ninguno conserva su copia", () => {
+  it("both paths use the function and neither keeps its own copy", () => {
     for (const f of [join(__dirname, "worker.ts"), join(__dirname, "..", "engines", "ImageEngine.ts")]) {
       const src = readFileSync(f, "utf8");
       expect(src.includes("normalizeRawSlots(")).toBe(true);

@@ -21,55 +21,55 @@ import { sanitizeHtml } from "./security";
 
 const limpio = (s: string) => sanitizeHtml(s).toLowerCase();
 
-describe("lo hostil se limpia", () => {
-  it("quita onload del propio <svg>", () => {
+describe("hostile content is cleaned", () => {
+  it("removes onload from the <svg> itself", () => {
     const salida = limpio('<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><circle r="9"/></svg>');
     expect(salida).not.toContain("onload");
     // but the shape is kept: sanitizing is not deleting
     expect(salida).toContain("circle");
   });
 
-  it("quita <script> aunque venga dentro del SVG", () => {
+  it("removes <script> even when it comes inside the SVG", () => {
     expect(limpio('<svg><script>alert(1)</script><path d="M0 0"/></svg>')).not.toContain("<script");
   });
 
-  it("quita onerror de una imagen anidada", () => {
+  it("removes onerror from a nested image", () => {
     expect(limpio('<svg><image href="x" onerror="alert(1)"/></svg>')).not.toContain("onerror");
   });
 
-  it("quita cualquier manejador on*, no solo los conocidos", () => {
+  it("removes any on* handler, not only the known ones", () => {
     const salida = limpio('<svg onmouseover="a()" onfocus="b()" onanimationstart="c()"><rect/></svg>');
     expect(salida).not.toContain("onmouseover");
     expect(salida).not.toContain("onfocus");
     expect(salida).not.toContain("onanimationstart");
   });
 
-  it("quita <foreignObject>, que permite meter HTML arbitrario", () => {
+  it("removes <foreignObject>, which allows arbitrary HTML to be injected", () => {
     expect(limpio('<svg><foreignObject><iframe src="x"></iframe></foreignObject></svg>')).not.toContain("iframe");
   });
 
-  it("quita href con javascript:, en cualquier caja", () => {
+  it("removes href with javascript:, in any box", () => {
     expect(limpio('<svg><a href="JaVaScRiPt:alert(1)"><rect/></a></svg>')).not.toContain("javascript");
   });
 
-  it("quita href con javascript: partido por un salto de linea", () => {
+  it("removes href with javascript: split by a line break", () => {
     // The browser normalizes this to `javascript:`; an `indexOf("javascript:")` did
     // not catch it. The scheme allowlist does.
     expect(limpio('<svg><a href="java\nscript:alert(1)"><rect/></a></svg>')).not.toContain("script:");
   });
 
-  it("quita <use href> apuntando fuera del documento", () => {
+  it("removes <use href> pointing outside the document", () => {
     const salida = limpio('<svg><use href="http://malo.example/x.svg#i"/></svg>');
     expect(salida).not.toContain("malo.example");
   });
 
-  it("conserva <use href='#id'>, que es una referencia interna legitima", () => {
+  it("keeps <use href='#id'>, which is a legitimate internal reference", () => {
     expect(limpio('<svg><defs><path id="p" d="M0 0"/></defs><use href="#p"/></svg>')).toContain('href="#p"');
   });
 });
 
 describe("lo legitimo sobrevive", () => {
-  it("un icono con grupos, trazo y fill queda intacto", () => {
+  it("an icon with groups, stroke and fill stays intact", () => {
     const salida = limpio(
       '<svg viewBox="0 0 24 24"><g fill="none" stroke="#333" stroke-width="2" stroke-linecap="round">' +
       '<path d="M3 12h18"/><circle cx="12" cy="12" r="9"/></g></svg>'
@@ -79,7 +79,7 @@ describe("lo legitimo sobrevive", () => {
     }
   });
 
-  it("un degradado conserva sus paradas y unidades", () => {
+  it("a gradient keeps its stops and units", () => {
     const salida = limpio(
       '<svg><defs><linearGradient id="g" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1" y2="1">' +
       '<stop offset="0" stop-color="#f00"/><stop offset="1" stop-color="#00f" stop-opacity="0.5"/>' +
@@ -90,7 +90,7 @@ describe("lo legitimo sobrevive", () => {
     }
   });
 
-  it("una mascara y un recorte sobreviven", () => {
+  it("a mask and a clip survive", () => {
     // This is what the shortcut was protecting: with the short list, they disappeared.
     const salida = limpio(
       '<svg><defs><clipPath id="c" clipPathUnits="objectBoundingBox"><path d="M0 0"/></clipPath>' +
@@ -102,7 +102,7 @@ describe("lo legitimo sobrevive", () => {
     }
   });
 
-  it("un filtro de desenfoque sobrevive", () => {
+  it("a blur filter survives", () => {
     const salida = limpio(
       '<svg><defs><filter id="f" filterUnits="userSpaceOnUse">' +
       '<feGaussianBlur stdDeviation="3" result="b"/><feColorMatrix type="matrix" values="0 0 0"/>' +
@@ -113,13 +113,13 @@ describe("lo legitimo sobrevive", () => {
     }
   });
 
-  it("el transform y el fill-rule no se pierden", () => {
+  it("the transform and the fill-rule are not lost", () => {
     const salida = limpio('<svg><path d="M0 0" transform="translate(4 4) rotate(45)" fill-rule="evenodd"/></svg>');
     expect(salida).toContain("transform");
     expect(salida).toContain("fill-rule");
   });
 
-  it("el HTML de un slot de text enriquecido sigue funcionando", () => {
+  it("the HTML of a rich-text slot still works", () => {
     const salida = limpio('<div><span class="x"><b>Hola</b> <i>mundo</i></span></div>');
     for (const t of ["<div", "<span", "<b>", "<i>", "hola", "mundo"]) {
       expect(salida, t).toContain(t);
@@ -128,7 +128,7 @@ describe("lo legitimo sobrevive", () => {
 });
 
 describe("casos limite", () => {
-  it("una cadena vacia no revienta", () => {
+  it("an empty string does not blow up", () => {
     expect(sanitizeHtml("")).toBe("");
   });
 

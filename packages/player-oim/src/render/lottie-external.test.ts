@@ -28,18 +28,18 @@ describe("cargador externo de lottie", () => {
     delete (globalThis as any).lottie;
   });
 
-  it("resuelve el archivo junto al script del player, en las dos rutas publicas", () => {
+  it("resolves the file next to the player script, on both public paths", () => {
     expect(vendorUrl("https://cdn.oim.media/oim-player.js", "5.13.0"))
       .toBe("https://cdn.oim.media/vendor/lottie_light-5.13.0.js");
     expect(vendorUrl("https://cdn.oim.media/player/v1/oim-player.js?cb=1", "5.13.0"))
       .toBe("https://cdn.oim.media/player/v1/vendor/lottie_light-5.13.0.js");
   });
 
-  it("sin la URL del script usa la del CDN", () => {
+  it("without the script URL it uses the CDN's", () => {
     expect(vendorUrl(null, "5.13.0")).toBe("https://cdn.oim.media/player/v1/vendor/lottie_light-5.13.0.js");
   });
 
-  it("cinco peticiones insertan un solo script y todas reciben lottie", async () => {
+  it("five requests insert a single script and all of them receive lottie", async () => {
     const load = createExternalLottieLoader({ scriptUrl: "https://cdn.oim.media/oim-player.js", version: "5.13.0" });
     const all = Promise.all([1, 2, 3, 4, 5].map(() => load()));
     expect(scripts()).toHaveLength(1);
@@ -48,14 +48,14 @@ describe("cargador externo de lottie", () => {
     for (const l of await all) expect(l).toBe(fakeLottie);
   });
 
-  it("si ya hay un lottie en la pagina no inserta nada", async () => {
+  it("if there is already a lottie on the page it inserts nothing", async () => {
     (globalThis as any).lottie = fakeLottie;
     const load = createExternalLottieLoader({ scriptUrl: null, version: "5.13.0" });
     expect(await load()).toBe(fakeLottie);
     expect(scripts()).toHaveLength(0);
   });
 
-  it("si falla la carga rechaza con la URL, quita el script y la siguiente vez reintenta", async () => {
+  it("if the load fails it rejects with the URL, removes the script and the next time it retries", async () => {
     const load = createExternalLottieLoader({ scriptUrl: "https://cdn.oim.media/oim-player.js", version: "5.13.0" });
     const first = load();
     scripts()[0].onerror!(new Event("error"));
@@ -68,7 +68,7 @@ describe("cargador externo de lottie", () => {
     expect(await second).toBe(fakeLottie);
   });
 
-  it("si el script carga pero no define lottie, rechaza en vez de colgarse", async () => {
+  it("if the script loads but does not define lottie, it rejects instead of hanging", async () => {
     const load = createExternalLottieLoader({ scriptUrl: null, version: "5.13.0" });
     const p = load();
     scripts()[0].onload!(new Event("load"));

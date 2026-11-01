@@ -29,7 +29,7 @@ import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine";
 import { inkMargin, DEFAULT_LINE_HEIGHT } from "../../../core/src/typography.js";
 
-function montar(slots: any[]) {
+function mount(slots: any[]) {
   const host = document.createElement("div");
   const shadow = (host as any).attachShadow({ mode: "open" });
   document.body.appendChild(host);
@@ -50,7 +50,7 @@ const text = (style: any = {}) => ({
 });
 
 async function slotDe(style: any): Promise<HTMLElement> {
-  const { host, motor } = montar([text(style)]);
+  const { host, motor } = mount([text(style)]);
   await motor.renderSlots();
   return host.shadowRoot!.querySelector('[data-slot-id="t"]') as HTMLElement;
 }
@@ -60,10 +60,10 @@ async function hoverDe(style: any): Promise<HTMLElement> {
   return (await slotDe({ width: "300px", height: "80px", ...style })).querySelector(".oim-slot-hover-wrap") as HTMLElement;
 }
 
-describe("un text con fill de degradado", () => {
+describe("a text with a gradient fill", () => {
   const DEG = "linear-gradient(90deg, #1b3a6b, #e0457b)";
 
-  it("recibe el degradado como fondo", async () => {
+  it("receives the gradient as background", async () => {
     const el = await hoverDe({ fillType: "gradient", fillGradient: DEG });
     expect(el.style.backgroundImage).toContain("linear-gradient");
   });
@@ -73,20 +73,20 @@ describe("un text con fill de degradado", () => {
    * only where there is a glyph. Without `color: transparent` the text would be painted
    * ON TOP of its own gradient and none of it would show.
    */
-  it("se convierte en mascara: recorte al text y color transparente", async () => {
+  it("becomes a mask: clipped to the text, with a transparent colour", async () => {
     const el = await hoverDe({ fillType: "gradient", fillGradient: DEG });
     expect(el.style.backgroundClip || (el.style as any).webkitBackgroundClip).toBe("text");
     expect(el.style.color).toBe("transparent");
   });
 });
 
-describe("el color plano NO se convierte en mascara", () => {
+describe("a flat colour does NOT become a mask", () => {
   /**
    * The half that is often forgotten. A solid fill is painted as the normal text
    * colour: turning it into a mask would cost the smoothing that knows the shape of
    * the letter, and in return for nothing.
    */
-  it("un fill solido pinta el color, sin recorte", async () => {
+  it("a solid fill paints the colour, without clipping", async () => {
     const el = await slotDe({ fillType: "color", fillColor: "#1b3a6b" });
     // happy-dom keeps the hexadecimal; a browser normalizes it to `rgb()`.
     // It is compared with what THIS environment produces, not with what
@@ -95,21 +95,21 @@ describe("el color plano NO se convierte en mascara", () => {
     expect(el.style.backgroundClip).not.toBe("text");
   });
 
-  it("sin fillType no se toca nada", async () => {
+  it("without fillType nothing is touched", async () => {
     const el = await slotDe({});
     expect(el.style.backgroundClip).not.toBe("text");
     expect(el.style.color).not.toBe("transparent");
   });
 });
 
-describe("el inkMargin para la tinta de los descendentes", () => {
+describe("the inkMargin for the ink of descenders", () => {
   /**
    * With `background-clip: text` the paint is cropped to the background area, which is
    * the line box. The ink of the "j", the "p" and the "g" sticks out of it and is left
    * WITHOUT FILL (transparent), and with a text border the outline is seen to continue
    * where the colour no longer reaches.
    */
-  it("se anade cuando el text es una mascara", async () => {
+  it("is added when the text is a mask", async () => {
     const el = await slotDe({ fillType: "gradient", fillGradient: "linear-gradient(90deg,#000,#fff)" });
     const esperado = inkMargin(DEFAULT_LINE_HEIGHT) + "em";
     expect(el.style.paddingTop).toBe(esperado);
@@ -121,7 +121,7 @@ describe("el inkMargin para la tinta de los descendentes", () => {
    * inline style. Without `important` here, the inkMargin would never get applied and
    * this test would pass anyway by only looking at `style.paddingTop`.
    */
-  it("va con important, o la hoja de styles lo pisa", async () => {
+  it("goes with important, or the stylesheet overrides it", async () => {
     const el = await slotDe({ fillType: "gradient", fillGradient: "linear-gradient(90deg,#000,#fff)" });
     expect(el.style.getPropertyPriority("padding-top")).toBe("important");
     expect(el.style.getPropertyPriority("padding-bottom")).toBe("important");
@@ -132,7 +132,7 @@ describe("el inkMargin para la tinta de los descendentes", () => {
    * fits, and enlarging the background area would shift a vertical gradient.
    * for no reason.
    */
-  it("no se anade con un interlineado que ya da de si", async () => {
+  it("is not added with a line height that already provides enough", async () => {
     const el = await slotDe({
       fillType: "gradient", fillGradient: "linear-gradient(90deg,#000,#fff)", lineHeight: 1.6,
     });
@@ -140,7 +140,7 @@ describe("el inkMargin para la tinta de los descendentes", () => {
   });
 
   /** Nor when the fill is solid, which clips nothing. */
-  it("no se anade a un fill solido", async () => {
+  it("is not added to a solid fill", async () => {
     const el = await slotDe({ fillType: "color", fillColor: "#111" });
     expect(el.style.paddingTop).toBe("");
   });
@@ -153,7 +153,7 @@ describe("the text mask lives inside what animates (phase 3, 13 Sept)", () => {
   const DEG = "linear-gradient(90deg, #1b3a6b, #e0457b)";
 
   async function partes(style: any) {
-    const { host, motor } = montar([text({ width: "300px", height: "80px", ...style })]);
+    const { host, motor } = mount([text({ width: "300px", height: "80px", ...style })]);
     if (style.textAnimationType) {
       motor.disableAnimations = false;
     }

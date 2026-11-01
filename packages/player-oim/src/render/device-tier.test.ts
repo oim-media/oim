@@ -13,7 +13,7 @@ import {
 } from './device-tier';
 
 describe('device-tier utility', () => {
-  it('detecta dispositivos móviles por User Agent estándar', () => {
+  it('detects mobile devices by standard User Agent', () => {
     const fakeNavIphone = {
       userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
       platform: 'iPhone',
@@ -29,7 +29,7 @@ describe('device-tier utility', () => {
     expect(isMobileDevice(fakeNavAndroid)).toBe(true);
   });
 
-  it('detecta iPadOS que simula MacIntel con puntos táctiles', () => {
+  it('detects iPadOS that masquerades as MacIntel with touch points', () => {
     const fakeNavIpad = {
       userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15',
       platform: 'MacIntel',
@@ -38,7 +38,7 @@ describe('device-tier utility', () => {
     expect(isMobileDevice(fakeNavIpad)).toBe(true);
   });
 
-  it('detecta PC de escritorio con ratón fino', () => {
+  it('detects a desktop PC with a fine pointer', () => {
     const fakeNavDesktop = {
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0',
       platform: 'Win32',
@@ -62,7 +62,7 @@ describe('device-tier utility', () => {
     expect(prefersReducedMotion(winNormal)).toBe(false);
   });
 
-  it('asigna tier "low" si el modo ahorro de datos está activo', () => {
+  it('assigns tier "low" if data saver mode is on', () => {
     const fakeNav = {
       userAgent: 'Desktop',
       hardwareConcurrency: 16,
@@ -71,7 +71,7 @@ describe('device-tier utility', () => {
     expect(getDeviceTier(fakeNav)).toBe('low');
   });
 
-  it('asigna tier "low" si la memoria es <= 2GB o núcleos <= 2', () => {
+  it('assigns tier "low" if memory is <= 2GB or cores <= 2', () => {
     const fakeNavLowMem = {
       userAgent: 'Desktop',
       hardwareConcurrency: 8,
@@ -87,7 +87,7 @@ describe('device-tier utility', () => {
     expect(getDeviceTier(fakeNavLowCpu)).toBe('low');
   });
 
-  it('asigna tier "high" a PCs con >=8 núcleos y >=8GB de RAM', () => {
+  it('assigns tier "high" to PCs with >=8 cores and >=8GB of RAM', () => {
     const fakeNavDesktop = {
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
       hardwareConcurrency: 8,
@@ -100,7 +100,7 @@ describe('device-tier utility', () => {
     expect(getDeviceTier(fakeNavDesktop, fakeWin)).toBe('high');
   });
 
-  it('asigna tier "low" o "medium" a móviles según sus núcleos/RAM', () => {
+  it('assigns tier "low" or "medium" to phones according to their cores/RAM', () => {
     const fakeNavMobileLow = {
       userAgent: 'Mozilla/5.0 (Android; Mobile)',
       hardwareConcurrency: 4,

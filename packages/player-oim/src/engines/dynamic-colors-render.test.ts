@@ -26,7 +26,7 @@ function montarMotor(slots: any[]) {
 }
 
 describe("Renderizado de Colores Dinamicos en ImageEngine", () => {
-  it("asigna var(--oim-color-accent, ...) y var(--oim-color-outline, ...) en formas rectangulares", async () => {
+  it("assigns var(--oim-color-accent, ...) and var(--oim-color-outline, ...) on rectangular shapes", async () => {
     const origCreateElement = document.createElement.bind(document);
     let slotElement: any = null;
     const setPropertyCalls: [string, string][] = [];
@@ -69,7 +69,7 @@ describe("Renderizado de Colores Dinamicos en ImageEngine", () => {
     vi.restoreAllMocks();
   });
 
-  it("asigna variables dinamicas en figuras vectoriales SVG (star, heart)", async () => {
+  it("assigns dynamic variables on SVG vector figures (star, heart)", async () => {
     const { motor, shadow } = montarMotor([{
       id: "star_shape",
       type: "geo",
@@ -96,7 +96,7 @@ describe("Renderizado de Colores Dinamicos en ImageEngine", () => {
     expect(polygon?.getAttribute("stroke")).toBe("var(--oim-color-on-primary, var(--oim-palette-on-primary, #064E3B))");
   });
 
-  it("asigna var(--oim-color-on-surface, ...) en capas de texto", async () => {
+  it("assigns var(--oim-color-on-surface, ...) on text layers", async () => {
     const setPropertyCalls: [string, string][] = [];
     const origCreateElement = document.createElement.bind(document);
     vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
@@ -134,7 +134,7 @@ describe("Renderizado de Colores Dinamicos en ImageEngine", () => {
     vi.restoreAllMocks();
   });
 
-  it("resuelve colores dinamicos en mascara de ventana", async () => {
+  it("resolves dynamic colours in a window mask", async () => {
     const { motor, shadow } = montarMotor([{
       id: "mascara_ventana",
       type: "mask",
@@ -162,7 +162,7 @@ describe("Renderizado de Colores Dinamicos en ImageEngine", () => {
     expect(paths[1]?.getAttribute("stroke")).toBe("var(--oim-color-outline, var(--oim-palette-outline, #FFFFFF))");
   });
 
-  it("conserva el color base plano si no hay rol semantico declarado", async () => {
+  it("keeps the flat base colour if no semantic role is declared", async () => {
     const { motor, shadow } = montarMotor([{
       id: "star_plana",
       type: "geo",
@@ -186,7 +186,7 @@ describe("Renderizado de Colores Dinamicos en ImageEngine", () => {
     expect(polygon?.getAttribute("stroke")).toBe("#7F1D1D");
   });
 
-  it("un color del archivo no puede inyectar declaraciones CSS en el atributo style", async () => {
+  it("a colour from the file cannot inject CSS declarations into the style attribute", async () => {
     // The color comes from the .oim and the schema does NOT validate its format.
     // When there is no semantic role -the common case-, `resolveCssColor` returns
     // the RAW value. If that value is pasted into the `style` attribute, the
@@ -220,17 +220,17 @@ describe("Renderizado de Colores Dinamicos en ImageEngine", () => {
   });
 });
 
-describe("allow-dynamic-colors: eximir una imagen concreta", () => {
+describe("allow-dynamic-colors: exempting a specific image", () => {
   // The function is already opt-in at the page level: if the page does not
   // define `--oim-color-*`, `var(--x, fallback)` falls back to the author's
   // fallback. This attribute covers the other case: a page that DOES define
   // them globally and embeds a public work that must not adopt its palette.
-  it("por defecto los deja pasar", async () => {
+  it("by default it lets them through", async () => {
     const { motor } = montarMotor([]);
     expect(motor.allowDynamicColors).toBe(true);
   });
 
-  it('con allow-dynamic-colors="false" neutraliza los ocho roles en el visor', async () => {
+  it('with allow-dynamic-colors="false" it neutralizes the eight roles in the viewer', async () => {
     const host = document.createElement("div");
     host.setAttribute("allow-dynamic-colors", "false");
     const shadow = (host as any).attachShadow({ mode: "open" });
@@ -269,7 +269,7 @@ describe("allow-dynamic-colors: eximir una imagen concreta", () => {
     expect(path.style.getPropertyValue("stroke")).toContain("--oim-color-primary");
   });
 
-  it("resuelve variables dinamicas en efectos drop-shadow y glow", async () => {
+  it("resolves dynamic variables in drop-shadow and glow effects", async () => {
     const { motor, shadow } = montarMotor([
       {
         id: "card_effect",
@@ -336,7 +336,7 @@ describe("allow-dynamic-colors: eximir una imagen concreta", () => {
     expect(textEl.style.textShadow).toContain("4px 4px 2px var(--oim-color-accent, var(--oim-palette-accent, #a3e635))");
   });
 
-  it("resuelve variables dinamicas en sombra legacy con shadowColorRole", async () => {
+  it("resolves dynamic variables in a legacy shadow with shadowColorRole", async () => {
     const { motor, shadow } = montarMotor([
       {
         id: "card_legacy_shadow",

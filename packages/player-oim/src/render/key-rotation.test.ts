@@ -45,8 +45,8 @@ afterEach(() => {
   vi.resetModules();
 });
 
-describe('rotacion de clave', () => {
-  it('un player nuevo, con la clave vieja caducada dentro, sigue validando lo firmado antes — y sin red', async () => {
+describe('key rotation', () => {
+  it('a new player, with the old expired key inside, still validates what was signed before — and without network', async () => {
     const espia = vi.fn(() => Promise.reject(new Error('no deberia salir a la red')));
     vi.stubGlobal('fetch', espia);
 
@@ -58,7 +58,7 @@ describe('rotacion de clave', () => {
     expect(espia).not.toHaveBeenCalled();
   });
 
-  it('rechaza lo firmado con la clave vieja DESPUES de retirarla', async () => {
+  it('rejects what was signed with the old key AFTER retiring it', async () => {
     const { EMBEDDED_KEYS } = await import('./keys');
     EMBEDDED_KEYS.push(claveVieja);
 
@@ -66,13 +66,13 @@ describe('rotacion de clave', () => {
     expect(await verifyMetadataSignature(F.firmado_con_la_vieja_despues)).toBe(false);
   });
 
-  it('un player viejo aprende del servidor la clave que no lleva dentro', async () => {
+  it('an old player learns from the server the key it does not carry inside', async () => {
     elServidorPublicaSusClaves();
     const { verifyMetadataSignature } = await import('./security');
     expect(await verifyMetadataSignature(F.firmado_con_la_nueva)).toBe(true);
   });
 
-  it('un player viejo tambien respeta la caducidad que publica el servidor', async () => {
+  it('an old player also respects the expiry the server publishes', async () => {
     elServidorPublicaSusClaves();
     const { verifyMetadataSignature } = await import('./security');
     expect(await verifyMetadataSignature(F.firmado_con_la_vieja_despues)).toBe(false);

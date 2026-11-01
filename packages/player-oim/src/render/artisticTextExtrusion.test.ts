@@ -16,13 +16,13 @@
 import { describe, it, expect } from "vitest";
 import { buildArtisticTextModelFromSlot } from "./artisticText";
 
-const luz = (hex: string) => {
+const brightness = (hex: string) => {
   const n = parseInt(hex.slice(1), 16);
   return ((n >> 16) & 255) + ((n >> 8) & 255) + (n & 255);
 };
 
-describe("el relieve 3D del player", () => {
-  it("oscurece el color del relieve, igual que el editor", () => {
+describe("the player's 3D relief", () => {
+  it("darkens the relief colour, as the editor does", () => {
     const model = buildArtisticTextModelFromSlot(
       {
         id: "c",
@@ -35,6 +35,6 @@ describe("el relieve 3D del player", () => {
     );
     expect(model.extrusionLayers.length).toBeGreaterThan(0);
     expect(model.extrusionLayers[model.extrusionLayers.length - 1].color).toBe("#010102");
-    for (const capa of model.extrusionLayers) expect(luz(capa.color)).toBeLessThanOrEqual(luz("#111827"));
+    for (const layer of model.extrusionLayers) expect(brightness(layer.color)).toBeLessThanOrEqual(brightness("#111827"));
   });
 });

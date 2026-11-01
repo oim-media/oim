@@ -10,7 +10,7 @@ import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
  * and asks for the verdict.
  */
 
-const SERVER_KID = 'v9-solo-del-servidor';
+const SERVER_KID = 'v9-server-only';
 
 async function firmarComoElServidor(metadata: any, privateKey: CryptoKey): Promise<string> {
   const { serializeCanonical } = await import('./security');
@@ -63,12 +63,12 @@ afterEach(() => {
   vi.resetModules();
 });
 
-describe('caducidad de una clave que solo publica el servidor', () => {
-  it('una firma anterior a not_after vale', async () => {
+describe('expiry of a key that only the server publishes', () => {
+  it('a signature issued before not_after is valid', async () => {
     expect(await veredicto('2026-06-01T00:00:00Z', '2026-12-31T00:00:00Z')).toBe(true);
   });
 
-  it('una firma posterior a not_after NO vale', async () => {
+  it('a signature issued after not_after is NOT valid', async () => {
     expect(await veredicto('2027-06-01T00:00:00Z', '2026-12-31T00:00:00Z')).toBe(false);
   });
 });

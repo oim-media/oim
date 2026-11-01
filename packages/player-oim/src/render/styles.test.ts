@@ -56,8 +56,8 @@ function regla(selector: string): string {
   return encontrada as string;
 }
 
-describe("los dos escalados no comparten nombre", () => {
-  it("el overlay scale con --oim-fit, que es el factor de ajuste", () => {
+describe("the two scalings do not share a name", () => {
+  it("the overlay scale with --oim-fit, which is the fit factor", () => {
     const r = regla(".oim-layer-overlay");
     expect(r).toContain("scale(var(--oim-fit");
   });
@@ -71,7 +71,7 @@ describe("los dos escalados no comparten nombre", () => {
     expect(regla(".oim-layer-overlay")).not.toContain("--oim-scale");
   });
 
-  it("el slot scale con --oim-scale, que es la scale de la forma", () => {
+  it("the slot scale with --oim-scale, which is the shape's scale", () => {
     expect(regla(".oim-slot")).toContain("scale(var(--oim-scale, 1))");
   });
 
@@ -80,7 +80,7 @@ describe("los dos escalados no comparten nombre", () => {
     expect(regla(".oim-slot")).not.toContain("--oim-fit");
   });
 
-  it("las variantes del slot mantienen la misma separacion", () => {
+  it("the slot's variants keep the same separation", () => {
     // `:hover` composes over the shape's scale; if the fitting factor slipped
     // in, the slot would jump in size when the pointer passes over it. (The
     // per-layer entry that was also checked here no longer exists: the veil is
@@ -116,12 +116,12 @@ describe("los dos escalados no comparten nombre", () => {
  * or pattern fill is painted with `background-clip: text`, that is, like a mask,
  * and a mask is rasterized without knowing that its edges are letter outlines.
  */
-describe("el overlay no pide capa de compositor permanente", () => {
+describe("the overlay does not request a permanent compositor layer", () => {
   it("no declara will-change", () => {
     expect(regla(".oim-layer-overlay")).not.toContain("will-change");
   });
 
-  it("y sigue escalando con el factor de ajuste", () => {
+  it("and still scales with the fit factor", () => {
     // Removing `will-change` must not take the transform away with it.
     expect(regla(".oim-layer-overlay")).toContain("scale(var(--oim-fit");
   });

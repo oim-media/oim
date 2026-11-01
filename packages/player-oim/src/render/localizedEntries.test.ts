@@ -15,40 +15,40 @@ const capaDeTexto = (extra: any = {}) => ({
 });
 
 describe("localizedEntries", () => {
-  it("ausente en el mapa significa heredar del valor principal", () => {
-    const capa = capaDeTexto({ fontSizes: { de: "13px" } });
-    expect(localizedEntries(capa, "de").size).toBe("13px");
-    expect(localizedEntries(capa, "es").size).toBe("16px");
+  it("absent from the map means inheriting from the principal value", () => {
+    const layer = capaDeTexto({ fontSizes: { de: "13px" } });
+    expect(localizedEntries(layer, "de").size).toBe("13px");
+    expect(localizedEntries(layer, "es").size).toBe("16px");
   });
 
   // DECLARED behaviour change: `fontSizeOverrides` used to be read.
   // Contract 1.5.0 retired it with no deprecation phase, and the compiler
   // merges it into `fontSizes`, so a signed file never carries it.
-  it("ignora fontSizeOverrides, retirado en el contrato 1.5.0", () => {
-    const capa = capaDeTexto({ fontSizeOverrides: { de: "11px" } });
-    expect(localizedEntries(capa, "de").size).toBe("16px");
+  it("ignores fontSizeOverrides, retired in contract 1.5.0", () => {
+    const layer = capaDeTexto({ fontSizeOverrides: { de: "11px" } });
+    expect(localizedEntries(layer, "de").size).toBe("16px");
   });
 
-  it("una URL http(s) no es una imagen: el contrato retiro allow_external_urls", () => {
-    const capa = { id: "u", type: "text", content: { es: "https://x.example/a.png" }, style: {} };
-    expect(localizedEntries(capa, "es").maxWidthValue).toBe("80%");
+  it("an http(s) URL is not an image: the contract removed allow_external_urls", () => {
+    const layer = { id: "u", type: "text", content: { es: "https://x.example/a.png" }, style: {} };
+    expect(localizedEntries(layer, "es").maxWidthValue).toBe("80%");
   });
 
-  it("un numero pelado se interpreta como px, para no emitir CSS invalido", () => {
+  it("a bare number is read as px, so as not to emit invalid CSS", () => {
     expect(localizedEntries(capaDeTexto({ fontSizes: { de: 24 } }), "de").size).toBe("24px");
   });
 
-  it("un size 0 cae al principal, como hace el motor", () => {
+  it("a size of 0 falls back to the principal, as the engine does", () => {
     // The engine chains with `||`, so a 0 is discarded. If `??` were used here it
     // would give "0px" and this module would stop reproducing what it replaces.
     expect(localizedEntries(capaDeTexto({ fontSizes: { de: 0 } }), "de").size).toBe("16px");
   });
 
-  it("una unidad valida pasa tal cual", () => {
+  it("a valid unit passes through unchanged", () => {
     expect(localizedEntries(capaDeTexto({ fontSizes: { de: "4cqw" } }), "de").size).toBe("4cqw");
   });
 
-  it("una capa de fondo ignora maxWidths: si no, deja una franja sin cubrir", () => {
+  it("a background layer ignores maxWidths: otherwise it leaves an uncovered strip", () => {
     const fondo = {
       id: "background-pattern-slot",
       type: "image",
@@ -58,7 +58,7 @@ describe("localizedEntries", () => {
     expect(localizedEntries(fondo, "es").maxWidthValue).toBe("none");
   });
 
-  it("el ancho por defecto depende de si el content es imagen", () => {
+  it("the default width depends on whether the content is an image", () => {
     expect(localizedEntries(capaDeTexto(), "es").maxWidthValue).toBe("80%");
     const img = { id: "i", type: "image", content: { es: "data:image/png;base64,AAA" }, style: {} };
     expect(localizedEntries(img, "es").maxWidthValue).toBe("none");
@@ -72,35 +72,35 @@ describe("localizedEntries", () => {
 });
 
 describe("compareLangs", () => {
-  it("si la terna es identica, la capa no puede verse distinta", () => {
+  it("if the triple is identical, the layer cannot look different", () => {
     // 'fr' has the same text as 'es' on purpose.
     expect(compareLangs(capaDeTexto(), "es", "fr")).toBe("none");
   });
 
-  it("cambiar solo el size no obliga a reconstruir", () => {
-    const capa = capaDeTexto({ fontSizes: { fr: "13px" } });
-    expect(compareLangs(capa, "es", "fr")).toBe("style-only");
+  it("changing only the size does not force a rebuild", () => {
+    const layer = capaDeTexto({ fontSizes: { fr: "13px" } });
+    expect(compareLangs(layer, "es", "fr")).toBe("style-only");
   });
 
-  it("cambiar solo el ancho maximo tampoco", () => {
-    const capa = capaDeTexto({ maxWidths: { fr: "95%" } });
-    expect(compareLangs(capa, "es", "fr")).toBe("style-only");
+  it("changing only the maximum width does not either", () => {
+    const layer = capaDeTexto({ maxWidths: { fr: "95%" } });
+    expect(compareLangs(layer, "es", "fr")).toBe("style-only");
   });
 
-  it("cambiar el content si, porque decide que se construye", () => {
+  it("changing the content does, because it decides what gets built", () => {
     expect(compareLangs(capaDeTexto(), "es", "en")).toBe("content");
   });
 
-  it("el content manda aunque tambien cambie el size", () => {
-    const capa = capaDeTexto({ fontSizes: { en: "13px" } });
-    expect(compareLangs(capa, "es", "en")).toBe("content");
+  it("the content wins even if the size also changes", () => {
+    const layer = capaDeTexto({ fontSizes: { en: "13px" } });
+    expect(compareLangs(layer, "es", "en")).toBe("content");
   });
 });
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-describe("el motor no puede tener su propia copy de la regla", () => {
+describe("the engine cannot have its own copy of the rule", () => {
   const fuente = readFileSync(
     fileURLToPath(new URL("../engines/ImageEngine.ts", import.meta.url)),
     "utf8"
@@ -113,51 +113,51 @@ describe("el motor no puede tener su propia copy de la regla", () => {
     expect(fuente).not.toMatch(/function\s+_getContent/);
   });
 
-  it("ImageEngine pide las entradas por idioma al modulo", () => {
+  it("ImageEngine asks the module for the entries per language", () => {
     expect(fuente).toMatch(/localizedEntries\s*\(/);
   });
 });
 
-describe("resolveContent con el principal bajo *", () => {
-  it("un idioma sin clave propia recibe el principal", () => {
+describe("resolveContent with the principal under *", () => {
+  it("a language without its own key receives the principal", () => {
     expect(resolveContent({ "*": "A", pt: "B" }, "fr")).toBe("A");
   });
 
-  it("una excepcion en ingles no se cuela en los idiomas que heredan", () => {
+  it("an English exception does not leak into the languages that inherit", () => {
     // The trap of the old order: without a * in front, fr fell through to `en` and got
     // the English exception instead of the main one.
     expect(resolveContent({ "*": "A", en: "B" }, "fr")).toBe("A");
   });
 
-  it("la clave propia gana al principal, sin distinguir mayusculas", () => {
+  it("its own key beats the principal, regardless of case", () => {
     expect(resolveContent({ "*": "A", pt: "B" }, "pt")).toBe("B");
     expect(resolveContent({ "*": "A", PT: "B" }, "pt")).toBe("B");
   });
 
-  it("una excepcion vacia se queda vacia: el autor dijo que no usa el principal", () => {
+  it("an empty exception stays empty: the author said it does not use the principal", () => {
     expect(resolveContent({ "*": "A", pt: "" }, "pt")).toBe("");
   });
 
-  it("un archivo sin * se resuelve exactamente como antes", () => {
+  it("a file without * resolves exactly as before", () => {
     expect(resolveContent({ es: "Hola", en: "Hello" }, "fr")).toBe("Hello");
     expect(resolveContent({ es: "Hola", en: "" }, "en")).toBe("Hola");
   });
 });
 
-describe("compareLangs con el medio heredado", () => {
-  const capa = {
+describe("compareLangs with the inherited medium", () => {
+  const layer = {
     id: "img",
     type: "image",
     content: { "*": "data:image/png;base64,AAA", pt: "data:image/png;base64,BBB" },
     style: {},
   };
 
-  it("dos idiomas que heredan el mismo principal no repintan la capa", () => {
-    expect(compareLangs(capa, "es", "en")).toBe("none");
+  it("two languages that inherit the same principal do not repaint the layer", () => {
+    expect(compareLangs(layer, "es", "en")).toBe("none");
   });
 
   it("pasar a la excepcion si repinta", () => {
-    expect(compareLangs(capa, "es", "pt")).toBe("content");
+    expect(compareLangs(layer, "es", "pt")).toBe("content");
   });
 });
 

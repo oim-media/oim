@@ -32,12 +32,12 @@ const PIDEN_FUERA = [
   '<svg><rect fill="' + BS + '75rl(https://tercero.example/c)"></rect></svg>',
 ];
 
-describe("un SVG de un .oim no pide nada por url() en sus atributos", () => {
-  it.each(PIDEN_FUERA)("no queda la direccion: %s", (html) => {
+describe("an SVG from a .oim does not request anything via url() in its attributes", () => {
+  it.each(PIDEN_FUERA)("no trace of the address remains: %s", (html) => {
     expect(sanitizeHtml(html)).not.toContain("tercero.example");
   });
 
-  it("las referencias internas se quedan: degradados, filtros, mascaras", () => {
+  it("internal references stay: gradients, filters, masks", () => {
     const html = sanitizeHtml(
       '<svg><rect fill="url(#g)" filter="url(#sombra)" mask="url( #m )" clip-path="url(\'#c\')"></rect></svg>',
     );
@@ -47,7 +47,7 @@ describe("un SVG de un .oim no pide nada por url() en sus atributos", () => {
     expect(html).toContain("clip-path=");
   });
 
-  it("solo se va el atributo culpable", () => {
+  it("only the guilty attribute is removed", () => {
     const html = sanitizeHtml('<svg><rect width="10" fill="url(https://tercero.example/a#g)"></rect></svg>');
     expect(html).toContain('width="10"');
     expect(html).not.toContain("fill=");

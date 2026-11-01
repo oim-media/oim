@@ -18,7 +18,7 @@
 import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine";
 
-function montar(geoShape: string, style: any = {}) {
+function mount(geoShape: string, style: any = {}) {
   const host = document.createElement("div");
   const shadow = (host as any).attachShadow({ mode: "open" });
   document.body.appendChild(host);
@@ -35,96 +35,96 @@ function montar(geoShape: string, style: any = {}) {
                strokeColor: "#2563EB", strokeWidth: 2, ...style },
     }],
   };
-  return { motor, nodo: () => shadow.querySelector('[data-slot-id="figura"]') as HTMLElement };
+  return { motor, node: () => shadow.querySelector('[data-slot-id="figura"]') as HTMLElement };
 }
 
 const POLIGONOS = ["triangle", "star", "arrow", "diamond", "hexagon"];
 const TRAZADOS = ["circle", "heart", "line"];
 
-describe("las cinco que se publicaban como rectangulos", () => {
+describe("the five that used to be published as rectangles", () => {
   for (const forma of ["arrow", "diamond", "hexagon", "heart", "line"]) {
-    it(`\`${forma}\` se dibuja de verdad`, async () => {
-      const { motor, nodo } = montar(forma);
+    it(`\`${forma}\` is really drawn`, async () => {
+      const { motor, node } = mount(forma);
       await motor.renderSlots();
-      expect(nodo().querySelector("svg"), `${forma} no monto ningun svg`).toBeTruthy();
+      expect(node().querySelector("svg"), `${forma} no monto ningun svg`).toBeTruthy();
     });
   }
 });
 
-describe("cada forma usa el elemento SVG que le toca", () => {
+describe("each shape uses the SVG element that suits it", () => {
   for (const forma of POLIGONOS) {
-    it(`\`${forma}\` es un <polygon>`, async () => {
-      const { motor, nodo } = montar(forma);
+    it(`\`${forma}\` is a <polygon>`, async () => {
+      const { motor, node } = mount(forma);
       await motor.renderSlots();
-      expect(nodo().querySelector("polygon")).toBeTruthy();
+      expect(node().querySelector("polygon")).toBeTruthy();
     });
   }
   for (const forma of TRAZADOS) {
-    it(`\`${forma}\` es un <path>`, async () => {
-      const { motor, nodo } = montar(forma);
+    it(`\`${forma}\` is a <path>`, async () => {
+      const { motor, node } = mount(forma);
       await motor.renderSlots();
-      expect(nodo().querySelector("path")).toBeTruthy();
+      expect(node().querySelector("path")).toBeTruthy();
     });
   }
 });
 
-describe("el trazo sigue la silueta", () => {
-  it("va en el `stroke` de la figura, no en un `border` de caja", async () => {
+describe("the stroke follows the silhouette", () => {
+  it("goes on the figure's `stroke`, not on a box `border`", async () => {
     // The original failure: CSS `border` draws the element's rectangle and the
     // `clip-path` is applied afterwards, carrying it away. An exact twin of the
     // shadow failure.
-    const { motor, nodo } = montar("star");
+    const { motor, node } = mount("star");
     await motor.renderSlots();
-    const figura = nodo().querySelector("polygon")!;
-    expect(figura.getAttribute("stroke")).toBe("#2563EB");
-    expect(figura.getAttribute("stroke-width")).toBe("2");
-    expect(nodo().style.border).toBe("");
+    const figureItem = node().querySelector("polygon")!;
+    expect(figureItem.getAttribute("stroke")).toBe("#2563EB");
+    expect(figureItem.getAttribute("stroke-width")).toBe("2");
+    expect(node().style.border).toBe("");
   });
 
-  it("no se estira con la capa", async () => {
+  it("does not stretch with the layer", async () => {
     // `preserveAspectRatio: none` stretches the viewBox: without this, a wide and
     // short shape would have a thick border at the top and a thin one at the sides.
-    const { motor, nodo } = montar("hexagon");
+    const { motor, node } = mount("hexagon");
     await motor.renderSlots();
-    expect(nodo().querySelector("polygon")!.getAttribute("vector-effect")).toBe("non-scaling-stroke");
+    expect(node().querySelector("polygon")!.getAttribute("vector-effect")).toBe("non-scaling-stroke");
   });
 
-  it("un rectangulo SI conserva su borde de caja", async () => {
+  it("a rectangle DOES keep its box border", async () => {
     // There the box IS the shape, and the corner radius arrives in real pixels.
-    const { motor, nodo } = montar("rectangle");
+    const { motor, node } = mount("rectangle");
     await motor.renderSlots();
-    expect(nodo().querySelector("svg")).toBeNull();
-    expect(nodo().style.border).toContain("2px");
+    expect(node().querySelector("svg")).toBeNull();
+    expect(node().style.border).toContain("2px");
   });
 });
 
 describe("el fill", () => {
   it("va en la figura y no en el container", async () => {
-    const { motor, nodo } = montar("diamond");
+    const { motor, node } = mount("diamond");
     await motor.renderSlots();
-    expect(nodo().querySelector("polygon")!.getAttribute("fill")).toBe("#93c5fd");
+    expect(node().querySelector("polygon")!.getAttribute("fill")).toBe("#93c5fd");
     // If the container were still painted, the whole box would show behind it.
-    expect(nodo().style.backgroundColor).toBe("transparent");
+    expect(node().style.backgroundColor).toBe("transparent");
   });
 
-  it("la linea no se rellena: seria una barra", async () => {
-    const { motor, nodo } = montar("line");
+  it("the line is not filled: it would be a bar", async () => {
+    const { motor, node } = mount("line");
     await motor.renderSlots();
-    expect(nodo().querySelector("path")!.getAttribute("fill")).toBe("none");
+    expect(node().querySelector("path")!.getAttribute("fill")).toBe("none");
   });
 });
 
-describe("los puntos son los del editor", () => {
-  it("el triangulo va metido un 5%, no a sangre", async () => {
+describe("the points are the editor's", () => {
+  it("the triangle is inset by 5%, not flush", async () => {
     // The player drew it as `50% 0%, 0% 100%, 100% 100%`.
-    const { motor, nodo } = montar("triangle");
+    const { motor, node } = mount("triangle");
     await motor.renderSlots();
-    expect(nodo().querySelector("polygon")!.getAttribute("points")).toBe("50,5 95,90 5,90");
+    expect(node().querySelector("polygon")!.getAttribute("points")).toBe("50,5 95,90 5,90");
   });
 
-  it("y ya no queda ningun `clip-path`", async () => {
-    const { motor, nodo } = montar("star");
+  it("and no `clip-path` is left at all", async () => {
+    const { motor, node } = mount("star");
     await motor.renderSlots();
-    expect(nodo().style.clipPath || "").toBe("");
+    expect(node().style.clipPath || "").toBe("");
   });
 });

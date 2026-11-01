@@ -30,11 +30,11 @@ function makeStyle(overrides: Record<string, unknown>) {
 }
 
 describe("getTrimCss", () => {
-  it("devuelve objeto vacio sin trazo", () => {
+  it("returns an empty object without a stroke", () => {
     expect(getTrimCss(makeStyle({ strokeWidth: 0, trimEnd: 50 }), 200)).toEqual({});
   });
 
-  it("devuelve objeto vacio cuando el recorte cubre el contorno entero", () => {
+  it("returns an empty object when the trim covers the whole outline", () => {
     expect(getTrimCss(makeStyle({ trimStart: 0, trimEnd: 100 }), 200)).toEqual({});
   });
 
@@ -44,7 +44,7 @@ describe("getTrimCss", () => {
     expect(css.strokeDashoffset).toBe(0);
   });
 
-  it("desplaza el inicio del trazo", () => {
+  it("shifts the start of the stroke", () => {
     const css = getTrimCss(makeStyle({ trimStart: 25, trimEnd: 75 }), 200);
     expect(css.strokeDasharray).toBe("100 200");
     expect(css.strokeDashoffset).toBe(-50);
@@ -58,14 +58,14 @@ describe("getTrimCss", () => {
 /**
  * Mirrors the editor's "getTrimCss with draw animation" suite. Same values.
  */
-describe("getTrimCss con animacion de dibujado", () => {
-  it("un contorno completo CON duracion si se anima", () => {
+describe("getTrimCss with a drawing animation", () => {
+  it("a full outline WITH a duration if it is animated", () => {
     const css = getTrimCss(makeStyle({ trimStart: 0, trimEnd: 100, trimDuration: 2 }), 200);
     expect(css.animation).toBe("oim-trim-draw 2s ease-out forwards");
     expect(css.strokeDasharray).toBe("200 200");
   });
 
-  it("un contorno completo SIN duracion sigue sin producir nada", () => {
+  it("a full outline WITHOUT a duration still produces nothing", () => {
     expect(getTrimCss(makeStyle({ trimStart: 0, trimEnd: 100 }), 200)).toEqual({});
   });
 
@@ -75,7 +75,7 @@ describe("getTrimCss con animacion de dibujado", () => {
     expect(css["--oim-trim-to"]).toBe("0px");
   });
 
-  it("respeta trimStart en los dos extremos del recorrido", () => {
+  it("respects trimStart at both ends of the path", () => {
     const css = getTrimCss(makeStyle({ trimStart: 25, trimEnd: 75, trimDuration: 1 }), 200);
     expect(css["--oim-trim-from"]).toBe("50px");
     expect(css["--oim-trim-to"]).toBe("-50px");
@@ -85,7 +85,7 @@ describe("getTrimCss con animacion de dibujado", () => {
     expect(getTrimCss(makeStyle({ trimStart: 0, trimEnd: 50, trimDuration: 0 }), 200).animation).toBeUndefined();
   });
 
-  it("sin trazo no anima aunque haya duracion", () => {
+  it("without a stroke it does not animate even with a duration", () => {
     expect(getTrimCss(makeStyle({ strokeWidth: 0, trimDuration: 2 }), 200)).toEqual({});
   });
 });

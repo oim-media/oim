@@ -28,22 +28,22 @@ const FIGURAS_ESPERADAS = [
 ];
 
 describe("MASK_SHAPE_PATHS", () => {
-  it("conoce todas las siluetas que el editor ofrece", () => {
-    for (const figura of FIGURAS_ESPERADAS) {
-      expect(MASK_SHAPE_PATHS[figura], `falta la silueta "${figura}"`).toBeTruthy();
+  it("knows all the silhouettes the editor offers", () => {
+    for (const figureItem of FIGURAS_ESPERADAS) {
+      expect(MASK_SHAPE_PATHS[figureItem], `falta la silueta "${figureItem}"`).toBeTruthy();
     }
   });
 
-  it("no tiene siluetas de mas que el editor no sepa producir", () => {
+  it("has no extra silhouettes that the editor cannot produce", () => {
     // A silhouette that exists only here cannot be chosen from the editor:
     // it is dead code that looks like an option.
     expect(Object.keys(MASK_SHAPE_PATHS).sort()).toEqual([...FIGURAS_ESPERADAS].sort());
   });
 
-  it("cada silueta es un trazado cerrado y no una cadena cualquiera", () => {
-    for (const [figura, d] of Object.entries(MASK_SHAPE_PATHS)) {
-      expect(d.startsWith("M"), `"${figura}" no empieza con M`).toBe(true);
-      expect(d.trim().endsWith("Z"), `"${figura}" no cierra con Z`).toBe(true);
+  it("each silhouette is a closed path and not an arbitrary string", () => {
+    for (const [figureItem, d] of Object.entries(MASK_SHAPE_PATHS)) {
+      expect(d.startsWith("M"), `"${figureItem}" does not start with M`).toBe(true);
+      expect(d.trim().endsWith("Z"), `"${figureItem}" does not close with Z`).toBe(true);
     }
   });
 });

@@ -23,16 +23,16 @@
 import { describe, it, expect } from 'vitest';
 import { childrenByGroup, wrapperStyle } from './groups';
 
-const grupo = (id: string) => ({ id, type: 'group', style: {} });
-const hijo = (id: string, groupId?: string) => ({
+const groupItem = (id: string) => ({ id, type: 'group', style: {} });
+const child = (id: string, groupId?: string) => ({
   id, type: 'geo', style: groupId ? { groupId } : {}
 });
 
 
-describe('como se coloca el wrapper', () => {
+describe('how the wrapper is placed', () => {
   const canvas = { width: 800, height: 600 };
 
-  it('cubre el lienzo entero y se ancla en su origen', () => {
+  it('covers the entire canvas and is anchored at its origin', () => {
     // The children carry CANVAS coordinates, not coordinates relative to the
     // group. If the wrapper stayed at the group's box, they would all end up misplaced.
     const env = wrapperStyle({ x: 100, y: 50, width: 200, height: 100 }, canvas);
@@ -42,12 +42,12 @@ describe('como se coloca el wrapper', () => {
     expect(env.height).toBe('600px');
   });
 
-  it('la transformada gira sobre el CENTRO DEL GRUPO, no del lienzo', () => {
+  it('the transform rotates around the CENTER OF THE GROUP, not the canvas', () => {
     const env = wrapperStyle({ x: 100, y: 50, width: 200, height: 100 }, canvas);
     expect(env.transformOrigin).toBe('200px 100px');
   });
 
-  it('no se traga los clics del resto del lienzo', () => {
+  it('does not swallow the clicks of the rest of the canvas', () => {
     // Covers the full 800x600: without this, a 20x20 group would block any
     // interactive layer beneath it in the stack. The children reactivate it
     // themselves, because `.oim-slot` already declares `pointer-events: auto`.
@@ -55,67 +55,67 @@ describe('como se coloca el wrapper', () => {
       .toBe('none');
   });
 
-  it('un grupo sin size no produce NaN en el origen', () => {
+  it('a group without a size does not produce NaN at the origin', () => {
     const env = wrapperStyle({ x: 0, y: 0, width: 0, height: 0 }, canvas);
     expect(env.transformOrigin).toBe('0px 0px');
   });
 });
 
-describe('el anidado sobre el DOM, como lo hace el motor', () => {
+describe('nesting over the DOM, as the engine does it', () => {
   /** Reproduces the reparenting step of `renderSlots`. */
-  const anidar = (slots: any[]) => {
+  const nest = (slots: any[]) => {
     const fragment = document.createDocumentFragment();
-    const elPorId = new Map<string, HTMLElement>();
+    const byId = new Map<string, HTMLElement>();
     for (const s of slots) {
       const el = document.createElement('div');
       el.className = 'oim-slot';
       el.dataset.slotId = s.id;
-      elPorId.set(s.id, el);
+      byId.set(s.id, el);
       fragment.appendChild(el);
     }
     childrenByGroup(slots).forEach((ids, idGrupo) => {
-      const groupEl = elPorId.get(idGrupo);
+      const groupEl = byId.get(idGrupo);
       if (!groupEl) return;
       ids.forEach((id) => {
-        const childEl = elPorId.get(id);
+        const childEl = byId.get(id);
         if (childEl) groupEl.appendChild(childEl);
       });
     });
-    return { fragment, elPorId };
+    return { fragment, byId };
   };
 
-  it('los hijos acaban DENTRO del elemento del grupo', () => {
-    const { fragment, elPorId } = anidar([grupo('g1'), hijo('a', 'g1'), hijo('b', 'g1')]);
+  it('the children end up INSIDE the group element', () => {
+    const { fragment, byId } = nest([groupItem('g1'), child('a', 'g1'), child('b', 'g1')]);
     expect(fragment.children.length).toBe(1);
-    expect(elPorId.get('a')!.parentElement).toBe(elPorId.get('g1'));
-    expect(elPorId.get('b')!.parentElement).toBe(elPorId.get('g1'));
+    expect(byId.get('a')!.parentElement).toBe(byId.get('g1'));
+    expect(byId.get('b')!.parentElement).toBe(byId.get('g1'));
   });
 
-  it('el orden entre hermanos se conserva', () => {
-    const { elPorId } = anidar([grupo('g1'), hijo('a', 'g1'), hijo('b', 'g1')]);
-    expect(Array.from(elPorId.get('g1')!.children).map((e) => (e as HTMLElement).dataset.slotId))
+  it('the order among siblings is preserved', () => {
+    const { byId } = nest([groupItem('g1'), child('a', 'g1'), child('b', 'g1')]);
+    expect(Array.from(byId.get('g1')!.children).map((e) => (e as HTMLElement).dataset.slotId))
       .toEqual(['a', 'b']);
   });
 
-  it('NINGUNA capa desaparece del documento, pase lo que pase', () => {
+  it('NO layer disappears from the document, whatever happens', () => {
     // This is the invariant that decides whether this can be published: the
     // player is embedded in third-party pages. Losing content is worse than
     // ignoring an effect.
     const slots = [
-      grupo('g1'), hijo('a', 'g1'), hijo('b', 'g1'),
-      hijo('huerfano', 'g_perdido'), hijo('suelta'),
+      groupItem('g1'), child('a', 'g1'), child('b', 'g1'),
+      child('huerfano', 'g_perdido'), child('suelta'),
       { id: 'g2', type: 'group', style: { groupId: 'g1' } },
     ];
-    const { fragment, elPorId } = anidar(slots);
+    const { fragment, byId } = nest(slots);
     const enElArbol = Array.from((fragment as any).querySelectorAll('[data-slot-id]'))
       .map((e: any) => e.dataset.slotId).sort();
     expect(enElArbol).toEqual(slots.map((s) => s.id).sort());
-    expect(elPorId.get('huerfano')!.parentNode).toBe(fragment);
-    expect(elPorId.get('suelta')!.parentNode).toBe(fragment);
+    expect(byId.get('huerfano')!.parentNode).toBe(fragment);
+    expect(byId.get('suelta')!.parentNode).toBe(fragment);
   });
 
-  it('un archivo antiguo produce el mismo DOM plano de siempre', () => {
-    const { fragment } = anidar([
+  it('an old file produces the same flat DOM as always', () => {
+    const { fragment } = nest([
       { id: 'g1', type: 'group', style: {} },
       { id: 'a', type: 'geo', style: {} },
       { id: 'b', type: 'geo', style: {} },

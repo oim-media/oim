@@ -84,12 +84,12 @@ function warnIncompleteInteraction(
   states: SlotStates | undefined,
   id?: string
 ): void {
-  const which = id ? '"' + id + '"' : 'sin id';
+  const which = id ? '"' + id + '"' : 'no id';
 
   if (isInteractive && !states) {
     console.warn(
-      '[OimPlayer] El slot ' + which + ' se declara interactivo pero no trae states ' +
-        '(`states`), ni en la raiz ni en `style`. No respondera al cursor.'
+      '[OimPlayer] The slot ' + which + ' is declared interactive but has no states ' +
+        '(`states`), neither at the root nor in `style`. It will not respond to the cursor.'
     );
     return;
   }
@@ -101,17 +101,17 @@ function warnIncompleteInteraction(
 
   if (isInteractive && states && !states.hover && !hasUsefulClick) {
     console.warn(
-      '[OimPlayer] El slot ' + which + ' se declara interactivo y trae `states`, pero nada ' +
-        'que el player sepa ejecutar: entiende `hover` y las acciones de `active`. ' +
-        'No respondera.'
+      '[OimPlayer] The slot ' + which + ' is declared interactive and has `states`, but nothing ' +
+        'that the player can run: it understands `hover` and the actions of `active`. ' +
+        'It will not respond.'
     );
     return;
   }
 
   if (!isInteractive && states && Object.keys(states).length > 0) {
     console.warn(
-      '[OimPlayer] El slot ' + which + ' trae states (`states`) pero no esta marcado como ' +
-        'interactivo (`isInteractive`). El player los ignora.'
+      '[OimPlayer] The slot ' + which + ' has states (`states`) but is not marked as ' +
+        'interactive (`isInteractive`). The player ignores them.'
     );
   }
 }
@@ -196,9 +196,9 @@ export function bindStates(
 
   // The CLICK, and why it is hooked up separately from the hover.
   //
-  // `aplicar`/`salir` are a pair: what the pointer sets on entering, it removes on
+  // `apply`/`leave` are a pair: what the pointer sets on entering, it removes on
   // leaving. A click has no exit (nobody "stops clicking"), so it goes through
-  // `ejecutar` and NEVER through `revertir`. That is exactly what distinguishes a
+  // `resolveActions` and NEVER through `leave`. That is exactly what distinguishes a
   // toggle from a "show": if it undid itself, it would toggle nothing.
   //
   // Only the ACTIONS. The styles of `active` (scale, colour) are a pressed state,
@@ -225,7 +225,7 @@ export function bindStates(
   // PAGE, with no local effect at all. Without this it would have to declare a fake
   // action just so that the event would exist.
   //
-  // With an empty list, `ejecutar` announces and touches nothing: `resolveActions([])`
+  // With an empty list, the action run announces and touches nothing: `resolveActions([])`
   // returns no visibility to change.
   const clickActions = states.active?.actions;
   if (actionRunner) {
@@ -268,13 +268,13 @@ export function bindStates(
  * `1.1` from shrinking to a hundredth of its size. It can be removed once it is
  * confirmed that none remain.
  */
-export function escalaComoFactor(valor: number): number {
-  return valor <= 10 ? valor : valor / 100;
+export function scaleAsFactor(value: number): number {
+  return value <= 10 ? value : value / 100;
 }
 
 export function stateStyles(e: InteractiveState): Record<string, string> {
   const s: Record<string, string> = {};
-  if (e.scale !== undefined) s["--oim-slot-hover-scale"] = String(escalaComoFactor(e.scale));
+  if (e.scale !== undefined) s["--oim-slot-hover-scale"] = String(scaleAsFactor(e.scale));
   if (e.rotation !== undefined) s["--oim-rot"] = `${e.rotation}deg`;
   if (e.opacity !== undefined) s.opacity = String(e.opacity / 100);
   if (e.color) s.color = e.color;

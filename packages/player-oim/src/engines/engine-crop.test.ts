@@ -13,7 +13,7 @@
 import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine";
 
-function montar(slots: any[]) {
+function mount(slots: any[]) {
   const host = document.createElement("div");
   const shadow = (host as any).attachShadow({ mode: "open" });
   document.body.appendChild(host);
@@ -37,7 +37,7 @@ const img = (host: HTMLElement) => host.shadowRoot!.querySelector('[data-slot-id
 
 describe("image crop in the player", () => {
   it("frames and zooms the image, and clips what overflows", async () => {
-    const { host, motor } = montar([foto({ objectFit: "contain", imageCrop: { x: 20, y: 70, zoom: 2 } })]);
+    const { host, motor } = mount([foto({ objectFit: "contain", imageCrop: { x: 20, y: 70, zoom: 2 } })]);
     await motor.renderSlots();
     const i = img(host);
     expect(i.style.objectFit).toBe("cover");
@@ -48,7 +48,7 @@ describe("image crop in the player", () => {
   });
 
   it("without a crop the image is as before", async () => {
-    const { host, motor } = montar([foto({ objectFit: "contain" })]);
+    const { host, motor } = mount([foto({ objectFit: "contain" })]);
     await motor.renderSlots();
     expect(img(host).style.objectFit).toBe("contain");
     expect(img(host).style.transform).toBe("");

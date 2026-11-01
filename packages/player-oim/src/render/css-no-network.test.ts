@@ -36,18 +36,18 @@ const SIN_URL = [
   "background:u" + BS + "72l(https://tercero.example/c)",
 ];
 
-describe("CSS de un .oim: tampoco sin escribir url(", () => {
+describe(".oim CSS: no url( either, not even unwritten", () => {
   it.each(SIN_URL)("no deja rastro de la direccion: %s", (css) => {
     expect(neutralizeExternalCssUrls(css)).not.toContain("tercero.example");
   });
 
-  it.each(SIN_URL)("tampoco dentro de un style de texto: %s", (css) => {
+  it.each(SIN_URL)("not inside a text style either: %s", (css) => {
     const html = sanitizeHtml('<span style=\'color:red;' + css.replace(/'/g, '"') + '\'>hola</span>');
     expect(html).not.toContain("tercero.example");
     expect(html).toContain("hola");
   });
 
-  it("el CSS normal del editor sigue intacto", () => {
+  it("the editor's normal CSS stays intact", () => {
     const css = "color:#f59e0b;font-weight:700;letter-spacing:0.05em";
     expect(neutralizeExternalCssUrls(css)).toBe(css);
   });

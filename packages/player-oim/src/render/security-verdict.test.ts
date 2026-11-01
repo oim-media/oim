@@ -32,45 +32,45 @@ const base = { isSigned: true, isSigValid: true, imageHash: HASH };
 const sellado = (extra: object = {}) => ({ image_hash: HASH, image_hash_alg: ALG, ...extra });
 
 describe("securityVerdict", () => {
-  it("firma valida y la imagen casa con el sello: verificado", () => {
+  it("valid signature and the image matches the seal: verified", () => {
     expect(securityVerdict({ ...base, metadata: sellado() })).toBe("verified");
   });
 
-  it("el sello se compara sin distinguir mayusculas", () => {
+  it("the seal is compared case-insensitively", () => {
     expect(securityVerdict({ ...base, metadata: sellado({ image_hash: HASH.toUpperCase() }) })).toBe("verified");
   });
 
-  it("un archivo publico que casa: firmado sin autoria", () => {
+  it("a public file that matches: signed without authorship", () => {
     expect(securityVerdict({ ...base, metadata: sellado({ reedicion: "publico" }) })).toBe("verified_sin_autoria");
   });
 
-  it("la imagen no casa con el sello: alterada", () => {
+  it("the image does not match the seal: altered", () => {
     expect(securityVerdict({ ...base, metadata: sellado({ image_hash: "b".repeat(64) }) })).toBe("image_mismatch");
   });
 
-  it("hay sello pero no se pudo calcular el hash: alterada, nunca verificada", () => {
+  it("there is a seal but the hash could not be computed: altered, never verified", () => {
     expect(securityVerdict({ ...base, imageHash: null, metadata: sellado() })).toBe("image_mismatch");
   });
 
-  it("firmado sin sello de imagen: sin sello", () => {
+  it("signed without an image seal: no seal", () => {
     expect(securityVerdict({ ...base, metadata: {} })).toBe("image_unsealed");
   });
 
-  it("un image_hash antiguo sin algoritmo NO se exige, aunque no case", () => {
+  it("an old image_hash without an algorithm is NOT required, even if it does not match", () => {
     expect(securityVerdict({ ...base, metadata: { image_hash: HASH_DE_NADA } })).toBe("image_unsealed");
     expect(securityVerdict({ ...base, metadata: { image_hash: "b".repeat(64) } })).toBe("image_unsealed");
   });
 
-  it("un algoritmo que este player no conoce: sin sello, no alterado", () => {
+  it("an algorithm this player does not know: no seal, not altered", () => {
     expect(securityVerdict({ ...base, metadata: sellado({ image_hash_alg: "blake3-futuro" }) })).toBe("image_unsealed");
   });
 
-  it("firma invalida gana a todo lo de la imagen", () => {
+  it("an invalid signature beats everything about the image", () => {
     expect(securityVerdict({ ...base, isSigValid: false, metadata: sellado({ image_hash: "b".repeat(64) }) }))
       .toBe("invalid_signature");
   });
 
-  it("sin firma: legacy", () => {
+  it("no signature: legacy", () => {
     expect(securityVerdict({ ...base, isSigned: false, metadata: {} })).toBe("unsigned");
   });
 
@@ -80,12 +80,12 @@ describe("securityVerdict", () => {
 });
 
 describe("isRefused", () => {
-  it("un archivo alterado no se muestra: ni la imagen ni los metadatos", () => {
+  it("an altered file is not shown: neither the image nor the metadata", () => {
     expect(isRefused("image_mismatch")).toBe(true);
     expect(isRefused("invalid_signature")).toBe(true);
   });
 
-  it("el resto de estados si se muestran", () => {
+  it("the other states are still shown", () => {
     for (const s of ["verified", "verified_sin_autoria", "image_unsealed", "unsigned"] as const) {
       expect(isRefused(s)).toBe(false);
     }

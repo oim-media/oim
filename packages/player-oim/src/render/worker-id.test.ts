@@ -9,8 +9,8 @@
  */
 import { describe, it, expect, vi } from "vitest";
 
-describe("el worker devuelve el id de cada peticion", () => {
-  it("tambien cuando el archivo no es un .oim", async () => {
+describe("the worker returns the id of each request", () => {
+  it("also when the file is not a .oim", async () => {
     const enviados: any[] = [];
     (globalThis as any).postMessage = vi.fn((m: any) => enviados.push(m));
     await import("./worker");

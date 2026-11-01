@@ -43,7 +43,7 @@
 import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine";
 
-function montar(slots: any[]) {
+function mount(slots: any[]) {
   const host = document.createElement("div");
   // `mode="full"` is REQUIRED here since the default became the still image: without it,
   // no slot is interactive and these tests (which are about interactive slots) would pass
@@ -61,7 +61,7 @@ function montar(slots: any[]) {
 }
 
 async function slotDe(slot: any): Promise<HTMLElement> {
-  const { host, motor } = montar([slot]);
+  const { host, motor } = mount([slot]);
   await motor.renderSlots();
   return host.shadowRoot!.querySelector('[data-slot-id="s"]') as HTMLElement;
 }
@@ -92,8 +92,8 @@ const forma = (extra: any = {}) => ({
 
 const ACCION = { states: { active: { actions: [{ target: "otra", type: "toggle" }] } } };
 
-describe("el fondo de un text interactivo", () => {
-  it("un text marcado interactivo NO se pinta el fondo", async () => {
+describe("the background of an interactive text", () => {
+  it("a text marked interactive does NOT paint the background", async () => {
     const el = await slotDe(text({ isInteractive: true }));
     expect(el.style.backgroundColor).toBe("");
   });
@@ -102,33 +102,33 @@ describe("el fondo de un text interactivo", () => {
    * The path that already existed before the click: it is enough for it to carry `states`
    * so that `isInteractiveSlot` counts it, without `isInteractive` in the middle.
    */
-  it("y uno con states tampoco, aunque nadie lo marcara", async () => {
+  it("and one with states does not either, even if nobody marked it", async () => {
     const el = await slotDe(text(ACCION));
     expect(el.style.backgroundColor).toBe("");
   });
 
-  it("el text sigue estando, y con SU color", async () => {
+  it("the text is still there, and with ITS colour", async () => {
     const el = await slotDe(text({ isInteractive: true }));
     expect(el.textContent).toContain("PULSAME");
     // What made the text invisible was not losing it: it was making the two equal.
     expect(el.style.backgroundColor).not.toBe(el.style.color);
   });
 
-  it("un text normal tampoco lo tenia, y sigue sin tenerlo", async () => {
+  it("a normal text did not have one either, and still does not", async () => {
     const el = await slotDe(text());
     expect(el.style.backgroundColor).toBe("");
   });
 });
 
-describe("lo que el arreglo NO puede llevarse por delante", () => {
-  it("una FORMA interactiva conserva su fill", async () => {
+describe("what the fix must NOT take away", () => {
+  it("an interactive SHAPE keeps its fill", async () => {
     // Here `fillColor` IS the fill of the shape: removing it from all the interactive
     // ones would have traded one bug for another.
     const el = await slotDe(forma({ isInteractive: true, ...ACCION }));
     expect(el.style.backgroundColor).toBeTruthy();
   });
 
-  it("una forma normal tambien", async () => {
+  it("a normal shape too", async () => {
     const el = await slotDe(forma());
     expect(el.style.backgroundColor).toBeTruthy();
   });
@@ -141,13 +141,13 @@ describe("lo que el arreglo NO puede llevarse por delante", () => {
    * The minimum is measured, not the width: the width comes from `style.width` through
    * another branch that this bench does not exercise, so asserting on it would be measuring nothing.
    */
-  it("un text interactivo conserva su area minima de contacto", async () => {
+  it("an interactive text keeps its minimum contact area", async () => {
     const el = await slotDe(text({ isInteractive: true }));
     expect(el.style.minWidth).toBe("24px");
     expect(el.style.minHeight).toBe("24px");
   });
 
-  it("y uno NO interactivo no la lleva: es de los pulsables, no de todos", async () => {
+  it("and a NON-interactive one does not get it: it is for the clickable ones, not for all", async () => {
     const el = await slotDe(text());
     expect(el.style.minWidth).toBe("");
   });

@@ -28,7 +28,7 @@ describe("Typewriter, Glitch, Highlight, and DropCap in ImageEngine", () => {
     vi.useRealTimers();
   });
 
-  it("applyTypewriterText progresivamente revela caracteres con cursor", () => {
+  it("applyTypewriterText progressively reveals characters with a cursor", () => {
     const wrap = makeWrap();
     const anim = applyTypewriterText(wrap, "Antigravity", 10, 0, true);
 
@@ -42,7 +42,7 @@ describe("Typewriter, Glitch, Highlight, and DropCap in ImageEngine", () => {
     anim.stop();
   });
 
-  it("applyGlitchText aplica aberración cromática durante la ráfaga y se puede detener", () => {
+  it("applyGlitchText applies chromatic aberration during the burst and can be stopped", () => {
     const wrap = makeWrap();
     const anim = applyGlitchText(wrap, "Cyberpunk", "glitch-cyberpunk", 1.0, 0, 70);
 
@@ -73,7 +73,7 @@ describe("Typewriter, Glitch, Highlight, and DropCap in ImageEngine", () => {
     anim.stop();
   });
 
-  it("applyTextHighlight aplica estilos envolventes de marcador, pill o subrayado grueso", () => {
+  it("applyTextHighlight applies wrapping styles for a marker, pill or thick underline", () => {
     const wrap = makeWrap();
     applyTextHighlight(wrap, {
       enabled: true,
@@ -87,7 +87,7 @@ describe("Typewriter, Glitch, Highlight, and DropCap in ImageEngine", () => {
     expect(wrap.style.backgroundColor).toBe("rgba(245, 158, 11, 0.4)");
   });
 
-  it("applyDropCap crea un span flotante para la primera letra según líneas especificadas", () => {
+  it("applyDropCap creates a floating span for the first letter across the specified lines", () => {
     const wrap = makeWrap();
     applyDropCap(wrap, "Había una vez", {
       enabled: true,

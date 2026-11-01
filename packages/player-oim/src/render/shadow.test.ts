@@ -9,10 +9,10 @@ import { dropShadowCss, shadowColorCss, shadowFollowsGlyphs } from "./shadow";
 
 describe("dropShadowCss", () => {
   const casos: Array<[string, Record<string, unknown>, string]> = [
-    ["todo a cero",
+    ["everything at zero",
       { shadowOffsetX: 0, shadowOffsetY: 0, shadowBlur: 0, shadowColor: "#000000", shadowOpacity: 100 },
       "drop-shadow(0px 0px 0px rgba(0, 0, 0, 1))"],
-    ["los valores por defecto, que es el caso comun",
+    ["the default values, which is the common case",
       { shadowOffsetY: 4, shadowBlur: 8, shadowOpacity: 30 },
       "drop-shadow(0px 4px 8px rgba(0, 0, 0, 0.3))"],
     ["color y opacidad propios",
@@ -37,23 +37,23 @@ describe("dropShadowCss", () => {
     expect(dropShadowCss(style)).toBe(esperado);
   });
 
-  it("espacio detras de cada coma, como el editor", () => {
+  it("a space after each comma, as the editor does", () => {
     // `hexToRgba` in the engine composes `rgba(236,72,153,0.5)` without spaces. The
     // canonical format includes them.
     expect(dropShadowCss({ shadowColor: "#EC4899", shadowOpacity: 50 }))
       .toContain("rgba(236, 72, 153,");
   });
 
-  it("una opacidad fuera de rango se acota", () => {
+  it("an out-of-range opacity is clamped", () => {
     expect(dropShadowCss({ shadowOpacity: 500 })).toContain(", 1))");
     expect(dropShadowCss({ shadowOpacity: -20 })).toContain(", 0))");
   });
 
-  it("sin color, negro", () => {
+  it("without a colour, black", () => {
     expect(dropShadowCss({ shadowOpacity: 100 })).toContain("rgba(0, 0, 0, 1)");
   });
 
-  it("resuelve shadowColorRole con variable CSS", () => {
+  it("resolves shadowColorRole with a CSS variable", () => {
     expect(
       dropShadowCss({
         shadowOffsetX: 8,
@@ -97,19 +97,19 @@ describe("dropShadowCss", () => {
  * shape drawing), and putting `svg` there would change all of them.
  */
 describe('shadowFollowsGlyphs', () => {
-  it('solo el text sigue los glifos', () => {
+  it('only the text follows the glyphs', () => {
     expect(shadowFollowsGlyphs('text')).toBe(true);
   });
 
   /** The failure case: the vector has to go through the silhouette. */
   it.each(['svg', 'geo', 'shape', 'draw', 'image', 'container', 'filter', 'mask', 'group'])(
-    '%s sigue la silueta',
+    '%s follows the silhouette',
     (tipo) => {
       expect(shadowFollowsGlyphs(tipo)).toBe(false);
     },
   );
 
-  it('un tipo desconocido va por la silueta, no por los glifos', () => {
+  it('an unknown type follows the silhouette, not the glyphs', () => {
     // Erring toward drop-shadow is the safe choice: it follows the alpha channel, so it comes
     // out correct on anything. A text-shadow on something without glyphs paints
     // NOTHING, which is exactly the bug this fixes.

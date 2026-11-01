@@ -1,8 +1,7 @@
 {
   "name": "@oim-media/player-ovm",
   "license": "Apache-2.0",
-  "version": "1.0.0",
-  "private": true,
+  "version": "1.22.0",
   "description": "OvmPlayer Web Component for Interactive Video",
   "type": "module",
   "main": "./src/index.js",
@@ -12,5 +11,13 @@
   "files": [
     "src",
     "NOTICE"
-  ]
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oim-media/oim.git",
+    "directory": "packages/player-ovm"
+  }
 }

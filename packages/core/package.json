@@ -1,8 +1,7 @@
 {
   "name": "@oim-media/core",
   "license": "Apache-2.0",
-  "version": "1.0.0",
-  "private": true,
+  "version": "1.22.0",
   "type": "module",
   "sideEffects": false,
   "main": "./dist/index.js",
@@ -43,5 +42,13 @@
     "ajv": "^8.20.0",
     "typescript": "~6.0.3",
     "vitest": "^4.1.0"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oim-media/oim.git",
+    "directory": "packages/core"
   }
 }

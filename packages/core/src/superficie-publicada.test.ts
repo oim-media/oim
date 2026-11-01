@@ -306,10 +306,11 @@ describe("nada sensible viaja en el paquete", () => {
   /**
    * `files: ["dist"]` is what keeps the source code, the tests and any loose
    * file in the directory from ending up in the tarball. Without it,
-   * `npm publish` packages the WHOLE package directory.
+   * `npm publish` packages the WHOLE package directory. NOTICE travels too:
+   * Apache-2.0 asks for it to accompany redistributions.
    */
   it("el manifiesto limita el tarball a dist/", () => {
     const pkg = JSON.parse(readFileSync(join(DIR, "..", "package.json"), "utf8"));
-    expect(pkg.files).toEqual(["dist"]);
+    expect(pkg.files).toEqual(["dist", "NOTICE"]);
   });
 });

@@ -520,13 +520,12 @@ const observedAttrs = ['src', 'placeholder', 'lang', 'activate-on', 'fit', 'alig
 let OimPlayerClass: any;
 
 if (typeof customElements !== 'undefined' && !customElements.get('oim-player')) {
-  OimPlayerClass = function (this: any) {
-    const el = Reflect.construct(HTMLElement, [], OimPlayerClass) as any;
-    el._engine = null;
-    el._src = null;
-    return el;
+  // A real class: a function that calls Reflect.construct(HTMLElement) is
+  // re-entered by DOMs that construct custom elements on connect (happy-dom 20.14+).
+  OimPlayerClass = class extends HTMLElement {
+    _engine: any = null;
+    _src: any = null;
   };
-  OimPlayerClass.prototype = Object.create(HTMLElement.prototype);
   OimPlayerClass.prototype.connectedCallback = OimPlayerElement.connectedCallback;
   OimPlayerClass.prototype.disconnectedCallback = OimPlayerElement.disconnectedCallback;
   OimPlayerClass.prototype.attributeChangedCallback = OimPlayerElement.attributeChangedCallback;

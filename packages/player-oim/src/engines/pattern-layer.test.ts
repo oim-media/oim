@@ -81,19 +81,18 @@ describe("the pattern layer in the player", () => {
   // You cannot read `el.style.width` back: happy-dom rejects `cqw` as an invalid
   // unit and the setter becomes a silent no-op -it was checked separately, with
   // `div.style.width = '25cqw'` outside the engine, and the value stays ''-. The
-  // only way to see which value the engine TRIED to set is to spy on the setter
-  // of `CSSStyleDeclaration` before rendering.
+  // only way to see which value the engine TRIED to set is to spy on
+  // `CSSStyleDeclaration.prototype.setProperty`, which happy-dom 21 routes every
+  // `style.width = ...` assignment through.
   it("does not stretch to 100% of the viewer: it measures what the slot declares", async () => {
-    const setWidth = vi.spyOn(CSSStyleDeclaration.prototype, "width", "set");
-    const setHeight = vi.spyOn(CSSStyleDeclaration.prototype, "height", "set");
+    const setProperty = vi.spyOn(CSSStyleDeclaration.prototype, "setProperty");
     try {
       const el = await slotDe(slotPatron);
       expect(el.getAttribute("data-slot-id")).toBe("p");
-      expect(setWidth).toHaveBeenCalledWith("25.0000cqw");
-      expect(setHeight).toHaveBeenCalledWith("25.0000cqw");
+      expect(setProperty).toHaveBeenCalledWith("width", "25.0000cqw");
+      expect(setProperty).toHaveBeenCalledWith("height", "25.0000cqw");
     } finally {
-      setWidth.mockRestore();
-      setHeight.mockRestore();
+      setProperty.mockRestore();
     }
   });
 

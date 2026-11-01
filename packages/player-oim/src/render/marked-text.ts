@@ -9,7 +9,6 @@
  * `<span data-mark>` per marked one, styled by `markStyle`. The syntax is read
  * only by @oim-media/core (`parseMarks`); this file just turns runs into DOM, the
  * same way the editor's canvas does.
- * Spec: docs/superpowers/specs/2026-10-10-text-marks-design.md
  */
 
 import { parseMarks, plainText, markStyle } from "../../../core/src/text-marks.js";

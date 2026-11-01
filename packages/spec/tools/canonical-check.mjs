@@ -129,12 +129,12 @@ function verifySignature(canonical, signatureB64) {
  * signer agrees.
  */
 const KNOWN_ANSWERS = [
-  { rule: 'regla 4 · orden de claves', input: { b: 1, a: 2 }, expected: '{"a":2,"b":1}' },
-  { rule: 'regla 4 · anidado y en arrays', input: { a: [{ z: 1, y: 2 }] }, expected: '{"a":[{"y":2,"z":1}]}' },
-  { rule: 'regla 6 · UTF-8 sin escapar', input: { t: 'año' }, expected: '{"t":"año"}' },
-  { rule: 'regla 3 · decimal a entero', input: { x: 2.0 }, expected: '{"x":2}' },
-  { rule: 'regla 3 · redondeo a 6', input: { x: 0.1234567 }, expected: '{"x":0.123457}' },
-  { rule: 'regla 2 · solo en la raiz', input: { slots: [{ timestamp: 1 }], timestamp: 2 }, expected: '{"slots":[{"timestamp":1}]}' },
+  { rule: 'rule 4 · key order', input: { b: 1, a: 2 }, expected: '{"a":2,"b":1}' },
+  { rule: 'rule 4 · nested and in arrays', input: { a: [{ z: 1, y: 2 }] }, expected: '{"a":[{"y":2,"z":1}]}' },
+  { rule: 'rule 6 · unescaped UTF-8', input: { t: 'Zürich' }, expected: '{"t":"Zürich"}' },
+  { rule: 'rule 3 · decimal to integer', input: { x: 2.0 }, expected: '{"x":2}' },
+  { rule: 'rule 3 · rounding to 6', input: { x: 0.1234567 }, expected: '{"x":0.123457}' },
+  { rule: 'rule 2 · root only', input: { slots: [{ timestamp: 1 }], timestamp: 2 }, expected: '{"slots":[{"timestamp":1}]}' },
 ];
 
 let knownAnswerFailures = 0;
@@ -149,9 +149,9 @@ for (const { rule, input, expected } of KNOWN_ANSWERS) {
 }
 console.log(
   knownAnswerFailures === 0
-    ? `Reglas sin vector firmado: ${KNOWN_ANSWERS.length} casos de respuesta conocida, todos correctos.
+    ? `Rules without a signed vector: ${KNOWN_ANSWERS.length} known-answer cases, all correct.
 `
-    : `Reglas sin vector firmado: ${knownAnswerFailures} caso(s) incorrecto(s).
+    : `Rules without a signed vector: ${knownAnswerFailures} incorrect case(s).
 `,
 );
 
@@ -162,7 +162,7 @@ for (const file of fs.readdirSync(VECTORS).filter((f) => f.endsWith('.oim.png'))
   const name = file.replace('.oim.png', '');
 
   if (!metadata?.signature) {
-    console.log(`  ${name.padEnd(22)} sin firma`);
+    console.log(`  ${name.padEnd(22)} unsigned`);
     continue;
   }
 
@@ -172,18 +172,18 @@ for (const file of fs.readdirSync(VECTORS).filter((f) => f.endsWith('.oim.png'))
 
   // The seal is only meaningful once the signature covering it is valid.
   const expected = metadata.image_hash_alg === 'sha256-idat' ? metadata.image_hash : null;
-  const sealed = expected ? (imageDataHash(png) === expected ? 'sello ok' : 'SELLO ROTO') : 'sin sellar';
+  const sealed = expected ? (imageDataHash(png) === expected ? 'seal ok' : 'SEAL BROKEN') : 'unsealed';
 
-  if (!valid || sealed === 'SELLO ROTO') failures++;
+  if (!valid || sealed === 'SEAL BROKEN') failures++;
   console.log(
     `  ${name.padEnd(22)} ${digest.slice(0, 8)}… ${String(canonical.length).padStart(5)} B · ` +
-    `${valid ? 'firma ok' : 'FIRMA INVALIDA'} · ${sealed}`,
+    `${valid ? 'signature ok' : 'SIGNATURE INVALID'} · ${sealed}`,
   );
 }
 
 console.log(
   failures === 0
-    ? '\nLas siete reglas del README reproducen la firma de todos los vectores.'
-    : `\n${failures} vector(es) no verifican: el README y el firmante han derivado.`,
+    ? '\nThe seven README rules reproduce the signature of every vector.'
+    : `\n${failures} vector(s) do not verify: the README and the signer have drifted.`,
 );
 process.exit(failures === 0 ? 0 : 1);

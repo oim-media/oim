@@ -52,14 +52,14 @@ describe("Catalog & Engine Router (catalog.ts, index.ts)", () => {
     warnSpy.mockRestore();
   });
 
-  it.each(GENERATOR_CATALOG.map((g) => g.id))("%s se renderiza y produce contenido", (id) => {
+  it.each(GENERATOR_CATALOG.map((g) => g.id))("%s renders and produces content", (id) => {
     const svg = renderGenerativeSVG({ generatorId: id, seed: 7 }, { width: 400, height: 300 });
     expect(svg).toContain("data:image/svg+xml");
     // An "empty" SVG is this family's silent failure: it does not throw, it does not paint.
     expect(svg.length).toBeGreaterThan(400);
   });
 
-  it("todos los ids son ASCII en kebab-case", () => {
+  it("all ids are ASCII in kebab-case", () => {
     // The id is PERSISTED and compared with `===` in getGeneratorSpec. An accented character
     // has two different Unicode forms ("retícula" takes 9 bytes in NFC and 10 in NFD, and they
     // are not equal as strings), so a layer that normalizes differently turns the lookup into
@@ -67,11 +67,11 @@ describe("Catalog & Engine Router (catalog.ts, index.ts)", () => {
     // A background that changes on its own, with no visible error: exactly the failure this
     // work exists to eliminate.
     for (const g of GENERATOR_CATALOG) {
-      expect(g.id, `id no valido: "${g.id}"`).toMatch(/^[a-z0-9-]+$/);
+      expect(g.id, `invalid id: "${g.id}"`).toMatch(/^[a-z0-9-]+$/);
     }
   });
 
-  it("no hay ids repetidos", () => {
+  it("there are no duplicate ids", () => {
     // getGeneratorSpec returns the first one; a duplicate leaves the second
     // unreachable and visible in the gallery.
     const ids = GENERATOR_CATALOG.map((g) => g.id);

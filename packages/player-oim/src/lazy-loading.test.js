@@ -21,9 +21,9 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "node:fs";
-import path from "node:path";
+import { REFERENCE_OIM } from "../../core/test/fixtures/index.ts";
 
-const oim = fs.readFileSync(path.resolve(process.cwd(), "../core/test/fixtures/object_view.oim.png"));
+const oim = fs.readFileSync(REFERENCE_OIM);
 
 /**
  * An observer that only reports: geometry is the one that decides.

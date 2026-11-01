@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import fs from 'fs';
-import path from 'path';
+import { REFERENCE_OIM } from '../../core/test/fixtures/index.ts';
 
 // Configure happy-dom environment for the test file
 /**
@@ -8,7 +8,7 @@ import path from 'path';
  */
 
 // Read the actual example_image.oim file to return in mock fetch requests
-const oimFilePath = path.resolve(__dirname, '../../core/test/fixtures/flyer_festival.oim.png');
+const oimFilePath = REFERENCE_OIM;
 const oimBuffer = fs.readFileSync(oimFilePath);
 
 // Ignore Node.js DecompressionStream unhandled rejection warnings for raw deflate fallback

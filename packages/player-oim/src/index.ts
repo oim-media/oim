@@ -12,10 +12,12 @@ import { setFlag } from './render/attrs.js';
 
 interface OimPlayerOptions {
   allowZoom?: boolean;
+  /** @deprecated No effect; removed in 2.0.0. */
   showLanguageSelector?: boolean;
   showSlots?: boolean;
   allowLottie?: boolean;
   disableAnimations?: boolean;
+  /** @deprecated No effect; removed in 2.0.0. */
   dropdownBlur?: boolean;
   fit?: 'contain' | 'cover';
   align?: 'center' | 'top' | 'bottom';
@@ -111,6 +113,7 @@ OimPlayerElement.connectedCallback = function (this: any) {
   if (!this._oimOptions) this._oimOptions = {};
   if (this.hasAttribute('fit')) this._oimOptions.fit = this.getAttribute('fit');
   if (this.hasAttribute('align')) this._oimOptions.align = this.getAttribute('align');
+  // dropdown-blur: no effect; removed in 2.0.0.
   if (this.hasAttribute('dropdown-blur')) this._oimOptions.dropdownBlur = this.getAttribute('dropdown-blur') !== 'false';
   if (this.hasAttribute('allow-lottie')) this._oimOptions.allowLottie = this.getAttribute('allow-lottie') !== 'false';
   if (this.hasAttribute('allow-dynamic-colors')) this._oimOptions.allowDynamicColors = this.getAttribute('allow-dynamic-colors') !== 'false';
@@ -373,6 +376,7 @@ OimPlayerElement.attributeChangedCallback = function (this: any, name: string, o
     this._syncPlaceholder();
     this._initPlayer();
   } else if (name === 'dropdown-blur' && oldVal !== newVal) {
+    // no effect; removed in 2.0.0.
     if (!this._oimOptions) this._oimOptions = {};
     this._oimOptions.dropdownBlur = newVal !== 'false';
     if (this._engine) {
@@ -459,6 +463,7 @@ OimPlayerElement._initPlayer = function (this: any) {
   if (!self._oimOptions) self._oimOptions = {};
   if (self.hasAttribute('fit')) self._oimOptions.fit = self.getAttribute('fit');
   if (self.hasAttribute('align')) self._oimOptions.align = self.getAttribute('align');
+  // dropdown-blur: no effect; removed in 2.0.0.
   if (self.hasAttribute('dropdown-blur')) self._oimOptions.dropdownBlur = self.getAttribute('dropdown-blur') !== 'false';
   if (self.hasAttribute('placeholder')) self._oimOptions.placeholder = self.getAttribute('placeholder');
   if (self.hasAttribute('allow-lottie')) self._oimOptions.allowLottie = self.getAttribute('allow-lottie') !== 'false';
@@ -682,6 +687,7 @@ export const OimPlayer = {
     const el = document.createElement('oim-player') as any;
     el._oimOptions = opts || {};
     el.src = src;
+    // show-controls: no effect; removed in 2.0.0.
     el.setAttribute('show-controls', (opts && opts.showLanguageSelector === false) ? 'false' : 'true');
     if (opts && opts.allowLottie === false) {
       el.setAttribute('allow-lottie', 'false');

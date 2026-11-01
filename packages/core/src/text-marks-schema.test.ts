@@ -35,7 +35,7 @@ describe("style.marks", () => {
   });
 
   it("no free CSS: unsafe colours are rejected, unknown keys never reach the style", () => {
-    // The contract never forbids unknown keys (contrato.test.ts): a newer file
+    // The contract never forbids unknown keys (contract.test.ts): a newer file
     // must still parse. What keeps CSS out is that renderers only paint what
     // markStyle resolves.
     expect(markStyle({ css: "color:red" } as any)).toEqual({ underline: false });

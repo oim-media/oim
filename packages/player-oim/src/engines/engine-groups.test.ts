@@ -20,7 +20,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { ImageEngine } from "./ImageEngine";
 
-const LIENZO = { canvas_width: 800, canvas_height: 600 };
+const CANVAS = { canvas_width: 800, canvas_height: 600 };
 
 const capa = (id: string, extra: any = {}) => ({
   id,
@@ -44,7 +44,7 @@ describe("el grupo en el motor", () => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");
     shadowRoot.appendChild(engine._overlay);
-    engine.metadata = { ...LIENZO, slots };
+    engine.metadata = { ...CANVAS, slots };
     return engine;
   };
 
@@ -173,7 +173,7 @@ describe("degradar sin perder nada", () => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");
     shadowRoot.appendChild(engine._overlay);
-    engine.metadata = { ...LIENZO, slots };
+    engine.metadata = { ...CANVAS, slots };
     return engine;
   };
 
@@ -241,7 +241,7 @@ describe("un repintado parcial no rompe el grupo", () => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");
     shadowRoot.appendChild(engine._overlay);
-    engine.metadata = { ...LIENZO, slots };
+    engine.metadata = { ...CANVAS, slots };
     return engine;
   };
 
@@ -329,7 +329,7 @@ describe("animar una capa que esta en un grupo", () => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");
     shadowRoot.appendChild(engine._overlay);
-    engine.metadata = { ...LIENZO, slots: [
+    engine.metadata = { ...CANVAS, slots: [
       capa("g1", { type: "group", style: { animation: conAnimacion() } }),
       capa("a", { style: { groupId: "g1", animation: conAnimacion() } }),
       capa("b", { style: { groupId: "g1" } }),
@@ -359,7 +359,7 @@ describe("lo que el wrapper desbloquea (fase 4)", () => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");
     shadowRoot.appendChild(engine._overlay);
-    engine.metadata = { ...LIENZO, slots };
+    engine.metadata = { ...CANVAS, slots };
     return engine;
   };
 
@@ -454,7 +454,7 @@ describe("con un slot como el que emite el backend DE VERDAD", () => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");
     shadowRoot.appendChild(engine._overlay);
-    engine.metadata = { ...LIENZO, slots };
+    engine.metadata = { ...CANVAS, slots };
     return engine;
   };
 

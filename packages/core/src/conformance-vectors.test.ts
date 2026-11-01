@@ -37,7 +37,7 @@ const CASOS = existsSync(VECTORES)
   ? readdirSync(VECTORES).filter((f) => f.endsWith(".oim.png")).sort()
   : [];
 
-/** The same thing that `tools/generar-vectores.mjs` emits. If they diverge, the vector lies. */
+/** The same thing the vector generator (run by the signing service) emits. If they diverge, the vector lies. */
 const DEL_ESTILO = [
   "width", "height", "fontSize", "borderRadius", "fillColor",
   "groupId", "childIds", "isInteractive", "states", "parallax",
@@ -47,7 +47,7 @@ const DEL_ESTILO = [
   "blendMode", "opacity", "borderWidth", "borderColor", "strokeStyle",
   "filterPreset", "filterBlur", "filterBrightness", "filterContrast", "filterSaturate", "filterHueRotate",
   "textRuns",
-  // Contract 1.10.0, vector layer-grain. Same list as tools/generar-vectores.mjs.
+  // Contract 1.10.0, vector layer-grain. Same list as the vector generator.
   "grain", "grainIntensity", "grainSize", "grainBlend",
   // Vector layer-blur: the contract's blur field, which the player ignored.
   "layerBlur",
@@ -65,7 +65,7 @@ function loQueSeEspera(m: any) {
     languages: m.languages,
     signed: Boolean(m.signature),
     key_version: m.key_version,
-    // 1.20.0: same projection as generar-vectores.mjs, so the palettes vector is checked.
+    // 1.20.0: same projection as the vector generator, so the palettes vector is checked.
     ...(m.palettes ? { palettes: m.palettes, defaultPalette: m.defaultPalette } : {}),
     slots: (m.slots || []).map((s: any) => {
       const style: Record<string, unknown> = {};

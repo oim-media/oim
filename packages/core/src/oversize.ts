@@ -67,7 +67,7 @@ export function maxOffset(depth: number): number {
  */
 export function oversizeScale(
   caja: LayerBox,
-  lienzo: CanvasSize,
+  canvas: CanvasSize,
   depth: number,
   eje: ParallaxAxis = "both",
   /**
@@ -117,10 +117,10 @@ export function oversizeScale(
     Math.max(porUnLado(margenA), porUnLado(margenB));
 
   const faltaX = seMueveEnX
-    ? falta(caja.left, lienzo.width - (caja.left + caja.width))
+    ? falta(caja.left, canvas.width - (caja.left + caja.width))
     : 0;
   const faltaY = seMueveEnY
-    ? falta(caja.top, lienzo.height - (caja.top + caja.height))
+    ? falta(caja.top, canvas.height - (caja.top + caja.height))
     : 0;
 
   if (faltaX <= 0 && faltaY <= 0) return 1;

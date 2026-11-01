@@ -141,8 +141,8 @@ export function infiniteLayerPlan(
   //
   // Without this, a layer narrower than the canvas leaves empty bands at the
   // sides -the fault seen in the editor- and a wider one builds pieces nobody sees.
-  const lienzo = Number.isFinite(anchoLienzoPx) && anchoLienzoPx > 0 ? anchoLienzoPx : anchoPiezaPx;
-  let copies = Math.ceil(lienzo / anchoPiezaPx) + piezasPorUnidad;
+  const canvas = Number.isFinite(anchoLienzoPx) && anchoLienzoPx > 0 ? anchoLienzoPx : anchoPiezaPx;
+  let copies = Math.ceil(canvas / anchoPiezaPx) + piezasPorUnidad;
   // With mirroring the number must be EVEN: half a pair breaks the symmetry and
   // brings back the jump.
   if (cfg.mirror && copies % 2 !== 0) copies += 1;

@@ -329,7 +329,7 @@ describe("1.4.0 cierra la deriva y marca lo retirado", () => {
   // Up to 1.6.0 the opposite was required here ("NOT marked: the player really
   // applies it"), because that was the case. In 1.7.0 the player stops applying
   // it (sandbox, a product decision) and the test changes with the fact:
-  // sandbox-sin-red.test.ts, in the player, pins that it is no longer applied.
+  // sandbox-no-network.test.ts, in the player, pins that it is no longer applied.
   it("`allowed_domains` va marcada desde 1.7.0: el player ya no la aplica", () => {
     const s = contrato(OimMetadataSchema, "oim", "x") as any;
     expect(s.properties.allowed_domains.deprecated).toBe(true);
@@ -346,8 +346,8 @@ describe("1.12.0 marca lo que nadie usa, sin borrarlo (auditoria del 10 oct)", (
   };
 
   // 1.21.0 added colour roles in patterns and backgrounds; 1.22.0 added reveal, trigger and play.
-  it("el contrato declara la 1.22.0", () => {
-    expect(CONTRACT_VERSION).toBe("1.22.0");
+  it("el contrato declara la 1.22.1", () => {
+    expect(CONTRACT_VERSION).toBe("1.22.1");
   });
 
   // A repeated definition goes to $defs and the property keeps a $ref.

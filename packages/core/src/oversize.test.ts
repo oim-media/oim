@@ -18,7 +18,7 @@ import {
   type ParallaxAxis,
 } from "./oversize";
 
-const LIENZO = { width: 800, height: 600 };
+const CANVAS = { width: 800, height: 600 };
 
 interface Caso {
   nombre: string;
@@ -97,7 +97,7 @@ const CASOS: Caso[] = [
 describe("la escala de sobredimensionado del parallax", () => {
   for (const c of CASOS) {
     it(c.nombre, () => {
-      expect(oversizeScale(LIENZO && c.caja, LIENZO, c.depth, c.eje)).toBe(c.esperado);
+      expect(oversizeScale(CANVAS && c.caja, CANVAS, c.depth, c.eje)).toBe(c.esperado);
     });
   }
 });
@@ -106,20 +106,20 @@ describe("una capa con pista de bucle infinito no se toca", () => {
   const horizonte = { left: 0, top: 450, width: 800, height: 150 };
 
   it("sin pista, el horizonte se agranda", () => {
-    expect(oversizeScale(horizonte, LIENZO, 0.6, "both", false)).toBe(1.24);
+    expect(oversizeScale(horizonte, CANVAS, 0.6, "both", false)).toBe(1.24);
   });
 
   it("con pista, NO: la pista ya cubre el lienzo toda la vuelta", () => {
     // And enlarging it would do harm: each piece would look bigger than drawn,
     // and the number of pieces was calculated for the unscaled size.
-    expect(oversizeScale(horizonte, LIENZO, 0.6, "both", true)).toBe(1);
+    expect(oversizeScale(horizonte, CANVAS, 0.6, "both", true)).toBe(1);
   });
 
   it("por defecto se asume que NO hay pista", () => {
     // The parameter is the last and optional one: whoever does not pass it
     // behaves as before. If the default were `true`, adding a new call would
     // disable the oversizing without anyone noticing.
-    expect(oversizeScale(horizonte, LIENZO, 0.6, "both")).toBe(1.24);
+    expect(oversizeScale(horizonte, CANVAS, 0.6, "both")).toBe(1.24);
   });
 });
 

@@ -38,7 +38,7 @@ function acotado(valor: unknown, min: number, max: number): number | undefined {
   return Math.min(max, Math.max(min, valor));
 }
 
-interface AjustesNormalizados {
+interface NormalizedSettings {
   preset: string | undefined;
   blur: number;
   brightness: number;
@@ -48,7 +48,7 @@ interface AjustesNormalizados {
 }
 
 /** The settings, already clamped, with neutral values where one is missing or invalid. */
-function normalizar(style: Record<string, unknown>): AjustesNormalizados {
+function normalize(style: Record<string, unknown>): NormalizedSettings {
   const { filterPreset: preset } = style;
   return {
     preset: typeof preset === "string" && Object.prototype.hasOwnProperty.call(FILTER_PRESET_CSS, preset) ? preset : undefined,
@@ -62,7 +62,7 @@ function normalizar(style: Record<string, unknown>): AjustesNormalizados {
 
 /** Fixed order: preset, blur, brightness, contrast, saturation, hue-rotate. `undefined` if everything is neutral. */
 export function mediaFilterCss(style: Record<string, unknown>): string | undefined {
-  const a = normalizar(style);
+  const a = normalize(style);
   const parts: string[] = [];
 
   if (a.preset !== undefined) parts.push(FILTER_PRESET_CSS[a.preset]);

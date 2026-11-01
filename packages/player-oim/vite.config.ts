@@ -8,13 +8,10 @@ const LOTTIE_PKG = require.resolve('lottie-web/package.json');
 const LOTTIE_VERSION: string = JSON.parse(readFileSync(LOTTIE_PKG, 'utf8')).version;
 const LOTTIE_LIGHT = resolve(LOTTIE_PKG, '..', 'build/player/lottie_light.min.js');
 
-// The oim-cdn Cloudflare Pages project builds ONLY this package (`pnpm run
-// build --filter @oim-media/player-oim`) and serves `dist/` directly as its site
-// root — it never runs apps/studio's build, so that app's own copy-to-public
-// plugin (which mirrors this same file to /player/v1/) never executes here.
-// Mirroring the versioned copy in this package's own build is what actually
-// makes cdn.oim.media/player/v1/oim-player.js exist. Lottie is published next
-// to both copies, because the player resolves vendor/ against its own URL.
+// The CDN site is built from this package alone and `dist/` is served as the
+// site root, so the versioned copy is produced here, in this build. Lottie is
+// published next to both copies, because the player resolves vendor/ against
+// its own URL.
 function versionedCopyPlugin() {
   return {
     name: 'copy-versioned-player',
@@ -47,12 +44,13 @@ export default defineConfig(({ command, mode }) => mode === 'esm' ? {
   worker: { format: 'es' }
 } : ({
   plugins: [versionedCopyPlugin()],
+  publicDir: false,
   define: {
     __OIM_LOTTIE_VERSION__: JSON.stringify(LOTTIE_VERSION)
   },
   // Only in `vite build`: an `iife` inlines every import(), so the real
   // lottie_light would land in the bundle. vitest runs as `serve` and keeps
-  // the real library, and apps/studio does not use this config at all.
+  // the real library.
   resolve: command === 'build'
     ? { alias: { 'lottie-web/build/player/lottie_light': resolve(__dirname, 'src/core/lottie-external.ts') } }
     : {},

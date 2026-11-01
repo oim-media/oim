@@ -15,7 +15,7 @@ import { readFileSync } from 'node:fs';
  * was retired, and learns the new key from the server when it meets it.
  */
 
-const F = JSON.parse(readFileSync(new URL('./__fixtures__/rotacion.json', import.meta.url), 'utf8'));
+const F = JSON.parse(readFileSync(new URL('./__fixtures__/rotation.json', import.meta.url), 'utf8'));
 
 const claveVieja = {
   kid: F.jwk_vieja.kid,

@@ -76,7 +76,7 @@ describe("securityVerdict", () => {
 
   // "a blocked domain beats everything" was removed together with
   // `allowed_domains` (the sandbox): the player no longer checks which site a
-  // file is opened on. `sandbox-sin-red.test.ts` protects this.
+  // file is opened on. `sandbox-no-network.test.ts` protects this.
 });
 
 describe("isRefused", () => {

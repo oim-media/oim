@@ -1,13 +1,27 @@
+/**
+ * @license
+ * Copyright (c) 2026 Xue Studios LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * Public types of `@oim-media/player-oim`. Written by hand, so it MUST match the
+ * runtime exports of `index.ts`: `published-surface.test.ts` fails when it drifts.
+ */
+
+/** Options accepted by `OimPlayer.mount()`. They reach the engine as-is. */
 export interface OimPlayerOptions {
   allowZoom?: boolean;
   showLanguageSelector?: boolean;
   showSlots?: boolean;
   allowLottie?: boolean;
+  allowDynamicColors?: boolean;
   disableAnimations?: boolean;
+  disableActions?: boolean;
   dropdownBlur?: boolean;
   fit?: 'contain' | 'cover';
   align?: 'center' | 'top' | 'bottom';
-  variant?: 'hero' | string;
+  placeholder?: string;
 }
 
 export type OimSecurityStatus =
@@ -23,6 +37,8 @@ export type OimSecurityStatus =
   | 'corrupt';
 
 export interface OimPlayerInstance extends HTMLElement {
+  src: Blob | string;
+  lang: string;
   destroy(): void;
   getMetadata(): any;
   getSecurityStatus(): OimSecurityStatus | null;
@@ -44,7 +60,7 @@ export interface OimPlayerInstance extends HTMLElement {
   getEngine(): any;
 }
 
-export const OimPlayer: {
+declare const OimPlayer: {
   mount(
     containerId: string | HTMLElement,
     src: Blob | string,
@@ -52,9 +68,11 @@ export const OimPlayer: {
   ): OimPlayerInstance | null;
 };
 
-declare const _default: {
-  version: string;
-  description: string;
-  OimPlayer: typeof OimPlayer;
-};
-export default _default;
+export { OimPlayer };
+export default OimPlayer;
+
+/** Same function as `OimPlayer.mount`. */
+export declare const mount: typeof OimPlayer.mount;
+
+/** The element prototype behind `<oim-player>`. Not meant to be instantiated. */
+export declare const OimPlayerElement: object;

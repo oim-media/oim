@@ -31,7 +31,7 @@
     "jsdom": "^30.0.0",
     "typescript": "~6.0.3",
     "vite": "^8.1.6",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.12"
   },
   "files": [
     "dist/esm",

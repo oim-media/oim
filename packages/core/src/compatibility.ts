@@ -43,7 +43,10 @@
  * the format can change without the player being touched. Tying both numbers
  * together would make an internal fix look like a format break.
  */
-export const CONTRACT_VERSION = "1.23.0";
+export const CONTRACT_VERSION = "1.23.1";
+// 1.23.1: zod 4.6 regenerates the JSON Schema. `signed_at` and `timestamp` now
+// require seconds (the only writer, the backend, always emits them); fixed-length
+// tuples gain `maxItems`. No field added or removed.
 // 1.23.0: format keys in English. `reedit` replaces `reedicion` (values `public`,
 // `author_only`, `sealed`); `reedicion` is read forever as a legacy alias and never written.
 // Exported names in English with deprecated aliases until 2.0.0. The `data-oim-*`

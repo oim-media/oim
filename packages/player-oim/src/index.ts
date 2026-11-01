@@ -68,9 +68,9 @@ const OimPlayerElement = Object.create(HTMLElement.prototype);
  */
 function ensureReservedSpace(): void {
   if (typeof document === 'undefined') return;
-  if (document.getElementById('oim-player-hueco')) return;
+  if (document.getElementById('oim-player-gap')) return;
   const est = document.createElement('style');
-  est.id = 'oim-player-hueco';
+  est.id = 'oim-player-gap';
   est.textContent =
     ':where(oim-player){display:block}' +
     ':where(oim-player:not([data-oim-cargado])){min-height:200px}';
@@ -107,9 +107,9 @@ OimPlayerElement.connectedCallback = function (this: any) {
  * `pause()` and the `oim-player-paused` class- and none of them governed the
  * others: each one protected a piece and nobody protected the whole.
  *
- *   dormido (dormant) -> not even loaded
- *   listo (ready)     -> loaded and built, still
- *   activo (active)   -> moving
+ *   dormant -> not even loaded
+ *   ready   -> loaded and built, still
+ *   active  -> moving
  */
 OimPlayerElement._replantearActividad = function (this: any) {
   if (!this._src || !this.isConnected) return;
@@ -118,11 +118,11 @@ OimPlayerElement._replantearActividad = function (this: any) {
     if (!('IntersectionObserver' in window)) {
       // Without an observer there is no way to know whether it is visible: it
       // loads and animates, as it behaved before all of this.
-      this._pasarA('activo');
+      this._moveTo('active');
       return;
     }
     const self = this;
-    const fire = () => self._programarDecision();
+    const fire = () => self._scheduleDecision();
 
     // TWO observers, ONE decision. When crossing margins, we store the
     // intersection state to avoid calling getBoundingClientRect() synchronously
@@ -155,7 +155,7 @@ OimPlayerElement._replantearActividad = function (this: any) {
       this.addEventListener('mouseleave', this._onPointerLeave);
     }
   }
-  this._programarDecision();
+  this._scheduleDecision();
 };
 
 /**
@@ -167,12 +167,12 @@ OimPlayerElement._replantearActividad = function (this: any) {
  * `dormido > activo > dormido`, and that ghost `activo` was enough to
  * unload them all.
  */
-OimPlayerElement._programarDecision = function (this: any) {
+OimPlayerElement._scheduleDecision = function (this: any) {
   if (this._activityFrame) return;
   const self = this;
   this._activityFrame = requestAnimationFrame(function () {
     self._activityFrame = null;
-    self._decidir();
+    self._decide();
   });
 };
 
@@ -183,7 +183,7 @@ OimPlayerElement._programarDecision = function (this: any) {
  * during scrolling; falls back to reading getBoundingClientRect() when there is
  * no report (e.g. tests or initialization).
  */
-OimPlayerElement._decidir = function (this: any) {
+OimPlayerElement._decide = function (this: any) {
   if (!this._src || !this.isConnected) return;
 
   const tabHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
@@ -216,16 +216,16 @@ OimPlayerElement._decidir = function (this: any) {
   // when to build it, never when to play it.
   if (this.getAttribute('activate-on') === 'manual') moves = false;
 
-  this._pasarA(moves ? 'activo' : (near ? 'listo' : 'dormido'));
+  this._moveTo(moves ? 'active' : (near ? 'ready' : 'dormant'));
 };
 
-OimPlayerElement._pasarA = function (this: any, state: string) {
+OimPlayerElement._moveTo = function (this: any, state: string) {
   if (this._activityState === state) return;
   this._activityState = state;
 
-  if (state === 'dormido') return;   // nothing to build or stop
+  if (state === 'dormant') return;   // nothing to build or stop
   if (!this._engine) this._initPlayer();
-  if (state === 'activo') this.play();
+  if (state === 'active') this.play();
   else this.pause();
 };
 
@@ -301,7 +301,7 @@ OimPlayerElement.disconnectedCallback = function (this: any) {
   }
   this._isNear = null;
   this._isVisible = null;
-  this._activityState = 'dormido';
+  this._activityState = 'dormant';
   if (this._engine && this._engine.destroy) {
     this._engine.destroy();
   }
@@ -424,7 +424,7 @@ OimPlayerElement._initPlayer = function (this: any) {
     
     self._engine = new ImageEngine(self, self._oimOptions);
     self._loading = false;
-    // `_pasarA` calls `pause()` right after `_initPlayer()`, before this
+    // `_moveTo` calls `pause()` right after `_initPlayer()`, before this
     // engine exists, so that pause only reached the CSS class. The engine
     // inherits it here, or its Lottie and keyframes play on a card that is
     // waiting for the cursor.
@@ -446,26 +446,26 @@ OimPlayerElement._initPlayer = function (this: any) {
  * without this, `getMetadata()` on a `.oim` at the bottom of a list would
  * return `null` where it used to return data, and we would break whoever uses it.
  */
-OimPlayerElement._despertar = function (this: any) {
+OimPlayerElement._wake = function (this: any) {
   // `_loading` and not only `_engine`: `_initPlayer` takes a while to assign the
-  // engine, so `_pasarA` called it and then `play()` -> `_despertar()` called it
+  // engine, so `_moveTo` called it and then `play()` -> `_wake()` called it
   // AGAIN. Measured: two loads and double the requests per player.
   if (this._engine || this._loading || !this._src) return;
   this._initPlayer();
 };
 
 OimPlayerElement.getMetadata = function (this: any) {
-  this._despertar();
+  this._wake();
   return this._engine ? this._engine.metadata : null;
 };
 
 OimPlayerElement.getSecurityStatus = function (this: any) {
-  this._despertar();
+  this._wake();
   return this._engine ? (this._engine.securityStatus || 'unsigned') : null;
 };
 
 OimPlayerElement.setLang = function (this: any, lang: string) {
-  this._despertar();
+  this._wake();
   if (this._engine && this._engine.setLang) {
     this._engine.setLang(lang);
   }
@@ -478,7 +478,7 @@ OimPlayerElement.setZoom = function (this: any, zoom: number) {
 };
 
 OimPlayerElement.play = function (this: any) {
-  this._despertar();
+  this._wake();
   this.classList.remove('oim-player-paused');
   if (this._engine && this._engine.play) {
     this._engine.play();
@@ -539,10 +539,10 @@ if (typeof customElements !== 'undefined' && !customElements.get('oim-player')) 
   OimPlayerClass.prototype.getEngine = OimPlayerElement.getEngine;
   OimPlayerClass.prototype._initPlayer = OimPlayerElement._initPlayer;
   OimPlayerClass.prototype._replantearActividad = OimPlayerElement._replantearActividad;
-  OimPlayerClass.prototype._decidir = OimPlayerElement._decidir;
-  OimPlayerClass.prototype._programarDecision = OimPlayerElement._programarDecision;
-  OimPlayerClass.prototype._pasarA = OimPlayerElement._pasarA;
-  OimPlayerClass.prototype._despertar = OimPlayerElement._despertar;
+  OimPlayerClass.prototype._decide = OimPlayerElement._decide;
+  OimPlayerClass.prototype._scheduleDecision = OimPlayerElement._scheduleDecision;
+  OimPlayerClass.prototype._moveTo = OimPlayerElement._moveTo;
+  OimPlayerClass.prototype._wake = OimPlayerElement._wake;
   OimPlayerClass.prototype._startAutoRotateLang = OimPlayerElement._startAutoRotateLang;
   OimPlayerClass.prototype._stopAutoRotateLang = OimPlayerElement._stopAutoRotateLang;
   OimPlayerClass.prototype.destroy = OimPlayerElement.destroy;

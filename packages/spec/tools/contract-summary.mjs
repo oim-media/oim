@@ -99,9 +99,9 @@ function describe(property) {
   if (property.enum) return `enum: ${property.enum.join(", ")}`;
   if (property.$ref) return property.$ref.replace("#/$defs/", "→ ");
   const parts = [property.type ?? "?"];
-  if (property.maxItems) parts.push(`máx ${property.maxItems} elementos`);
-  if (property.maxLength) parts.push(`máx ${property.maxLength} caracteres`);
-  if (property.items?.maxLength) parts.push(`cada uno máx ${property.items.maxLength} caracteres`);
+  if (property.maxItems) parts.push(`max ${property.maxItems} items`);
+  if (property.maxLength) parts.push(`max ${property.maxLength} characters`);
+  if (property.items?.maxLength) parts.push(`each up to ${property.items.maxLength} characters`);
   if (property.items?.$ref) parts.push(`de ${property.items.$ref.replace("#/$defs/", "")}`);
   return parts.join(" · ");
 }
@@ -177,13 +177,13 @@ function build() {
 function report(summary) {
   const { contract, vectors, drift } = summary;
   console.log(`\nContrato  ${contract.id}`);
-  console.log(`          ${contract.rootKeyCount} claves en la raíz · obligatorias: ${contract.required.join(", ") || "ninguna"}`);
-  console.log(`          admite claves no declaradas: ${contract.acceptsUndeclaredKeys ? "sí" : "no"}`);
+  console.log(`          ${contract.rootKeyCount} keys at the root · required: ${contract.required.join(", ") || "none"}`);
+  console.log(`          accepts undeclared keys: ${contract.acceptsUndeclaredKeys ? "yes" : "no"}`);
   console.log(`          ${contract.definitions.length} sub-definiciones: ${contract.definitions.join(", ")}\n`);
 
   console.log("Vectores");
   for (const v of vectors) {
-    const marks = [v.signed ? "firmado" : "SIN FIRMAR", v.sealed ? "sellado" : "SIN SELLAR"].join(" · ");
+    const marks = [v.signed ? "signed" : "UNSIGNED", v.sealed ? "sealed" : "UNSEALED"].join(" · ");
     console.log(
       `  ${v.file.padEnd(26)} ${String(v.fileBytes).padStart(6)} B` +
         ` · OIM ${String(v.oimChunkBytes).padStart(5)} B` +
@@ -194,18 +194,18 @@ function report(summary) {
 
   console.log("\nDeriva");
   if (drift.undeclared.length === 0) {
-    console.log("  · los vectores no llevan ninguna clave fuera del contrato");
+    console.log("  · the vectors carry no key outside the contract");
   } else {
-    console.log(`  · EN LOS ARCHIVOS, NO EN EL CONTRATO: ${drift.undeclared.join(", ")}`);
-    console.log("    Una implementación que lea solo el contrato no sabrá que existen.");
+    console.log(`  · IN THE FILES, NOT IN THE CONTRACT: ${drift.undeclared.join(", ")}`);
+    console.log("    An implementation that reads only the contract will not know they exist.");
   }
   if (drift.retired.length > 0) {
-    console.log(`  · RETIRADAS, marcadas en el contrato: ${drift.retired.join(", ")}`);
-    console.log("    Siguen declaradas para no romper lo ya publicado; un lector nuevo no debe escribirlas.");
+    console.log(`  · RETIRED, marked in the contract: ${drift.retired.join(", ")}`);
+    console.log("    They stay declared so as not to break what is already published; a new reader must not write them.");
   }
   if (drift.untested.length > 0) {
-    console.log(`  · vigentes y sin vector que las ejerza: ${drift.untested.join(", ")}`);
-    console.log("    Ningún archivo de prueba las usa: una implementación puede leerlas mal y pasar la conformidad.");
+    console.log(`  · in force and with no vector that exercises them: ${drift.untested.join(", ")}`);
+    console.log("    No test file uses them: an implementation may read them wrongly and still pass conformance.");
   }
   console.log("");
 }

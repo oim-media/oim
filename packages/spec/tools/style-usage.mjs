@@ -24,7 +24,7 @@
  * newest date it saw. Any key introduced after that date is outside what this
  * corpus can judge, and the report says so instead of guessing.
  *
- *   node tools/style-usage.mjs <fichero-o-url> [...]
+ *   node tools/style-usage.mjs <file-or-url> [...]
  *   node tools/style-usage.mjs --vectors        # the contract's vectors
  */
 
@@ -135,7 +135,7 @@ for (const source of sources) {
     continue;
   }
   if (!metadata) {
-    console.error(`  sin chunk OIM legible: ${source}`);
+    console.error(`  no readable OIM chunk: ${source}`);
     continue;
   }
   const keys = styleKeysOf(metadata);
@@ -144,18 +144,18 @@ for (const source of sources) {
     name: basename(source),
     // `signed_at` is inside the signature; `timestamp` is not and can be
     // rewritten. Prefer the one that cannot lie.
-    date: (metadata.signed_at ?? metadata.timestamp ?? "").slice(0, 10) || "sin fecha",
+    date: (metadata.signed_at ?? metadata.timestamp ?? "").slice(0, 10) || "no date",
     slots: (metadata.slots ?? metadata.elements ?? metadata.layers ?? []).length,
     styleKeys: keys.size,
   });
 }
 
 const used = new Set(usage.keys());
-const newest = files.map((f) => f.date).filter((d) => d !== "sin fecha").sort().pop() ?? "desconocida";
+const newest = files.map((f) => f.date).filter((d) => d !== "no date").sort().pop() ?? "unknown";
 
 console.log(`\nArchivos medidos: ${files.length}`);
 for (const f of files) {
-  console.log(`  ${f.date}  ${String(f.slots).padStart(3)} slots  ${String(f.styleKeys).padStart(3)} claves  ${f.name}`);
+  console.log(`  ${f.date}  ${String(f.slots).padStart(3)} slots  ${String(f.styleKeys).padStart(3)} keys  ${f.name}`);
 }
 
 console.log(`\nClaves de style`);
@@ -164,23 +164,23 @@ console.log(`  leidas por el player             ${read.size}`);
 console.log(`  presentes en estos archivos      ${used.size}`);
 
 const toDeclare = [...used].filter((k) => !declared.has(k)).sort((a, b) => usage.get(b) - usage.get(a));
-console.log(`\nEn los archivos y SIN declarar: ${toDeclare.length}`);
-console.log(`  (ordenadas por cuantos archivos las traen -- declarar de arriba abajo)`);
+console.log(`\nIn the files and NOT declared: ${toDeclare.length}`);
+console.log(`  (sorted by how many files carry them -- declare from the top down)`);
 for (const key of toDeclare.slice(0, 25)) {
   console.log(`    ${String(usage.get(key)).padStart(3)}/${files.length}  ${key}`);
 }
-if (toDeclare.length > 25) console.log(`    … y ${toDeclare.length - 25} mas`);
+if (toDeclare.length > 25) console.log(`    … and ${toDeclare.length - 25} more`);
 
 const unusedByFiles = [...read].filter((k) => !used.has(k) && !declared.has(k)).sort();
-console.log(`\nEl player las lee, ningun archivo las trae: ${unusedByFiles.length}`);
-console.log(`  NO son necesariamente restos muertos. El archivo mas reciente medido es`);
-console.log(`  de ${newest}: cualquier clave anadida despues no puede juzgarse con este`);
-console.log(`  corpus. Fechar la clave antes de retirarla.`);
+console.log(`\nThe player reads them, no file carries them: ${unusedByFiles.length}`);
+console.log(`  They are NOT necessarily dead leftovers. The most recent file measured is`);
+console.log(`  from ${newest}: any key added later cannot be judged with this`);
+console.log(`  corpus. Verify the key before retiring it.`);
 console.log(`    ${unusedByFiles.slice(0, 20).join(", ")}${unusedByFiles.length > 20 ? ", …" : ""}`);
 
 const dead = [...declared].filter((k) => !read.has(k) && !used.has(k)).sort();
 if (dead.length > 0) {
-  console.log(`\nDeclaradas, ni leidas ni usadas: ${dead.length}`);
+  console.log(`\nDeclared, neither read nor used: ${dead.length}`);
   console.log(`    ${dead.join(", ")}`);
 }
 console.log("");

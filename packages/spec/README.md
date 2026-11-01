@@ -1,220 +1,216 @@
-# oim-spec — el contrato del formato
+# oim-spec — the format contract
 
-Esto **no** es una biblioteca. Es la definición del formato `.oim`, en datos,
-para que una implementación en cualquier lenguaje pueda ser correcta sin leer
-el TypeScript.
+This is **not** a library. It is the definition of the `.oim` format, in data,
+so that an implementation in any language can be correct without reading the
+TypeScript.
 
 ```
-BINARY_SPEC.md    Especificación binaria del contenedor PNG, compresión y firma.
-CANONICAL_SPEC.md Especificación canónica de metadatos (slots, estilos, tipos y opciones).
-schema/           JSON Schema de los metadatos. Generado, nunca editado a mano.
-vectors/          Ficheros .oim de ejemplo con su resultado esperado.
+BINARY_SPEC.md    Binary specification of the PNG container, compression and signature.
+CANONICAL_SPEC.md Canonical specification of the metadata (slots, styles, types and options).
+schema/           JSON Schema of the metadata. Generated, never edited by hand.
+vectors/          Example .oim files with their expected result.
 ```
 
-## Por qué existe
+## Why it exists
 
-Los dos repositorios habían copiado el mismo código en vez de compartirlo, y
-las copias derivaron: `grupos.ts` acumuló 546 líneas distintas entre el player
-y el editor, `layerComposition.ts` 775. Un player en Swift o en Rust repetiría
-ese error una vez por lenguaje.
+The two repositories had copied the same code instead of sharing it, and the
+copies drifted: `grupos.ts` accumulated 546 lines that differed between the
+player and the editor, `layerComposition.ts` 775. A player in Swift or in Rust
+would repeat that mistake once per language.
 
-Un contrato en TypeScript solo sirve a TypeScript. Este directorio es la parte
-que sobrevive al lenguaje.
+A contract in TypeScript only serves TypeScript. This directory is the part
+that survives the language.
 
-## Quién manda hoy
+## Who is the authority today
 
-Hoy la fuente de verdad sigue siendo `packages/core/src/schema.ts`: el JSON de
-`schema/` se **genera** desde ese Zod, y una prueba falla si alguien edita el
-Zod sin regenerarlo. Es deliberado — un contrato generado no puede derivar de
-su implementación, que es justo el fallo que esto cierra.
+Today the source of truth is still `packages/core/src/schema.ts`: the JSON in
+`schema/` is **generated** from that Zod schema, and a test fails if someone
+edits the Zod without regenerating. This is deliberate — a generated contract
+cannot drift from its implementation, which is exactly the failure this closes.
 
-El día que exista una segunda implementación, la dirección se invierte: el JSON
-pasa a ser la fuente y el TypeScript uno más de los que lo cumplen. No antes:
-mantener a mano una especificación que nadie más lee es cómo se acumulan
-contratos que mienten.
+The day a second implementation exists, the direction reverses: the JSON
+becomes the source and the TypeScript one more of the implementations that
+satisfy it. Not before: maintaining by hand a specification that nobody else
+reads is how contracts that lie accumulate.
 
-## Regenerar
+## Regenerate
 
 ```
 pnpm --filter @oim-media/core test -- -u
 ```
 
-## Comprobar si el contrato y los archivos han derivado
+## Check whether the contract and the files have drifted
 
 ```
-node tools/contract-summary.mjs          # informe legible
-node tools/contract-summary.mjs --json   # los mismos datos, para otra herramienta
-node tools/contract-summary.mjs --write  # deja contract-summary.json
+node tools/contract-summary.mjs          # readable report
+node tools/contract-summary.mjs --json   # the same data, for another tool
+node tools/contract-summary.mjs --write  # writes contract-summary.json
 
-node tools/canonical-check.mjs           # la firma: rehace la forma canonica
-                                         # y verifica los vectores de verdad
+node tools/canonical-check.mjs           # the signature: rebuilds the canonical form
+                                         # and verifies the real vectors
 ```
 
-Una prueba vigila que el JSON Schema siga al Zod, pero **nada comparaba el
-contrato con archivos firmados de verdad**. Ese hueco ya había dejado pasar
-cuatro divergencias, encontradas a mano el 18 de septiembre de 2026; la peor,
-`reedicion` —quién puede reeditar la obra— que va en todos los archivos y no
-está declarada en ninguna parte.
+A test watches that the JSON Schema follows the Zod, but **nothing compared the
+contract against real signed files**. That gap had already let four divergences
+through, found by hand on 18 September 2026; the worst, `reedicion` — who may
+re-edit the work — goes in every file and is not declared anywhere.
 
-El guion informa, no arregla ni falla. Convertir la deriva en una prueba roja
-es el final correcto, pero primero hay que resolverla: una prueba que nace en
-rojo enseña a todo el mundo a ignorarla.
+The script reports, it does not fix or fail. Turning drift into a red test is
+the right end state, but first the drift must be resolved: a test that starts
+red teaches everyone to ignore it.
 
-## `content` y el principal `*` (desde 1.2.0)
+## `content` and the main `*` (since 1.2.0)
 
-En las capas de medio (imagen, Lottie, vector), `content` puede guardar el
-medio principal bajo la clave `"*"` y solo las excepciones bajo su código de
-idioma:
+On media layers (image, Lottie, vector), `content` can store the main media
+under the key `"*"` and only the exceptions under their language code:
 
     "content": { "*": "oim-media:abc", "pt": "oim-media:def" }
 
-Regla de lectura: si `content` tiene `"*"`, el idioma pedido usa **su propia
-clave si existe, aunque esté vacía**; si no existe, usa `"*"`. No hay más
-respaldos. Sin `"*"` (todo archivo anterior a 1.2.0, y todo texto), la regla
-de siempre: el idioma pedido, luego `en`, `es`, `default` y la primera clave,
-## `reedicion` y `name` en la raíz (desde 1.4.0)
+Reading rule: if `content` has `"*"`, the requested language uses **its own key
+if it exists, even if empty**; if it does not exist, it uses `"*"`. There are no
+further fallbacks. Without `"*"` (every file prior to 1.2.0, and every text),
+the usual rule applies: the requested language, then `en`, `es`, `default` and
+the first key,
+## `reedicion` and `name` at the root (since 1.4.0)
 
-Los dos iban en **todos** los archivos publicados y en **ninguna** versión del
-contrato. Un lector construido leyendo solo el contrato no podía saber que
-existían.
+Both were in **every** published file and in **no** version of the contract. A
+reader built by reading only the contract could not know they existed.
 
-`reedicion` era el peor de los dos porque **decide un permiso**:
+`reedicion` was the worse of the two because **it decides a permission**:
 
     "reedicion": "publico" | "solo_autor" | "sellado"
 
-Un valor desconocido cae a `solo_autor`, **nunca a `publico`**: el valor por
-defecto de un sistema de permisos se elige por lo que pasa cuando algo va mal.
-Un lector que lo ignorase trataría como reeditable una obra que no lo es.
+An unknown value falls back to `solo_autor`, **never to `publico`**: the default
+of a permission system is chosen by what happens when something goes wrong. A
+reader that ignored it would treat as re-editable a work that is not.
 
-Viaja junto a `immutable_lock`, y no es redundancia: `reedicion` es la
-declaración —viaja dentro del archivo, cualquiera que lo abra sabe qué quiso su
-autor— e `immutable_lock` es lo que el backend guarda y aplica. Una declaración
-sin aplicación es una sugerencia; una aplicación sin declaración es una puerta
-cerrada sin cartel. `reeditPermission.ts` es la fuente canónica de esa regla, y
-escribe los dos campos a la vez para que no puedan separarse.
+It travels together with `immutable_lock`, and this is not redundancy:
+`reedicion` is the declaration — it travels inside the file, so anyone who opens
+it knows what its author intended — and `immutable_lock` is what the backend
+stores and enforces. A declaration without enforcement is a suggestion; an
+enforcement without a declaration is a closed door with no sign. `reeditPermission.ts`
+is the canonical source of that rule, and it writes both fields at once so that
+they cannot be separated.
 
-`name` es el título de la obra. No confundir con `slot.name` ni con
+`name` is the title of the work. Do not confuse it with `slot.name` or
 `fonts[].name`.
 
-## Lo retirado se marca, no se borra (desde 1.4.0)
+## What is retired is marked, not deleted (since 1.4.0)
 
-`terms_accepted` y `redirect_membership_verified` llevan `deprecated: true` en
-el JSON Schema, que es la forma **legible por una máquina** de decirlo: un
-lector nuevo no tiene que interpretar un comentario para saber que no debe
-escribirlas.
+`terms_accepted` and `redirect_membership_verified` carry `deprecated: true` in
+the JSON Schema, which is the **machine-readable** way of saying it: a new reader
+does not have to interpret a comment to know it must not write them.
 
-Las dejó atrás la 1.1.0 al retirar `allow_external_urls`: sus únicos lectores
-—las rutas de firma del backend— están detrás de `if allow_external_urls`, una
-clave que el contrato ya no declara, así que **la comprobación no puede
-dispararse para un archivo conforme**.
+Version 1.1.0 left them behind when it retired `allow_external_urls`: their only
+readers — the backend's signing paths — sit behind `if allow_external_urls`, a
+key the contract no longer declares, so **the check cannot fire for a conforming
+file**.
 
-Marcadas y no borradas a propósito. El backend las sigue honrando si un archivo
-trae la clave retirada; quitarlas del contrato lo haría mentir en el otro
-sentido, que es el mismo fallo con el signo cambiado.
+Marked and not deleted, on purpose. The backend still honours them if a file
+carries the retired key; removing them from the contract would make it lie in
+the other direction, which is the same failure with the sign flipped.
 
-**`allowed_domains` no está en esa lista, aunque se haya dicho lo contrario.**
-Sigue viva y el reproductor la aplica: `worker.ts` la convierte en
-`isDomainAllowed` y `securityVerdict` responde `domain_blocked`. Hay una prueba
-que impide volver a darla por muerta.
+**`allowed_domains` is not on that list, although it has been said otherwise.**
+It is still alive and the player enforces it: `worker.ts` turns it into
+`isDomainAllowed` and `securityVerdict` answers `domain_blocked`. A test exists
+that prevents it from being declared dead again.
 
-Nada se elimina y `min_player` no sube: un archivo antiguo sigue siendo válido
-y un lector que ignore las cuatro claves se comporta igual que antes.
+Nothing is removed and `min_player` does not go up: an old file is still valid,
+and a reader that ignores the four keys behaves exactly as before.
 
-## Fuentes incrustadas (desde 1.3.0)
+## Embedded fonts (since 1.3.0)
 
-La raíz puede llevar `fonts`: una entrada por variante de fuente que usa la
-obra, recortada a los caracteres que puede mostrar.
+The root may carry `fonts`: one entry per font variant the work uses, trimmed to
+the characters it can display.
 
     { "family": "Lora", "name": "oim-3f9a1c2b-Lora", "weight": 700,
       "style": "italic", "format": "woff2", "data": "<base64>" }
 
-Un lector que la entienda registra cada entrada con el nombre de `name` y pinta
-las capas de familia `family` con ese nombre primero. Un lector que no la
-entienda la ignora: las capas siguen diciendo `family` y se pintan como antes.
-Por eso `fonts` no sube `min_player`.
+A reader that understands it registers each entry under the name in `name` and
+paints the layers of family `family` with that name first. A reader that does
+not understand it ignores it: the layers still say `family` and are painted as
+before. That is why `fonts` does not raise `min_player`.
 
-**Las fuentes en línea son comportamiento heredado** desde el 17 de septiembre
-de 2026: el editor ya no las ofrece y todo archivo nuevo lleva sus fuentes
-dentro. El reproductor de referencia mantiene su cargador de Google solo para
-los archivos ya publicados, y un lector nuevo no tiene por qué implementarlo:
-sin `fonts`, se pinta con la tipografía de repuesto del sistema. Un `.oim` no
-pide nada a terceros al abrirse, que es lo mismo que decidió la 1.1.0 al
-retirar `allow_external_urls`.
+**Online fonts are inherited behaviour** since 17 September 2026: the editor no
+longer offers them and every new file carries its fonts inside. The reference
+player keeps its Google loader only for files already published, and a new
+reader does not have to implement it: without `fonts`, it is painted with the
+system's fallback typeface. An `.oim` does not request anything from third
+parties when it is opened, which is what 1.1.0 decided when it retired
+`allow_external_urls`.
 
-## El estilo deja de ser texto libre (desde 1.8.0)
+## Style stops being free text (since 1.8.0)
 
-La 1.6 declaró unas cuarenta claves de estilo que el editor ya escribía, pero
-casi todas como cadena libre: declarar una clave sin decir qué admite
-documenta que existe, no cómo se lee. La 1.8.0 les da forma:
+Version 1.6 declared about forty style keys that the editor already wrote, but
+almost all as free strings: declaring a key without saying what it accepts
+documents that it exists, not how it is read. Version 1.8.0 gives them a shape:
 
-- **Un solo tipo de color**, `cssColor`, para las dieciséis claves de color.
-  Admite hex, `rgb()`/`hsl()`, `transparent`, `none`, `currentColor`,
-  `inherit` y `var(--nombre)` con respaldo, porque los colores dinámicos van
-  en archivos reales. Es el gemelo portable de `isSafeCssColor`, el saneado
-  del player: una prueba exige que **todo lo que acepte el contrato lo acepte
-  el player**, nunca al revés.
-- **Vocabularios cerrados** donde el editor ya los cierra: roles de color,
-  los 14 patrones, las 8 direcciones del patrón, el degradado y la animación
-  del texto, y `geoShape` gana `scribble`, que se escribía y no se declaraba.
-- **Los tres `any` tienen forma**: `cuts` (recortes de la máscara),
-  `fillGenerative` (generador, semilla, parámetros y colores) y
-  `fillGradient`.
+- **A single colour type**, `cssColor`, for the sixteen colour keys. It accepts
+  hex, `rgb()`/`hsl()`, `transparent`, `none`, `currentColor`, `inherit` and
+  `var(--name)` with a fallback, because dynamic colours go into real files. It
+  is the portable twin of `isSafeCssColor`, the player's sanitiser: a test
+  requires that **everything the contract accepts, the player accepts**, never the
+  other way around.
+- **Closed vocabularies** where the editor already closes them: colour roles, the
+  14 patterns, the 8 pattern directions, the text gradient and text animation,
+  and `geoShape` gains `scribble`, which was written but not declared.
+- **The three `any` have a shape**: `cuts` (mask cutouts), `fillGenerative`
+  (generator, seed, parameters and colours) and `fillGradient`.
 
-`fillGradient` era el agujero serio. Termina en `background-image`, que
-admite una lista de imágenes, así que
-`linear-gradient(red, blue), url(https://tercero/baliza)` hacía que abrir el
-archivo pidiera un recurso a un tercero. Ahora el contrato admite **un único**
-degradado con funciones de color dentro, y el player descarta cualquier otra
-cosa aunque el archivo no valide contra el contrato.
+`fillGradient` was the serious hole. It ends up in `background-image`, which
+accepts a list of images, so `linear-gradient(red, blue), url(https://third-party/beacon)`
+made opening the file request a resource from a third party. Now the contract
+accepts **a single** gradient with colour functions inside, and the player discards
+anything else even if the file does not validate against the contract.
 
-Medido el 24 de septiembre de 2026: los 42 archivos `.oim` que hay en disco,
-incluidos los 20 vectores, validan contra la 1.8.0.
+Measured on 24 September 2026: the 42 `.oim` files on disk, including the 20
+vectors, validate against 1.8.0.
 
-## Sin CSS en crudo (desde 1.9.0)
+## No raw CSS (since 1.9.0)
 
-`animation.custom_loop_css`, `custom_keyframes` y `custom_hover_css` llevan
-`deprecated: true` y **ningún reproductor debe aplicarlas**. `loop: "custom"`
-y `hover: "custom"` no pintan nada.
+`animation.custom_loop_css`, `custom_keyframes` and `custom_hover_css` carry
+`deprecated: true` and **no player may apply them**. `loop: "custom"` and
+`hover: "custom"` paint nothing.
 
-Eran CSS del archivo metido tal cual en una hoja de estilo. El filtro solo
-reescribía `url(...)`, y había otras tres formas de pedir un recurso que
-pasaban intactas: `@import "https://…"`, `image-set("https://…" 1x)` y un
-`url` escrito con escape CSS (`\75rl(…)`). `custom_hover_css` ni siquiera
-pasaba por el filtro y se pegaba dentro de `{ … }`, así que un `}` salía de la
-regla y podía reescribir el reproductor entero, incluidos sus propios avisos.
+They were CSS from the file pasted as-is into a style sheet. The filter only
+rewrote `url(...)`, and there were three other ways of requesting a resource that
+passed through intact: `@import "https://…"`, `image-set("https://…" 1x)` and a
+`url` written with a CSS escape (`\75rl(…)`). `custom_hover_css` did not even go
+through the filter and was pasted inside `{ … }`, so a `}` could leave the rule
+and rewrite the entire player, including its own warnings.
 
-El editor nunca las escribió y ningún archivo las usa: se retiran en vez de
-perseguir la gramática de CSS con una lista negra. `cssAnimation` se queda,
-acotada a la única forma que escribe el editor,
-`background-animation-<dirección> <n>s linear infinite`.
+The editor never wrote them and no file uses them: they are removed rather than
+chasing the grammar of CSS with a blocklist. `cssAnimation` stays, restricted to
+the only form the editor writes,
+`background-animation-<direction> <n>s linear infinite`.
 
-## Paletas con nombre (desde 1.20.0)
+## Named palettes (since 1.20.0)
 
-La raíz del `.oim` puede traer `palettes` y `defaultPalette`:
+The root of the `.oim` may carry `palettes` and `defaultPalette`:
 
-- **`palettes`**: un mapa de nombre a paleta. Cada paleta asigna colores a los
-  doce roles de `DYNAMIC_COLOR_ROLES` (los ocho de siempre más `text-primary`,
-  `text-secondary`, `text-muted` y `text-on-accent`). Como mucho seis paletas.
-  Un nombre cumple `^[a-z][a-z0-9-]{0,23}$`. Los colores no se validan en el
-  contrato: el lector descarta los que no pasan `isSafeCssColor` y conserva el
-  resto, igual que con un color de capa.
-- **`defaultPalette`**: el nombre de la paleta por omisión. Si no nombra una
-  paleta de `palettes`, el lector lo ignora.
+- **`palettes`**: a map from name to palette. Each palette assigns colours to the
+  twelve roles of `DYNAMIC_COLOR_ROLES` (the eight from before plus `text-primary`,
+  `text-secondary`, `text-muted` and `text-on-accent`). At most six palettes. A
+  name matches `^[a-z][a-z0-9-]{0,23}$`. Colours are not validated in the
+  contract: the reader discards those that fail `isSafeCssColor` and keeps the
+  rest, the same as with a layer colour.
+- **`defaultPalette`**: the name of the default palette. If it does not name a
+  palette in `palettes`, the reader ignores it.
 
-**Orden de resolución** (`resolvePalette` en `@oim-media/core`):
+**Resolution order** (`resolvePalette` in `@oim-media/core`):
 
-1. La paleta pedida por el anfitrión (atributo `palette` del player).
-2. Si el documento trae `dark` y `light`, la que pida `prefers-color-scheme`.
+1. The palette requested by the host (the player's `palette` attribute).
+2. If the document carries `dark` and `light`, the one that `prefers-color-scheme` asks for.
 3. `defaultPalette`.
-4. Ninguna: cada capa usa su color fijo.
+4. None: each layer uses its fixed colour.
 
-El resultado se escribe en el visor como `--oim-palette-<rol>`, y
-`resolveCssColor(rol, fijo)` emite `var(--oim-color-<rol>, var(--oim-palette-<rol>, fijo))`.
-Las `--oim-color-*` del anfitrión siguen ganando a la paleta, y
-`allow-dynamic-colors="false"` las anula todas.
+The result is written to the viewer as `--oim-palette-<role>`, and
+`resolveCssColor(role, fixed)` emits `var(--oim-color-<role>, var(--oim-palette-<role>, fixed))`.
+The host's `--oim-color-*` still win over the palette, and `allow-dynamic-colors="false"`
+overrides all of them.
 
-Un archivo 1.20.0 leído por un player anterior se ve con los colores fijos de
-cada capa. Nada se rompe.
+A 1.20.0 file read by an earlier player is shown with each layer's fixed
+colours. Nothing breaks.
 
 ## Conformance vectors
 
@@ -223,130 +219,123 @@ generated by Xue Studios' signing service through the production pipeline and
 committed to this repository; the generator itself is not part of it. See
 [`vectors/README.md`](vectors/README.md).
 
-## Precedente
+## Precedent
 
-Lottie separó su especificación de toda implementación en `lottie/lottie-spec`
-—`/schema` partido por objeto, `/tests` con vectores— y dejó que cada player se
-llamara como quisiera en su ecosistema (`lottie-web`, `lottie-ios`,
-`com.airbnb.android:lottie`). No hay ningún ámbito `@lottie/*`: la identidad
-vive en la especificación, no en el nombre del paquete.
+Lottie separated its specification from every implementation into `lottie/lottie-spec`
+— `/schema` split by object, `/tests` with vectors — and let each player be
+named as it wished in its ecosystem (`lottie-web`, `lottie-ios`,
+`com.airbnb.android:lottie`). There is no `@lottie/*` scope: the identity
+lives in the specification, not in the package name.
 
-## La forma canónica de la firma
+## The canonical form of the signature
 
-Sin esta sección, una segunda implementación puede leer el formato entero y
-aun así **no poder verificar una sola firma**. Es el único apartado del
-contrato que bloquea por completo a un lector nuevo: todo lo demás se puede
-ignorar y degradar, la firma no.
+Without this section, a second implementation can read the entire format and
+still **be unable to verify a single signature**. It is the only part of the
+contract that completely blocks a new reader: everything else can be ignored and
+degraded, the signature cannot.
 
-La firma es **ECDSA P-256 con SHA-256**, en formato crudo IEEE P1363 —`r || s`,
-32 bytes cada uno, 64 en total— codificada en base64 dentro de `signature`.
-No es DER: quien use una biblioteca que devuelva DER tiene que convertirla.
+The signature is **ECDSA P-256 with SHA-256**, in raw IEEE P1363 format — `r || s`,
+32 bytes each, 64 in total — encoded in base64 inside `signature`. It is not
+DER: whoever uses a library that returns DER has to convert it.
 
-### Los bytes que se firman
+### The bytes that are signed
 
-No se firma el chunk, ni el JSON tal y como está escrito en el archivo. Se
-firma el resultado de estas siete reglas, en este orden:
+Neither the chunk nor the JSON as written in the file is signed. What is signed
+is the result of these seven rules, in this order:
 
-1. **Partir del objeto de metadatos** ya decodificado del chunk.
-2. **Quitar de la raíz** `signature`, `key_version`, `timestamp` y
-   `creator_user_id`. Solo de la raíz: si esos nombres aparecen anidados, se
-   quedan.
-3. **Normalizar los números**: redondear a **6 decimales** y, si el resultado
-   no tiene parte fraccionaria, emitirlo como entero (`2.0000001` → `2`).
-4. **Ordenar las claves** de todos los objetos, recursivamente, por punto de
-   código Unicode. También dentro de los objetos que haya en los arrays.
-5. **Serializar compacto**: sin espacios, separadores `,` y `:`.
-6. **No escapar lo no-ASCII**: `año` se emite tal cual, no como `a\u00f1o`.
-7. **Codificar en UTF-8**. Esos bytes son los que se firman y los que se
-   verifican.
+1. **Start from the metadata object** already decoded from the chunk.
+2. **Remove from the root** `signature`, `key_version`, `timestamp` and
+   `creator_user_id`. Only from the root: if those names appear nested, they stay.
+3. **Normalise the numbers**: round to **6 decimals** and, if the result has no
+   fractional part, emit it as an integer (`2.0000001` → `2`).
+4. **Sort the keys** of all objects, recursively, by Unicode code point. Also
+   inside the objects that appear in arrays.
+5. **Serialise compactly**: no spaces, separators `,` and `:`.
+6. **Do not escape non-ASCII**: `Zürich` is emitted as-is, not as `Z\u00fcrich`.
+7. **Encode in UTF-8**. Those bytes are the ones that are signed and the ones
+   that are verified.
 
-`signed_at` va **dentro** de la firma y `timestamp` **fuera**. No es un
-descuido: `timestamp` se puede reescribir sin romper nada, y la comprobación de
-caducidad de la clave necesita una fecha que no se pueda falsificar.
+`signed_at` goes **inside** the signature and `timestamp` **outside**. This is
+not an oversight: `timestamp` can be rewritten without breaking anything, and the
+key-expiry check needs a date that cannot be forged.
 
-`creator_user_id` se excluye porque es dato personal, y un archivo firmado es
-justo lo que su autor ya no puede borrar.
+`creator_user_id` is excluded because it is personal data, and a signed file is
+exactly what its author can no longer delete.
 
-### El sello de la imagen
+### The image seal
 
-`image_hash` es el **SHA-256 en hexadecimal de la concatenación de las cargas
-útiles de los chunks `IDAT`** del PNG —solo los datos, sin longitud, sin tipo y
-sin CRC—, y `image_hash_alg` vale `sha256-idat`.
+`image_hash` is the **hexadecimal SHA-256 of the concatenation of the payloads of
+the `IDAT` chunks** of the PNG — only the data, without length, without type and
+without CRC — and `image_hash_alg` is `sha256-idat`.
 
-Como `image_hash` es un campo más de los metadatos, **la firma lo cubre**: con
-la firma válida, el sello ya no se puede cambiar. Por eso el orden importa y no
-se negocia: normalizar el PNG, calcular el sello, firmar, e insertar el chunk
-**a nivel de bytes sin volver a codificar la imagen**. Un simple «volver a
-guardar» después de firmar cambia el `IDAT` y el sello deja de casar para
-siempre.
+Because `image_hash` is one more metadata field, **the signature covers it**: with
+a valid signature, the seal can no longer be changed. That is why the order
+matters and is not negotiable: normalise the PNG, compute the seal, sign, and
+insert the chunk **at byte level without re-encoding the image**. A simple "save
+again" after signing changes the `IDAT` and the seal stops matching forever.
 
-Los archivos anteriores al 11 de septiembre de 2026 no llevan sello y se
-aceptan sin él.
+Files prior to 11 September 2026 carry no seal and are accepted without one.
 
-### Dónde se rompía esto
+### Where this used to break
 
-Hasta el 20 de septiembre de 2026 las dos implementaciones de referencia
-—`serialize_canonical` en Python y `serializeCanonical` en TypeScript—
-coincidían **por construcción, no por acuerdo**, y discrepaban en tres
-entradas. Con `packages/core/src/canonical.ts` como fuente única del lado
-TypeScript, medido de nuevo el 24 de septiembre:
+Until 20 September 2026 the two reference implementations — `serialize_canonical`
+in Python and `serializeCanonical` in TypeScript — agreed **by construction, not
+by agreement**, and disagreed on three inputs. With `packages/core/src/canonical.ts`
+as the single source on the TypeScript side, measured again on 24 September:
 
-| Entrada | Python | TypeScript | Estado |
+| Input | Python | TypeScript | Status |
 |---|---|---|---|
-| `creator_user_id` en la raíz | lo quita | lo quita | **cerrada** |
-| decimal con más de 6 cifras | redondea | redondea | **cerrada** |
-| claves fuera del BMP | punto de código | punto de código | **cerrada** |
-| decimal que al redondear queda entero | `2` | `2` | **cerrada el 24 sept** |
+| `creator_user_id` at the root | removes it | removes it | **closed** |
+| decimal with more than 6 digits | rounds | rounds | **closed** |
+| keys outside the BMP | code point | code point | **closed** |
+| decimal that becomes an integer when rounded | `2` | `2` | **closed on 24 Sept** |
 
-La cuarta la encontró la revisión del 24 de septiembre y era de **orden**
-dentro de la regla 3: `clean_floats` preguntaba «¿es entero?» *antes* de
-redondear, y en una sola pasada dejaba `2.0000001` como `2.0` y `1e-7` como
-`0.0`, donde TypeScript emite `2` y `0`. El firmante no la sufría porque
-aplica `clean_floats` dos veces; quien reimplementase el Python con una sola
-pasada, sí. Ahora redondea primero, y
-una prueba del firmante de referencia fija los bytes.
+The fourth was found by the review of 24 September and was an **ordering** issue
+inside rule 3: `clean_floats` asked "is it an integer?" *before* rounding, and in a
+single pass left `2.0000001` as `2.0` and `1e-7` as `0.0`, where TypeScript emits
+`2` and `0`. The signer did not suffer it because it applies `clean_floats` twice;
+whoever reimplemented the Python with a single pass did. It now rounds first, and
+a test of the reference signer fixes the bytes.
 
-**Lo que manda es lo que se firma**: redondear a 6 decimales primero y, si el
-resultado no tiene parte fraccionaria, emitirlo como entero. `-0` se emite
-`0`. Ninguna firma existente cambia: con dos pasadas el resultado ya era ese.
+**What governs is what is signed**: round to 6 decimals first and, if the result
+has no fractional part, emit it as an integer. `-0` is emitted as `0`. No existing
+signature changes: with two passes the result was already that.
 
-Una nota sobre la cita: el comentario de `canonical.ts` menciona RFC 8785
-(JCS), pero JCS ordena las claves por **unidades UTF-16**, no por punto de
-código. OIM ordena por punto de código; solo se distinguen con claves fuera
-del BMP. El contrato es este README, no la RFC.
+A note on the citation: the comment in `canonical.ts` mentions RFC 8785 (JCS), but
+JCS sorts keys by **UTF-16 units**, not by code point. OIM sorts by code point;
+the two only differ with keys outside the BMP. The contract is this README, not the RFC.
 
-### Qué comprueba el guion, y qué no
+### What the script checks, and what it does not
 
     node tools/canonical-check.mjs
 
-Rehace las siete reglas y **verifica la firma real de cada vector** con la
-clave pública v1 que lleva el reproductor dentro. No compara contra un digest
-apuntado a mano: si las reglas estuvieran mal, la firma no validaría.
+It rebuilds the seven rules and **verifies the real signature of each vector**
+with the v1 public key that the player carries inside. It does not compare against
+a digest pointed to by hand: if the rules were wrong, the signature would not validate.
 
-Con los 20 vectores de la matriz —generados por la tubería real y firmados
-con la clave de producción— se volvió a quitar cada regla una por una:
+With the 20 vectors of the matrix — generated by the real pipeline and signed
+with the production key — each rule was removed one at a time:
 
-| Regla quitada | Firmas que caen |
+| Rule removed | Signatures that fail |
 |---|---|
-| 2 · exclusiones de la raíz | 20 de 20 |
-| 6 · UTF-8 sin escapar | 8 de 20 |
-| sello · SHA-256 de los `IDAT` | 19 de 19 sellados |
-| 3 · números | **0** |
-| 4 · orden de claves | **0** |
+| 2 · root exclusions | 20 of 20 |
+| 6 · unescaped UTF-8 | 8 of 20 |
+| seal · SHA-256 of the `IDAT` | 19 of 19 sealed |
+| 3 · numbers | **0** |
+| 4 · key order | **0** |
 
-La regla 6 y el sello, que antes solo se sostenían con casos de respuesta
-conocida, **ya los demuestra una firma**. Las reglas 3 y 4 no, y **ningún
-vector firmado por nuestra tubería podrá hacerlo nunca**: el firmante escribe
-el archivo a partir de sus propios bytes canónicos, así que lo que queda en
-el chunk ya está redondeado y ordenado. Esas dos reglas solo se notan cuando
-alguien **vuelve a serializar** los metadatos —un editor que reescriba el
-chunk, otra biblioteca de JSON— y ahí es justo donde hacen falta.
+Rule 6 and the seal, which before were only held up by known-answer cases,
+**are now demonstrated by a signature**. Rules 3 and 4 are not, and **no vector
+signed by our pipeline could ever do so**: the signer writes the file from its own
+canonical bytes, so what remains in the chunk is already rounded and sorted. Those
+two rules only show up when someone **serialises the metadata again** — an editor
+that rewrites the chunk, another JSON library — and that is exactly where they
+are needed.
 
-Por eso siguen cubiertas con casos de respuesta conocida dentro del guion:
-**pillan una regresión del guion, no demuestran que el firmante esté de
-acuerdo**. Demostrarlo de verdad pediría un vector escrito a mano, con claves
-desordenadas y un decimal largo, y firmado sobre su forma canónica: un
-archivo que la tubería real no produce nunca.
+That is why they remain covered by known-answer cases inside the script:
+they **catch a regression in the script, they do not prove that the signer agrees**.
+Proving it for real would require a hand-written vector, with unordered keys and a
+long decimal, signed over its canonical form: a file the real pipeline never produces.
 
 ## Embedded player keys
 

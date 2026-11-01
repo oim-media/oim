@@ -1,150 +1,150 @@
-# Especificación Binaria del Contenedor OIM (Open Interactive Media)
+# OIM (Open Interactive Media) Container Binary Specification
 
-**Versión:** 1.0  
-**Fecha:** 2026-09-22  
-**Estado:** Normativo / Vigente  
-**Autores:** Equipo de Arquitectura OIM
-
----
-
-## 1. Resumen y Objetivos
-
-Un archivo **`.oim`** (o **`.oim.png`**) es un documento multimedia enriquecido, interactivo y verificable que se transporta dentro de un archivo de imagen conforme a la especificación estándar **ISO/IEC 15948:2004 (PNG)**.
-
-El objetivo de este diseño binario es:
-1. **Compatibilidad Universal (Fallback Visual):** Cualquier visor de imágenes, navegador o cliente sin soporte para OIM puede decodificar y renderizar el archivo como una imagen PNG estática estándar de alta fidelidad.
-2. **Cero Dependencia de Red (Self-Contained):** El documento encapsula toda su geometría vectorial, textos multilingües, animaciones, fuentes tipográficas tipográficas y metadatos interactivos dentro de la propia imagen.
-3. **Integridad Criptográfica y Firma ECDSA (Zero-Trust):** El archivo integra una firma digital asimétrica que vincula indeleblemente los metadatos interactivos con los píxeles renderizados (chunks `IDAT`), impidiendo la sustitución o manipulación del lienzo o de las capas.
+**Version:** 1.0  
+**Date:** 2026-09-22  
+**Status:** Normative / In force  
+**Authors:** OIM Architecture Team
 
 ---
 
-## 2. Anatomía del Contenedor Binario PNG
+## 1. Summary and Objectives
 
-Todo archivo OIM comienza estrictamente con la firma de 8 bytes canónica de PNG:
+A **`.oim`** (or **`.oim.png`**) file is an enriched, interactive and verifiable multimedia document carried inside an image file that conforms to the standard **ISO/IEC 15948:2004 (PNG)** specification.
+
+The objectives of this binary design are:
+1. **Universal compatibility (visual fallback):** Any image viewer, browser or client without OIM support can decode and render the file as a standard, high-fidelity static PNG image.
+2. **Zero network dependency (self-contained):** The document encapsulates all of its vector geometry, multilingual texts, animations, typefaces and interactive metadata within the image itself.
+3. **Cryptographic integrity and ECDSA signature (zero-trust):** The file embeds an asymmetric digital signature that indelibly binds the interactive metadata to the rendered pixels (`IDAT` chunks), preventing substitution or manipulation of the canvas or its layers.
+
+---
+
+## 2. Anatomy of the PNG Binary Container
+
+Every OIM file begins strictly with the canonical 8-byte PNG signature:
 
 ```binary
 89 50 4E 47 0D 0A 1A 0A  (\x89PNG\r\n\x1a\n)
 ```
 
-### 2.1. Estructura de Chunks PNG
+### 2.1. PNG Chunk Structure
 
-Cada chunk en el archivo PNG sigue la disposición estándar de 4 campos:
+Each chunk in the PNG file follows the standard 4-field layout:
 
-| Campo | Longitud | Descripción |
+| Field | Length | Description |
 |---|---|---|
-| **Length** | 4 bytes (Big-Endian) | Longitud del campo `Data` (excluye `Type` y `CRC`). |
-| **Type** | 4 bytes (ASCII) | Identificador de 4 caracteres (ej. `IHDR`, `tEXt`, `IDAT`, `IEND`). |
-| **Data** | *Length* bytes | Carga útil del chunk. |
-| **CRC-32** | 4 bytes (Big-Endian) | Suma de comprobación CRC-32 calculada sobre `Type` + `Data`. |
+| **Length** | 4 bytes (Big-Endian) | Length of the `Data` field (excludes `Type` and `CRC`). |
+| **Type** | 4 bytes (ASCII) | Four-character identifier (e.g. `IHDR`, `tEXt`, `IDAT`, `IEND`). |
+| **Data** | *Length* bytes | Chunk payload. |
+| **CRC-32** | 4 bytes (Big-Endian) | CRC-32 checksum computed over `Type` + `Data`. |
 
-### 2.2. Disposición e Inyección de Metadatos OIM
+### 2.2. Placement and Injection of OIM Metadata
 
-Los metadatos OIM se almacenan preferentemente en un chunk auxiliar de texto:
+OIM metadata is preferably stored in an ancillary text chunk:
 
-- **Tipo de Chunk:** `zTXt` (el que se escribe desde el 29 oct 2026). Los lectores aceptan además `tEXt` (archivos anteriores) e `iTXt`.
-- **Clave del Chunk (Keyword):** `OIM_Data` (reconocida históricamente también `OIM_JSON_DATA`).
-- **Ubicación en el archivo:**
-  - **DESPUÉS** de `IHDR` (y chunks de cabecera de paleta/color si existen).
-  - **ANTES** o **DESPUÉS** de los chunks de imagen `IDAT`.
-  - **SIEMPRE ANTES** del chunk de cierre `IEND`.
+- **Chunk type:** `zTXt` (written since 29 Oct 2026). Readers also accept `tEXt` (earlier files) and `iTXt`.
+- **Chunk keyword:** `OIM_Data` (historically `OIM_JSON_DATA` was also recognised).
+- **Location in the file:**
+  - **AFTER** `IHDR` (and any palette/colour header chunks, if present).
+  - **BEFORE** or **AFTER** the image `IDAT` chunks.
+  - **ALWAYS BEFORE** the closing `IEND` chunk.
 
-> **Nota Crítica sobre Inyección:** La inserción del chunk de metadatos debe realizarse **quirúrgicamente a nivel de bytes** en el flujo binario del PNG sin re-renderizar ni recodificar los bloques `IDAT`, preservando el hash criptográfico exacto del lienzo.
+> **Critical note on injection:** The metadata chunk must be inserted **surgically at byte level** into the PNG binary stream, without re-rendering or re-encoding the `IDAT` blocks, preserving the exact cryptographic hash of the canvas.
 
 ---
 
-## 3. Codificación y Compresión de la Carga Útil
+## 3. Encoding and Compression of the Payload
 
-La carga útil del chunk `zTXt` tiene la siguiente estructura:
+The payload of the `zTXt` chunk has the following structure:
 
 ```
-[ Keyword: "OIM_Data" ] + [ Null Separator: 0x00 ] + [ Método: 0x00 ] + [ zlib(JSON), binario ]
+[ Keyword: "OIM_Data" ] + [ Null Separator: 0x00 ] + [ Method: 0x00 ] + [ zlib(JSON), binary ]
 ```
 
-Sin Base64: medido el 29 oct 2026, el archivo pesa un 12–23 % menos que con el
-`tEXt` anterior (`"OIM_Data\0"` + Base64 de Deflate crudo), que los lectores
-siguen aceptando.
+No Base64: measured on 29 Oct 2026, the file is 12–23 % smaller than with the
+earlier `tEXt` form (`"OIM_Data\0"` + Base64 of raw Deflate), which readers
+still accept.
 
-### 3.1. Flujo de Empaquetado (Serializer)
+### 3.1. Packaging Flow (Serializer)
 
-1. El objeto de metadatos OIM (conforme a `OimMetadataSchema`) se serializa a una cadena JSON codificada en **UTF-8**.
-2. La cadena UTF-8 se comprime con **zlib** (RFC 1950: cabecera de 2 bytes, DEFLATE, Adler-32), nivel 9.
-3. Se ensambla el chunk `zTXt`:
-   - `Length`: `8` (clave) + `1` (byte nulo) + `1` (método) + `len(zlib)`
+1. The OIM metadata object (conforming to `OimMetadataSchema`) is serialised to a JSON string encoded in **UTF-8**.
+2. The UTF-8 string is compressed with **zlib** (RFC 1950: 2-byte header, DEFLATE, Adler-32), level 9.
+3. The `zTXt` chunk is assembled:
+   - `Length`: `8` (keyword) + `1` (null byte) + `1` (method) + `len(zlib)`
    - `Type`: `7A 54 58 74` (`zTXt`)
-   - `Data`: `"OIM_Data\0\0"` + `<bytes_zlib>`
-   - `CRC-32`: Calculado sobre `Type` y `Data`.
+   - `Data`: `"OIM_Data\0\0"` + `<zlib_bytes>`
+   - `CRC-32`: computed over `Type` and `Data`.
 
-### 3.2. Flujo de Extracción y Descompresión (Reader)
+### 3.2. Extraction and Decompression Flow (Reader)
 
-Un `zTXt` se lee saltando el NUL y el byte de método y descomprimiendo con
-zlib. Para el `tEXt` anterior, un decodificador conforme debe procesar la carga
-útil con la siguiente tolerancia de fallos:
-1. Extraer el valor del chunk tras el delimitador `0x00`.
-2. Decodificar la cadena Base64 a bytes binarios.
-3. Si la cadena en texto claro decodificada ya inicia con `{` (JSON sin comprimir de depuración/borrador), procesar directamente con `JSON.parse`.
-4. Si contiene datos binarios comprimidos:
-   - Intentar descomprimir con **Zlib Deflate** (`new DecompressionStream('deflate')` o `zlib.inflateSync`).
-   - Si falla, intentar descomprimir con **Raw Deflate** (`new DecompressionStream('deflate-raw')` o `zlib.inflateRawSync`).
-5. Decodificar los bytes resultantes con `TextDecoder("utf-8")` y parsear el JSON.
+A `zTXt` is read by skipping the NUL and the method byte and decompressing with
+zlib. For the earlier `tEXt` form, a conforming decoder must process the payload
+with the following fault tolerance:
+1. Extract the value of the chunk after the `0x00` delimiter.
+2. Decode the Base64 string into binary bytes.
+3. If the decoded plain text already starts with `{` (uncompressed JSON from debugging/draft), process it directly with `JSON.parse`.
+4. If it contains compressed binary data:
+   - Try to decompress with **Zlib Deflate** (`new DecompressionStream('deflate')` or `zlib.inflateSync`).
+   - If that fails, try to decompress with **Raw Deflate** (`new DecompressionStream('deflate-raw')` or `zlib.inflateRawSync`).
+5. Decode the resulting bytes with `TextDecoder("utf-8")` and parse the JSON.
 
 ---
 
-## 4. El Sello de Integridad de la Imagen (`image_hash`)
+## 4. The Image Integrity Seal (`image_hash`)
 
-Para garantizar que un conjunto de metadatos interactivos válidos y firmados no pueda ser recortado y pegado sobre una imagen arbitraria (ataque de trasplante de lienzo), el formato implementa el sello de imagen sobre el stream IDAT:
+To guarantee that a set of valid, signed interactive metadata cannot be cut out and pasted onto an arbitrary image (canvas-transplant attack), the format implements an image seal over the IDAT stream:
 
-### 4.1. Algoritmo de Cálculo
+### 4.1. Calculation Algorithm
 
 ```
 image_hash = SHA256( IDAT_payload_1 || IDAT_payload_2 || ... || IDAT_payload_n )
 ```
 
-- Se recorren todos los chunks con tipo exacto `IDAT` en el orden estricto en que aparecen en el contenedor PNG.
-- Se extrae exclusivamente la carga útil de cada chunk (`Data`, descartando los 4 bytes de longitud, 4 bytes de tipo `IDAT` y los 4 bytes de CRC).
-- Se concatenan todos los bytes de datos de imagen cruda comprimida.
-- Se calcula el digest **SHA-256** expresado en formato **hexadecimal minúsculo** (64 caracteres).
+- All chunks with the exact type `IDAT` are traversed, in the strict order in which they appear in the PNG container.
+- Only the payload of each chunk is extracted (`Data`, discarding the 4 length bytes, the 4 `IDAT` type bytes and the 4 CRC bytes).
+- All the bytes of the compressed raw image data are concatenated.
+- The **SHA-256** digest is computed and expressed in **lowercase hexadecimal** (64 characters).
 
-### 4.2. Campos en Metadatos
-- `image_hash`: Cadena hexadecimal SHA-256 resultante.
+### 4.2. Metadata Fields
+- `image_hash`: Resulting SHA-256 hexadecimal string.
 - `image_hash_alg`: Literal `"sha256-idat"`.
 
 ---
 
-## 5. Especificación de Firma Criptográfica ECDSA P-256
+## 5. ECDSA P-256 Cryptographic Signature Specification
 
-Un archivo `.oim` firmado garantiza la autoría, integridad y no repudio del diseño.
+A signed `.oim` file guarantees the authorship, integrity and non-repudiation of the design.
 
-- **Criptosistema:** ECDSA sobre curva elíptica **NIST P-256** (secp256r1 / prime256v1).
-- **Función Hash:** SHA-256.
-- **Formato de Firma:** IEEE P1363 crudo (`r || s`, 32 bytes para $r$ + 32 bytes para $s$ = exactamente **64 bytes** binarios).
-- **Serialización en JSON:** Base64 de los 64 bytes binarios en la propiedad `signature`. *(No se utiliza codificación ASN.1/DER).*
+- **Cryptosystem:** ECDSA over the **NIST P-256** elliptic curve (secp256r1 / prime256v1).
+- **Hash function:** SHA-256.
+- **Signature format:** raw IEEE P1363 (`r || s`, 32 bytes for $r$ + 32 bytes for $s$ = exactly **64 binary bytes**).
+- **JSON serialisation:** Base64 of the 64 binary bytes in the `signature` property. *(No ASN.1/DER encoding is used.)*
 
-### 5.1. Reglas Canónicas de Serialización (JCS - JSON Canonicalization)
+### 5.1. Canonical Serialisation Rules (JCS - JSON Canonicalization)
 
-Para que cualquier implementación en cualquier lenguaje (TypeScript, Python, Rust, Go, Swift) verifique la firma de manera idéntica sin discrepancias de un solo byte, el payload a firmar o verificar se construye siguiendo estrictamente estas **7 Reglas**:
+So that any implementation in any language (TypeScript, Python, Rust, Go, Swift) verifies the signature identically, without a single byte of discrepancy, the payload to be signed or verified is built by strictly following these **7 rules**:
 
-1. **Objeto Base:** Tomar el diccionario de metadatos OIM decodificado.
-2. **Exclusiones de Raíz:** Excluir únicamente de la raíz los campos:
+1. **Base object:** Take the decoded OIM metadata dictionary.
+2. **Root exclusions:** Exclude from the root only the fields:
    - `signature`
    - `key_version`
    - `timestamp`
-   - `creator_user_id` *(excluido por privacidad RGPD/Zero-Knowledge)*.  
-   *(Nota: Si alguna de estas claves existe en objetos anidados o estilos, no se elimina).*
-3. **Normalización Numérica:**
-   - Si un número decimal tiene valor entero exacto (ej. `2.0` o `-0.0`), se formatea como entero (`2`, `0`).
-   - Los números de coma flotante se formatean a un máximo de **6 cifras decimales** con redondeo simétrico estándar.
-4. **Ordenación Léxica de Claves:** Todas las claves de los objetos (en la raíz y recursivamente en todos los niveles y dentro de arrays) se ordenan por punto de código Unicode ascendente.
-5. **Serialización Compacta:** Sin espacios en blanco entre claves, dos puntos o comas: `{"a":1,"b":"dos"}`.
-6. **Preservación UTF-8:** No escapar caracteres Unicode fuera de ASCII con secuencias `\uXXXX`. Se emiten directamente en UTF-8 nativo (ej. `"niño"` en lugar de `"ni\u00f1o"`).
-7. **Digest:** Los bytes resultantes codificados en UTF-8 se pasan directamente a la función de verificación/firma SHA-256 + ECDSA P-256.
+   - `creator_user_id` *(excluded for privacy, GDPR / zero-knowledge)*.  
+   *(Note: if any of these keys exist in nested objects or styles, they are not removed.)*
+3. **Numeric normalisation:**
+   - If a decimal number has an exact integer value (e.g. `2.0` or `-0.0`), it is formatted as an integer (`2`, `0`).
+   - Floating-point numbers are formatted to a maximum of **6 decimal places** with standard symmetric rounding.
+4. **Lexical key ordering:** All object keys (at the root and recursively at every level and inside arrays) are sorted by ascending Unicode code point.
+5. **Compact serialisation:** No whitespace between keys, colons or commas: `{"a":1,"b":"dos"}`.
+6. **UTF-8 preservation:** Do not escape non-ASCII Unicode characters with `\uXXXX` sequences. They are emitted directly as native UTF-8 (e.g. `"Zürich"` instead of `"Z\u00fcrich"`).
+7. **Digest:** The resulting bytes encoded in UTF-8 are passed directly to the SHA-256 + ECDSA P-256 verification/signing function.
 
 ---
 
-## 6. Manejo de Fuentes Incrustadas (`fonts`)
+## 6. Embedded Font Handling (`fonts`)
 
-Desde la versión 1.3.0, el formato `.oim` es autónomo y no realiza llamadas a CDNs de terceros para renderizar tipografías:
+Since version 1.3.0, the `.oim` format is self-contained and makes no calls to third-party CDNs to render typefaces:
 
-- **Estructura del Array `fonts` en la Raíz:**
+- **Structure of the `fonts` array at the root:**
   ```json
   [
     {
@@ -153,34 +153,34 @@ Desde la versión 1.3.0, el formato `.oim` es autónomo y no realiza llamadas a 
       "weight": 700,
       "style": "normal",
       "format": "woff2",
-      "data": "<cadena_base64_del_binario_woff2_subseteado>"
+      "data": "<base64_string_of_the_subsetted_woff2_binary>"
     }
   ]
   ```
-- **Subseteado Estricto:** Los binarios WOFF2 incrustados deben ser subseteados únicamente a los glifos presentes en los textos del proyecto para minimizar el peso total del PNG (típicamente de 4 KB a 18 KB por variante).
-- **Registro en el Lector:**
-  1. Decodificar `data` desde Base64.
-  2. Registrar la fuente mediante `FontFace` (en navegadores) o registrar en el motor de fuentes del sistema nativo con el identificador único `name`.
-  3. Vincular los slots que refieran a `family` con la variante resuelta.
+- **Strict subsetting:** The embedded WOFF2 binaries must be subsetted only to the glyphs present in the project's texts, to minimise the total weight of the PNG (typically 4 KB to 18 KB per variant).
+- **Registration in the reader:**
+  1. Decode `data` from Base64.
+  2. Register the font via `FontFace` (in browsers) or register it in the native system's font engine under the unique identifier `name`.
+  3. Bind the slots that refer to `family` to the resolved variant.
 
 ---
 
-## 7. Tabla Resumen de Campos y Compatibilidad
+## 7. Summary Table of Fields and Compatibility
 
-| Característica | Chunks / Clave | Formato | Mandatorio |
+| Feature | Chunks / Key | Format | Mandatory |
 |---|---|---|---|
-| **Imagen Base** | `IDAT` | PNG comprimido estándar | Sí |
-| **Metadatos OIM** | `zTXt` (`OIM_Data`) | zlib(JSON), binario | Sí |
-| **Sello IDAT** | `image_hash` | SHA-256 hex | Sí (desde v1.2) |
-| **Firma Digital** | `signature` | Base64(ECDSA P1363 64B) | Opcional en borradores, Obligatorio en publicado |
-| **Versión de Clave**| `key_version` | String (ej. `"v1"`) | Requerido si firmado |
-| **Fecha de Firma**| `signed_at` | ISO-8601 UTC | Requerido si firmado |
-| **Tipografías** | `fonts` | Array con WOFF2 Base64 | Recomendado |
-| **Paletas con nombre** (1.20.0) | `palettes`, `defaultPalette` | Objeto nombre → (rol → color CSS); cadena | Opcional |
+| **Base image** | `IDAT` | Standard compressed PNG | Yes |
+| **OIM metadata** | `zTXt` (`OIM_Data`) | zlib(JSON), binary | Yes |
+| **IDAT seal** | `image_hash` | SHA-256 hex | Yes (since v1.2) |
+| **Digital signature** | `signature` | Base64(ECDSA P1363 64B) | Optional in drafts, required in published files |
+| **Key version** | `key_version` | String (e.g. `"v1"`) | Required if signed |
+| **Signing date** | `signed_at` | ISO-8601 UTC | Required if signed |
+| **Typefaces** | `fonts` | Array with WOFF2 Base64 | Recommended |
+| **Named palettes** (1.20.0) | `palettes`, `defaultPalette` | Object name → (role → CSS colour); string | Optional |
 
-### Paletas con nombre (1.20.0)
+### Named palettes (1.20.0)
 
-`palettes` y `defaultPalette` son opcionales en la raíz del documento. Las
-reglas de nombres, roles, límite de seis paletas y orden de resolución están en
-`README.md` (sección «Paletas con nombre»). Un lector que no las conoce ignora
-ambas claves y pinta los colores fijos de cada capa.
+`palettes` and `defaultPalette` are optional at the root of the document. The
+rules for names, roles, the limit of six palettes and the resolution order are
+in `README.md` (section "Named palettes"). A reader that does not know them
+ignores both keys and paints each layer's fixed colours.

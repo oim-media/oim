@@ -10,7 +10,7 @@
 /**
  * An engine created while the player is paused is born paused.
  *
- * `_pasarA('listo')` calls `_initPlayer()` and then `pause()`, but
+ * `_moveTo('ready')` calls `_initPlayer()` and then `pause()`, but
  * `_initPlayer` builds the engine asynchronously: `pause()` found no engine and
  * only set the CSS class. The engine then started unpaused, and its Lottie and
  * keyframe animations played on a library card with `activate-on="hover"`

@@ -1,83 +1,85 @@
-# Vectores de conformidad
+# Conformance vectors
 
-Cada vector es un `.oim` real con el resultado que un lector debe producir al
-abrirlo. El JSON Schema de `../schema/` dice qué **forma** tiene un `.oim`;
-esto dice qué **resultado** sale de uno concreto.
+Each vector is a real `.oim` with the result that a reader must produce when
+opening it. The JSON Schema in `../schema/` says what **shape** a `.oim` has;
+this says what **result** comes out of a specific one.
 
 ```
-<nombre>.oim.png        el fichero, firmado, tal y como lo produce el sistema
-<nombre>.expected.json  lo que un lector conforme debe extraer de él
+<name>.oim.png        the file, signed, exactly as the system produces it
+<name>.expected.json  what a conforming reader must extract from it
 ```
 
-## La Matriz de 20 Vectores Normativos
+## The Matrix of 20 Normative Vectors
 
-Una suite reducida no distingue una implementación que **lee el formato** de una que **acierta por azar con un caso simple**. Esta matriz de 20 vectores cubre exhaustivamente todas las dimensiones del formato:
+A reduced suite cannot tell apart an implementation that **reads the format**
+from one that **gets a simple case right by chance**. This matrix of 20 vectors
+exhaustively covers every dimension of the format:
 
-| # | Vector | Qué cubre |
+| # | Vector | What it covers |
 |---|---|---|
-| 1 | `basic-text` | El mínimo: contenedor PNG, chunk `zTXt`, zlib, dos idiomas, geometría en `cqw` |
-| 2 | `groups-and-parallax` | Jerarquía simple (`childIds` / `groupId`) y profundidad (`parallax`) |
-| 3 | `interactive` | `isInteractive`, `states.active.actions`, esquinas por lado y `min_player` |
-| 4 | `multilang-cjk-rtl` | Cobertura multilingüe compleja: español, japonés (CJK: `こんにちは世界`) y árabe (RTL: `مرحبا بالعالم`) |
-| 5 | `typography-styling` | Tipografía avanzada: `fontFamily`, `fontWeight`, `fontStyle: "italic"`, `textTransform`, `letterSpacing`, `lineHeight` |
-| 6 | `nested-groups` | Jerarquía multinivel: grupo raíz conteniendo subgrupo con elementos hijos |
-| 7 | `asymmetric-borders` | Radios de curvatura independientes por esquina (`borderRadius: "10px 25px 50px 0px"`) |
-| 8 | `shadow-effects` | Sistema de sombras: `shadowEnabled`, `shadowColor`, `shadowBlur`, `shadowOffsetX`, `shadowOffsetY`, `shadowOpacity` |
-| 9 | `color-blending-opacity` | Composición visual: opacidad de capa (`opacity: 70`) y modos de fusión (`blendMode: "multiply"`) |
-| 10 | `strokes-and-borders` | Trazo vectorial y contornos: `borderWidth`, `borderColor`, `strokeStyle: "dashed"` |
-| 11 | `parallax-infinite` | Efecto parallax continuo horizontal en bucle (`mode: "infinite_horizontal"`, `speed_px_sec`, `direction`) |
-| 12 | `interactive-hover` | Estado interactivo de cursor: `states.hover` con `scale`, `rotation`, `opacity` |
-| 13 | `interactive-chained-actions` | Múltiples acciones interactivas encadenadas al activar capa (`toggle`, `hide`) |
-| 14 | `filter-effects` | Filtros visuales CSS: `filterBlur`, `filterBrightness`, `filterContrast`, `filterSaturate`, `filterHueRotate` |
-| 15 | `text-runs-precalculated` | Maquetación precalculada para renderizadores nativos no-web (`textRuns` con `lines`, `width`, `yOffset`) |
-| 16 | `multi-container-layout` | Varios slots de tipo `container` organizando la maqueta espacial del documento |
-| 17 | `extreme-aspect-ratios` | Lienzo panorámico ultra-ancho (`1600x400`, relación 4:1) probando consistencia del contenedor |
-| 18 | `transparent-background` | Fondo transparente estricto (`fillColor: "transparent"`) según la regla normativa de color |
-| 19 | `layer-ordering-zindex` | Secuencia estricta de apilamiento con slots superpuestos en idénticas coordenadas |
-| 20 | `full-monty-composite` | Documento maestro integral combinando multilingüe, interactividad activa/hover, grupos, parallax y sombras |
+| 1 | `basic-text` | The minimum: PNG container, `zTXt` chunk, zlib, two languages, geometry in `cqw` |
+| 2 | `groups-and-parallax` | Simple hierarchy (`childIds` / `groupId`) and depth (`parallax`) |
+| 3 | `interactive` | `isInteractive`, `states.active.actions`, per-side corners and `min_player` |
+| 4 | `multilang-cjk-rtl` | Complex multilingual coverage: Spanish, Japanese (CJK: `こんにちは世界`) and Arabic (RTL: `مرحبا بالعالم`) |
+| 5 | `typography-styling` | Advanced typography: `fontFamily`, `fontWeight`, `fontStyle: "italic"`, `textTransform`, `letterSpacing`, `lineHeight` |
+| 6 | `nested-groups` | Multi-level hierarchy: a root group containing a subgroup with child elements |
+| 7 | `asymmetric-borders` | Independent corner radii per corner (`borderRadius: "10px 25px 50px 0px"`) |
+| 8 | `shadow-effects` | Shadow system: `shadowEnabled`, `shadowColor`, `shadowBlur`, `shadowOffsetX`, `shadowOffsetY`, `shadowOpacity` |
+| 9 | `color-blending-opacity` | Visual composition: layer opacity (`opacity: 70`) and blend modes (`blendMode: "multiply"`) |
+| 10 | `strokes-and-borders` | Vector stroke and outlines: `borderWidth`, `borderColor`, `strokeStyle: "dashed"` |
+| 11 | `parallax-infinite` | Continuous horizontal looping parallax effect (`mode: "infinite_horizontal"`, `speed_px_sec`, `direction`) |
+| 12 | `interactive-hover` | Cursor interactive state: `states.hover` with `scale`, `rotation`, `opacity` |
+| 13 | `interactive-chained-actions` | Several interactive actions chained when a layer is activated (`toggle`, `hide`) |
+| 14 | `filter-effects` | CSS visual filters: `filterBlur`, `filterBrightness`, `filterContrast`, `filterSaturate`, `filterHueRotate` |
+| 15 | `text-runs-precalculated` | Precalculated layout for native non-web renderers (`textRuns` with `lines`, `width`, `yOffset`) |
+| 16 | `multi-container-layout` | Several `container` slots organising the spatial layout of the document |
+| 17 | `extreme-aspect-ratios` | Ultra-wide panoramic canvas (`1600x400`, 4:1 ratio) testing container consistency |
+| 18 | `transparent-background` | Strictly transparent background (`fillColor: "transparent"`) under the normative colour rule |
+| 19 | `layer-ordering-zindex` | Strict stacking sequence with slots overlapping at identical coordinates |
+| 20 | `full-monty-composite` | Comprehensive master document combining multilingual content, active/hover interactivity, groups, parallax and shadows |
 
-## Cómo se usa desde otro lenguaje
+## How to use it from another language
 
-1. Abre el `.oim` como PNG y busca el chunk de metadatos: `zTXt` (clave `OIM_Data`; el que se escribe desde el 29 oct 2026), o `tEXt` / `iTXt` (claves `OIM_Data` o `OIM_JSON_DATA`).
-2. Descomprime la carga útil: si viene en base64, decodifícalo primero; la descompresión es **deflate crudo** (sin cabecera zlib, RFC 1951) o zlib estándar.
-3. Interpreta el resultado como JSON UTF-8: son los metadatos del documento.
-4. Compara con `<nombre>.expected.json`, ignorando su campo `description`.
+1. Open the `.oim` as a PNG and look for the metadata chunk: `zTXt` (key `OIM_Data`; the one written since 29 Oct 2026), or `tEXt` / `iTXt` (keys `OIM_Data` or `OIM_JSON_DATA`).
+2. Decompress the payload: if it comes in base64, decode it first; decompression is **raw deflate** (no zlib header, RFC 1951) or standard zlib.
+3. Interpret the result as UTF-8 JSON: these are the document's metadata.
+4. Compare with `<name>.expected.json`, ignoring its `description` field.
 
-Lo que se compara es lo que dos implementaciones pueden discrepar de verdad: la
-geometría **ya normalizada** a `cqw` o unidades de usuario, la jerarquía, la profundidad,
-la tipografía y la interactividad declarada. No el metadato entero — un volcado completo se rompe
-cada vez que el compilado añade un campo, y entonces se regenera sin mirar, que
-es un vector que ya no comprueba nada.
+What is compared is what two implementations can genuinely disagree on: the
+geometry **already normalised** to `cqw` or user units, the hierarchy, the depth,
+the typography and the declared interactivity. Not the whole metadata — a full
+dump breaks every time the compiler adds a field, and then it gets regenerated
+without a look, which is a vector that no longer checks anything.
 
-## La firma
+## The signature
 
-Los 20 vectores vienen firmados con la clave pública publicada en `packages/spec/keys.json`. La firma cubre la serialización canónica
-de los metadatos y el hash criptográfico de los píxeles (`image_hash` sobre los chunks `IDAT`).
-Un lector que verifique debe reconstruir esa forma canónica siguiendo las siete reglas
-especificadas en el `README.md` de la raíz de `packages/spec`; uno que solo lea el formato
-puede ignorarla, pero entonces no debe afirmar que valida autoría.
+The 20 vectors are signed with the public key published in `packages/spec/keys.json`. The signature covers the canonical serialisation
+of the metadata and the cryptographic hash of the pixels (`image_hash` over the `IDAT` chunks).
+A reader that verifies must rebuild that canonical form following the seven rules
+specified in the `README.md` at the root of `packages/spec`; one that only reads the format
+may ignore it, but then it must not claim to validate authorship.
 
-## Cómo se generaron
+## How they were generated
 
 The vectors are generated by Xue Studios' signing service, through the same
-production pipeline that signs every published `.oim`: the slots are normalized
-to `cqw`, the file is sanitized, signed and embedded. The generator is not part
+production pipeline that signs every published `.oim`: the slots are normalised
+to `cqw`, the file is sanitised, signed and embedded. The generator is not part
 of this repository; the output is committed here as-is, so every implementation
 reads the same files.
 
 `interactive` is the exception: it comes from a real editor export, and that is
-why it carries things the normalization pipeline alone does not produce.
+why it carries things the normalisation pipeline alone does not produce.
 
 The base image weighs about 3 KB and is reused across vectors. A published
-`.oim` weighs megabytes because it carries its rasterized canvas inside; the
+`.oim` weighs megabytes because it carries its rasterised canvas inside; the
 image is not what these vectors check.
 
-## Que no se pudran
+## Keeping them from rotting
 
-`packages/core/src/conformance-vectors.test.ts` los ejecuta en cada suite: si la
-implementación de referencia cambia lo que produce, los vectores fallan. Es
-circular a propósito y en una dirección — la referencia define el resultado, y
-la prueba impide que se mueva sin que ellos se muevan con ella.
+`packages/core/src/conformance-vectors.test.ts` runs them in every suite: if the
+reference implementation changes what it produces, the vectors fail. It is
+circular on purpose and in one direction — the reference defines the result, and
+the test prevents it from moving without the vectors moving with it.
 
-El día que exista un segundo lector y discrepe, hay un fichero concreto sobre el
-que discutir en vez de dos opiniones.
+The day a second reader exists and disagrees, there is a concrete file to discuss
+instead of two opinions.

@@ -43,7 +43,8 @@
  * the format can change without the player being touched. Tying both numbers
  * together would make an internal fix look like a format break.
  */
-export const CONTRACT_VERSION = "1.25.0";
+export const CONTRACT_VERSION = "1.25.1";
+// 1.25.1: typings list expired_key; dead options marked deprecated; no format change.
 // 1.25.0: player events carry detail.message (mensaje deprecated); package READMEs; no format change.
 // 1.24.0: player renders the placeholder image until the .oim paints; no format change.
 // 1.23.2: typings match runtime, license headers, tooling warnings; no format change.

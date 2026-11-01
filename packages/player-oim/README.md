@@ -57,7 +57,7 @@ changes again.
 | `activate-on` | visible | `hover`: the file moves only while the pointer is over it (on devices with a pointer; touch devices behave as `visible`). `manual`: the page decides with `play()` and `pause()`. Visibility still decides when the file is built. | yes |
 | `fit` | `contain` | `contain` or `cover`. | yes |
 | `align` | `center` | `center`, `top` or `bottom`. | yes |
-| `dropdown-blur` | on | Accepted and stored. **No visible effect in 1.25.0.** | yes |
+| `dropdown-blur` | on | Deprecated: no effect, removed in 2.0.0. | yes |
 | `allow-lottie` | on | `false` disables Lottie layers. | yes |
 | `palette` | document default | Name of one of the file's palettes. Unknown names are ignored. Applies only when `allow-dynamic-colors` is on. | yes |
 | `auto-rotate-lang` | off | Milliseconds between the languages present in the file. Non-numeric or non-positive values use 3000 ms. Stops while the player is paused. | yes |
@@ -72,8 +72,8 @@ Precedence for `mode`, `disable-animations` and `disable-actions`, strongest fir
 the `mount()` options, then the attribute, then `mode`, then the default. Reduced
 motion overrides the animation setting only.
 
-`show-controls` is set by `OimPlayer.mount()` and read by the engine. It has no
-visible effect in 1.25.0 (see [Known gaps](#known-gaps)).
+`show-controls` is set by `OimPlayer.mount()`. Deprecated: no effect, removed in 2.0.0
+(see [Known gaps](#known-gaps)).
 
 ## JavaScript API
 
@@ -98,8 +98,8 @@ const player: OimPlayerInstance | null = OimPlayer.mount("hero", "/art/poster.oi
 | `allowLottie` | boolean | Same as `allow-lottie`. |
 | `disableAnimations` | boolean | Overrides the attribute and `mode`. |
 | `disableActions` | boolean | Overrides the attribute and `mode`. |
-| `dropdownBlur` | boolean | Accepted, no visible effect in 1.25.0. |
-| `showLanguageSelector` | boolean | Accepted, **no effect in 1.25.0**. |
+| `dropdownBlur` | boolean | Deprecated: no effect, removed in 2.0.0. |
+| `showLanguageSelector` | boolean | Deprecated: no effect, removed in 2.0.0. |
 | `fit` | `contain` or `cover` | Same as `fit`. |
 | `align` | `center`, `top` or `bottom` | Same as `align`. |
 | `placeholder` | string | Same as `placeholder`. |
@@ -229,7 +229,7 @@ anyone.
 
 ## Known gaps
 
-These are accepted and stored, but do nothing in 1.25.0:
+These are deprecated: they are accepted and stored, but do nothing. Removed in 2.0.0:
 
 - `showLanguageSelector` (option) and `show-controls` (attribute, set by `mount`).
 - `dropdownBlur` (option) and `dropdown-blur` (attribute).

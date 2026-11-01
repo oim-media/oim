@@ -12,12 +12,14 @@
 /** Options accepted by `OimPlayer.mount()`. They reach the engine as-is. */
 export interface OimPlayerOptions {
   allowZoom?: boolean;
+  /** @deprecated No effect; removed in 2.0.0. */
   showLanguageSelector?: boolean;
   showSlots?: boolean;
   allowLottie?: boolean;
   allowDynamicColors?: boolean;
   disableAnimations?: boolean;
   disableActions?: boolean;
+  /** @deprecated No effect; removed in 2.0.0. */
   dropdownBlur?: boolean;
   fit?: 'contain' | 'cover';
   align?: 'center' | 'top' | 'bottom';
@@ -32,6 +34,8 @@ export type OimSecurityStatus =
   /** Signed before the image seal existed: the metadata is OIM's, the image is not checked. */
   | 'image_unsealed'
   | 'invalid_signature'
+  /** Authentic, but signed with a key the player no longer trusts (past its verify_until). */
+  | 'expired_key'
   /** The image does not match the signed `image_hash`. The file is not shown. */
   | 'image_mismatch'
   | 'corrupt';

@@ -66,3 +66,31 @@ describe("published surface: index.d.ts matches the runtime", () => {
     expect([...usedKeys].sort()).toEqual([...declaredKeys].sort());
   });
 });
+
+// Every status the engine can return must be a member of the public
+// OimSecurityStatus union. The engine's list is the SecurityStatus type in
+// render/security.ts; both are read from source so neither can drift silently.
+function unionMembers(file: string, alias: string): string[] {
+  const program = ts.createProgram([file], { noEmit: true, strict: true });
+  const sf = program.getSourceFile(file)!;
+  const decl = sf.statements.find(
+    (st): st is ts.TypeAliasDeclaration => ts.isTypeAliasDeclaration(st) && st.name.text === alias
+  )!;
+  const members = ts.isUnionTypeNode(decl.type) ? decl.type.types : [decl.type];
+  return members
+    .map((m) => {
+      if (!ts.isLiteralTypeNode(m) || !ts.isStringLiteral(m.literal)) {
+        throw new Error(`${alias} has a member that is not a string literal`);
+      }
+      return m.literal.text;
+    })
+    .sort();
+}
+
+describe("published surface: OimSecurityStatus lists every engine status", () => {
+  it("OimSecurityStatus contains exactly the statuses the engine returns", () => {
+    const engine = unionMembers(join(__dirname, "render/security.ts"), "SecurityStatus");
+    const published = unionMembers(dts, "OimSecurityStatus");
+    expect(published).toEqual(engine);
+  });
+});

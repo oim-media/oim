@@ -7,8 +7,8 @@
 // Fails when a production dependency uses a license outside the allowlist:
 // whatever the players bundle ships to every site that embeds them.
 // Usage: node tools/licenses.mjs
-import { execFileSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
+import { pnpm } from "./pnpm.mjs";
 
 const ALLOWED = new Set(["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC"]);
 
@@ -20,7 +20,7 @@ export function disallowed(report) {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const json = execFileSync("pnpm", ["licenses", "list", "--prod", "--json"], { encoding: "utf8", shell: true });
+  const json = pnpm(["licenses", "list", "--prod", "--json"], { encoding: "utf8" });
   const bad = disallowed(JSON.parse(json));
   for (const b of bad) console.error(`disallowed license: ${b}`);
   console.log(`${bad.length} disallowed production licenses`);

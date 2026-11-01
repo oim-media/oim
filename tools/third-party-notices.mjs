@@ -7,13 +7,13 @@
 // Writes THIRD_PARTY_NOTICES into a build output: the MIT license of a
 // dependency the player ships (lottie-web) requires its notice to travel with it.
 // Usage: node tools/third-party-notices.mjs <package-name> <outDir>
-import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { pnpm } from "./pnpm.mjs";
 
 const [pkg, outDir] = process.argv.slice(2);
 const report = JSON.parse(
-  execFileSync("pnpm", ["licenses", "list", "--prod", "--json", "--filter", pkg], { encoding: "utf8", shell: true }),
+  pnpm(["licenses", "list", "--prod", "--json", "--filter", pkg], { encoding: "utf8" }),
 );
 
 const sections = Object.entries(report).flatMap(([license, deps]) =>

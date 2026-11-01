@@ -8,7 +8,7 @@
  * The drop cap's style: the first letter, `lines` lines tall. One function
  * for the editor canvas, the player and the static export, so the three draw
  * the same letter (known trap 2: two copies drift apart).
- * Spec: docs/superpowers/specs/2026-10-10-retirar-resaltado-y-capitular-design.md
+ * Spec: docs/superpowers/specs/2026-10-10-remove-highlight-and-drop-cap-design.md
  */
 
 import { toRanges, fromRanges } from "./text-marks.js";

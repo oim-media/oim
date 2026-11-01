@@ -534,8 +534,8 @@ export function sanitizeHtml(htmlStr: string): string {
           el.removeAttribute(attr.name);
         }
         if (name === 'style') {
-          const limpio = neutralizeExternalCssUrls(attr.value);
-          if (limpio !== attr.value) el.setAttribute(attr.name, limpio);
+          const clean = neutralizeExternalCssUrls(attr.value);
+          if (clean !== attr.value) el.setAttribute(attr.name, clean);
         } else if (name !== 'href' && name !== 'src' && requestsOutsideByCss(attr.value)) {
           // `fill`, `stroke`, `filter`, `mask`, `clip-path`...: not URLs, but a
           // `url(https://...)` in them is a request when the work opens. Twin

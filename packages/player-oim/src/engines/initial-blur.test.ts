@@ -11,17 +11,17 @@ import { describe, it, expect, vi } from "vitest";
 import { getStylesText } from "../render/styles";
 import ImageEngine from "./ImageEngine";
 
-describe("Efecto de desenfoque (blur 14px) en la carga inicial", () => {
-  it("la hoja de estilos declara blur(14px) en .oim-player-viewport y none en .oim-viewport--ready", () => {
+describe("Blur effect (blur 14px) on the initial load", () => {
+  it("la sheet de estilos declara blur(14px) en .oim-player-viewport y none en .oim-viewport--ready", () => {
     const css = getStylesText();
 
-    // Comprobar la regla .oim-player-viewport
+    // Check the rule .oim-player-viewport
     const viewportMatch = css.match(/\.oim-player-viewport\s*\{([^}]+)\}/);
     expect(viewportMatch).toBeTruthy();
     expect(viewportMatch![1]).toContain("filter: blur(var(--oim-reveal-blur, 14px))");
     expect(viewportMatch![1]).toContain("transition: opacity var(--oim-reveal-duration, 0.32s) ease-in-out, filter var(--oim-reveal-duration, 0.32s) ease-in-out");
 
-    // Comprobar la regla .oim-player-viewport.oim-viewport--ready
+    // Check the rule .oim-player-viewport.oim-viewport--ready
     const readyMatch = css.match(/\.oim-player-viewport\.oim-viewport--ready\s*\{([^}]+)\}/);
     expect(readyMatch).toBeTruthy();
     expect(readyMatch![1]).toContain("filter: none");
@@ -68,7 +68,7 @@ describe("Efecto de desenfoque (blur 14px) en la carga inicial", () => {
     }
   });
 
-  it("al completar renderSlots() el viewport recibe la clase oim-viewport--ready", async () => {
+  it("when renderSlots() completes the viewport gets the class oim-viewport--ready", async () => {
     const host = document.createElement("div");
     const shadow = (host as any).attachShadow({ mode: "open" });
     document.body.appendChild(host);

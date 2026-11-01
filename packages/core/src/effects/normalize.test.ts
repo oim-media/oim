@@ -37,7 +37,7 @@ describe("normalizeSlotEffects", () => {
     });
   });
 
-  it("convierte layerBlur legacy a efecto blur", () => {
+  it("converts legacy layerBlur into a blur effect", () => {
     const legacy = { layerBlur: 12 };
     const res = normalizeSlotEffects(legacy);
     expect(res).toHaveLength(1);
@@ -48,7 +48,7 @@ describe("normalizeSlotEffects", () => {
     });
   });
 
-  it("convierte shadowEnabled legacy a efecto drop-shadow", () => {
+  it("converts legacy shadowEnabled into a drop-shadow effect", () => {
     const legacy = {
       shadowEnabled: true,
       shadowColor: "#000000",
@@ -69,7 +69,7 @@ describe("normalizeSlotEffects", () => {
     });
   });
 
-  it("convierte efecto neon/shadow legacy a efecto glow / drop-shadow", () => {
+  it("converts a legacy neon/shadow effect into a glow / drop-shadow effect", () => {
     const legacyNeon = {
       effect: "neon",
       effectColor: "#00ffcc",

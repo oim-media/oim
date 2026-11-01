@@ -102,7 +102,7 @@ function describe(property) {
   if (property.maxItems) parts.push(`max ${property.maxItems} items`);
   if (property.maxLength) parts.push(`max ${property.maxLength} characters`);
   if (property.items?.maxLength) parts.push(`each up to ${property.items.maxLength} characters`);
-  if (property.items?.$ref) parts.push(`de ${property.items.$ref.replace("#/$defs/", "")}`);
+  if (property.items?.$ref) parts.push(`of ${property.items.$ref.replace("#/$defs/", "")}`);
   return parts.join(" · ");
 }
 

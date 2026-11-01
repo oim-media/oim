@@ -68,7 +68,7 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
       canvas_height: 600,
       slots: [
         {
-          id: "cielo",
+          id: "sky",
           type: "text",
           content: { es: "Cielo en movimiento" },
           style: {
@@ -92,7 +92,7 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
     expect(engine.metadata.slots[0].parallax.enabled).toBe(true);
 
     // Check that the slot contains the track
-    const slotEl = engine._overlay.querySelector('[data-slot-id="cielo"]') as HTMLElement;
+    const slotEl = engine._overlay.querySelector('[data-slot-id="sky"]') as HTMLElement;
     expect(slotEl).not.toBeNull();
 
     const trackItem = slotEl.querySelector(`.${TRACK_CLASS}`) as HTMLElement;
@@ -292,7 +292,7 @@ describe("the width of the copies comes from the plan, not from the engine", () 
       canvas_height: 600,
       slots: [
         {
-          id: "cielo",
+          id: "sky",
           type: "text",
           width_px: 640,
           content: { es: "Cielo" },
@@ -322,7 +322,7 @@ describe("the width of the copies comes from the plan, not from the engine", () 
   });
 });
 
-describe("el bucle apagado es velocidad cero", () => {
+describe("the paused loop has zero speed", () => {
   // The real case that motivated the redesign: sky and trees in motion, and a
   // mountain and a cabin STILL in front, in the same group. Duplicating the cabin
   // would give two cabins.
@@ -363,7 +363,7 @@ describe("el bucle apagado es velocidad cero", () => {
   });
 });
 
-describe("cuantas piezas monta la pista", () => {
+describe("cuantas pieces monta la track", () => {
   const setupItem = async (mirror: boolean) => {
     const host = document.createElement("div");
     document.body.appendChild(host);
@@ -374,7 +374,7 @@ describe("cuantas piezas monta la pista", () => {
     (engine as never as { metadata: unknown }).metadata = {
       canvas_width: 800, canvas_height: 600,
       slots: [{
-        id: "cielo", type: "text", width_px: 400, content: { es: "Cielo" },
+        id: "sky", type: "text", width_px: 400, content: { es: "Cielo" },
         style: { parallax: { enabled: true, mode: "infinite_horizontal",
           infinite: { enabled: true, speedPxSec: 40, direction: "right_to_left", seamlessTile: mirror } } },
       }],
@@ -390,7 +390,7 @@ describe("cuantas piezas monta la pista", () => {
     // With a mirror the unit is the pair (800), so the track must measure at
     // least 1600: four pieces of 400.
     const trackItem = await setupItem(true);
-    expect(trackItem.children.length % 2, "media pareja rompe la simetria").toBe(0);
+    expect(trackItem.children.length % 2, "media pair rompe la simetria").toBe(0);
     expect(trackItem.children.length * 400).toBeGreaterThanOrEqual(800 + 800);
   });
 
@@ -405,7 +405,7 @@ describe("cuantas piezas monta la pista", () => {
     const hijos = Array.from(trackItem.children) as HTMLElement[];
     hijos.forEach((h, i) => {
       const reflejada = (h.style.transform || "").includes("scaleX(-1)");
-      expect(reflejada, `la pieza ${i} deberia ${i % 2 ? "" : "NO "}estar reflejada`).toBe(i % 2 === 1);
+      expect(reflejada, `la piece ${i} deberia ${i % 2 ? "" : "NO "}estar reflejada`).toBe(i % 2 === 1);
     });
   });
 });
@@ -503,7 +503,7 @@ describe("a layer with an infinite loop is not oversized", () => {
     motor.metadata = {
       canvasWidth: 800, canvasHeight: 600,
       slots: [{
-        id: "cielo", type: "geo", align: "left",
+        id: "sky", type: "geo", align: "left",
         position: [0, 0.75], width_px: 800, height_px: 150,
         content: { es: "" },
         style: { geoShape: "rect", fillColor: "#333", fillType: "color" },
@@ -512,7 +512,7 @@ describe("a layer with an infinite loop is not oversized", () => {
       }],
     };
     await motor.renderSlots();
-    const el = shadow.querySelector('[data-slot-id="cielo"]') as HTMLElement;
+    const el = shadow.querySelector('[data-slot-id="sky"]') as HTMLElement;
     expect(el.querySelector(`.${TRACK_CLASS}`), "I did not mount the track: the test measures nothing").toBeTruthy();
     expect(el.style.getPropertyValue("--oim-scale")).toBe("");
   });
@@ -527,7 +527,7 @@ describe("a layer with an infinite loop is not oversized", () => {
     motor.metadata = {
       canvasWidth: 800, canvasHeight: 600,
       slots: [{
-        id: "cielo", type: "geo", align: "left",
+        id: "sky", type: "geo", align: "left",
         position: [0, 0.75], width_px: 800, height_px: 150,
         content: { es: "" },
         style: { geoShape: "rect", fillColor: "#333", fillType: "color" },
@@ -536,7 +536,7 @@ describe("a layer with an infinite loop is not oversized", () => {
       }],
     };
     await motor.renderSlots();
-    const el = shadow.querySelector('[data-slot-id="cielo"]') as HTMLElement;
+    const el = shadow.querySelector('[data-slot-id="sky"]') as HTMLElement;
     expect(el.style.getPropertyValue("--oim-scale")).toBe("1.24");
   });
 });
@@ -570,12 +570,12 @@ describe("the copies overlap in the player, not only in the plan", () => {
     await (engine as never as { renderSlots: () => Promise<void> }).renderSlots();
 
     const trackItem = shadow.querySelector(`.${TRACK_CLASS}`) as HTMLElement;
-    const piezas = Array.from(trackItem.children) as HTMLElement[];
-    expect(piezas.length).toBe(4);
-    piezas.forEach((p, i) => {
-      expect(p.style.transformOrigin, `pieza ${i}`).toBe("0 0");
-      expect(p.style.transform, `pieza ${i}`).toContain(`scaleX(${641 / 640})`);
-      expect(p.style.transform.includes("scaleX(-1)"), `pieza ${i}`).toBe(i % 2 === 1);
+    const pieces = Array.from(trackItem.children) as HTMLElement[];
+    expect(pieces.length).toBe(4);
+    pieces.forEach((p, i) => {
+      expect(p.style.transformOrigin, `piece ${i}`).toBe("0 0");
+      expect(p.style.transform, `piece ${i}`).toContain(`scaleX(${641 / 640})`);
+      expect(p.style.transform.includes("scaleX(-1)"), `piece ${i}`).toBe(i % 2 === 1);
     });
   });
 });

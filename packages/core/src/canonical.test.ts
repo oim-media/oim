@@ -54,10 +54,10 @@ describe('serializeCanonical - 7 canonical rules (RFC 8785)', () => {
 
   it('Rules 6 and 7: non-ASCII UTF-8 characters without \\uXXXX sequences', () => {
     const input = {
-      titulo: 'Diseño para niños con acción',
+      title: 'Diseño para niños con acción',
     };
 
     const out = new TextDecoder().decode(serializeCanonical(input));
-    expect(out).toBe('{"titulo":"Diseño para niños con acción"}');
+    expect(out).toBe('{"title":"Diseño para niños con acción"}');
   });
 });

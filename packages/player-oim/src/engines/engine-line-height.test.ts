@@ -52,7 +52,7 @@ async function lineHeightOf(style: any = {}): Promise<string> {
   return el.style.lineHeight;
 }
 
-describe("el interlineado en el motor", () => {
+describe("line height in the engine", () => {
   it("is written to the element", async () => {
     expect(await lineHeightOf({ lineHeight: 1.6 })).toBe("1.6");
   });
@@ -83,7 +83,7 @@ describe("el interlineado en el motor", () => {
 
   it("an impossible value does not reach the DOM", async () => {
     expect(await lineHeightOf({ lineHeight: 0 })).toBe(String(DEFAULT_LINE_HEIGHT));
-    expect(await lineHeightOf({ lineHeight: "alto" })).toBe(String(DEFAULT_LINE_HEIGHT));
+    expect(await lineHeightOf({ lineHeight: "tall" })).toBe(String(DEFAULT_LINE_HEIGHT));
     // Clamped to the maximum the editor offers, not discarded.
     expect(await lineHeightOf({ lineHeight: 99 })).toBe("3");
   });

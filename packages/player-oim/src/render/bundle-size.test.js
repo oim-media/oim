@@ -48,15 +48,15 @@ const SRC = join(__dirname, "..");
 const BUNDLE = join(__dirname, "..", "..", "dist", "oim-player.js");
 
 function fontList(dir) {
-  const salida = [];
-  for (const entrada of readdirSync(dir)) {
-    const path = join(dir, entrada);
-    if (statSync(path).isDirectory()) salida.push(...fontList(path));
+  const output = [];
+  for (const entry of readdirSync(dir)) {
+    const path = join(dir, entry);
+    if (statSync(path).isDirectory()) output.push(...fontList(path));
     else if (path.endsWith(".ts") && !path.endsWith(".test.ts") && !path.endsWith(".d.ts")) {
-      salida.push(path);
+      output.push(path);
     }
   }
-  return salida;
+  return output;
 }
 
 const FUENTES = fontList(SRC).map((path) => ({ path, text: readFileSync(path, "utf8") }));
@@ -101,14 +101,14 @@ describe("where the weight can creep in", () => {
   it("lottie is only imported dynamically", () => {
     const offenders = [];
     for (const { path, text } of FUENTES) {
-      for (const linea of text.split("\n")) {
-        if (!/lottie/i.test(linea)) continue;
+      for (const line of text.split("\n")) {
+        if (!/lottie/i.test(line)) continue;
         // The rule is about the LIBRARY: a static import of lottie-web puts it
         // in the bundle. Our own lottie-loader.ts is the gate to it and must be
         // importable statically, so match the package name, not any path that
         // happens to contain "lottie".
-        if (/^\s*import\s+[^(]*from\s+["']lottie-web/.test(linea)) offenders.push(`${path}: ${linea.trim()}`);
-        if (/^\s*import\s+["']lottie-web/.test(linea)) offenders.push(`${path}: ${linea.trim()}`);
+        if (/^\s*import\s+[^(]*from\s+["']lottie-web/.test(line)) offenders.push(`${path}: ${line.trim()}`);
+        if (/^\s*import\s+["']lottie-web/.test(line)) offenders.push(`${path}: ${line.trim()}`);
       }
     }
     expect(offenders).toEqual([]);
@@ -122,17 +122,17 @@ describe("where the weight can creep in", () => {
  * matter what passes.
  */
 describe("el paquete construido, si existe", () => {
-  const hayPaquete = existsSync(BUNDLE);
-  const bundle = hayPaquete ? readFileSync(BUNDLE, "utf8") : "";
+  const hasBundle = existsSync(BUNDLE);
+  const bundle = hasBundle ? readFileSync(BUNDLE, "utf8") : "";
 
-  it.skipIf(!hayPaquete)("no contiene zod", () => {
+  it.skipIf(!hasBundle)("no contiene zod", () => {
     // Several fingerprints: class names can be minified, error-code strings cannot.
     const huellas = ["ZodError", "invalid_union_discriminator", "too_big", "$ZodType"];
     const encontradas = huellas.filter((h) => bundle.includes(h));
     expect(encontradas).toEqual([]);
   });
 
-  it.skipIf(!hayPaquete)("no contiene lottie en el trozo principal", () => {
+  it.skipIf(!hasBundle)("no contiene lottie en el trozo principal", () => {
     // `bodymovin` is Lottie's own runtime name and survives minification: it
     // appears twice in lottie_light.min.js. The previous fingerprint,
     // `AnimationItem`, appears zero times even in Lottie itself, so this test
@@ -143,17 +143,17 @@ describe("el paquete construido, si existe", () => {
 
 describe("lottie ships apart from the player", () => {
   const DIST = join(__dirname, "..", "..", "dist");
-  const hayPaquete = existsSync(BUNDLE);
+  const hasBundle = existsSync(BUNDLE);
 
   // A budget, not a target: each raise is a deliberate decision recorded in
   // the commit that makes it. Last raise: 59 KB for reveal and play (1.22.0).
-  it.skipIf(!hayPaquete)("el player cabe en 59 KB gzip", async () => {
+  it.skipIf(!hasBundle)("the player fits in 59 KB gzip", async () => {
     const { gzipSync } = await import("node:zlib");
     const kb = gzipSync(readFileSync(BUNDLE)).length / 1024;
     expect(Math.round(kb)).toBeLessThanOrEqual(59);
   });
 
-  it.skipIf(!hayPaquete)("the lottie file sits next to both player paths", () => {
+  it.skipIf(!hasBundle)("the lottie file sits next to both player paths", () => {
     const version = JSON.parse(readFileSync(join(__dirname, "..", "..", "node_modules", "lottie-web", "package.json"), "utf8")).version;
     for (const dir of [join(DIST, "vendor"), join(DIST, "player", "v1", "vendor")]) {
       const file = join(dir, `lottie_light-${version}.js`);

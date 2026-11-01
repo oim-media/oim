@@ -304,7 +304,7 @@ describe('the declared interactivity', () => {
             lineHeight: 28.8,
             lines: [
               { text: "Hola mundo", width: 120.5, yOffset: 0 },
-              { text: "segunda linea", width: 140.2, yOffset: 28.8 },
+              { text: "segunda line", width: 140.2, yOffset: 28.8 },
             ],
           },
           en: {
@@ -351,11 +351,11 @@ describe("the slot cap", () => {
   // it, the contract does not publish it and the editor cannot warn in advance.
   it("the schema accepts 150 slots and rejects 151", () => {
     const slot = () => ({ id: "s", type: "text", position: [0, 0], content: {} });
-    const conN = (n: number) => ({ slots: Array.from({ length: n }, slot) });
-    expect(OimMetadataSchema.safeParse(conN(150)).success).toBe(true);
-    expect(OimMetadataSchema.safeParse(conN(151)).success).toBe(false);
-    expect(OvmMetadataSchema.safeParse(conN(150)).success).toBe(true);
-    expect(OvmMetadataSchema.safeParse(conN(151)).success).toBe(false);
+    const withN = (n: number) => ({ slots: Array.from({ length: n }, slot) });
+    expect(OimMetadataSchema.safeParse(withN(150)).success).toBe(true);
+    expect(OimMetadataSchema.safeParse(withN(151)).success).toBe(false);
+    expect(OvmMetadataSchema.safeParse(withN(150)).success).toBe(true);
+    expect(OvmMetadataSchema.safeParse(withN(151)).success).toBe(false);
   });
 
   /**
@@ -372,11 +372,11 @@ describe("the slot cap", () => {
     "the cap also applies to `%s`, which carries the same slots",
     (campo) => {
       const slot = () => ({ id: "s", type: "text", position: [0, 0], content: {} });
-      const conN = (n: number) => ({ slots: [], [campo]: Array.from({ length: n }, slot) });
-      expect(OimMetadataSchema.safeParse(conN(150)).success).toBe(true);
-      expect(OimMetadataSchema.safeParse(conN(151)).success).toBe(false);
-      expect(OvmMetadataSchema.safeParse(conN(150)).success).toBe(true);
-      expect(OvmMetadataSchema.safeParse(conN(151)).success).toBe(false);
+      const withN = (n: number) => ({ slots: [], [campo]: Array.from({ length: n }, slot) });
+      expect(OimMetadataSchema.safeParse(withN(150)).success).toBe(true);
+      expect(OimMetadataSchema.safeParse(withN(151)).success).toBe(false);
+      expect(OvmMetadataSchema.safeParse(withN(150)).success).toBe(true);
+      expect(OvmMetadataSchema.safeParse(withN(151)).success).toBe(false);
     }
   );
 

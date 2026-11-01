@@ -98,7 +98,7 @@ describe("the stroke follows the silhouette", () => {
   });
 });
 
-describe("el fill", () => {
+describe("the fill", () => {
   it("va en la figura y no en el container", async () => {
     const { motor, node } = mount("diamond");
     await motor.renderSlots();

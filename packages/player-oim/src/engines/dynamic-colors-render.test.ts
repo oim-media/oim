@@ -25,7 +25,7 @@ function montarMotor(slots: any[]) {
   return { motor, shadow };
 }
 
-describe("Renderizado de Colores Dinamicos en ImageEngine", () => {
+describe("Dynamic color rendering in ImageEngine", () => {
   it("assigns var(--oim-color-accent, ...) and var(--oim-color-outline, ...) on rectangular shapes", async () => {
     const origCreateElement = document.createElement.bind(document);
     let slotElement: any = null;

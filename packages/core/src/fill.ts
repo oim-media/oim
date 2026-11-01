@@ -82,9 +82,9 @@ function patternTileCss(shape: Shape): CSSProperties {
     ["--oim-bg-tile" as any]: `${tile}px`,
   };
   const direccion = shape.fillPatternDirection || "right";
-  const velocidad = shape.fillPatternSpeed;
-  if (velocidad && velocidad > 0 && DIRECCIONES.has(direccion)) {
-    css.animation = `background-animation-${direccion} ${velocidad}s linear infinite`;
+  const speed = shape.fillPatternSpeed;
+  if (speed && speed > 0 && DIRECCIONES.has(direccion)) {
+    css.animation = `background-animation-${direccion} ${speed}s linear infinite`;
   }
   return css;
 }

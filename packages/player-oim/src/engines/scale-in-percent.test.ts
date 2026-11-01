@@ -22,7 +22,7 @@ describe("the scale of an interactive state travels as a percentage", () => {
     }
   });
 
-  it("100 es el tamano natural", () => {
+  it("100 es el size natural", () => {
     expect(scaleAsFactor(100)).toBe(1);
   });
 

@@ -47,11 +47,11 @@ describe("phase B: figure safety", () => {
 describe("phase B: CSS compatibility of the data URI", () => {
   it("escapes parentheses in the URI so CSS parsers do not discard the background", () => {
     const uri = generatePatternSVG({ ...base, counts: [1], dispersions: [0] });
-    const sinPrefijo = uri.replace(/^data:image\/svg\+xml;utf8,/, "");
-    expect(sinPrefijo).toContain("%28");
-    expect(sinPrefijo).toContain("%29");
-    expect(sinPrefijo).not.toContain("(");
-    expect(sinPrefijo).not.toContain(")");
+    const withoutPrefix = uri.replace(/^data:image\/svg\+xml;utf8,/, "");
+    expect(withoutPrefix).toContain("%28");
+    expect(withoutPrefix).toContain("%29");
+    expect(withoutPrefix).not.toContain("(");
+    expect(withoutPrefix).not.toContain(")");
   });
 });
 

@@ -76,10 +76,10 @@ async function escenario(states: any, extra: any = {}) {
   ]);
   await motor.renderSlots();
   const sr = host.shadowRoot!;
-  const avisos: any[] = [];
-  host.addEventListener("oim:action", (e: any) => avisos.push(e));
+  const warnings: any[] = [];
+  host.addEventListener("oim:action", (e: any) => warnings.push(e));
   return {
-    host, avisos,
+    host, warnings,
     // `queueUpdate` queues and applies on the next frame. happy-dom does not
     // produce frames, so without this the queue never drains and the DOM stays
     // as it was: comparing styles there distinguishes nothing.
@@ -93,22 +93,22 @@ describe("the player announces what it did", () => {
   it("a click emits oim:action", async () => {
     const e = await escenario({ active: { actions: ACCIONES } });
     e.buttonItem.dispatchEvent(new Event("click"));
-    expect(e.avisos.length).toBe(1);
-    expect(e.avisos[0].detail.slot).toBe("boton");
-    expect(e.avisos[0].detail.trigger).toBe("click");
+    expect(e.warnings.length).toBe(1);
+    expect(e.warnings[0].detail.slot).toBe("boton");
+    expect(e.warnings[0].detail.trigger).toBe("click");
   });
 
   it("and says which layers it affects", async () => {
     const e = await escenario({ active: { actions: ACCIONES } });
     e.buttonItem.dispatchEvent(new Event("click"));
-    expect(e.avisos[0].detail.targets).toEqual(["ficha"]);
+    expect(e.warnings[0].detail.targets).toEqual(["ficha"]);
   });
 
   it("hover also announces, and is told apart from the click", async () => {
     const e = await escenario({ hover: { actions: ACCIONES } });
     e.buttonItem.dispatchEvent(new Event("mouseenter"));
-    expect(e.avisos.length).toBe(1);
-    expect(e.avisos[0].detail.trigger).toBe("hover");
+    expect(e.warnings.length).toBe(1);
+    expect(e.warnings[0].detail.trigger).toBe("hover");
   });
 
   /**
@@ -119,7 +119,7 @@ describe("the player announces what it did", () => {
   it("and carries nothing but the file's own identifiers", async () => {
     const e = await escenario({ active: { actions: ACCIONES } });
     e.buttonItem.dispatchEvent(new Event("click"));
-    expect(Object.keys(e.avisos[0].detail).sort()).toEqual(["name", "slot", "targets", "trigger", "types"]);
+    expect(Object.keys(e.warnings[0].detail).sort()).toEqual(["name", "slot", "targets", "trigger", "types"]);
   });
 });
 
@@ -142,20 +142,20 @@ describe("the announcement can be listened to by name", () => {
   it("carries the name the author gave it", async () => {
     const e = await escenario({ active: { actions: ACCIONES } }, { name: "Boton1" });
     e.buttonItem.dispatchEvent(new Event("click"));
-    expect(e.avisos[0].detail.name).toBe("Boton1");
+    expect(e.warnings[0].detail.name).toBe("Boton1");
   });
 
   it("and still carries the id, which is the stable key", async () => {
     const e = await escenario({ active: { actions: ACCIONES } }, { name: "Boton1" });
     e.buttonItem.dispatchEvent(new Event("click"));
-    expect(e.avisos[0].detail.slot).toBe("boton");
+    expect(e.warnings[0].detail.slot).toBe("boton");
   });
 
   /** A layer without a name does not invent one: it is omitted and the id remains. */
   it("a layer without a name does not invent one", async () => {
     const e = await escenario({ active: { actions: ACCIONES } });
     e.buttonItem.dispatchEvent(new Event("click"));
-    expect(e.avisos[0].detail.name).toBeUndefined();
+    expect(e.warnings[0].detail.name).toBeUndefined();
   });
 });
 
@@ -175,10 +175,10 @@ describe("an interactive layer without actions", () => {
   it("announces anyway, with empty targets", async () => {
     const e = await escenario({ hover: { scale: 1.1 } }, { name: "Comprar" });
     e.buttonItem.dispatchEvent(new Event("click"));
-    expect(e.avisos.length).toBe(1);
-    expect(e.avisos[0].detail.name).toBe("Comprar");
-    expect(e.avisos[0].detail.targets).toEqual([]);
-    expect(e.avisos[0].detail.types).toEqual([]);
+    expect(e.warnings.length).toBe(1);
+    expect(e.warnings[0].detail.name).toBe("Comprar");
+    expect(e.warnings[0].detail.targets).toEqual([]);
+    expect(e.warnings[0].detail.types).toEqual([]);
   });
 
   it("and does not touch any layer, which is what was expected", async () => {
@@ -209,14 +209,14 @@ describe("the page can veto the local effect", () => {
     expect(e.ficha.style.display).toBe("none");
   });
 
-  it("el evento es cancelable de verdad", async () => {
+  it("the event is truly cancelable", async () => {
     const e = await escenario({ active: { actions: ACCIONES } });
     e.buttonItem.dispatchEvent(new Event("click"));
-    expect(e.avisos[0].cancelable).toBe(true);
+    expect(e.warnings[0].cancelable).toBe(true);
   });
 });
 
-describe("no molesta a quien no escucha", () => {
+describe("does not bother whoever is not listening", () => {
   it("without listeners, the click still works", async () => {
     const { host, motor } = mount([
       box("boton", { isInteractive: true, states: { active: { actions: ACCIONES } } }),
@@ -240,9 +240,9 @@ describe("no molesta a quien no escucha", () => {
     motor._overlay = document.createElement("div"); motor._viewport.appendChild(motor._overlay);
     motor.metadata = { slots: [box("boton", { isInteractive: true, states: { active: { actions: ACCIONES } } })], width: 800, height: 600 };
     await motor.renderSlots();
-    const avisos = vi.fn();
-    host.addEventListener("oim:action", avisos);
+    const warnings = vi.fn();
+    host.addEventListener("oim:action", warnings);
     (shadow.querySelector('[data-slot-id="boton"]') as HTMLElement).dispatchEvent(new Event("click"));
-    expect(avisos).not.toHaveBeenCalled();
+    expect(warnings).not.toHaveBeenCalled();
   });
 });

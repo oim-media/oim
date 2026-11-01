@@ -39,7 +39,7 @@ describe("stateStyles", () => {
 
 describe("bindStates", () => {
   /** Writes immediately, as `queueUpdate` would after draining its queue. */
-  const escribirYa = (el: HTMLElement, styles: Record<string, string>) => {
+  const writeNow = (el: HTMLElement, styles: Record<string, string>) => {
     for (const [k, v] of Object.entries(styles)) {
       if (k.startsWith("--")) {
         if (v === "") el.style.removeProperty(k);
@@ -53,7 +53,7 @@ describe("bindStates", () => {
   it("applies the state when the cursor enters and undoes it when it leaves", () => {
     const el = document.createElement("div");
     el.style.setProperty("--oim-slot-hover-scale", "1");
-    bindStates(el, { hover: { scale: 1.4, opacity: 50 } }, escribirYa);
+    bindStates(el, { hover: { scale: 1.4, opacity: 50 } }, writeNow);
 
     el.dispatchEvent(new Event("mouseenter"));
     expect(el.style.getPropertyValue("--oim-slot-hover-scale")).toBe("1.4");
@@ -70,7 +70,7 @@ describe("bindStates", () => {
     // consecutive entries: the second must not capture again.
     const el = document.createElement("div");
     el.style.setProperty("--oim-slot-hover-scale", "1");
-    bindStates(el, { hover: { scale: 2 } }, escribirYa);
+    bindStates(el, { hover: { scale: 2 } }, writeNow);
 
     el.dispatchEvent(new Event("mouseenter"));
     el.dispatchEvent(new Event("mouseenter"));
@@ -81,19 +81,19 @@ describe("bindStates", () => {
 
   it("without states it hooks nothing up", () => {
     const el = document.createElement("div");
-    const escribir = vi.fn();
-    bindStates(el, undefined, escribir);
+    const write = vi.fn();
+    bindStates(el, undefined, write);
     el.dispatchEvent(new Event("mouseenter"));
-    expect(escribir).not.toHaveBeenCalled();
+    expect(write).not.toHaveBeenCalled();
   });
 
-  it("dispara ejecutar de actionRunner en mouseenter y revertir en mouseleave", () => {
+  it("runs the actionRunner execute on mouseenter and reverts on mouseleave", () => {
     const el = document.createElement("div");
     const gestor = {
       run: vi.fn(),
       revert: vi.fn()
     };
-    const actions = [{ target: "precio", type: "show" }];
+    const actions = [{ target: "price", type: "show" }];
     bindStates(el, { hover: { scale: 1.1, actions } }, vi.fn(), gestor);
 
     el.dispatchEvent(new Event("mouseenter"));
@@ -107,56 +107,56 @@ describe("bindStates", () => {
   it("a touch pointerdown enters hover and registers the touch-outside listener", () => {
     const el = document.createElement("div");
     el.style.setProperty("--oim-slot-hover-scale", "1");
-    const alTocarFuera = vi.fn();
+    const onTouchOutside = vi.fn();
     bindStates(
       el,
       { hover: { scale: 1.5 } },
-      escribirYa,
+      writeNow,
       undefined,
-      alTocarFuera
+      onTouchOutside
     );
 
     const touchEvent = new PointerEvent("pointerdown", { pointerType: "touch" });
     el.dispatchEvent(touchEvent);
 
     expect(el.style.getPropertyValue("--oim-slot-hover-scale")).toBe("1.5");
-    expect(alTocarFuera).toHaveBeenCalledTimes(1);
-    expect(alTocarFuera).toHaveBeenCalledWith(el, expect.any(Function));
+    expect(onTouchOutside).toHaveBeenCalledTimes(1);
+    expect(onTouchOutside).toHaveBeenCalledWith(el, expect.any(Function));
   });
 
   it("a mouse pointerdown is ignored so as not to duplicate mouseenter", () => {
     const el = document.createElement("div");
-    const alTocarFuera = vi.fn();
-    const escribir = vi.fn();
+    const onTouchOutside = vi.fn();
+    const write = vi.fn();
     bindStates(
       el,
       { hover: { scale: 1.5 } },
-      escribir,
+      write,
       undefined,
-      alTocarFuera
+      onTouchOutside
     );
 
     const mouseEvent = new PointerEvent("pointerdown", { pointerType: "mouse" });
     el.dispatchEvent(mouseEvent);
 
-    expect(escribir).not.toHaveBeenCalled();
-    expect(alTocarFuera).not.toHaveBeenCalled();
+    expect(write).not.toHaveBeenCalled();
+    expect(onTouchOutside).not.toHaveBeenCalled();
   });
 
   it("invoking the touch-outside callback leaves the hover state", () => {
     const el = document.createElement("div");
     el.style.setProperty("--oim-slot-hover-scale", "1");
     let salirCallback: (() => void) | null = null;
-    const alTocarFuera = vi.fn((_targetEl: HTMLElement, onSalir: () => void) => {
+    const onTouchOutside = vi.fn((_targetEl: HTMLElement, onSalir: () => void) => {
       salirCallback = onSalir;
     });
 
     bindStates(
       el,
       { hover: { scale: 1.5 } },
-      escribirYa,
+      writeNow,
       undefined,
-      alTocarFuera
+      onTouchOutside
     );
 
     const touchEvent = new PointerEvent("pointerdown", { pointerType: "touch" });
@@ -174,7 +174,7 @@ describe("bindStates", () => {
     // It was once here and in the engine at the same time. This test pins down
     // that the hook handles only WHEN a state is entered and exited, nothing more.
     const el = document.createElement("div");
-    bindStates(el, { hover: { scale: 1.2 } }, escribirYa);
+    bindStates(el, { hover: { scale: 1.2 } }, writeNow);
     expect(el.style.minWidth).toBe("");
     expect(el.style.minHeight).toBe("");
   });
@@ -194,20 +194,20 @@ describe("applyMinHitArea", () => {
 describe("resolveActions", () => {
   it("show and hide resolve to visibility per target", () => {
     expect(resolveActions([
-      { target: "precio", type: "show" },
+      { target: "price", type: "show" },
       { target: "actionEvent", type: "hide" }
-    ], {})).toEqual({ visibility: { precio: true, actionEvent: false }, texts: {} });
+    ], {})).toEqual({ visibility: { price: true, actionEvent: false }, texts: {} });
   });
 
   it("setText does not touch the visibility", () => {
     expect(resolveActions([
-      { target: "precio", type: "setText", value: "9,99" }
-    ], {})).toEqual({ visibility: {}, texts: { precio: "9,99" } });
+      { target: "price", type: "setText", value: "9,99" }
+    ], {})).toEqual({ visibility: {}, texts: { price: "9,99" } });
   });
 
-  it("toggle consulta la visibilidad actual", () => {
-    expect(resolveActions([{ target: "precio", type: "toggle" }], { precio: true }))
-      .toEqual({ visibility: { precio: false }, texts: {} });
+  it("toggle reads the current visibility", () => {
+    expect(resolveActions([{ target: "price", type: "toggle" }], { price: true }))
+      .toEqual({ visibility: { price: false }, texts: {} });
   });
 
   it("an action without a target is ignored instead of breaking", () => {
@@ -219,33 +219,33 @@ describe("resolveActions", () => {
 describe("parity between interaction vocabularies", () => {
   it("states (show/hide) and toggle_elements produce the same visibility result", () => {
     // New vocabulary: states with show / hide actions
-    const accionesNuevas = [
-      { target: "precio", type: "show" },
+    const newActions = [
+      { target: "price", type: "show" },
       { target: "actionEvent", type: "hide" }
     ];
-    const resNuevo = resolveActions(accionesNuevas, { precio: false, actionEvent: true });
+    const newResult = resolveActions(newActions, { price: false, actionEvent: true });
 
     // Old vocabulary: interaction with show_slots / hide_slots
-    const configVieja = {
-      show_slots: ["precio"],
+    const oldConfig = {
+      show_slots: ["price"],
       hide_slots: ["actionEvent"]
     };
-    const resViejo: Record<string, boolean> = {};
-    (configVieja.show_slots || []).forEach((id) => { resViejo[id] = true; });
-    (configVieja.hide_slots || []).forEach((id) => { resViejo[id] = false; });
+    const oldResult: Record<string, boolean> = {};
+    (oldConfig.show_slots || []).forEach((id) => { oldResult[id] = true; });
+    (oldConfig.hide_slots || []).forEach((id) => { oldResult[id] = false; });
 
-    expect(resNuevo.visibility).toEqual(resViejo);
-    expect(resNuevo.visibility).toEqual({ precio: true, actionEvent: false });
+    expect(newResult.visibility).toEqual(oldResult);
+    expect(newResult.visibility).toEqual({ price: true, actionEvent: false });
   });
 
   it("the reader of interaction / toggle_elements is still preserved", () => {
-    const configVieja = {
+    const oldConfig = {
       hide_slots: ["capa1"],
       show_slots: ["capa2", "capa3"]
     };
     const visibilityMap: Record<string, boolean> = {};
-    configVieja.show_slots.forEach((id) => { visibilityMap[id] = true; });
-    configVieja.hide_slots.forEach((id) => { visibilityMap[id] = false; });
+    oldConfig.show_slots.forEach((id) => { visibilityMap[id] = true; });
+    oldConfig.hide_slots.forEach((id) => { visibilityMap[id] = false; });
 
     expect(visibilityMap).toEqual({
       capa1: false,
@@ -311,17 +311,17 @@ describe("the touch-outside cannot trust e.target", () => {
      * It is a source-code guard because the listener lives in the engine, where it
      * cannot be covered without mounting the whole thing.
      */
-    const fuente = fs.readFileSync(
+    const source = fs.readFileSync(
       path.join(__dirname, "ImageEngine.ts"),
       "utf8"
     );
-    const inicio = fuente.indexOf("stage.addEventListener('pointerdown'");
-    expect(inicio, "I cannot find the touch-outside listener").toBeGreaterThan(-1);
-    const bloque = fuente.slice(inicio, inicio + 900);
+    const start = source.indexOf("stage.addEventListener('pointerdown'");
+    expect(start, "I cannot find the touch-outside listener").toBeGreaterThan(-1);
+    const block = source.slice(start, start + 900);
     // Without comments: otherwise the explanation itself would make the test pass.
-    const codigo = bloque.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
-    expect(codigo, "the touch-outside must be decided with composedPath()").toContain("composedPath()");
-    expect(codigo, "the touch-outside was decided again with e.target").not.toContain("e.target");
+    const code = block.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
+    expect(code, "the touch-outside must be decided with composedPath()").toContain("composedPath()");
+    expect(code, "the touch-outside was decided again with e.target").not.toContain("e.target");
   });
 });
 
@@ -333,9 +333,9 @@ describe("readInteraction — warns about what it cannot do", () => {
   it("warns when the slot is declared interactive and has no states", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
-      readInteraction({ isInteractive: true }, "precio");
+      readInteraction({ isInteractive: true }, "price");
       expect(warn).toHaveBeenCalledTimes(1);
-      expect(warn.mock.calls[0][0]).toContain("precio");
+      expect(warn.mock.calls[0][0]).toContain("price");
       expect(warn.mock.calls[0][0]).toContain("states");
     } finally {
       warn.mockRestore();
@@ -400,7 +400,7 @@ describe("readInteraction — warns about what it cannot do", () => {
       readInteraction({}, "quieto");
       // `states: {}` is an empty object the editor may write without meaning
       // anything; it does not earn an actionEvent if the slot is not interactive.
-      readInteraction({ states: {} }, "vacio");
+      readInteraction({ states: {} }, "empty");
       expect(warn).not.toHaveBeenCalled();
     } finally {
       warn.mockRestore();
@@ -412,29 +412,29 @@ describe("the engine does not stay silent about what it cannot do either", () =>
   // No test mounts the action manager -that absence is exactly the gap through
   // which the original fault slipped-, so it is pinned against the source, just
   // like the `composedPath` guard.
-  const fuente = () => fs.readFileSync(path.join(__dirname, "ImageEngine.ts"), "utf8");
+  const source = () => fs.readFileSync(path.join(__dirname, "ImageEngine.ts"), "utf8");
   const sinComentarios = (t: string) =>
     t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
 
   it("passes the slot id to readInteraction, or the warnings do not say which one it is", () => {
-    const codigo = sinComentarios(fuente());
-    const i = codigo.indexOf("readInteraction(");
+    const code = sinComentarios(source());
+    const i = code.indexOf("readInteraction(");
     expect(i, "I cannot find the call to readInteraction").toBeGreaterThan(-1);
-    expect(codigo.slice(i, i + 200)).toContain("slot.id");
+    expect(code.slice(i, i + 200)).toContain("slot.id");
   });
 
   it("warns once about an action whose target does not exist", () => {
-    const codigo = sinComentarios(fuente());
-    const i = codigo.indexOf("warnedTargets");
-    expect(i, "el destino inexistente volvio a fallar en silencio").toBeGreaterThan(-1);
+    const code = sinComentarios(source());
+    const i = code.indexOf("warnedTargets");
+    expect(i, "the missing target failed silently again").toBeGreaterThan(-1);
     // Up to the end of `run`, not a fixed 900 characters: that window expired as
     // soon as the `oim:action` actionEvent was added in the middle, and the test
     // failed because the code moved, not because it broke.
-    const fin = codigo.indexOf("revert:", i);
-    const bloque = codigo.slice(i, fin > i ? fin : i + 2000);
-    expect(bloque, "the actionEvent must be conditioned on the target not existing").toContain("!targetEl");
-    expect(bloque, "it must be remembered so as not to repeat it on every hover").toContain("warnedTargets.add");
-    expect(bloque).toContain("console.warn");
+    const fin = code.indexOf("revert:", i);
+    const block = code.slice(i, fin > i ? fin : i + 2000);
+    expect(block, "the actionEvent must be conditioned on the target not existing").toContain("!targetEl");
+    expect(block, "it must be remembered so as not to repeat it on every hover").toContain("warnedTargets.add");
+    expect(block).toContain("console.warn");
   });
 });
 
@@ -533,11 +533,11 @@ describe("the actions on click", () => {
    * is what keeps the fix from depending on that accident.
    */
   it("the click still bubbles up: the surrounding page decides", () => {
-    const padre = document.createElement("div");
+    const parent = document.createElement("div");
     const el = document.createElement("div");
-    padre.appendChild(el);
-    const enElPadre = vi.fn();
-    padre.addEventListener("click", enElPadre);
+    parent.appendChild(el);
+    const onParent = vi.fn();
+    parent.addEventListener("click", onParent);
 
     const gestor = gestorFalso();
     bindStates(el, { active: { actions: ACCIONES } }, vi.fn(), gestor);
@@ -545,7 +545,7 @@ describe("the actions on click", () => {
 
     // Both things happen: the local action AND the host's click.
     expect(gestor.run).toHaveBeenCalledWith(ACCIONES, "click");
-    expect(enElPadre).toHaveBeenCalledTimes(1);
+    expect(onParent).toHaveBeenCalledTimes(1);
   });
 
   /**
@@ -555,7 +555,7 @@ describe("the actions on click", () => {
   it("hover keeps reverting its own, with both declared", () => {
     const el = document.createElement("div");
     const gestor = gestorFalso();
-    const deHover = [{ target: "precio", type: "show" }];
+    const deHover = [{ target: "price", type: "show" }];
     bindStates(el, { hover: { actions: deHover }, active: { actions: ACCIONES } }, vi.fn(), gestor);
 
     el.dispatchEvent(new Event("mouseenter"));

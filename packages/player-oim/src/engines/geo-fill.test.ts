@@ -33,18 +33,18 @@ async function slotDe(type: string, style: any): Promise<HTMLElement> {
 }
 
 const GRAD = "linear-gradient(90deg, #f59e0b 0%, #7c3aed 100%)";
-const capaDeRelleno = (el: HTMLElement) => el.querySelector(".oim-fill-layer") as HTMLElement | null;
+const fillLayer = (el: HTMLElement) => el.querySelector(".oim-fill-layer") as HTMLElement | null;
 
 describe("the complex fills of a shape reach the player", () => {
   it("rectangle with gradient: the fill layer carries the gradient and the slot paints no flat colour", async () => {
     const el = await slotDe("geo", { fillType: "gradient", fillGradient: GRAD, fillColor: "#f59e0b", geoShape: "rectangle" });
-    expect(capaDeRelleno(el)?.style.backgroundImage).toBe(GRAD);
+    expect(fillLayer(el)?.style.backgroundImage).toBe(GRAD);
     expect(el.style.backgroundColor).not.toBe("#f59e0b");
   });
 
   it("circle with gradient: gradient with the circle's mask, and the outline only draws the border", async () => {
     const el = await slotDe("geo", { fillType: "gradient", fillGradient: GRAD, fillColor: "#f59e0b", geoShape: "circle", strokeWidth: 3, strokeColor: "#111111" });
-    const layerItem = capaDeRelleno(el)!;
+    const layerItem = fillLayer(el)!;
     expect(layerItem.style.backgroundImage).toBe(GRAD);
     const mascara = (layerItem.style as any).maskImage || (layerItem.style as any).webkitMaskImage;
     expect(mascara).toBe((shapeMaskCss("circle") as any).maskImage);
@@ -78,25 +78,25 @@ describe("the complex fills of a shape reach the player", () => {
 
   it("rectangle with pattern: tiles and moves", async () => {
     const el = await slotDe("geo", { fillType: "pattern", fillPatternType: "clouds", fillPatternColor: "#ffffff", fillPatternBgColor: "#000000", fillPatternSpeed: 5, fillPatternDirection: "right", geoShape: "rectangle" });
-    const layerItem = capaDeRelleno(el)!;
+    const layerItem = fillLayer(el)!;
     expect(layerItem.style.backgroundRepeat).toBe("repeat");
     expect(layerItem.style.animation).toContain("background-animation-right");
   });
 
   it("generative rectangle: the fill layer carries its image", async () => {
     const el = await slotDe("geo", { fillType: "generative", fillGenerative: { generatorId: "stacked-waves", seed: 1, params: {}, colors: { mode: "palette", stops: ["#f59e0b", "#7c3aed"], direction: "forward", background: "#000000", backgroundVisible: true } }, geoShape: "rectangle" });
-    expect(capaDeRelleno(el)?.style.backgroundImage).toMatch(/^url\("data:image\/svg\+xml/);
+    expect(fillLayer(el)?.style.backgroundImage).toMatch(/^url\("data:image\/svg\+xml/);
   });
 
   it("a flat colour still works as always: no fill layer", async () => {
     const el = await slotDe("geo", { fillType: "color", fillColor: "#f59e0b", geoShape: "rectangle" });
-    expect(capaDeRelleno(el)).toBeNull();
+    expect(fillLayer(el)).toBeNull();
     expect(el.style.backgroundColor).toBe("#f59e0b");
   });
 
   it("a container still works as always: the fill on the slot itself", async () => {
     const el = await slotDe("container", { fillType: "gradient", fillGradient: GRAD });
-    expect(capaDeRelleno(el)).toBeNull();
+    expect(fillLayer(el)).toBeNull();
     expect(el.style.backgroundImage).toBe(GRAD);
   });
 });
@@ -124,7 +124,7 @@ describe("the shape's drawing matches its fill layer", () => {
 describe("phase B: the player's pattern fill carries its figures", () => {
   it("a shape with figures paints them in its fill layer", async () => {
     const el = await slotDe("geo", { fillType: "pattern", fillPatternType: "stars", fillPatternSvgs: ["🔥"], fillPatternColors: ["#FF0000"], fillPatternCounts: [1], fillPatternDispersions: [0], geoShape: "rectangle" });
-    const bg = capaDeRelleno(el)!.style.backgroundImage;
+    const bg = fillLayer(el)!.style.backgroundImage;
     expect(decodeURIComponent(bg)).toContain("🔥");
   });
 });

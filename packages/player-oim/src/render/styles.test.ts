@@ -49,8 +49,8 @@ function regla(selector: string): string {
     .split("}")
     .map((trozo) => trozo + "}")
     .find((trozo) => {
-      const llave = trozo.indexOf("{");
-      return llave > -1 && trozo.slice(0, llave).trim() === selector;
+      const key = trozo.indexOf("{");
+      return key > -1 && trozo.slice(0, key).trim() === selector;
     });
   expect(encontrada, `no encuentro la regla de ${selector}`).toBeTruthy();
   return encontrada as string;

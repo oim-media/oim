@@ -217,7 +217,7 @@ export function whatTheReaderCannotDo(metadata: any, reader: Reader): MissingSup
   const missingCapabilities = declared
     .filter((c): c is string => typeof c === "string" && c !== "")
     .filter((c) => !reader.capabilities.includes(c))
-    .filter((c, i, todas) => todas.indexOf(c) === i)
+    .filter((c, i, all) => all.indexOf(c) === i)
     .sort();
 
   const requeridas: unknown[] = Array.isArray(metadata?.capabilities_required)
@@ -226,7 +226,7 @@ export function whatTheReaderCannotDo(metadata: any, reader: Reader): MissingSup
   const missingRequiredCapabilities = requeridas
     .filter((c): c is string => typeof c === "string" && c !== "")
     .filter((c) => !reader.capabilities.includes(c))
-    .filter((c, i, todas) => todas.indexOf(c) === i)
+    .filter((c, i, all) => all.indexOf(c) === i)
     .sort();
 
   const versionTooOld = isNewer(required, reader.version);

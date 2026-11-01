@@ -10,7 +10,7 @@
 /**
  * The player paints text marks (contract 1.11.0) with the one interpretation
  * in @oim-media/core, and never shows a tag.
- * Spec: docs/superpowers/specs/2026-10-10-marcas-de-texto-design.md
+ * Spec: docs/superpowers/specs/2026-10-10-text-marks-design.md
  */
 
 import { describe, it, expect, vi } from "vitest";

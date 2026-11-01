@@ -152,7 +152,7 @@ describe("the text mask lives inside what animates (phase 3, 13 Sept)", () => {
   // 144.2 with the mask on the hover wrap. The mask must move with the text.
   const DEG = "linear-gradient(90deg, #1b3a6b, #e0457b)";
 
-  async function partes(style: any) {
+  async function parts(style: any) {
     const { host, motor } = mount([text({ width: "300px", height: "80px", ...style })]);
     if (style.textAnimationType) {
       motor.disableAnimations = false;
@@ -166,14 +166,14 @@ describe("the text mask lives inside what animates (phase 3, 13 Sept)", () => {
   }
 
   it("the gradient and the clip are on the hover wrap", async () => {
-    const { hover } = await partes({ fillType: "gradient", fillGradient: DEG });
+    const { hover } = await parts({ fillType: "gradient", fillGradient: DEG });
     expect(hover.style.backgroundImage).toContain("linear-gradient");
     expect(hover.style.backgroundClip || (hover.style as any).webkitBackgroundClip).toBe("text");
     expect(hover.style.color).toBe("transparent");
   });
 
   it("the slot and the loop wrap are no longer a mask", async () => {
-    const { slot, loop } = await partes({ fillType: "gradient", fillGradient: DEG });
+    const { slot, loop } = await parts({ fillType: "gradient", fillGradient: DEG });
     for (const el of [slot, loop]) {
       expect(el.style.backgroundClip || (el.style as any).webkitBackgroundClip || "").not.toBe("text");
       expect(el.style.backgroundImage || "").not.toContain("linear-gradient");
@@ -181,13 +181,13 @@ describe("the text mask lives inside what animates (phase 3, 13 Sept)", () => {
   });
 
   it("a solid fill is untouched: no mask anywhere", async () => {
-    const { slot, hover } = await partes({ fillType: "color", fillColor: "#1b3a6b" });
+    const { slot, hover } = await parts({ fillType: "color", fillColor: "#1b3a6b" });
     expect(hover.style.backgroundClip || "").not.toBe("text");
     expect(slot.style.backgroundClip || "").not.toBe("text");
   });
 
   it("gradient text gives height: 100% to loop and hover wrap, and centers hover wrap with flex column", async () => {
-    const { loop, hover } = await partes({ fillType: "gradient", fillGradient: DEG });
+    const { loop, hover } = await parts({ fillType: "gradient", fillGradient: DEG });
     expect(loop.style.height).toBe("100%");
     expect(hover.style.height).toBe("100%");
     expect(hover.style.display).toBe("flex");
@@ -196,14 +196,14 @@ describe("the text mask lives inside what animates (phase 3, 13 Sept)", () => {
   });
 
   it("plain color text does not set 100% height or flex on loop and hover wrap", async () => {
-    const { loop, hover } = await partes({ fillType: "color", fillColor: "#1b3a6b" });
+    const { loop, hover } = await parts({ fillType: "color", fillColor: "#1b3a6b" });
     expect(loop.style.height).toBe("");
     expect(hover.style.height).toBe("");
     expect(hover.style.display).not.toBe("flex");
   });
 
   it("gradient text with wave-chars places character spans inside inner child, not directly under hoverWrap", async () => {
-    const { hover } = await partes({
+    const { hover } = await parts({
       fillType: "gradient",
       fillGradient: DEG,
       textAnimationType: "wave-chars",

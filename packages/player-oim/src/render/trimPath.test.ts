@@ -81,7 +81,7 @@ describe("getTrimCss with a drawing animation", () => {
     expect(css["--oim-trim-to"]).toBe("-50px");
   });
 
-  it("duracion 0 no anima", () => {
+  it("duration 0 no anima", () => {
     expect(getTrimCss(makeStyle({ trimStart: 0, trimEnd: 50, trimDuration: 0 }), 200).animation).toBeUndefined();
   });
 

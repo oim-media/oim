@@ -72,7 +72,7 @@ describe("_destroyLottiesIn", () => {
 
   it("if one instance fails to destroy, the others are destroyed anyway", () => {
     // lottie-web's destroy() can throw on a node that is already unmounted.
-    const rota = { destroy() { throw new Error("nodo desmontado"); } } as any;
+    const rota = { destroy() { throw new Error("node desmontado"); } } as any;
     const buena = lottieFalso();
     const motor = engineWith([
       { slotId: "rota", inst: rota },

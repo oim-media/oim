@@ -154,7 +154,7 @@ export type RegisterOutsideTap = (el: HTMLElement, onLeave: () => void) => void;
  * is the part that makes `stateStyles` useful, and without extracting it the only way
  * to cover it would be to mount the whole engine.
  *
- * `escribir` is injected (in the player it is `queueUpdate`) so as not to couple this
+ * `write` is injected (in the player it is `queueUpdate`) so as not to couple this
  * to the engine's write batching.
  *
  * `actionRunner` is injected to decouple actions on other slots from the DOM lookup

@@ -38,7 +38,7 @@ describe("Editor <-> player parity for geometric shapes", () => {
   });
 
   /** Mounts a single slot and returns its already-rendered <path>. */
-  const pintarForma = async (style: Record<string, unknown>): Promise<Element | null> => {
+  const paintShape = async (style: Record<string, unknown>): Promise<Element | null> => {
     const motor = new ImageEngine(host as any);
     motor._viewport = document.createElement("div");
     motor._viewport.className = "oim-viewport";
@@ -72,7 +72,7 @@ describe("Editor <-> player parity for geometric shapes", () => {
   describe("fallback chain of the outline", () => {
     // CanvasArea.tsx: d={shape.customBlobPath || shape.svgPath || GEO_SHAPES.blob.d}
     it("a blob with svgPath and without customBlobPath keeps its shape when published", async () => {
-      const figureItem = await pintarForma({
+      const figureItem = await paintShape({
         geoShape: "blob",
         svgPath: "M 0,0 L 80,20 L 40,90 Z",
         fillColor: "#38bdf8",
@@ -84,7 +84,7 @@ describe("Editor <-> player parity for geometric shapes", () => {
     });
 
     it("customBlobPath overrides svgPath, as in the editor", async () => {
-      const figureItem = await pintarForma({
+      const figureItem = await paintShape({
         geoShape: "blob",
         customBlobPath: "M 1,1 L 2,2 Z",
         svgPath: "M 9,9 L 8,8 Z",
@@ -95,14 +95,14 @@ describe("Editor <-> player parity for geometric shapes", () => {
     });
 
     it("without either of the two, the blob uses the catalogue", async () => {
-      const figureItem = await pintarForma({ geoShape: "blob", fillColor: "#38bdf8" });
+      const figureItem = await paintShape({ geoShape: "blob", fillColor: "#38bdf8" });
 
       expect(figureItem?.getAttribute("d")).toBe(BLOB_DEL_CATALOGO);
     });
 
     // The editor does NOT offer svgPath for the doodle: d={customBlobPath || catalogue}
     it("the doodle ignores svgPath, as the editor does", async () => {
-      const figureItem = await pintarForma({
+      const figureItem = await paintShape({
         geoShape: "scribble",
         svgPath: "M 0,0 L 80,20 Z",
         strokeColor: "#18181B",
@@ -120,14 +120,14 @@ describe("Editor <-> player parity for geometric shapes", () => {
 
     // CanvasArea.tsx: strokeWidth={shape.strokeWidth > 0 ? shape.strokeWidth : 2}
     it("a doodle without thickness is published with thickness 2, not invisible", async () => {
-      const figureItem = await pintarForma({ geoShape: "scribble", strokeColor: "#18181B" });
+      const figureItem = await paintShape({ geoShape: "scribble", strokeColor: "#18181B" });
 
       expect(figureItem?.getAttribute("stroke-width")).toBe("2");
       expect(figureItem?.getAttribute("stroke")).toBe("#18181B");
     });
 
     it("a thickness of 0 also falls back, as in the editor", async () => {
-      const figureItem = await pintarForma({
+      const figureItem = await paintShape({
         geoShape: "scribble",
         strokeColor: "#18181B",
         strokeWidth: 0,
@@ -138,7 +138,7 @@ describe("Editor <-> player parity for geometric shapes", () => {
 
     // CanvasArea.tsx: stroke={shape.strokeColor || shape.fillColor || "#2563EB"}
     it("a doodle with only a fill colour uses it as the stroke colour", async () => {
-      const figureItem = await pintarForma({ geoShape: "scribble", fillColor: "#DC2626" });
+      const figureItem = await paintShape({ geoShape: "scribble", fillColor: "#DC2626" });
 
       expect(figureItem?.getAttribute("stroke")).toBe("#DC2626");
       expect(figureItem?.getAttribute("stroke-width")).toBe("2");
@@ -147,13 +147,13 @@ describe("Editor <-> player parity for geometric shapes", () => {
     });
 
     it("without any colour, the doodle falls back to the editor's blue", async () => {
-      const figureItem = await pintarForma({ geoShape: "scribble" });
+      const figureItem = await paintShape({ geoShape: "scribble" });
 
       expect(figureItem?.getAttribute("stroke")).toBe("#2563EB");
     });
 
     it("an explicit thickness beats the fallback", async () => {
-      const figureItem = await pintarForma({
+      const figureItem = await paintShape({
         geoShape: "scribble",
         strokeColor: "#18181B",
         strokeWidth: 7,
@@ -168,13 +168,13 @@ describe("Editor <-> player parity for geometric shapes", () => {
     // doodle fix had been applied to every open stroke, this line would be published
     // visible where the editor shows nothing.
     it("a line without thickness stays without a stroke, as in the editor", async () => {
-      const figureItem = await pintarForma({ geoShape: "line", strokeColor: "#18181B" });
+      const figureItem = await paintShape({ geoShape: "line", strokeColor: "#18181B" });
 
       expect(figureItem?.getAttribute("stroke-width")).toBeNull();
     });
 
     it("a circle without a stroke colour stays without a stroke", async () => {
-      const figureItem = await pintarForma({
+      const figureItem = await paintShape({
         geoShape: "circle",
         fillColor: "#38bdf8",
         strokeWidth: 3,

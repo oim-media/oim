@@ -10,7 +10,7 @@ import { resolvePatternColors } from "./patterns";
 import { shapeMaskCss } from "./fill";
 import { GEO_SHAPES, pointsToAttribute } from "./geoShapes";
 
-describe("getFillCss en @oim-media/player-oim", () => {
+describe("getFillCss in @oim-media/player-oim", () => {
   const makeShape = (overrides: Partial<Shape> = {}): Shape => ({
     width: 200,
     height: 100,
@@ -94,8 +94,8 @@ describe("patternLayerCss", () => {
   // A still layer must NOT pay for a composition cycle.
   it.each([
     ["direccion none", { fillPatternDirection: "none", fillPatternSpeed: 8 }],
-    ["velocidad 0",    { fillPatternSpeed: 0 }],
-    ["velocidad negativa", { fillPatternSpeed: -4 }],
+    ["speed 0",    { fillPatternSpeed: 0 }],
+    ["speed negativa", { fillPatternSpeed: -4 }],
     ["no speed",  {}],
   ])("NO emite animacion: %s", (_caso, extra) => {
     expect(patternLayerCss(layer(extra)).animation).toBeUndefined();

@@ -150,9 +150,9 @@ export function infiniteLayerPlan(
   // brings back the jump.
   if (cfg.mirror && copies % 2 !== 0) copies += 1;
 
-  const duracion = unitPx / cfg.speedPxSec;
+  const duration = unitPx / cfg.speedPxSec;
 
-  if (!Number.isFinite(duracion) || duracion <= 0) {
+  if (!Number.isFinite(duration) || duration <= 0) {
     return {
       duplicate: false,
       copies: 0,
@@ -174,7 +174,7 @@ export function infiniteLayerPlan(
     // Legacy name, same value: a page may read it from the inline style until 2.0.0.
     "--oim-parallax-unidad": `${unitPx}px`,
     "animation-name": "oim-parallax-infinite",
-    "animation-duration": `${duracion}s`,
+    "animation-duration": `${duration}s`,
     "animation-timing-function": "linear",
     "animation-iteration-count": "infinite",
     "animation-direction": cfg.direction === "left_to_right" ? "reverse" : "normal",
@@ -220,12 +220,12 @@ export function infiniteLayerPlan(
 /**
  * Injects the parallax style sheet once per shadow root or document.
  */
-export function ensureParallaxKeyframes(raiz: ShadowRoot | Document | null): void {
-  if (!raiz) return;
+export function ensureParallaxKeyframes(root: ShadowRoot | Document | null): void {
+  if (!root) return;
   const styleId = "oim-parallax-styles";
-  if (raiz.getElementById(styleId)) return;
+  if (root.getElementById(styleId)) return;
 
-  // The target is NOT always `raiz`. In a shadow root it is, but a Document
+  // The target is NOT always `root`. In a shadow root it is, but a Document
   // accepts a single root element -it already has <html>- and an appendChild on
   // it throws HierarchyRequestError: "Only one element on document allowed". In
   // the editor that left the screen BLANK in every project.
@@ -234,11 +234,11 @@ export function ensureParallaxKeyframes(raiz: ShadowRoot | Document | null): voi
   // code; and happy-dom allows that appendChild, so the idempotency test passed.
   // The test environment was more permissive than the browser, which is the
   // most treacherous form of this fault: the test was not missing, it was lying.
-  const destino: Node = (raiz as Document).head || raiz;
+  const target: Node = (root as Document).head || root;
 
-  const styleEl = (raiz.ownerDocument || (raiz as Document)).createElement("style");
+  const styleEl = (root.ownerDocument || (root as Document)).createElement("style");
   styleEl.id = styleId;
   styleEl.textContent = CSS_PARALLAX;
-  destino.appendChild(styleEl);
+  target.appendChild(styleEl);
 }
 

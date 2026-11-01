@@ -7,7 +7,7 @@
 import { describe, it, expect } from "vitest";
 import { localizedEntries, compareLangs, resolveContent } from "./localizedEntries";
 
-const capaDeTexto = (extra: any = {}) => ({
+const textLayer = (extra: any = {}) => ({
   id: "titulo",
   type: "text",
   content: { es: "Hola", en: "Hello", fr: "Hola" },
@@ -16,7 +16,7 @@ const capaDeTexto = (extra: any = {}) => ({
 
 describe("localizedEntries", () => {
   it("absent from the map means inheriting from the principal value", () => {
-    const layer = capaDeTexto({ fontSizes: { de: "13px" } });
+    const layer = textLayer({ fontSizes: { de: "13px" } });
     expect(localizedEntries(layer, "de").size).toBe("13px");
     expect(localizedEntries(layer, "es").size).toBe("16px");
   });
@@ -25,7 +25,7 @@ describe("localizedEntries", () => {
   // Contract 1.5.0 retired it with no deprecation phase, and the compiler
   // merges it into `fontSizes`, so a signed file never carries it.
   it("ignores fontSizeOverrides, retired in contract 1.5.0", () => {
-    const layer = capaDeTexto({ fontSizeOverrides: { de: "11px" } });
+    const layer = textLayer({ fontSizeOverrides: { de: "11px" } });
     expect(localizedEntries(layer, "de").size).toBe("16px");
   });
 
@@ -35,17 +35,17 @@ describe("localizedEntries", () => {
   });
 
   it("a bare number is read as px, so as not to emit invalid CSS", () => {
-    expect(localizedEntries(capaDeTexto({ fontSizes: { de: 24 } }), "de").size).toBe("24px");
+    expect(localizedEntries(textLayer({ fontSizes: { de: 24 } }), "de").size).toBe("24px");
   });
 
   it("a size of 0 falls back to the principal, as the engine does", () => {
     // The engine chains with `||`, so a 0 is discarded. If `??` were used here it
     // would give "0px" and this module would stop reproducing what it replaces.
-    expect(localizedEntries(capaDeTexto({ fontSizes: { de: 0 } }), "de").size).toBe("16px");
+    expect(localizedEntries(textLayer({ fontSizes: { de: 0 } }), "de").size).toBe("16px");
   });
 
   it("a valid unit passes through unchanged", () => {
-    expect(localizedEntries(capaDeTexto({ fontSizes: { de: "4cqw" } }), "de").size).toBe("4cqw");
+    expect(localizedEntries(textLayer({ fontSizes: { de: "4cqw" } }), "de").size).toBe("4cqw");
   });
 
   it("a background layer ignores maxWidths: otherwise it leaves an uncovered strip", () => {
@@ -59,7 +59,7 @@ describe("localizedEntries", () => {
   });
 
   it("the default width depends on whether the content is an image", () => {
-    expect(localizedEntries(capaDeTexto(), "es").maxWidthValue).toBe("80%");
+    expect(localizedEntries(textLayer(), "es").maxWidthValue).toBe("80%");
     const img = { id: "i", type: "image", content: { es: "data:image/png;base64,AAA" }, style: {} };
     expect(localizedEntries(img, "es").maxWidthValue).toBe("none");
   });
@@ -74,25 +74,25 @@ describe("localizedEntries", () => {
 describe("compareLangs", () => {
   it("if the triple is identical, the layer cannot look different", () => {
     // 'fr' has the same text as 'es' on purpose.
-    expect(compareLangs(capaDeTexto(), "es", "fr")).toBe("none");
+    expect(compareLangs(textLayer(), "es", "fr")).toBe("none");
   });
 
   it("changing only the size does not force a rebuild", () => {
-    const layer = capaDeTexto({ fontSizes: { fr: "13px" } });
+    const layer = textLayer({ fontSizes: { fr: "13px" } });
     expect(compareLangs(layer, "es", "fr")).toBe("style-only");
   });
 
   it("changing only the maximum width does not either", () => {
-    const layer = capaDeTexto({ maxWidths: { fr: "95%" } });
+    const layer = textLayer({ maxWidths: { fr: "95%" } });
     expect(compareLangs(layer, "es", "fr")).toBe("style-only");
   });
 
   it("changing the content does, because it decides what gets built", () => {
-    expect(compareLangs(capaDeTexto(), "es", "en")).toBe("content");
+    expect(compareLangs(textLayer(), "es", "en")).toBe("content");
   });
 
   it("the content wins even if the size also changes", () => {
-    const layer = capaDeTexto({ fontSizes: { en: "13px" } });
+    const layer = textLayer({ fontSizes: { en: "13px" } });
     expect(compareLangs(layer, "es", "en")).toBe("content");
   });
 });
@@ -101,7 +101,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 describe("the engine cannot have its own copy of the rule", () => {
-  const fuente = readFileSync(
+  const source = readFileSync(
     fileURLToPath(new URL("../engines/ImageEngine.ts", import.meta.url)),
     "utf8"
   );
@@ -109,12 +109,12 @@ describe("the engine cannot have its own copy of the rule", () => {
   it("ImageEngine ya no declara resolveLangValue ni _getContent", () => {
     // The rule lives in localizedEntries.ts. A second copy here is how
     // the parallax broke: two places deciding the same thing and diverging.
-    expect(fuente).not.toMatch(/function\s+resolveLangValue/);
-    expect(fuente).not.toMatch(/function\s+_getContent/);
+    expect(source).not.toMatch(/function\s+resolveLangValue/);
+    expect(source).not.toMatch(/function\s+_getContent/);
   });
 
   it("ImageEngine asks the module for the entries per language", () => {
-    expect(fuente).toMatch(/localizedEntries\s*\(/);
+    expect(source).toMatch(/localizedEntries\s*\(/);
   });
 });
 

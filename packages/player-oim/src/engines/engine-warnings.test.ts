@@ -30,10 +30,10 @@ function mount() {
   return { host, motor: new ImageEngine(host as any) as any };
 }
 
-let avisos: string[];
+let warnings: string[];
 beforeEach(() => {
-  avisos = [];
-  vi.spyOn(console, "warn").mockImplementation((m: any) => { avisos.push(String(m)); });
+  warnings = [];
+  vi.spyOn(console, "warn").mockImplementation((m: any) => { warnings.push(String(m)); });
 });
 afterEach(() => { vi.restoreAllMocks(); });
 
@@ -41,7 +41,7 @@ describe("when the file asks for something this player does not have", () => {
   it("says so on the console", () => {
     const { motor } = mount();
     motor._announceUnsupported({ capabilities: ["physics_2d"] });
-    expect(avisos.join(" ")).toContain("physics_2d");
+    expect(warnings.join(" ")).toContain("physics_2d");
   });
 
   it("leaves it on the host, for whoever looks at the DOM", () => {
@@ -97,7 +97,7 @@ describe("when there is nothing to say", () => {
   ])("calla ante %s", (_n, metadata) => {
     const { host, motor } = mount();
     motor._announceUnsupported(metadata);
-    expect(avisos).toEqual([]);
+    expect(warnings).toEqual([]);
     expect(host.getAttribute("data-oim-sin-soporte")).toBeNull();
   });
 });
@@ -123,8 +123,8 @@ describe("warning can never be what breaks the loading", () => {
  */
 describe("both loading paths count it", () => {
   it("there is a call in each one", () => {
-    const fuente = readFileSync(join(__dirname, "ImageEngine.ts"), "utf8");
-    const llamadas = fuente.split("self._announceUnsupported(").length - 1;
+    const source = readFileSync(join(__dirname, "ImageEngine.ts"), "utf8");
+    const llamadas = source.split("self._announceUnsupported(").length - 1;
     expect(llamadas).toBe(2);
   });
 });

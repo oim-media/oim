@@ -77,7 +77,7 @@ describe("the two formats that were failing", () => {
     expect(OimMetadataSchema.safeParse({ ...base, timestamp: "2026-06-12T20:38:40.713579+00:00" }).success).toBe(true);
     expect(OimMetadataSchema.safeParse({ ...base, timestamp: "2026-06-12T20:38:40Z" }).success).toBe(true);
     // And it still rejects what is not a date, which is what it exists for.
-    expect(OimMetadataSchema.safeParse({ ...base, timestamp: "ayer por la tarde" }).success).toBe(false);
+    expect(OimMetadataSchema.safeParse({ ...base, timestamp: "yesterday afternoon" }).success).toBe(false);
   });
 
   it("accepts transparent without opening the door to other colors", () => {

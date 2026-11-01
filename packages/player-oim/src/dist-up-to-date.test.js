@@ -27,17 +27,17 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const raiz = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const construido = path.join(raiz, "dist", "oim-player.js");
-const fuente = path.join(raiz, "src");
+const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const construido = path.join(root, "dist", "oim-player.js");
+const source = path.join(root, "src");
 
 /** The most recently modified source file. */
 function masReciente(dir) {
   let max = 0;
-  for (const entrada of fs.readdirSync(dir, { withFileTypes: true })) {
-    const entryPath = path.join(dir, entrada.name);
-    if (entrada.isDirectory()) max = Math.max(max, masReciente(entryPath));
-    else if (/\.(ts|js)$/.test(entrada.name) && !/\.test\.[tj]s$/.test(entrada.name)) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const entryPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) max = Math.max(max, masReciente(entryPath));
+    else if (/\.(ts|js)$/.test(entry.name) && !/\.test\.[tj]s$/.test(entry.name)) {
       max = Math.max(max, fs.statSync(entryPath).mtimeMs);
     }
   }
@@ -54,7 +54,7 @@ describe("the built package cannot be older than the source", () => {
 
   it("and it was built AFTER the last change in src/", () => {
     const construidoEn = fs.statSync(construido).mtimeMs;
-    const fuenteEn = masReciente(fuente);
+    const fuenteEn = masReciente(source);
     const atraso = Math.round((fuenteEn - construidoEn) / 1000);
     expect(
       construidoEn >= fuenteEn,

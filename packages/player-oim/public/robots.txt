@@ -1,6 +1,0 @@
-# cdn.oim.media serves the player script and the demo .oim files.
-# Not blocked on purpose: oim.media pages load the player from here, and a
-# crawler that cannot fetch it renders those pages without it.
-User-agent: *
-Content-Signal: search=yes, ai-input=yes, ai-train=no
-Allow: /

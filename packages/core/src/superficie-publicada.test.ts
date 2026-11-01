@@ -22,16 +22,24 @@
 
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import * as core from "./index";
 
 const DIR = join(__dirname);
 
-/** The files that `tsc` compiles to `dist/`, which is the only thing that is published. */
+const PACKAGES = join(DIR, "..", "..");
+
+/**
+ * Everything that ends up in a published tarball: the sources of the three
+ * code packages (compiled or bundled into `dist/`) and the spec documents.
+ */
 function fuentesPublicadas(): { nombre: string; texto: string }[] {
-  return readdirSync(DIR)
-    .filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"))
-    .map((nombre) => ({ nombre, texto: readFileSync(join(DIR, nombre), "utf8") }));
+  const roots = ["core/src", "player-oim/src", "player-ovm/src", "spec"].map((r) => join(PACKAGES, r));
+  return roots.flatMap((root) =>
+    (readdirSync(root, { recursive: true }) as string[])
+      .filter((f) => /\.(ts|md)$/.test(f) && !/\.test\.ts$/.test(f) && !f.includes("node_modules"))
+      .map((f) => ({ nombre: relative(PACKAGES, join(root, f)), texto: readFileSync(join(root, f), "utf8") })),
+  );
 }
 
 /**
@@ -269,6 +277,9 @@ describe("nada sensible viaja en el paquete", () => {
       /\bsk_live_/,
       /\bsk_test_/,
       /eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\./, // a literal JWT
+      /eawltbnmonimtmtqslmk/, // Supabase project id
+      /apps\/(backend|studio|workers)/, // private monorepo paths
+      /OIM-Studio/, // private repository name
     ];
     for (const { nombre, texto } of fuentesPublicadas()) {
       for (const patron of prohibido) {

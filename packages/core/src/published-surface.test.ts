@@ -188,6 +188,8 @@ const SUPERFICIE = [
   "CSS_PARALLAX",
   "ensureParallaxKeyframes",
   "infiniteLayerPlan",
+  // legacyKeys.ts — reads the Spanish keys of signed files as English (contract 1.23.0).
+  "normalizeLegacyKeys",
   // permisoDeReedicion.ts — who may re-edit a .oim.
   "DEFAULT_PERMISSION",
   "permissionFields",

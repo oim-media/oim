@@ -50,6 +50,14 @@
     "immutable_lock": {
       "type": "boolean"
     },
+    "reedit": {
+      "type": "string",
+      "enum": [
+        "public",
+        "author_only",
+        "sealed"
+      ]
+    },
     "reedicion": {
       "type": "string",
       "enum": [

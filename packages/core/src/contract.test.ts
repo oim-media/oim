@@ -291,6 +291,11 @@ describe("1.4.0 closes the drift and marks what was retired", () => {
     expect(s.properties.reedicion.enum).toEqual(["publico", "solo_autor", "sellado"]);
   });
 
+  it("the root declares `reedit`, with its English values (contract 1.23.0)", () => {
+    const s = contractOf(OimMetadataSchema, "oim", "x") as any;
+    expect(s.properties.reedit.enum).toEqual(["public", "author_only", "sealed"]);
+  });
+
   it("the root declares `name`", () => {
     const s = contractOf(OimMetadataSchema, "oim", "x") as any;
     expect(s.properties.name).toBeDefined();

@@ -14,7 +14,7 @@ export type OimSecurityStatus =
   | 'no_metadata'
   | 'unsigned'
   | 'verified'
-  | 'verified_sin_autoria'
+  | 'verified_authorless'
   /** Signed before the image seal existed: the metadata is OIM's, the image is not checked. */
   | 'image_unsealed'
   | 'invalid_signature'

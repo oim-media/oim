@@ -1,4 +1,10 @@
 /**
+ * @license
+ * Copyright (c) 2026 Xue Studios LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
  * OIM/OVM Metadata Schema — Zod validation
  *
  * Validates the structure of .ovmdata / .oim metadata JSON

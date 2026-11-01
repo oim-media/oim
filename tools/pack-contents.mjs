@@ -7,8 +7,8 @@
 // Pins what each published tarball may contain, so a source file, a test or
 // the CDN demo site never ships by accident.
 // Usage: node tools/pack-contents.mjs   (run after `pnpm build`)
-import { execFileSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
+import { pnpm } from "./pnpm.mjs";
 
 const BASE = [/^package\.json$/, /^README\.md$/, /^LICENSE$/, /^NOTICE$/];
 
@@ -27,7 +27,7 @@ export function unexpected(files, allowed) {
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   let bad = 0;
   for (const [name, allowed] of Object.entries(ALLOWED)) {
-    const out = execFileSync("pnpm", ["pack", "--dry-run", "--json"], { cwd: `packages/${name}`, encoding: "utf8", shell: true });
+    const out = pnpm(["pack", "--dry-run", "--json"], { cwd: `packages/${name}`, encoding: "utf8" });
     const files = JSON.parse(out).files.map((f) => f.path.split("\\").join("/"));
     for (const f of unexpected(files, allowed)) {
       bad++;

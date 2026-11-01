@@ -1,4 +1,10 @@
 /**
+ * @license
+ * Copyright (c) 2026 Xue Studios LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
  * The "wave" text animation (wave-chars), declared as native CSS.
  *
  * Twin of the editor's waveText; the formula is duplicated on purpose, like

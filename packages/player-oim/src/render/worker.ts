@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright (c) 2026 Xue Studios LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { extractOIM } from '../../../core/src/binary.js';
 import { normalizeRawSlots } from './normalize-raw-slots.js';
 import {

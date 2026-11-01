@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright (c) 2026 Xue Studios LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import './render/own-script.js';
 import { resolveMode } from './render/modes.js';
 import { ImageEngine } from './engines/ImageEngine.js';

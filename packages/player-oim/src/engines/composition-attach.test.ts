@@ -1,4 +1,10 @@
 /**
+ * @license
+ * Copyright (c) 2026 Xue Studios LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
  * @vitest-environment happy-dom
  *
  * Covers the `results` -> `elByCompositionId` -> `attachCompositionNode` path,

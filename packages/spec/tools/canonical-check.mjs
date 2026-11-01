@@ -1,4 +1,10 @@
 /**
+ * @license
+ * Copyright (c) 2026 Xue Studios LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
  * Checks the canonical signature form documented in README.md against the
  * conformance vectors, by VERIFYING their real signatures with the published
  * public key.

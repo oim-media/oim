@@ -1,4 +1,10 @@
 /**
+ * @license
+ * Copyright (c) 2026 Xue Studios LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
  * <ovm-player> — Web Component for OVM video playback
  *
  * Framework-agnostic. Uses HTTP Range requests to extract metadata

@@ -1,4 +1,10 @@
 /**
+ * @license
+ * Copyright (c) 2026 Xue Studios LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
  * OIM API contract: where the backend lives, how its endpoints are named and
  * what shape the raw measurements sent to it have.
  *

@@ -1,4 +1,6 @@
 import { OIMRegistry } from '../render/registry.js';
+import { setFlag } from '../render/attrs.js';
+import { playerString } from '../render/strings.js';
 import { getDeviceProfile, type DeviceProfile } from '../render/device-tier.js';
 import { fileCache, type VerifyResult, type VerifiedFile } from '../render/file-cache.js';
 import { injectStyles } from '../render/styles.js';
@@ -802,7 +804,7 @@ export class ImageEngine {
           shadow.innerHTML = '<div class="oim-player-error oim-player-refused" part="error"></div>';
           injectStyles(shadow);
           const box = shadow.querySelector('.oim-player-error') as HTMLElement | null;
-          if (box) box.textContent = 'Archivo alterado: no coincide con su firma. OIM no lo muestra.';
+          if (box) box.textContent = playerString('tampered', self.lang);
         }
         host.dispatchEvent(new CustomEvent('error', { detail: err }));
         throw err;
@@ -915,11 +917,11 @@ export class ImageEngine {
     // that it is the original file.
     this.securityStatus = v.security;
     if (this.securityStatus === 'unsigned') {
-      try { this.host.setAttribute('data-oim-sin-firma', ''); } catch (e) {}
+      try { setFlag(this.host, 'data-oim-unsigned', 'data-oim-sin-firma'); } catch (e) {}
       console.warn('[OimPlayer] Unsigned file: painting the base image only. Interactive layers need a signature.');
     }
     if (this.securityStatus === 'expired_key') {
-      try { this.host.setAttribute('data-oim-clave-retirada', ''); } catch (e) {}
+      try { setFlag(this.host, 'data-oim-key-retired', 'data-oim-clave-retirada'); } catch (e) {}
       console.warn('[OimPlayer] This work was signed with a retired key. Ask the author to export it again.');
     }
     if (v.announce) {
@@ -1004,7 +1006,7 @@ export class ImageEngine {
 
     try {
       if (missing.missingCapabilities && missing.missingCapabilities.length > 0) {
-        this.host.setAttribute('data-oim-sin-soporte', missing.missingCapabilities.join(' '));
+        setFlag(this.host, 'data-oim-unsupported', 'data-oim-sin-soporte', missing.missingCapabilities.join(' '));
       }
       if (missing.missingRequiredCapabilities && missing.missingRequiredCapabilities.length > 0) {
         this.host.setAttribute('data-oim-requeridas-faltantes', missing.missingRequiredCapabilities.join(' '));
@@ -2671,7 +2673,7 @@ export class ImageEngine {
         // children hung from `slotEl` they would be SIBLINGS of the animation instead of inside it,
         // and animating a group would move an empty wrapper
         // and leave them still.
-        loopWrap.dataset.oimGrupo = String(slot.id);
+        setFlag(loopWrap, 'data-oim-group', 'data-oim-grupo', String(slot.id));
         // And it has to rotate around the center of the GROUP.
         // `.oim-slot-loop-wrap` carries `center center`, which on a wrapper of the canvas size is
         // the center of the CANVAS: rotating from there would send the group
@@ -3066,7 +3068,7 @@ export class ImageEngine {
           // anything else hanging from an element (svg, lottie wrappers) belongs to it
           // and is already rebuilt.
           // 
-          const inside = previous.querySelectorAll('[data-oim-grupo] > [data-slot-id], :scope > [data-slot-id]');
+          const inside = previous.querySelectorAll('[data-oim-group] > [data-slot-id], :scope > [data-slot-id]');
           for (let i = 0; i < inside.length; i++) {
             res.slotEl.appendChild(inside[i]);
           }
@@ -3113,8 +3115,8 @@ export class ImageEngine {
         // in a group would reposition it without anyone asking.
         if (!groupSlot || inZone(groupSlot)) return;
         // Inside the container that ANIMATES, not the slot: see the comment on
-        // `data-oim-grupo` above.
-        const groupEl = groupSlot.querySelector('[data-oim-grupo="' + groupId + '"]') || groupSlot;
+        // `data-oim-group` above.
+        const groupEl = groupSlot.querySelector('[data-oim-group="' + groupId + '"]') || groupSlot;
         childIds.forEach(function (childId: string) {
           const childEl = layer.querySelector('[data-slot-id="' + childId + '"]');
           if (!childEl || inZone(childEl)) return;

@@ -2,6 +2,7 @@ import './render/own-script.js';
 import { resolveMode } from './render/modes.js';
 import { ImageEngine } from './engines/ImageEngine.js';
 import { fileCache } from './render/file-cache.js';
+import { setFlag } from './render/attrs.js';
 
 interface OimPlayerOptions {
   allowZoom?: boolean;
@@ -59,7 +60,7 @@ const OimPlayerElement = Object.create(HTMLElement.prototype);
  * reported `top: 700`, so all 24 counted as "in view", and therefore all 24
  * were loaded. Lazy loading cannot work if the gap does not exist yet.
  *
- * Space is reserved until the engine sets `data-oim-cargado`, and the
+ * Space is reserved until the engine sets `data-oim-loaded`, and the
  * `oim-player-host` class is NOT used for this: it is added in
  * `connectedCallback`, before anything is loaded, so as a signal of "already
  * has content" it is no good -it was tried, and the gap never got reserved-.
@@ -73,7 +74,7 @@ function ensureReservedSpace(): void {
   est.id = 'oim-player-gap';
   est.textContent =
     ':where(oim-player){display:block}' +
-    ':where(oim-player:not([data-oim-cargado])){min-height:200px}';
+    ':where(oim-player:not([data-oim-loaded])){min-height:200px}';
   (document.head || document.documentElement).appendChild(est);
 }
 
@@ -429,7 +430,7 @@ OimPlayerElement._initPlayer = function (this: any) {
     // inherits it here, or its Lottie and keyframes play on a card that is
     // waiting for the cursor.
     if (self.classList.contains('oim-player-paused')) self._engine.pause();
-    self.setAttribute('data-oim-cargado', '');
+    setFlag(self, 'data-oim-loaded', 'data-oim-cargado');
 
     self._engine.load(src).then(() => {
       self._startAutoRotateLang();

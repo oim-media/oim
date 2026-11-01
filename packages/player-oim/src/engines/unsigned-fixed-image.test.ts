@@ -66,6 +66,7 @@ describe('unsigned, fixed image', () => {
     expect(engine.shadow.querySelectorAll('[data-slot-id]')).toHaveLength(0);
     expect(engine.shadow.querySelector('img')).not.toBeNull();
     expect(engine.host.getAttribute('data-oim-sin-firma')).not.toBeNull();
+    expect(engine.host.getAttribute('data-oim-unsigned')).not.toBeNull();
   });
 
   it('with an old seal (image_unsealed) it DOES compose: these are legitimate files', async () => {

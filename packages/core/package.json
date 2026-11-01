@@ -48,10 +48,10 @@
     "zod": "^4.6.6"
   },
   "devDependencies": {
-    "@types/node": "^24.12.4",
+    "@types/node": "^25.9.9",
     "ajv": "^8.20.0",
     "typescript": "~6.0.3",
-    "vitest": "^4.1.12"
+    "vitest": "^5.0.5"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"

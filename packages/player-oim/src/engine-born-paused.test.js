@@ -19,9 +19,9 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import fs from "node:fs";
-import path from "node:path";
+import { REFERENCE_OIM } from "../../core/test/fixtures/index";
 
-const oim = fs.readFileSync(path.resolve(process.cwd(), "../core/test/fixtures/object_view.oim.png"));
+const oim = fs.readFileSync(REFERENCE_OIM);
 
 const OBSERVER = class {
   constructor(cb) { this._cb = cb; }

@@ -9,7 +9,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
-import path from 'node:path';
+import { REFERENCE_OIM } from '../../../core/test/fixtures/index';
 
 let currentVerdict: string = 'unsigned';
 
@@ -23,7 +23,7 @@ vi.mock('../render/security.js', async (importOriginal) => {
 
 import ImageEngine from './ImageEngine';
 
-const oimFilePath = path.resolve(__dirname, '../../../core/test/fixtures/object_view.oim.png');
+const oimFilePath = REFERENCE_OIM;
 const oimBuffer = fs.readFileSync(oimFilePath);
 
 function blobDePrueba(): Blob {

@@ -34,6 +34,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import Ajv2020 from "ajv/dist/2020";
 import { OimMetadataSchema } from "./schema";
+import { REFERENCE_OIM } from "../test/fixtures/index";
 
 const contrato = JSON.parse(
   readFileSync(join(__dirname, "..", "..", "spec", "schema", "oim.schema.json"), "utf8"),
@@ -96,8 +97,9 @@ describe("real .oim files pass both gates", () => {
   it("the contract accepts what the system produces", async () => {
     const { extractOIM } = await import("./binary");
     const files = [
+      REFERENCE_OIM,
+      // Kept: the only fixture in a non-PNG container (a bare .oim), which the reference lacks.
       join(__dirname, "..", "test", "fixtures", "object_sport.oim"),
-      join(__dirname, "..", "test", "fixtures", "flyer_cafe.oim.png"),
     ];
     for (const file of files) {
       const { metadata } = await extractOIM(new Blob([readFileSync(file)]));

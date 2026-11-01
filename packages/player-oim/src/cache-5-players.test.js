@@ -9,9 +9,9 @@
  */
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import fs from "node:fs";
-import path from "node:path";
+import { REFERENCE_OIM } from "../../core/test/fixtures/index";
 
-const oim = fs.readFileSync(path.resolve(__dirname, "../../core/test/fixtures/object_view.oim.png"));
+const oim = fs.readFileSync(REFERENCE_OIM);
 const pasar = (ms) => new Promise((r) => setTimeout(r, ms));
 window.__OIM_BENCH__ = true;
 

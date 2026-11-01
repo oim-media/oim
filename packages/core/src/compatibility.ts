@@ -43,7 +43,8 @@
  * the format can change without the player being touched. Tying both numbers
  * together would make an internal fix look like a format break.
  */
-export const CONTRACT_VERSION = "1.26.0";
+export const CONTRACT_VERSION = "1.26.1";
+// 1.26.1: the reedit-english vector is signed; no format change.
 // 1.26.0: player default language is English when lang is not set; no format change.
 // 1.25.1: typings list expired_key; dead options marked deprecated; no format change.
 // 1.25.0: player events carry detail.message (mensaje deprecated); package READMEs; no format change.

@@ -1,18 +1,23 @@
 {
-  "description": "Reedit in English (contract 1.23.0): a file that declares reedit \"public\" with the English key. Unsigned, so it checks the key and not authorship.",
+  "description": "Reedit in English (contract 1.23.0): a file that declares reedit \"public\" with the English key. Signed by the production service, so the signature covers the English key.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800
   },
-  "signed": false,
+  "signed": true,
+  "key_version": "v1",
+  "languages": [
+    "es",
+    "en"
+  ],
   "reedit": "public",
   "slots": [
     {
       "id": "titulo",
       "type": "text",
       "position": [
-        10,
-        10
+        1.25,
+        1.6667
       ],
       "name": "Title",
       "content": {
@@ -20,9 +25,11 @@
         "es": "Hola"
       },
       "style": {
-        "width": "50.0cqw",
-        "height": "11.25cqw",
-        "fontSize": "5.0cqw"
+        "fillColor": "#ffffff",
+        "fontFamily": "Inter",
+        "fontSize": "6.0cqw",
+        "height": "25.0cqw",
+        "width": "25.0cqw"
       }
     }
   ]

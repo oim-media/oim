@@ -1,8 +1,17 @@
 {
   "name": "@oim-media/player-oim",
-  "license": "Apache-2.0",
   "version": "1.22.0",
-  "description": "OimPlayer Vanilla JS Plugin for OIM Images",
+  "description": "Web player for OIM interactive images: a framework-free <oim-player> element that verifies the signature and composes each layer.",
+  "keywords": [
+    "oim",
+    "interactive-image",
+    "web-component",
+    "player",
+    "custom-element"
+  ],
+  "author": "Xue Studios LLC",
+  "homepage": "https://oim.media",
+  "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/esm/index.js",
   "types": "./src/index.d.ts",

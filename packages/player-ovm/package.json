@@ -1,8 +1,17 @@
 {
   "name": "@oim-media/player-ovm",
-  "license": "Apache-2.0",
   "version": "1.22.0",
-  "description": "OvmPlayer Web Component for Interactive Video",
+  "description": "Web player for OVM interactive video: a framework-free web component.",
+  "keywords": [
+    "oim",
+    "ovm",
+    "interactive-video",
+    "web-component",
+    "player"
+  ],
+  "author": "Xue Studios LLC",
+  "homepage": "https://oim.media",
+  "license": "Apache-2.0",
   "type": "module",
   "main": "./src/index.js",
   "scripts": {

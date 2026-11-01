@@ -1,7 +1,15 @@
 {
   "name": "@oim-media/spec",
   "version": "1.22.0",
-  "description": "OIM format contract: JSON Schema, specification and conformance vectors.",
+  "description": "OIM format contract: JSON Schema, normative specification and conformance vectors that every OIM player must pass.",
+  "keywords": [
+    "oim",
+    "specification",
+    "json-schema",
+    "conformance"
+  ],
+  "author": "Xue Studios LLC",
+  "homepage": "https://oim.media",
   "license": "Apache-2.0",
   "files": [
     "schema",

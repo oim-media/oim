@@ -115,9 +115,6 @@ describe("the conformance vectors", () => {
    * came out of `/v1/oim/package`, which is what signs in production.
    */
   it.each(CASES)("%s is signed, like a real .oim", async (file) => {
-    const expected = JSON.parse(readFileSync(join(VECTORS, file.replace(".oim.png", ".expected.json")), "utf8"));
-    // `signed: false` marks a vector that the signing service could not produce. It checks its key and not authorship.
-    if (expected.signed === false) return;
     const { metadata } = await extractOIM(new Blob([readFileSync(join(VECTORS, file))]));
     expect(metadata.signature).toBeTruthy();
     expect(metadata.key_version).toBe("v1");

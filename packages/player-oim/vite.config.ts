@@ -32,7 +32,20 @@ function versionedCopyPlugin() {
   };
 }
 
-export default defineConfig(({ command }) => ({
+// `--mode esm` builds the npm package: ES module, Lottie and core left as
+// real imports for the consumer's bundler (it code-splits the dynamic import),
+// no CDN files. The default build is the single-file iife served by the CDN.
+export default defineConfig(({ command, mode }) => mode === 'esm' ? {
+  build: {
+    lib: { entry: resolve(__dirname, 'src/index.ts'), formats: ['es'], fileName: () => 'index.js' },
+    outDir: 'dist/esm',
+    emptyOutDir: true,
+    copyPublicDir: false,
+    minify: false,
+    rollupOptions: { external: [/^lottie-web/, /^@oim-media\/core/] }
+  },
+  worker: { format: 'es' }
+} : ({
   plugins: [versionedCopyPlugin()],
   define: {
     __OIM_LOTTIE_VERSION__: JSON.stringify(LOTTIE_VERSION)

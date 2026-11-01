@@ -40,6 +40,6 @@ jobs:
         run: |
           v="${GITHUB_REF_NAME#v}"
           for p in core player-oim player-ovm spec; do
-            gh api "orgs/oim-media/packages/npm/$p/versions" --jq '.[].name' | grep -qx "$v" \
-              || { echo "missing @oim-media/$p@$v"; exit 1; }
+            versions=$(gh api --paginate "orgs/oim-media/packages/npm/$p/versions" --jq '.[].name')
+            grep -qx "$v" <<< "$versions" || { echo "missing @oim-media/$p@$v"; exit 1; }
           done

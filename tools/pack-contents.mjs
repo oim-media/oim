@@ -14,7 +14,7 @@ const BASE = [/^package\.json$/, /^README\.md$/, /^LICENSE$/, /^NOTICE$/];
 
 export const ALLOWED = {
   core: [...BASE, /^dist\/.*\.(js|d\.ts|js\.map)$/],
-  "player-oim": [...BASE, /^dist\/oim-player\.js$/, /^dist\/vendor\/[\w.-]+\.js$/, /^dist\/THIRD_PARTY_NOTICES$/, /^src\/index\.d\.ts$/],
+  "player-oim": [...BASE, /^dist\/esm\/[\w.-]+\.js$/, /^dist\/oim-player\.js$/, /^dist\/vendor\/[\w.-]+\.js$/, /^dist\/THIRD_PARTY_NOTICES$/, /^src\/index\.d\.ts$/],
   "player-ovm": [...BASE, /^src\/[\w.-]+\.js$/],
   spec: [...BASE, /^(BINARY_SPEC|CANONICAL_SPEC)\.md$/, /^marks-cases\.json$/, /^schema\/[\w.-]+\.json$/, /^vectors\/.+/],
 };

@@ -21,6 +21,18 @@ describe("tarball contents", () => {
     ]);
   });
 
+  it("the package entry is an ES module with the player's exports", () => {
+    // The CDN build is an iife with no exports: pointing `main` at it broke
+    // `import { OimPlayer } from "@oim-media/player-oim"`.
+    const pkg = JSON.parse(readFileSync(fileURLToPath(new URL("../packages/player-oim/package.json", import.meta.url)), "utf8"));
+    const entry = readFileSync(fileURLToPath(new URL(`../packages/player-oim/${pkg.exports["."].import}`, import.meta.url)), "utf8");
+    const exported = entry.trim().split("\n").pop();
+    expect(exported.startsWith("export {")).toBe(true);
+    for (const name of ["OimPlayer", "OimPlayerElement", "mount", "OimPlayer as default"]) {
+      expect(exported).toContain(name);
+    }
+  });
+
   it("the built player carries the third-party notices", () => {
     const txt = readFileSync(fileURLToPath(new URL("../packages/player-oim/dist/THIRD_PARTY_NOTICES", import.meta.url)), "utf8");
     expect(txt).toMatch(/lottie-web@5\.\d+\.\d+/);

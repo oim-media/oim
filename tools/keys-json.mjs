@@ -43,7 +43,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const keys = await current();
   const text = serialize(keys);
   if (process.argv.includes("--check")) {
-    const onDisk = readFileSync(KEYS_JSON, "utf8");
+    const onDisk = readFileSync(KEYS_JSON, "utf8").replace(/\r\n/g, "\n");
     if (onDisk !== text) {
       console.error(`${KEYS_JSON} is out of date with ${KEYS_TS}; run node tools/keys-json.mjs`);
       process.exit(1);

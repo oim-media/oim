@@ -23,7 +23,7 @@ import ImageEngine from "./ImageEngine";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-function montar() {
+function mount() {
   const host = document.createElement("div");
   (host as any).attachShadow({ mode: "open" });
   document.body.appendChild(host);
@@ -37,21 +37,21 @@ beforeEach(() => {
 });
 afterEach(() => { vi.restoreAllMocks(); });
 
-describe("cuando el archivo pide algo que este player no tiene", () => {
-  it("lo dice por consola", () => {
-    const { motor } = montar();
+describe("when the file asks for something this player does not have", () => {
+  it("says so on the console", () => {
+    const { motor } = mount();
     motor._announceUnsupported({ capabilities: ["physics_2d"] });
     expect(avisos.join(" ")).toContain("physics_2d");
   });
 
-  it("lo deja en el anfitrion, para quien mira el DOM", () => {
-    const { host, motor } = montar();
+  it("leaves it on the host, for whoever looks at the DOM", () => {
+    const { host, motor } = mount();
     motor._announceUnsupported({ capabilities: ["physics_2d", "path_morph"] });
     expect(host.getAttribute("data-oim-sin-soporte")).toBe("path_morph physics_2d");
   });
 
-  it("y lo emite, para quien incrusta el player", () => {
-    const { host, motor } = montar();
+  it("and emits it, for whoever embeds the player", () => {
+    const { host, motor } = mount();
     let recibido: any = null;
     host.addEventListener("oim:incomplete", (e: any) => { recibido = e.detail; });
     motor._announceUnsupported({ min_player: "9.0.0" });
@@ -59,16 +59,16 @@ describe("cuando el archivo pide algo que este player no tiene", () => {
     expect(recibido?.versionTooOld).toBe(true);
   });
 
-  it("marca la version exigida por separado de las capabilities", () => {
-    const { host, motor } = montar();
+  it("marks the version required separately from the capabilities", () => {
+    const { host, motor } = mount();
     motor._announceUnsupported({ min_player: "9.0.0" });
     expect(host.getAttribute("data-oim-version-exigida")).toBe("9.0.0");
     expect(host.getAttribute("data-oim-sin-soporte")).toBeNull();
     expect(host.getAttribute("data-oim-requeridas-faltantes")).toBeNull();
   });
 
-  it("marca las capacidades requeridas faltantes y emite oim:unsupported", () => {
-    const { host, motor } = montar();
+  it("marks the missing required capabilities and emits oim:unsupported", () => {
+    const { host, motor } = mount();
     let unsupportedEvent: any = null;
     let incompleteEvent: any = null;
     host.addEventListener("oim:unsupported", (e: any) => { unsupportedEvent = e.detail; });
@@ -87,24 +87,24 @@ describe("cuando el archivo pide algo que este player no tiene", () => {
   });
 });
 
-describe("cuando no hay nada que decir", () => {
+describe("when there is nothing to say", () => {
   it.each([
-    ["un archivo de los de hoy, sin min_player", { slots: [] }],
-    ["una capacidad que si se implementa", { capabilities: ["vector_parallax"] }],
-    ["una version anterior", { min_player: "0.9.0" }],
+    ["a file from today, without min_player", { slots: [] }],
+    ["a capability that is implemented", { capabilities: ["vector_parallax"] }],
+    ["an earlier version", { min_player: "0.9.0" }],
   ])("calla ante %s", (_n, metadata) => {
-    const { host, motor } = montar();
+    const { host, motor } = mount();
     motor._announceUnsupported(metadata);
     expect(avisos).toEqual([]);
     expect(host.getAttribute("data-oim-sin-soporte")).toBeNull();
   });
 });
 
-describe("avisar nunca puede ser lo que rompa la carga", () => {
+describe("warning can never be what breaks the loading", () => {
   it.each([null, undefined, 7, "text", { capabilities: "no es lista" }])(
     "aguanta unos metadatos %p",
     (metadata) => {
-      const { motor } = montar();
+      const { motor } = mount();
       expect(() => motor._announceUnsupported(metadata)).not.toThrow();
     },
   );
@@ -119,8 +119,8 @@ describe("avisar nunca puede ser lo que rompa la carga", () => {
  * the problem seems to come and go. Mounting both paths here would require a worker and a
  * signed `.oim`; this at least pins that neither is left without it.
  */
-describe("los dos caminos de carga lo cuentan", () => {
-  it("hay una llamada en cada uno", () => {
+describe("both loading paths count it", () => {
+  it("there is a call in each one", () => {
     const fuente = readFileSync(join(__dirname, "ImageEngine.ts"), "utf8");
     const llamadas = fuente.split("self._announceUnsupported(").length - 1;
     expect(llamadas).toBe(2);

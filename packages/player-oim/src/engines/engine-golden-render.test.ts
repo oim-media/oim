@@ -29,7 +29,7 @@ import ImageEngine from "./ImageEngine";
 
 const VECTORES_DIR = join(__dirname, "..", "..", "..", "spec", "vectors");
 
-describe("Golden Render — Renderizado canónico de vectores oficiales", () => {
+describe("Golden Render — canonical rendering of the official vectors", () => {
   let host: HTMLElement;
   let shadow: ShadowRoot;
 
@@ -65,9 +65,9 @@ describe("Golden Render — Renderizado canónico de vectores oficiales", () => 
     return { motor, viewport, overlay };
   }
 
-  it("renderiza el vector 'basic-text.oim.png' en el DOM sin errores", async () => {
+  it("renders the vector 'basic-text.oim.png' into the DOM without errors", async () => {
     const filePath = join(VECTORES_DIR, "basic-text.oim.png");
-    expect(existsSync(filePath), "El vector basic-text.oim.png debe existir").toBe(true);
+    expect(existsSync(filePath), "The basic-text.oim.png vector must exist").toBe(true);
 
     const bytes = readFileSync(filePath);
     const { metadata } = await extractOIM(new Blob([bytes]));
@@ -77,7 +77,7 @@ describe("Golden Render — Renderizado canónico de vectores oficiales", () => 
     await motor.renderSlots();
 
     const slotEl = shadow.querySelector('[data-slot-id="titulo"]') as HTMLElement;
-    expect(slotEl, "El slot 'titulo' debe renderizarse en el DOM").not.toBeNull();
+    expect(slotEl, "The slot 'titulo' must render into the DOM").not.toBeNull();
     expect(slotEl.textContent).toContain("Hola");
   });
 
@@ -104,9 +104,9 @@ describe("Golden Render — Renderizado canónico de vectores oficiales", () => 
     expect(shadow.querySelector("filter#oim-grain-titulo")!.outerHTML).toContain('mode="soft-light"');
   });
 
-  it("renderiza el vector 'groups-and-parallax.oim.png' respetando jerarquía y profundidad", async () => {
+  it("renders the vector 'groups-and-parallax.oim.png' respecting hierarchy and depth", async () => {
     const filePath = join(VECTORES_DIR, "groups-and-parallax.oim.png");
-    expect(existsSync(filePath), "El vector groups-and-parallax.oim.png debe existir").toBe(true);
+    expect(existsSync(filePath), "The groups-and-parallax.oim.png vector must exist").toBe(true);
 
     const bytes = readFileSync(filePath);
     const { metadata } = await extractOIM(new Blob([bytes]));
@@ -120,10 +120,10 @@ describe("Golden Render — Renderizado canónico de vectores oficiales", () => 
     const hijoBEl = shadow.querySelector('[data-slot-id="hijo_b"]') as HTMLElement;
     const fondoEl = shadow.querySelector('[data-slot-id="fondo"]') as HTMLElement;
 
-    expect(grupoEl, "El grupo debe existir").not.toBeNull();
-    expect(hijoAEl, "El hijo A debe existir").not.toBeNull();
-    expect(hijoBEl, "El hijo B debe existir").not.toBeNull();
-    expect(fondoEl, "El fondo con parallax debe existir").not.toBeNull();
+    expect(grupoEl, "The group must exist").not.toBeNull();
+    expect(hijoAEl, "Child A must exist").not.toBeNull();
+    expect(hijoBEl, "Child B must exist").not.toBeNull();
+    expect(fondoEl, "The parallax background must exist").not.toBeNull();
 
     // Check that the child geometry nodes have their color resolved
     const polygonA = hijoAEl.querySelector("polygon, rect, path");
@@ -132,9 +132,9 @@ describe("Golden Render — Renderizado canónico de vectores oficiales", () => 
     expect(polygonB || hijoBEl.style.backgroundColor).toBeTruthy();
   });
 
-  it("renderiza el vector 'interactive.oim.png' con estados y targets interactivos", async () => {
+  it("renders the vector 'interactive.oim.png' with states and interactive targets", async () => {
     const filePath = join(VECTORES_DIR, "interactive.oim.png");
-    expect(existsSync(filePath), "El vector interactive.oim.png debe existir").toBe(true);
+    expect(existsSync(filePath), "The interactive.oim.png vector must exist").toBe(true);
 
     const bytes = readFileSync(filePath);
     const { metadata } = await extractOIM(new Blob([bytes]));
@@ -147,9 +147,9 @@ describe("Golden Render — Renderizado canónico de vectores oficiales", () => 
     const fichaEl = shadow.querySelector('[data-slot-id="ficha"]') as HTMLElement;
     const esquinasEl = shadow.querySelector('[data-slot-id="esquinas"]') as HTMLElement;
 
-    expect(botonEl, "El botón interactivo debe existir").not.toBeNull();
-    expect(fichaEl, "La ficha objetivo debe existir").not.toBeNull();
-    expect(esquinasEl, "La forma con esquinas asimétricas debe existir").not.toBeNull();
+    expect(botonEl, "The interactive button must exist").not.toBeNull();
+    expect(fichaEl, "The target card must exist").not.toBeNull();
+    expect(esquinasEl, "The shape with asymmetric corners must exist").not.toBeNull();
 
     // Check that the button is marked with an interactive class or attribute
     expect(botonEl.classList.contains("oim-interactive") || botonEl.style.cursor === "pointer" || botonEl.getAttribute("tabindex") !== null).toBe(true);

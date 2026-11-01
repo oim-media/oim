@@ -10,7 +10,7 @@
 import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine";
 
-function montar(slots: any[], lang: string = "es") {
+function mount(slots: any[], lang: string = "es") {
   const host = document.createElement("div");
   const shadow = (host as any).attachShadow({ mode: "open" });
   document.body.appendChild(host);
@@ -25,7 +25,7 @@ function montar(slots: any[], lang: string = "es") {
 }
 
 describe("ImageEngine — artistic-text rendering", () => {
-  it("renderiza un nodo SVG interactivo con capas de extrusión 3D", async () => {
+  it("renders an interactive SVG node with 3D extrusion layers", async () => {
     const slot = {
       id: "art1",
       type: "artistic-text",
@@ -48,7 +48,7 @@ describe("ImageEngine — artistic-text rendering", () => {
       },
     };
 
-    const { host, motor } = montar([slot], "es");
+    const { host, motor } = mount([slot], "es");
     await motor.renderSlots();
 
     const slotEl = host.shadowRoot!.querySelector('[data-slot-id="art1"]') as HTMLElement;
@@ -65,7 +65,7 @@ describe("ImageEngine — artistic-text rendering", () => {
     expect(svgEl!.textContent).toContain("HOLA 3D");
   });
 
-  it("renderiza texto curvado en arco con textPath", async () => {
+  it("renders text curved along an arc with textPath", async () => {
     const slot = {
       id: "art2",
       type: "artistic-text",
@@ -83,7 +83,7 @@ describe("ImageEngine — artistic-text rendering", () => {
       },
     };
 
-    const { host, motor } = montar([slot], "es");
+    const { host, motor } = mount([slot], "es");
     await motor.renderSlots();
 
     const slotEl = host.shadowRoot!.querySelector('[data-slot-id="art2"]') as HTMLElement;
@@ -95,7 +95,7 @@ describe("ImageEngine — artistic-text rendering", () => {
     expect(textPathEls[0].textContent).toContain("CURVADO");
   });
 
-  it("actualiza el texto y SVG reactivamente al cambiar de idioma con setLang", async () => {
+  it("updates the text and SVG reactively when the language changes via setLang", async () => {
     const slot = {
       id: "art3",
       type: "artistic-text",
@@ -111,7 +111,7 @@ describe("ImageEngine — artistic-text rendering", () => {
       },
     };
 
-    const { host, motor } = montar([slot], "es");
+    const { host, motor } = mount([slot], "es");
     await motor.renderSlots();
 
     let slotEl = host.shadowRoot!.querySelector('[data-slot-id="art3"]') as HTMLElement;

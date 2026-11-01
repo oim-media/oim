@@ -27,7 +27,7 @@ import ImageEngine from "./ImageEngine";
 const BLOB_DEL_CATALOGO =
   "M 50,10 C 75,10 92,25 90,50 C 88,75 75,90 50,90 C 25,90 10,75 10,50 C 10,25 25,10 50,10 Z";
 
-describe("Paridad editor <-> player en las formas geometricas", () => {
+describe("Editor <-> player parity for geometric shapes", () => {
   let host: HTMLElement;
   let shadow: ShadowRoot;
 
@@ -69,119 +69,119 @@ describe("Paridad editor <-> player en las formas geometricas", () => {
     return host.shadowRoot!.querySelector('[data-slot-id="forma"] path');
   };
 
-  describe("cadena de respaldos del trazado", () => {
+  describe("fallback chain of the outline", () => {
     // CanvasArea.tsx: d={shape.customBlobPath || shape.svgPath || GEO_SHAPES.blob.d}
-    it("un blob con svgPath y sin customBlobPath conserva su forma al publicarse", async () => {
-      const figura = await pintarForma({
+    it("a blob with svgPath and without customBlobPath keeps its shape when published", async () => {
+      const figureItem = await pintarForma({
         geoShape: "blob",
         svgPath: "M 0,0 L 80,20 L 40,90 Z",
         fillColor: "#38bdf8",
       });
 
-      expect(figura?.getAttribute("d")).toBe("M 0,0 L 80,20 L 40,90 Z");
+      expect(figureItem?.getAttribute("d")).toBe("M 0,0 L 80,20 L 40,90 Z");
       // What happened before: it fell back to the generic blob in the catalogue.
-      expect(figura?.getAttribute("d")).not.toBe(BLOB_DEL_CATALOGO);
+      expect(figureItem?.getAttribute("d")).not.toBe(BLOB_DEL_CATALOGO);
     });
 
-    it("customBlobPath manda sobre svgPath, como en el editor", async () => {
-      const figura = await pintarForma({
+    it("customBlobPath overrides svgPath, as in the editor", async () => {
+      const figureItem = await pintarForma({
         geoShape: "blob",
         customBlobPath: "M 1,1 L 2,2 Z",
         svgPath: "M 9,9 L 8,8 Z",
         fillColor: "#38bdf8",
       });
 
-      expect(figura?.getAttribute("d")).toBe("M 1,1 L 2,2 Z");
+      expect(figureItem?.getAttribute("d")).toBe("M 1,1 L 2,2 Z");
     });
 
-    it("sin ninguno de los dos, el blob usa el catalogo", async () => {
-      const figura = await pintarForma({ geoShape: "blob", fillColor: "#38bdf8" });
+    it("without either of the two, the blob uses the catalogue", async () => {
+      const figureItem = await pintarForma({ geoShape: "blob", fillColor: "#38bdf8" });
 
-      expect(figura?.getAttribute("d")).toBe(BLOB_DEL_CATALOGO);
+      expect(figureItem?.getAttribute("d")).toBe(BLOB_DEL_CATALOGO);
     });
 
     // The editor does NOT offer svgPath for the doodle: d={customBlobPath || catalogue}
-    it("el garabato ignora svgPath, igual que el editor", async () => {
-      const figura = await pintarForma({
+    it("the doodle ignores svgPath, as the editor does", async () => {
+      const figureItem = await pintarForma({
         geoShape: "scribble",
         svgPath: "M 0,0 L 80,20 Z",
         strokeColor: "#18181B",
         strokeWidth: 2,
       });
 
-      expect(figura?.getAttribute("d")).not.toBe("M 0,0 L 80,20 Z");
-      expect(figura?.getAttribute("d")).toContain("Q");
+      expect(figureItem?.getAttribute("d")).not.toBe("M 0,0 L 80,20 Z");
+      expect(figureItem?.getAttribute("d")).toContain("Q");
     });
   });
 
-  describe("respaldos de trazo del garabato", () => {
+  describe("doodle stroke fallbacks", () => {
     // The doodle is `rellenable: false`, so without a stroke NOTHING is
     // visible. The editor covers this with two fallbacks; the player did not have them.
 
     // CanvasArea.tsx: strokeWidth={shape.strokeWidth > 0 ? shape.strokeWidth : 2}
-    it("un garabato sin grosor se publica con grosor 2, no invisible", async () => {
-      const figura = await pintarForma({ geoShape: "scribble", strokeColor: "#18181B" });
+    it("a doodle without thickness is published with thickness 2, not invisible", async () => {
+      const figureItem = await pintarForma({ geoShape: "scribble", strokeColor: "#18181B" });
 
-      expect(figura?.getAttribute("stroke-width")).toBe("2");
-      expect(figura?.getAttribute("stroke")).toBe("#18181B");
+      expect(figureItem?.getAttribute("stroke-width")).toBe("2");
+      expect(figureItem?.getAttribute("stroke")).toBe("#18181B");
     });
 
-    it("un grosor de 0 tambien cae al respaldo, como en el editor", async () => {
-      const figura = await pintarForma({
+    it("a thickness of 0 also falls back, as in the editor", async () => {
+      const figureItem = await pintarForma({
         geoShape: "scribble",
         strokeColor: "#18181B",
         strokeWidth: 0,
       });
 
-      expect(figura?.getAttribute("stroke-width")).toBe("2");
+      expect(figureItem?.getAttribute("stroke-width")).toBe("2");
     });
 
     // CanvasArea.tsx: stroke={shape.strokeColor || shape.fillColor || "#2563EB"}
-    it("un garabato con solo color de relleno lo usa como color de trazo", async () => {
-      const figura = await pintarForma({ geoShape: "scribble", fillColor: "#DC2626" });
+    it("a doodle with only a fill colour uses it as the stroke colour", async () => {
+      const figureItem = await pintarForma({ geoShape: "scribble", fillColor: "#DC2626" });
 
-      expect(figura?.getAttribute("stroke")).toBe("#DC2626");
-      expect(figura?.getAttribute("stroke-width")).toBe("2");
+      expect(figureItem?.getAttribute("stroke")).toBe("#DC2626");
+      expect(figureItem?.getAttribute("stroke-width")).toBe("2");
       // Still no fill: it is an open stroke.
-      expect(figura?.getAttribute("fill")).toBe("none");
+      expect(figureItem?.getAttribute("fill")).toBe("none");
     });
 
-    it("sin ningun color, el garabato cae al azul del editor", async () => {
-      const figura = await pintarForma({ geoShape: "scribble" });
+    it("without any colour, the doodle falls back to the editor's blue", async () => {
+      const figureItem = await pintarForma({ geoShape: "scribble" });
 
-      expect(figura?.getAttribute("stroke")).toBe("#2563EB");
+      expect(figureItem?.getAttribute("stroke")).toBe("#2563EB");
     });
 
-    it("un grosor explicito gana al respaldo", async () => {
-      const figura = await pintarForma({
+    it("an explicit thickness beats the fallback", async () => {
+      const figureItem = await pintarForma({
         geoShape: "scribble",
         strokeColor: "#18181B",
         strokeWidth: 7,
       });
 
-      expect(figura?.getAttribute("stroke-width")).toBe("7");
+      expect(figureItem?.getAttribute("stroke-width")).toBe("7");
     });
   });
 
-  describe("lo que NO debe cambiar", () => {
+  describe("what must NOT change", () => {
     // The editor paints the line with `strokeWidth ?? 0`: no fallback. If the
     // doodle fix had been applied to every open stroke, this line would be published
     // visible where the editor shows nothing.
-    it("una linea sin grosor sigue sin trazo, como en el editor", async () => {
-      const figura = await pintarForma({ geoShape: "line", strokeColor: "#18181B" });
+    it("a line without thickness stays without a stroke, as in the editor", async () => {
+      const figureItem = await pintarForma({ geoShape: "line", strokeColor: "#18181B" });
 
-      expect(figura?.getAttribute("stroke-width")).toBeNull();
+      expect(figureItem?.getAttribute("stroke-width")).toBeNull();
     });
 
-    it("un circulo sin color de trazo sigue sin trazo", async () => {
-      const figura = await pintarForma({
+    it("a circle without a stroke colour stays without a stroke", async () => {
+      const figureItem = await pintarForma({
         geoShape: "circle",
         fillColor: "#38bdf8",
         strokeWidth: 3,
       });
 
-      expect(figura?.getAttribute("stroke-width")).toBeNull();
-      expect(figura?.getAttribute("fill")).toBe("#38bdf8");
+      expect(figureItem?.getAttribute("stroke-width")).toBeNull();
+      expect(figureItem?.getAttribute("fill")).toBe("#38bdf8");
     });
   });
 });

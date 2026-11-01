@@ -11,25 +11,25 @@ import path from "node:path";
 import { stateStyles, bindStates, resolveActions, applyMinHitArea, readInteraction } from "./states";
 
 describe("stateStyles", () => {
-  it("traduce un estado a las propiedades que el slot ya entiende", () => {
+  it("translates a state to the properties the slot already understands", () => {
     expect(stateStyles({ scale: 1.1, transitionDuration: 0.4 })).toEqual({
       "--oim-slot-hover-scale": "1.1",
       "--oim-transition-duration": "0.4s"
     });
   });
 
-  it("un estado vacio no emite nada, para no pisar el style base", () => {
+  it("an empty state emits nothing, so as not to overwrite the base style", () => {
     expect(stateStyles({})).toEqual({});
   });
 
-  it("la opacidad viaja en 0-100 y sale en 0-1", () => {
+  it("the opacity travels in 0-100 and comes out in 0-1", () => {
     // The editor stores it as 0-100 (`types.ts`). Emitting "50" instead of "0.5"
     // leaves the slot visible, and the failure looks like "nothing happens".
     expect(stateStyles({ opacity: 50 })).toEqual({ opacity: "0.5" });
     expect(stateStyles({ opacity: 0 })).toEqual({ opacity: "0" });
   });
 
-  it("la rotacion y el color se traducen correctamente", () => {
+  it("the rotation and the colour are translated correctly", () => {
     expect(stateStyles({ rotation: 45, color: "#ff0000" })).toEqual({
       "--oim-rot": "45deg",
       color: "#ff0000"
@@ -50,7 +50,7 @@ describe("bindStates", () => {
     }
   };
 
-  it("aplica el estado al entrar el cursor y lo deshace al salir", () => {
+  it("applies the state when the cursor enters and undoes it when it leaves", () => {
     const el = document.createElement("div");
     el.style.setProperty("--oim-slot-hover-scale", "1");
     bindStates(el, { hover: { scale: 1.4, opacity: 50 } }, escribirYa);
@@ -64,7 +64,7 @@ describe("bindStates", () => {
     expect(el.style.opacity).toBe("");
   });
 
-  it("el valor base se captura ANTES de pisarlo, no despues", () => {
+  it("the base value is captured BEFORE overwriting it, not after", () => {
     // If it were captured later, leaving the hover would return the hover value
     // and the layer would stay enlarged forever. It is checked with two
     // consecutive entries: the second must not capture again.
@@ -79,7 +79,7 @@ describe("bindStates", () => {
     expect(el.style.getPropertyValue("--oim-slot-hover-scale")).toBe("1");
   });
 
-  it("sin states no engancha nada", () => {
+  it("without states it hooks nothing up", () => {
     const el = document.createElement("div");
     const escribir = vi.fn();
     bindStates(el, undefined, escribir);
@@ -104,7 +104,7 @@ describe("bindStates", () => {
     expect(gestor.revert).toHaveBeenCalledWith(actions);
   });
 
-  it("un pointerdown tactil entra en hover y registra alTocarFuera", () => {
+  it("a touch pointerdown enters hover and registers the touch-outside listener", () => {
     const el = document.createElement("div");
     el.style.setProperty("--oim-slot-hover-scale", "1");
     const alTocarFuera = vi.fn();
@@ -124,7 +124,7 @@ describe("bindStates", () => {
     expect(alTocarFuera).toHaveBeenCalledWith(el, expect.any(Function));
   });
 
-  it("un pointerdown con mouse se ignora para no duplicate con mouseenter", () => {
+  it("a mouse pointerdown is ignored so as not to duplicate mouseenter", () => {
     const el = document.createElement("div");
     const alTocarFuera = vi.fn();
     const escribir = vi.fn();
@@ -143,7 +143,7 @@ describe("bindStates", () => {
     expect(alTocarFuera).not.toHaveBeenCalled();
   });
 
-  it("al invocar el callback de alTocarFuera se sale del estado hover", () => {
+  it("invoking the touch-outside callback leaves the hover state", () => {
     const el = document.createElement("div");
     el.style.setProperty("--oim-slot-hover-scale", "1");
     let salirCallback: (() => void) | null = null;
@@ -170,7 +170,7 @@ describe("bindStates", () => {
     expect(el.style.getPropertyValue("--oim-slot-hover-scale")).toBe("1");
   });
 
-  it("bindStates NO toca el tamaño: no es asunto suyo", () => {
+  it("bindStates does NOT touch the size: it is not its business", () => {
     // It was once here and in the engine at the same time. This test pins down
     // that the hook handles only WHEN a state is entered and exited, nothing more.
     const el = document.createElement("div");
@@ -181,7 +181,7 @@ describe("bindStates", () => {
 });
 
 describe("applyMinHitArea", () => {
-  it("el area de contacto nunca baja de 24x24 px (WCAG 2.5.8)", () => {
+  it("the contact area never drops below 24x24 px (WCAG 2.5.8)", () => {
     const el = document.createElement("div");
     el.style.width = "8px";
     el.style.height = "8px";
@@ -192,14 +192,14 @@ describe("applyMinHitArea", () => {
 });
 
 describe("resolveActions", () => {
-  it("show y hide se resuelven a visibilidad por destino", () => {
+  it("show and hide resolve to visibility per target", () => {
     expect(resolveActions([
       { target: "precio", type: "show" },
       { target: "actionEvent", type: "hide" }
     ], {})).toEqual({ visibility: { precio: true, actionEvent: false }, texts: {} });
   });
 
-  it("setText no toca la visibilidad", () => {
+  it("setText does not touch the visibility", () => {
     expect(resolveActions([
       { target: "precio", type: "setText", value: "9,99" }
     ], {})).toEqual({ visibility: {}, texts: { precio: "9,99" } });
@@ -210,14 +210,14 @@ describe("resolveActions", () => {
       .toEqual({ visibility: { precio: false }, texts: {} });
   });
 
-  it("una accion sin destino se ignora en vez de romper", () => {
+  it("an action without a target is ignored instead of breaking", () => {
     expect(resolveActions([{ target: "", type: "show" }], {}))
       .toEqual({ visibility: {}, texts: {} });
   });
 });
 
-describe("paridad entre vocabularios de interaccion", () => {
-  it("states (show/hide) y toggle_elements producen el mismo resultado de visibilidad", () => {
+describe("parity between interaction vocabularies", () => {
+  it("states (show/hide) and toggle_elements produce the same visibility result", () => {
     // New vocabulary: states with show / hide actions
     const accionesNuevas = [
       { target: "precio", type: "show" },
@@ -238,7 +238,7 @@ describe("paridad entre vocabularios de interaccion", () => {
     expect(resNuevo.visibility).toEqual({ precio: true, actionEvent: false });
   });
 
-  it("el lector de interaction / toggle_elements sigue preservado", () => {
+  it("the reader of interaction / toggle_elements is still preserved", () => {
     const configVieja = {
       hide_slots: ["capa1"],
       show_slots: ["capa2", "capa3"]
@@ -257,7 +257,7 @@ describe("paridad entre vocabularios de interaccion", () => {
 
 
 
-describe("readInteraction — la forma REAL del archivo", () => {
+describe("readInteraction — the REAL shape of the file", () => {
   /**
    * This slot is copied verbatim from `precio_al_pasar_el_cursor.oim.png`, the
    * first .oim with interaction that was exported. Its fields travel inside
@@ -273,7 +273,7 @@ describe("readInteraction — la forma REAL del archivo", () => {
     }
   };
 
-  it("lee los campos que vienen dentro de style, que es como los escribe el editor", () => {
+  it("reads the fields that come inside style, which is how the editor writes them", () => {
     const r = readInteraction(slotDelArchivo as never);
     expect(r.isInteractive).toBe(true);
     expect(r.states?.hover?.actions?.[0]).toEqual({
@@ -282,20 +282,20 @@ describe("readInteraction — la forma REAL del archivo", () => {
     });
   });
 
-  it("sigue leyendo los de la raiz, que es como los llevan los slots escritos a mano", () => {
+  it("still reads the root ones, which is how hand-written slots carry them", () => {
     const r = readInteraction({ isInteractive: true, states: { hover: { scale: 1.2 } } });
     expect(r.isInteractive).toBe(true);
     expect(r.states?.hover?.scale).toBe(1.2);
   });
 
-  it("un slot sin interaccion no es interactivo", () => {
+  it("a slot without interaction is not interactive", () => {
     expect(readInteraction({ style: { isInteractive: false } } as never).isInteractive).toBe(false);
     expect(readInteraction({} as never).states).toBeUndefined();
   });
 });
 
-describe("el toque fuera no puede fiarse de e.target", () => {
-  it("el motor usa composedPath para decidir si el toque fue fuera", () => {
+describe("the touch-outside cannot trust e.target", () => {
+  it("the engine uses composedPath to decide whether the touch was outside", () => {
     /**
      * The "tap outside" listener lives on the host, OUTSIDE the shadow root, and
      * when crossing that boundary the browser rewrites `e.target` to the host
@@ -316,21 +316,21 @@ describe("el toque fuera no puede fiarse de e.target", () => {
       "utf8"
     );
     const inicio = fuente.indexOf("stage.addEventListener('pointerdown'");
-    expect(inicio, "no encuentro el escuchador de tocar fuera").toBeGreaterThan(-1);
+    expect(inicio, "I cannot find the touch-outside listener").toBeGreaterThan(-1);
     const bloque = fuente.slice(inicio, inicio + 900);
     // Without comments: otherwise the explanation itself would make the test pass.
     const codigo = bloque.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
-    expect(codigo, "el toque fuera debe decidirse con composedPath()").toContain("composedPath()");
-    expect(codigo, "el toque fuera volvio a decidirse con e.target").not.toContain("e.target");
+    expect(codigo, "the touch-outside must be decided with composedPath()").toContain("composedPath()");
+    expect(codigo, "the touch-outside was decided again with e.target").not.toContain("e.target");
   });
 });
 
-describe("readInteraction — avisa de lo que no puede hacer", () => {
+describe("readInteraction — warns about what it cannot do", () => {
   // This feature's failure mode is silence: the player hooks nothing and whoever
   // opens the file does not know why. These tests pin down that it stops being
   // silent. They verify the NOTICE, not the returned value, which does not change.
 
-  it("avisa cuando el slot se declara interactivo y no trae states", () => {
+  it("warns when the slot is declared interactive and has no states", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       readInteraction({ isInteractive: true }, "precio");
@@ -342,7 +342,7 @@ describe("readInteraction — avisa de lo que no puede hacer", () => {
     }
   });
 
-  it("avisa cuando trae `states` pero sin `hover`, el unico que entiende hoy", () => {
+  it("warns when it carries `states` but without `hover`, the only one it understands today", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       readInteraction({ isInteractive: true, states: { pressed: {} } } as never, "boton");
@@ -358,7 +358,7 @@ describe("readInteraction — avisa de lo que no puede hacer", () => {
    * actionEvent that kept saying the layer "will not respond" would be worse than
    * saying nothing: it sends people looking for a fault that is not there.
    */
-  it("NO avisa de una capa que solo trae acciones de clic", () => {
+  it("does NOT warn about a layer that only has click actions", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       readInteraction(
@@ -372,7 +372,7 @@ describe("readInteraction — avisa de lo que no puede hacer", () => {
   });
 
   /** But an `active` WITHOUT actions does nothing: its styles are not applied. */
-  it("y si avisa de un active vacio, que no hace nada", () => {
+  it("and warns about an empty active, which does nothing", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       readInteraction({ isInteractive: true, states: { active: { scale: 1.2 } } } as never, "boton");
@@ -382,7 +382,7 @@ describe("readInteraction — avisa de lo que no puede hacer", () => {
     }
   });
 
-  it("avisa cuando hay states pero nadie marco el slot como interactivo", () => {
+  it("warns when there are states but nobody marked the slot as interactive", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       readInteraction({ style: { states: { hover: { scale: 1.2 } } } } as never, "img");
@@ -393,7 +393,7 @@ describe("readInteraction — avisa de lo que no puede hacer", () => {
     }
   });
 
-  it("no avisa en los dos casos sanos: interactivo con hover, y slot normal", () => {
+  it("does not warn in the two healthy cases: interactive with hover, and a normal slot", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       readInteraction({ style: { isInteractive: true, states: { hover: { scale: 1.2 } } } } as never, "ok");
@@ -408,7 +408,7 @@ describe("readInteraction — avisa de lo que no puede hacer", () => {
   });
 });
 
-describe("el motor tampoco calla lo que no puede hacer", () => {
+describe("the engine does not stay silent about what it cannot do either", () => {
   // No test mounts the action manager -that absence is exactly the gap through
   // which the original fault slipped-, so it is pinned against the source, just
   // like the `composedPath` guard.
@@ -416,14 +416,14 @@ describe("el motor tampoco calla lo que no puede hacer", () => {
   const sinComentarios = (t: string) =>
     t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
 
-  it("le pasa el id del slot a readInteraction, o los avisos no dicen cual es", () => {
+  it("passes the slot id to readInteraction, or the warnings do not say which one it is", () => {
     const codigo = sinComentarios(fuente());
     const i = codigo.indexOf("readInteraction(");
-    expect(i, "no encuentro la llamada a readInteraction").toBeGreaterThan(-1);
+    expect(i, "I cannot find the call to readInteraction").toBeGreaterThan(-1);
     expect(codigo.slice(i, i + 200)).toContain("slot.id");
   });
 
-  it("avisa una sola vez de una accion cuyo destino no existe", () => {
+  it("warns once about an action whose target does not exist", () => {
     const codigo = sinComentarios(fuente());
     const i = codigo.indexOf("warnedTargets");
     expect(i, "el destino inexistente volvio a fallar en silencio").toBeGreaterThan(-1);
@@ -432,8 +432,8 @@ describe("el motor tampoco calla lo que no puede hacer", () => {
     // failed because the code moved, not because it broke.
     const fin = codigo.indexOf("revert:", i);
     const bloque = codigo.slice(i, fin > i ? fin : i + 2000);
-    expect(bloque, "el actionEvent debe condicionarse a que el destino no exista").toContain("!targetEl");
-    expect(bloque, "debe recordarse para no repetirlo en cada hover").toContain("warnedTargets.add");
+    expect(bloque, "the actionEvent must be conditioned on the target not existing").toContain("!targetEl");
+    expect(bloque, "it must be remembered so as not to repeat it on every hover").toContain("warnedTargets.add");
     expect(bloque).toContain("console.warn");
   });
 });
@@ -452,11 +452,11 @@ describe("el motor tampoco calla lo que no puede hacer", () => {
  * leaves- and that is why it REVERTS. The click has no such exit, and a toggle
  * that undid itself on its own would not be a toggle.
  */
-describe("las acciones al hacer clic", () => {
+describe("the actions on click", () => {
   const gestorFalso = () => ({ run: vi.fn(), revert: vi.fn() });
   const ACCIONES = [{ target: "ficha", type: "toggle" }];
 
-  it("un clic ejecuta las acciones de active", () => {
+  it("a click runs the actions of active", () => {
     const el = document.createElement("div");
     const gestor = gestorFalso();
     bindStates(el, { active: { actions: ACCIONES } }, vi.fn(), gestor);
@@ -466,7 +466,7 @@ describe("las acciones al hacer clic", () => {
   });
 
   /** What separates a toggle from a "show": persistence. */
-  it("y NO las revierte nunca", () => {
+  it("and NEVER reverts them", () => {
     const el = document.createElement("div");
     const gestor = gestorFalso();
     bindStates(el, { active: { actions: ACCIONES } }, vi.fn(), gestor);
@@ -477,7 +477,7 @@ describe("las acciones al hacer clic", () => {
   });
 
   /** Without a cursor, nothing indicates that the layer can be clicked. */
-  it("la capa se señala como pulsable", () => {
+  it("the layer is flagged as clickable", () => {
     const el = document.createElement("div");
     bindStates(el, { active: { actions: ACCIONES } }, vi.fn(), gestorFalso());
     expect(el.style.cursor).toBe("pointer");
@@ -496,13 +496,13 @@ describe("las acciones al hacer clic", () => {
    * is also signalled as clickable. That is defensible -the author declared it
    * interactive- but it is a visible change.
    */
-  it("una capa interactiva SIN acciones tambien se señala pulsable", () => {
+  it("an interactive layer WITHOUT actions is also flagged as clickable", () => {
     const el = document.createElement("div");
     bindStates(el, { hover: { scale: 1.2 } }, vi.fn(), gestorFalso());
     expect(el.style.cursor).toBe("pointer");
   });
 
-  it("y una lista vacia anuncia, aunque no toque nada", () => {
+  it("and an empty list announces, even though it touches nothing", () => {
     const el = document.createElement("div");
     const gestor = gestorFalso();
     bindStates(el, { active: { actions: [] } }, vi.fn(), gestor);
@@ -532,7 +532,7 @@ describe("las acciones al hacer clic", () => {
    * `pointer-events: none` eats the clicks before they reach the slot. This test
    * is what keeps the fix from depending on that accident.
    */
-  it("el clic sigue subiendo: la pagina de alrededor manda", () => {
+  it("the click still bubbles up: the surrounding page decides", () => {
     const padre = document.createElement("div");
     const el = document.createElement("div");
     padre.appendChild(el);
@@ -552,7 +552,7 @@ describe("las acciones al hacer clic", () => {
    * The two halves coexist: hooking the click cannot have broken the hover, which
    * was the only thing that worked before this.
    */
-  it("el hover sigue reviertiendo lo suyo, con las dos declaradas", () => {
+  it("hover keeps reverting its own, with both declared", () => {
     const el = document.createElement("div");
     const gestor = gestorFalso();
     const deHover = [{ target: "precio", type: "show" }];

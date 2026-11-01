@@ -23,7 +23,7 @@
 import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine";
 
-function montar(slots: any[]) {
+function mount(slots: any[]) {
   const host = document.createElement("div");
   (host as any).attachShadow({ mode: "open" });
   document.body.appendChild(host);
@@ -46,7 +46,7 @@ const image = (style: any = {}) => ({
 });
 
 async function slot(slots: any[], id: string): Promise<HTMLElement> {
-  const { host, motor } = montar(slots);
+  const { host, motor } = mount(slots);
   await motor.renderSlots();
   return host.shadowRoot!.querySelector(`[data-slot-id="${id}"]`) as HTMLElement;
 }

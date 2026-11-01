@@ -10,7 +10,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import ImageEngine from './ImageEngine';
 
-describe('Adaptación inteligente de rendimiento (Device Tiering)', () => {
+describe('Adaptive performance (device tiering)', () => {
   let host: HTMLElement;
 
   beforeEach(() => {
@@ -22,7 +22,7 @@ describe('Adaptación inteligente de rendimiento (Device Tiering)', () => {
     document.body.removeChild(host);
   });
 
-  it('en dispositivo móvil o low-tier, el cambio de idioma usa fundido sin blur en el viewport', () => {
+  it('on a mobile or low-tier device, the language change uses a blur-free fade in the viewport', () => {
     const motor = new ImageEngine(host as any);
     // Simulate a mobile profile
     motor._deviceProfile = {
@@ -56,7 +56,7 @@ describe('Adaptación inteligente de rendimiento (Device Tiering)', () => {
     expect(viewport.style.filter).not.toContain('blur');
   });
 
-  it('en PC de escritorio high-tier, el cambio de idioma usa blur en el viewport', () => {
+  it('on a desktop high-tier PC, the language change uses blur in the viewport', () => {
     const motor = new ImageEngine(host as any);
     motor._deviceProfile = {
       tier: 'high',
@@ -84,7 +84,7 @@ describe('Adaptación inteligente de rendimiento (Device Tiering)', () => {
     expect(viewport.style.filter).toContain('blur(14px)');
   });
 
-  it('respeta el atributo tier="low" manual en el host degradando a fundido suave', () => {
+  it('respects a manual tier="low" attribute on the host by downgrading to a soft fade', () => {
     host.setAttribute('tier', 'low');
     const motor = new ImageEngine(host as any);
     motor._deviceProfile = {

@@ -52,7 +52,7 @@ export default defineConfig(({ command, mode }) => mode === 'esm' ? {
   // lottie_light would land in the bundle. vitest runs as `serve` and keeps
   // the real library.
   resolve: command === 'build'
-    ? { alias: { 'lottie-web/build/player/lottie_light': resolve(__dirname, 'src/core/lottie-external.ts') } }
+    ? { alias: { 'lottie-web/build/player/lottie_light': resolve(__dirname, 'src/render/lottie-external.ts') } }
     : {},
   build: {
     lib: {

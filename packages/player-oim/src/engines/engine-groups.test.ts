@@ -9,7 +9,7 @@
 /**
  * The group, inside the real engine.
  *
- * `core/grupos.test.ts` checks the rules; this checks that the engine APPLIES
+ * `core/groups.test.ts` checks the rules; this checks that the engine APPLIES
  * them. The difference is not theoretical: half of the failures of these days
  * were a correct rule that the real path never used, and a checked rule that
  * nobody applies behaves the same as one that does not exist.
@@ -22,7 +22,7 @@ import { ImageEngine } from "./ImageEngine";
 
 const CANVAS = { canvas_width: 800, canvas_height: 600 };
 
-const capa = (id: string, extra: any = {}) => ({
+const layer = (id: string, extra: any = {}) => ({
   id,
   type: "geo",
   content: { es: "" },
@@ -36,11 +36,11 @@ const capa = (id: string, extra: any = {}) => ({
   style: { fillColor: "#ff0000", ...(extra.style || {}) },
 });
 
-describe("el grupo en el motor", () => {
+describe("the group in the engine", () => {
   let hostEl: HTMLElement;
   let shadowRoot: ShadowRoot;
 
-  const motorCon = (slots: any[]) => {
+  const engineWith = (slots: any[]) => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");
     shadowRoot.appendChild(engine._overlay);
@@ -61,11 +61,11 @@ describe("el grupo en el motor", () => {
     if (hostEl.parentNode) document.body.removeChild(hostEl);
   });
 
-  it("mete a los hijos DENTRO del elemento del grupo", async () => {
-    const engine = motorCon([
-      capa("g1", { type: "group", position: [0.1, 0.1], width_px: 200, height_px: 100 }),
-      capa("a", { style: { groupId: "g1" } }),
-      capa("b", { style: { groupId: "g1" } }),
+  it("puts the children INSIDE the group element", async () => {
+    const engine = engineWith([
+      layer("g1", { type: "group", position: [0.1, 0.1], width_px: 200, height_px: 100 }),
+      layer("a", { style: { groupId: "g1" } }),
+      layer("b", { style: { groupId: "g1" } }),
     ]);
     await engine.renderSlots();
 
@@ -73,15 +73,15 @@ describe("el grupo en el motor", () => {
     expect(el(engine, "g1").contains(el(engine, "b"))).toBe(true);
   });
 
-  it("y van dentro del container que ANIMA, no colgando del slot", async () => {
+  it("and they go inside the container that ANIMATES, not hanging off the slot", async () => {
     // The animation of a slot runs on `.oim-slot-loop-wrap` and never on the
     // slot itself, because the transform of `.oim-slot` is its position anchor.
     // Hanging the children off the slot would leave them as SIBLINGS of the
     // animation: animating the group would move an empty wrapper and the
     // children would stay still.
-    const engine = motorCon([
-      capa("g1", { type: "group" }),
-      capa("a", { style: { groupId: "g1" } }),
+    const engine = engineWith([
+      layer("g1", { type: "group" }),
+      layer("a", { style: { groupId: "g1" } }),
     ]);
     await engine.renderSlots();
 
@@ -90,10 +90,10 @@ describe("el grupo en el motor", () => {
     expect(container.className).toContain("oim-slot-loop-wrap");
   });
 
-  it("y ese container gira sobre el centro del GRUPO", async () => {
-    const engine = motorCon([
-      capa("g1", { type: "group", position: [0.25, 0.5], width_px: 200, height_px: 100 }),
-      capa("a", { style: { groupId: "g1" } }),
+  it("and that container rotates around the center of the GROUP", async () => {
+    const engine = engineWith([
+      layer("g1", { type: "group", position: [0.25, 0.5], width_px: 200, height_px: 100 }),
+      layer("a", { style: { groupId: "g1" } }),
     ]);
     await engine.renderSlots();
 
@@ -102,14 +102,14 @@ describe("el grupo en el motor", () => {
     expect(el(engine, "a").parentElement!.style.transformOrigin).toBe("300px 350px");
   });
 
-  it("el grupo deja de ser una caja de su size y pasa a cubrir el lienzo", async () => {
+  it("the group stops being a box of its size and covers the canvas", async () => {
     // It used to be dead weight: an empty 200x100 element on top of its
     // children. Now it wraps, and so it has to sit at the origin: the children
     // carry CANVAS coordinates and would end up misplaced inside an offset box.
-    const engine = motorCon([
-      capa("g1", { type: "group", position: [0.25, 0.5], width_px: 200, height_px: 100 }),
-      capa("a", { style: { groupId: "g1" } }),
-      capa("b", { style: { groupId: "g1" } }),
+    const engine = engineWith([
+      layer("g1", { type: "group", position: [0.25, 0.5], width_px: 200, height_px: 100 }),
+      layer("a", { style: { groupId: "g1" } }),
+      layer("b", { style: { groupId: "g1" } }),
     ]);
     await engine.renderSlots();
 
@@ -123,11 +123,11 @@ describe("el grupo en el motor", () => {
     expect(groupEl.style.transformOrigin).toBe("300px 350px");
   });
 
-  it("no se traga los clics del resto del lienzo", async () => {
-    const engine = motorCon([
-      capa("g1", { type: "group", width_px: 20, height_px: 20 }),
-      capa("a", { style: { groupId: "g1" } }),
-      capa("b", { style: { groupId: "g1" } }),
+  it("does not swallow the clicks of the rest of the canvas", async () => {
+    const engine = engineWith([
+      layer("g1", { type: "group", width_px: 20, height_px: 20 }),
+      layer("a", { style: { groupId: "g1" } }),
+      layer("b", { style: { groupId: "g1" } }),
     ]);
     await engine.renderSlots();
     expect(el(engine, "g1").style.pointerEvents).toBe("none");
@@ -136,13 +136,13 @@ describe("el grupo en el motor", () => {
     expect(el(engine, "g1").style.overflow).toBe("visible");
   });
 
-  it("ocultar el grupo oculta a sus hijos, sin propagar nada a mano", async () => {
+  it("hiding the group hides its children, without propagating anything by hand", async () => {
     // The proof that the tree works: `display: none` on the parent hides the
     // children, which carry NOTHING of their own, because they are inside it.
-    const engine = motorCon([
-      capa("g1", { type: "group", style: { isVisible: false } }),
-      capa("a", { style: { groupId: "g1" } }),
-      capa("b", { style: { groupId: "g1" } }),
+    const engine = engineWith([
+      layer("g1", { type: "group", style: { isVisible: false } }),
+      layer("a", { style: { groupId: "g1" } }),
+      layer("b", { style: { groupId: "g1" } }),
     ]);
     await engine.renderSlots();
 
@@ -151,11 +151,11 @@ describe("el grupo en el motor", () => {
     expect(el(engine, "g1").contains(el(engine, "a"))).toBe(true);
   });
 
-  it("la opacidad del grupo la heredan los hijos por CSS", async () => {
-    const engine = motorCon([
-      capa("g1", { type: "group", style: { opacity: 40 } }),
-      capa("a", { style: { groupId: "g1" } }),
-      capa("b", { style: { groupId: "g1" } }),
+  it("the children inherit the group's opacity through CSS", async () => {
+    const engine = engineWith([
+      layer("g1", { type: "group", style: { opacity: 40 } }),
+      layer("a", { style: { groupId: "g1" } }),
+      layer("b", { style: { groupId: "g1" } }),
     ]);
     await engine.renderSlots();
 
@@ -165,11 +165,11 @@ describe("el grupo en el motor", () => {
   });
 });
 
-describe("degradar sin perder nada", () => {
+describe("degrade without losing anything", () => {
   let hostEl: HTMLElement;
   let shadowRoot: ShadowRoot;
 
-  const motorCon = (slots: any[]) => {
+  const engineWith = (slots: any[]) => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");
     shadowRoot.appendChild(engine._overlay);
@@ -187,7 +187,7 @@ describe("degradar sin perder nada", () => {
     if (hostEl.parentNode) document.body.removeChild(hostEl);
   });
 
-  it("un archivo ANTERIOR a la fase 3 se pinta plano, como siempre", async () => {
+  it("a file BEFORE phase 3 is painted flat, as always", async () => {
     // No slot carries `style.groupId`. That is the case for all the .oim files
     // already published, and it has to look exactly as before: the two loose
     // layers, and the group WITHOUT an element.
@@ -196,10 +196,10 @@ describe("degradar sin perder nada", () => {
     // `isGeoLike`, so a group slot without text was already being discarded
     // before phase 3. Measured, and contrary to what the design's diagnosis
     // said: the group's dead weight was in the signed file, not in the DOM.
-    const engine = motorCon([
-      capa("g1", { type: "group" }),
-      capa("a"),
-      capa("b"),
+    const engine = engineWith([
+      layer("g1", { type: "group" }),
+      layer("a"),
+      layer("b"),
     ]);
     await engine.renderSlots();
 
@@ -207,22 +207,22 @@ describe("degradar sin perder nada", () => {
     expect(Array.from(sueltos).map((e: any) => e.dataset.slotId)).toEqual(["a", "b"]);
   });
 
-  it("un hijo cuyo grupo no llego se queda suelto, no desaparece", async () => {
-    const engine = motorCon([capa("a", { style: { groupId: "g_perdido" } }), capa("b")]);
+  it("a child whose group never arrived is left loose, it does not disappear", async () => {
+    const engine = engineWith([layer("a", { style: { groupId: "g_perdido" } }), layer("b")]);
     await engine.renderSlots();
 
     expect(engine._overlay!.querySelectorAll("[data-slot-id]")).toHaveLength(2);
   });
 
-  it("ninguna capa se pierde del DOM en un archivo mezclado", async () => {
+  it("no layer is lost from the DOM in a mixed file", async () => {
     const slots = [
-      capa("g1", { type: "group" }),
-      capa("a", { style: { groupId: "g1" } }),
-      capa("b", { style: { groupId: "g1" } }),
-      capa("huerfano", { style: { groupId: "g_perdido" } }),
-      capa("suelta"),
+      layer("g1", { type: "group" }),
+      layer("a", { style: { groupId: "g1" } }),
+      layer("b", { style: { groupId: "g1" } }),
+      layer("huerfano", { style: { groupId: "g_perdido" } }),
+      layer("suelta"),
     ];
-    const engine = motorCon(slots);
+    const engine = engineWith(slots);
     await engine.renderSlots();
 
     const enElArbol = Array.from(engine._overlay!.querySelectorAll("[data-slot-id]"))
@@ -231,13 +231,13 @@ describe("degradar sin perder nada", () => {
   });
 });
 
-describe("un repintado parcial no rompe el grupo", () => {
+describe("a partial repaint does not break the group", () => {
   // `renderSlots({onlyIds})` replaces in place the nodes that change —it is
   // used by the language switch— and keeps the animations and parallax of the rest.
   let hostEl: HTMLElement;
   let shadowRoot: ShadowRoot;
 
-  const motorCon = (slots: any[]) => {
+  const engineWith = (slots: any[]) => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");
     shadowRoot.appendChild(engine._overlay);
@@ -249,9 +249,9 @@ describe("un repintado parcial no rompe el grupo", () => {
     engine._overlay!.querySelector('[data-slot-id="' + id + '"]') as HTMLElement;
 
   const escena = () => [
-    capa("g1", { type: "group" }),
-    capa("a", { style: { groupId: "g1" } }),
-    capa("b", { style: { groupId: "g1" } }),
+    layer("g1", { type: "group" }),
+    layer("a", { style: { groupId: "g1" } }),
+    layer("b", { style: { groupId: "g1" } }),
   ];
 
   beforeEach(() => {
@@ -264,8 +264,8 @@ describe("un repintado parcial no rompe el grupo", () => {
     if (hostEl.parentNode) document.body.removeChild(hostEl);
   });
 
-  it("repintar SOLO un hijo lo deja dentro del grupo", async () => {
-    const engine = motorCon(escena());
+  it("repainting ONLY one child leaves it inside the group", async () => {
+    const engine = engineWith(escena());
     await engine.renderSlots();
     await engine.renderSlots({ onlyIds: new Set(["a"]) });
 
@@ -273,12 +273,12 @@ describe("un repintado parcial no rompe el grupo", () => {
     expect(el(engine, "g1").contains(el(engine, "a"))).toBe(true);
   });
 
-  it("repintar el grupo Y un hijo a la vez no pierde al hijo", async () => {
+  it("repainting the group AND a child at once does not lose the child", async () => {
     // It is the case that slipped past me when writing phase 3: nesting BEFORE
     // the substitution, `replaceChild` put the new child inside the group's OLD
     // element and then replaced that whole group. The child left with it, and
     // the layer disappeared from the canvas.
-    const engine = motorCon(escena());
+    const engine = engineWith(escena());
     await engine.renderSlots();
     await engine.renderSlots({ onlyIds: new Set(["g1", "a"]) });
 
@@ -289,8 +289,8 @@ describe("un repintado parcial no rompe el grupo", () => {
     expect(el(engine, "g1").contains(el(engine, "b"))).toBe(true);
   });
 
-  it("repintar el grupo entero conserva a los dos hijos y su orden", async () => {
-    const engine = motorCon(escena());
+  it("repainting the whole group keeps both children and their order", async () => {
+    const engine = engineWith(escena());
     await engine.renderSlots();
     await engine.renderSlots({ onlyIds: new Set(["g1", "a", "b"]) });
 
@@ -299,7 +299,7 @@ describe("un repintado parcial no rompe el grupo", () => {
   });
 });
 
-describe("animar una capa que esta en un grupo", () => {
+describe("animating a layer that is inside a group", () => {
   // Does grouping an animated layer replace its animation? No. A group never
   // touches its children's animations: they COMPOSE, because they live on
   // nested elements and transforms multiply on the way down.
@@ -325,14 +325,14 @@ describe("animar una capa que esta en un grupo", () => {
     if (hostEl.parentNode) document.body.removeChild(hostEl);
   });
 
-  it("el hijo conserva SU animacion y el grupo la SUYA: son dos elementos", async () => {
+  it("the child keeps ITS animation and the group keeps ITS OWN: they are two elements", async () => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");
     shadowRoot.appendChild(engine._overlay);
     engine.metadata = { ...CANVAS, slots: [
-      capa("g1", { type: "group", style: { animation: conAnimacion() } }),
-      capa("a", { style: { groupId: "g1", animation: conAnimacion() } }),
-      capa("b", { style: { groupId: "g1" } }),
+      layer("g1", { type: "group", style: { animation: conAnimacion() } }),
+      layer("a", { style: { groupId: "g1", animation: conAnimacion() } }),
+      layer("b", { style: { groupId: "g1" } }),
     ]};
     await engine.renderSlots();
 
@@ -347,7 +347,7 @@ describe("animar una capa que esta en un grupo", () => {
   });
 });
 
-describe("lo que el wrapper desbloquea (fase 4)", () => {
+describe("what the wrapper unlocks (phase 4)", () => {
   // The design promised three things for phase 4 —animating a whole group, an
   // action that shows or hides it, and parallax over the set— and said that
   // none of them would need new hierarchy code. This checks it: all three come
@@ -355,7 +355,7 @@ describe("lo que el wrapper desbloquea (fase 4)", () => {
   let hostEl: HTMLElement;
   let shadowRoot: ShadowRoot;
 
-  const motorCon = (slots: any[]) => {
+  const engineWith = (slots: any[]) => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");
     shadowRoot.appendChild(engine._overlay);
@@ -380,12 +380,12 @@ describe("lo que el wrapper desbloquea (fase 4)", () => {
     if (hostEl.parentNode) document.body.removeChild(hostEl);
   });
 
-  it("una accion que oculta el grupo oculta todo lo que hay dentro", async () => {
-    const engine = motorCon([
-      capa("g1", { type: "group" }),
-      capa("a", { style: { groupId: "g1" } }),
-      capa("b", { style: { groupId: "g1" } }),
-      capa("fuera"),
+  it("an action that hides the group hides everything inside it", async () => {
+    const engine = engineWith([
+      layer("g1", { type: "group" }),
+      layer("a", { style: { groupId: "g1" } }),
+      layer("b", { style: { groupId: "g1" } }),
+      layer("fuera"),
     ]);
     await engine.renderSlots();
 
@@ -401,11 +401,11 @@ describe("lo que el wrapper desbloquea (fase 4)", () => {
     expect(el(engine, "g1").contains(el(engine, "a"))).toBe(true);
   });
 
-  it("y volver a mostrarlo devuelve el grupo entero", async () => {
-    const engine = motorCon([
-      capa("g1", { type: "group" }),
-      capa("a", { style: { groupId: "g1" } }),
-      capa("b", { style: { groupId: "g1" } }),
+  it("and showing it again brings back the whole group", async () => {
+    const engine = engineWith([
+      layer("g1", { type: "group" }),
+      layer("a", { style: { groupId: "g1" } }),
+      layer("b", { style: { groupId: "g1" } }),
     ]);
     await engine.renderSlots();
 
@@ -419,11 +419,11 @@ describe("lo que el wrapper desbloquea (fase 4)", () => {
     expect(el(engine, "g1").contains(el(engine, "a"))).toBe(true);
   });
 
-  it("el parallax de un grupo mueve el wrapper, no una caja vacia", async () => {
-    const engine = motorCon([
-      capa("g1", { type: "group", style: { parallax: { enabled: true, depth: 0.5, axis: "both" } } }),
-      capa("a", { style: { groupId: "g1" } }),
-      capa("b", { style: { groupId: "g1" } }),
+  it("a group's parallax moves the wrapper, not an empty box", async () => {
+    const engine = engineWith([
+      layer("g1", { type: "group", style: { parallax: { enabled: true, depth: 0.5, axis: "both" } } }),
+      layer("a", { style: { groupId: "g1" } }),
+      layer("b", { style: { groupId: "g1" } }),
     ]);
     await engine.renderSlots();
 
@@ -435,7 +435,7 @@ describe("lo que el wrapper desbloquea (fase 4)", () => {
   });
 });
 
-describe("con un slot como el que emite el backend DE VERDAD", () => {
+describe("with a slot like the one the backend REALLY emits", () => {
   // This is the test that was missing, and its absence cost a whole failure.
   //
   // The backend ALWAYS emits `style.width` and `style.height` in cqw, and the
@@ -450,7 +450,7 @@ describe("con un slot como el que emite el backend DE VERDAD", () => {
   let hostEl: HTMLElement;
   let shadowRoot: ShadowRoot;
 
-  const motorCon = (slots: any[]) => {
+  const engineWith = (slots: any[]) => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");
     shadowRoot.appendChild(engine._overlay);
@@ -489,8 +489,8 @@ describe("con un slot como el que emite el backend DE VERDAD", () => {
     if (hostEl.parentNode) document.body.removeChild(hostEl);
   });
 
-  it("el `style.width` del archivo NO pisa el size del wrapper", async () => {
-    const engine = motorCon([
+  it("the file's `style.width` does NOT override the wrapper's size", async () => {
+    const engine = engineWith([
       comoDelBackend("g1", { type: "group" }),
       comoDelBackend("a", { style: { groupId: "g1" } }),
       comoDelBackend("b", { style: { groupId: "g1" } }),
@@ -504,7 +504,7 @@ describe("con un slot como el que emite el backend DE VERDAD", () => {
     expect(groupEl.style.top).toBe("0px");
   });
 
-  it("neutraliza la scale del visor, que si no se aplicaria dos veces", async () => {
+  it("neutralizes the viewer's scale, which would otherwise be applied twice", async () => {
     // `--oim-scale` is set by the overlay and cascades to everything inside;
     // `.oim-slot` applies it on its own transform. The wrapper is an
     // `.oim-slot` that CONTAINS others, so its children received it twice and
@@ -513,7 +513,7 @@ describe("con un slot como el que emite el backend DE VERDAD", () => {
     // This test checks the variable and not the measured width on purpose:
     // happy-dom does not compose transforms. The real size was checked in a
     // browser, opening the .oim with the CDN player.
-    const engine = motorCon([
+    const engine = engineWith([
       comoDelBackend("g1", { type: "group" }),
       comoDelBackend("a", { style: { groupId: "g1" } }),
     ]);
@@ -521,9 +521,9 @@ describe("con un slot como el que emite el backend DE VERDAD", () => {
     expect(el(engine, "g1").style.getPropertyValue("--oim-scale")).toBe("1");
   });
 
-  it("y una capa suelta SI conserva el suyo", async () => {
+  it("and a loose layer DOES keep its own", async () => {
     // The wrapper is the exception, not the new rule.
-    const engine = motorCon([comoDelBackend("suelta")]);
+    const engine = engineWith([comoDelBackend("suelta")]);
     await engine.renderSlots();
     expect(el(engine, "suelta").style.width).not.toBe("800px");
   });

@@ -5,7 +5,7 @@
  */
 
 // Publishes the player's embedded public keys as data: packages/spec/keys.json
-// is generated from EMBEDDED_KEYS in packages/player-oim/src/core/keys.ts, so a
+// is generated from EMBEDDED_KEYS in packages/player-oim/src/render/keys.ts, so a
 // reader in any language can verify signatures without parsing TypeScript.
 // Usage: node tools/keys-json.mjs           (writes packages/spec/keys.json)
 //        node tools/keys-json.mjs --check   (exit 1 if the file has drifted)
@@ -13,7 +13,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 
-const KEYS_TS = "packages/player-oim/src/core/keys.ts";
+const KEYS_TS = "packages/player-oim/src/render/keys.ts";
 const KEYS_JSON = "packages/spec/keys.json";
 const FIELDS = ["kid", "jwk", "not_after", "verify_until"];
 
@@ -43,7 +43,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const keys = await current();
   const text = serialize(keys);
   if (process.argv.includes("--check")) {
-    const onDisk = readFileSync(KEYS_JSON, "utf8");
+    const onDisk = readFileSync(KEYS_JSON, "utf8").replace(/\r\n/g, "\n");
     if (onDisk !== text) {
       console.error(`${KEYS_JSON} is out of date with ${KEYS_TS}; run node tools/keys-json.mjs`);
       process.exit(1);

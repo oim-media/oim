@@ -15,7 +15,7 @@ import ImageEngine from "./ImageEngine";
 const pideTipografias = () =>
   Array.from(document.querySelectorAll("link")).some((l) => /fonts\.(googleapis|gstatic)\.com/.test(l.href));
 
-describe("una capa cuya familia va incrustada", () => {
+describe("a layer whose family is embedded", () => {
   let host: HTMLElement;
 
   beforeEach(() => {
@@ -42,26 +42,26 @@ describe("una capa cuya familia va incrustada", () => {
     return host.shadowRoot!.querySelector('[data-slot-id="t"]') as HTMLElement;
   };
 
-  it("se pinta con el nombre interno y no se pide a Google", async () => {
-    const capa = await pintar(new Map([["Lora", "oim-3f9a1c2b-Lora"]]));
-    expect(capa.style.fontFamily).toContain("oim-3f9a1c2b-Lora");
+  it("is painted with the internal name and Google is not asked", async () => {
+    const layerItem = await pintar(new Map([["Lora", "oim-3f9a1c2b-Lora"]]));
+    expect(layerItem.style.fontFamily).toContain("oim-3f9a1c2b-Lora");
     expect(pideTipografias()).toBe(false);
   });
 
   // Before: "without an embedded font it is requested from Google, as before". The player is a
   // sandbox: the family is named and the browser falls back to whatever is installed,
   // with no request at all.
-  it("sin fuente incrustada se nombra la familia y NO se pide a nadie", async () => {
-    const capa = await pintar(new Map());
-    expect(capa.style.fontFamily).toContain("Lora");
+  it("without an embedded font the family is named and NOTHING is requested", async () => {
+    const layerItem = await pintar(new Map());
+    expect(layerItem.style.fontFamily).toContain("Lora");
     expect(pideTipografias()).toBe(false);
   });
 });
 
-describe("una capa que no pinta texto", () => {
+describe("a layer that paints no text", () => {
   beforeEach(() => document.head.querySelectorAll("link").forEach((l) => l.remove()));
 
-  it("no pide a Google la fuente que el editor le pone igualmente", async () => {
+  it("does not ask Google for the font the editor sets on it anyway", async () => {
     // serializeSlots writes fontFamily "Inter" on EVERY layer, images included:
     // any .oim with an image asked Google for Inter on open.
     const host = document.createElement("div");

@@ -11,17 +11,19 @@ import { extractKeys, serialize } from "./keys-json.mjs";
 
 const require = createRequire(new URL("../packages/player-oim/package.json", import.meta.url));
 const ts = require("typescript");
-const tsSource = readFileSync(new URL("../packages/player-oim/src/core/keys.ts", import.meta.url), "utf8");
+const tsSource = readFileSync(new URL("../packages/player-oim/src/render/keys.ts", import.meta.url), "utf8");
+// A Windows checkout may write CRLF; the generator always writes LF.
+const readKeysJson = () => readFileSync(new URL("../packages/spec/keys.json", import.meta.url), "utf8").replace(/\r\n/g, "\n");
 
 describe("spec keys.json", () => {
   it("is exactly what keys.ts embeds (run node tools/keys-json.mjs after changing keys)", async () => {
-    const onDisk = readFileSync(new URL("../packages/spec/keys.json", import.meta.url), "utf8");
+    const onDisk = readKeysJson();
     expect(onDisk).toBe(serialize(await extractKeys(tsSource, ts)));
   });
 
   it("notices when a key in keys.ts changes", async () => {
     const changed = tsSource.replace("kid: 'v1'", "kid: 'v9'");
-    const onDisk = readFileSync(new URL("../packages/spec/keys.json", import.meta.url), "utf8");
+    const onDisk = readKeysJson();
     expect(onDisk).not.toBe(serialize(await extractKeys(changed, ts)));
   });
 

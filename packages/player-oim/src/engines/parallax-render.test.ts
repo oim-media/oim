@@ -6,8 +6,8 @@
 
 // @vitest-environment happy-dom
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { TRACK_CLASS, CSS_PARALLAX, ensureParallaxKeyframes } from "../core/parallaxCss";
-import { ParallaxController } from "../core/ParallaxController";
+import { TRACK_CLASS, CSS_PARALLAX, ensureParallaxKeyframes } from "../../../core/src/parallaxCss.js";
+import { ParallaxController } from "../render/ParallaxController";
 import { ImageEngine } from "./ImageEngine";
 
 describe("Parallax Render & Controller Engine (Tarea 2)", () => {
@@ -26,7 +26,7 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
     }
   });
 
-  it("ensureParallaxKeyframes inyecta CSS_PARALLAX una sola vez por shadow root", () => {
+  it("ensureParallaxKeyframes injects CSS_PARALLAX once per shadow root", () => {
     expect(shadowRoot.querySelectorAll("style")).toHaveLength(0);
     ensureParallaxKeyframes(shadowRoot);
     expect(shadowRoot.querySelectorAll("style")).toHaveLength(1);
@@ -38,7 +38,7 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
     expect(shadowRoot.querySelectorAll("style")).toHaveLength(1);
   });
 
-  it("ParallaxController no usa ni referencia dataset.parallaxOffset en su bucle", () => {
+  it("ParallaxController neither uses nor references dataset.parallaxOffset in its loop", () => {
     const container = document.createElement("div");
     const slotEl = document.createElement("div");
     container.appendChild(slotEl);
@@ -58,7 +58,7 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
     document.body.removeChild(container);
   });
 
-  it("normaliza style.parallax al entrar en el motor y monta pista infinita con 2 copies", async () => {
+  it("normalizes style.parallax on entering the engine and mounts an infinite track with 2 copies", async () => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");
     shadowRoot.appendChild(engine._overlay);
@@ -95,16 +95,16 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
     const slotEl = engine._overlay.querySelector('[data-slot-id="cielo"]') as HTMLElement;
     expect(slotEl).not.toBeNull();
 
-    const pista = slotEl.querySelector(`.${TRACK_CLASS}`) as HTMLElement;
-    expect(pista).not.toBeNull();
-    expect(pista.style.getPropertyValue("--oim-parallax-hover")).toBe("paused");
+    const trackItem = slotEl.querySelector(`.${TRACK_CLASS}`) as HTMLElement;
+    expect(trackItem).not.toBeNull();
+    expect(trackItem.style.getPropertyValue("--oim-parallax-hover")).toBe("paused");
     // With a mirror the return trip covers TWO pieces, so at 40 px/s over 800 px
     // it takes 40s, not 20. If it took 20, the mirror would double the speed without
     // anyone having touched the setting.
-    expect(pista.style.animationDuration).toBe("40s");
+    expect(trackItem.style.animationDuration).toBe("40s");
 
     // With a mirror there are FOUR pieces: with two, the reset jumps.
-    const copies = pista.children;
+    const copies = trackItem.children;
     expect(copies).toHaveLength(4);
 
     // Check that the second copy has the mirror scaleX(-1)
@@ -116,7 +116,7 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
     expect(styleEl).not.toBeNull();
   });
 
-  it("una capa con velocidad 0 NO se duplica y NO monta pista (caso montana y cabana)", async () => {
+  it("a layer with speed 0 is NOT duplicated and does NOT mount a track (the mountain and cabin case)", async () => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");
     shadowRoot.appendChild(engine._overlay);
@@ -147,15 +147,15 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
     expect(slotEl).not.toBeNull();
 
     // There must NOT be a track
-    const pista = slotEl.querySelector(`.${TRACK_CLASS}`);
-    expect(pista).toBeNull();
+    const trackItem = slotEl.querySelector(`.${TRACK_CLASS}`);
+    expect(trackItem).toBeNull();
 
     // It must have only the original wrapper
     expect(slotEl.children).toHaveLength(1);
     expect(slotEl.classList.contains(TRACK_CLASS)).toBe(false);
   });
 
-  it("un slot con isParallaxGroup tiene overflow: hidden para recortar el bucle", async () => {
+  it("a slot with isParallaxGroup has overflow: hidden to clip the loop", async () => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");
     shadowRoot.appendChild(engine._overlay);
@@ -184,7 +184,7 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
     expect(slotEl.style.overflow).toBe("hidden");
   });
 
-  it("un grupo con hijos que tienen parallax tiene overflow: hidden", async () => {
+  it("a group with children that have parallax has overflow: hidden", async () => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");
     shadowRoot.appendChild(engine._overlay);
@@ -224,7 +224,7 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
     expect(slotEl.style.overflow).toBe("hidden");
   });
 
-  it("un .oim con campos viejos (damping, combined, gyroscope) se abre sin lanzar", async () => {
+  it("an .oim with old fields (damping, combined, gyroscope) opens without throwing", async () => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");
     shadowRoot.appendChild(engine._overlay);
@@ -274,12 +274,12 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
   });
 });
 
-describe("el ancho de las copies sale del plan, no del motor", () => {
+describe("the width of the copies comes from the plan, not from the engine", () => {
   // When the editor fixed the width on its own and the player did not, we went back
   // to two behaviors: a correct preview and a broken published file.
   // The track is `width: max-content`: without a pixel width the two copies
   // collapse on top of each other.
-  it("LAS DOS copies llevan la base de flex del plan", async () => {
+  it("BOTH copies carry the plan's flex basis", async () => {
     const host = document.createElement("div");
     document.body.appendChild(host);
     const shadow = host.attachShadow({ mode: "open" });
@@ -312,12 +312,12 @@ describe("el ancho de las copies sale del plan, no del motor", () => {
 
     await (engine as never as { renderSlots: () => Promise<void> }).renderSlots();
 
-    const pista = shadow.querySelector(`.${TRACK_CLASS}`) as HTMLElement;
-    expect(pista, "no se monto la pista").toBeTruthy();
-    const copies = Array.from(pista.children) as HTMLElement[];
-    expect(copies.length, "con espejo la pista lleva cuatro piezas").toBe(4);
+    const trackItem = shadow.querySelector(`.${TRACK_CLASS}`) as HTMLElement;
+    expect(trackItem, "the track was not mounted").toBeTruthy();
+    const copies = Array.from(trackItem.children) as HTMLElement[];
+    expect(copies.length, "with a mirror the track has four pieces").toBe(4);
     for (const c of copies) {
-      expect(c.style.flex, "una pieza sin base de flex colapsa dentro de max-content").toContain("640px");
+      expect(c.style.flex, "a piece without a flex basis collapses inside max-content").toContain("640px");
     }
   });
 });
@@ -330,7 +330,7 @@ describe("el bucle apagado es velocidad cero", () => {
   // `parallax.enabled` says the layer has parallax; `infinite.enabled` says
   // whether it scrolls in a loop. Looking only at the first left the still layer
   // duplicated and scrolling past at its saved speed.
-  it("una capa con parallax y el bucle desactivado NO se duplica", async () => {
+  it("a layer with parallax and the loop disabled is NOT duplicated", async () => {
     const host = document.createElement("div");
     document.body.appendChild(host);
     const shadow = host.attachShadow({ mode: "open" });
@@ -359,12 +359,12 @@ describe("el bucle apagado es velocidad cero", () => {
     };
 
     await (engine as never as { renderSlots: () => Promise<void> }).renderSlots();
-    expect(shadow.querySelector(`.${TRACK_CLASS}`), "la capa quieta se duplico").toBeNull();
+    expect(shadow.querySelector(`.${TRACK_CLASS}`), "the still layer was duplicated").toBeNull();
   });
 });
 
 describe("cuantas piezas monta la pista", () => {
-  const montar = async (mirror: boolean) => {
+  const setupItem = async (mirror: boolean) => {
     const host = document.createElement("div");
     document.body.appendChild(host);
     const shadow = host.attachShadow({ mode: "open" });
@@ -386,23 +386,23 @@ describe("cuantas piezas monta la pista", () => {
   // The layer in these tests measures 400 and the canvas 800: pieces are needed
   // to cover `canvas + unit`, not a fixed number.
 
-  it("con espejo monta un numero PAR y suficiente", async () => {
+  it("with a mirror it mounts an EVEN and sufficient number", async () => {
     // With a mirror the unit is the pair (800), so the track must measure at
     // least 1600: four pieces of 400.
-    const pista = await montar(true);
-    expect(pista.children.length % 2, "media pareja rompe la simetria").toBe(0);
-    expect(pista.children.length * 400).toBeGreaterThanOrEqual(800 + 800);
+    const trackItem = await setupItem(true);
+    expect(trackItem.children.length % 2, "media pareja rompe la simetria").toBe(0);
+    expect(trackItem.children.length * 400).toBeGreaterThanOrEqual(800 + 800);
   });
 
-  it("sin espejo, las justas para cubrir el lienzo mas una", async () => {
+  it("without a mirror, just enough to cover the canvas plus one", async () => {
     // 800/400 = 2, plus one so the loop has somewhere to go = 3.
-    const pista = await montar(false);
-    expect(pista.children).toHaveLength(3);
+    const trackItem = await setupItem(false);
+    expect(trackItem.children).toHaveLength(3);
   });
 
-  it("solo se reflejan las piezas impares", async () => {
-    const pista = await montar(true);
-    const hijos = Array.from(pista.children) as HTMLElement[];
+  it("only the odd pieces are reflected", async () => {
+    const trackItem = await setupItem(true);
+    const hijos = Array.from(trackItem.children) as HTMLElement[];
     hijos.forEach((h, i) => {
       const reflejada = (h.style.transform || "").includes("scaleX(-1)");
       expect(reflejada, `la pieza ${i} deberia ${i % 2 ? "" : "NO "}estar reflejada`).toBe(i % 2 === 1);
@@ -410,12 +410,12 @@ describe("cuantas piezas monta la pista", () => {
   });
 });
 
-describe("una forma geo circular se dibuja redonda", () => {
+describe("a geo circular shape is drawn round", () => {
   // The exporter ALWAYS writes `border_radius_px: 0`, which arrives as
   // `style.borderRadius = '0px'`, and the generic styles loop runs AFTER
   // applying the shape: the circle ended up square. It had been like this
   // always; it surfaced when a sun was placed in a test scene.
-  it("el borde redondo del circulo no lo pisa el bucle de styles", async () => {
+  it("the circle's round border is not overwritten by the styles loop", async () => {
     const host = document.createElement("div");
     document.body.appendChild(host);
     const shadow = host.attachShadow({ mode: "open" });
@@ -437,22 +437,22 @@ describe("una forma geo circular se dibuja redonda", () => {
     };
 
     await (engine as never as { renderSlots: () => Promise<void> }).renderSlots();
-    const sol = shadow.querySelector("[data-slot-id]") as HTMLElement;
-    expect(sol, "no se monto el slot").toBeTruthy();
+    const sunItem = shadow.querySelector("[data-slot-id]") as HTMLElement;
+    expect(sunItem, "the slot was not mounted").toBeTruthy();
     // The circle is NOT drawn with `border-radius` any more: it is drawn with
     // a <path>, as in the editor, which is why the exporter's `borderRadius: 0px`
     // can no longer square it. The original test condition is kept (that style
     // is still on the slot), and what is checked is that the round figure is
     // still there.
-    const arco = sol.querySelector("path");
-    expect(arco, "el circulo no se dibujo").toBeTruthy();
-    expect(arco!.getAttribute("d"), "no es un arco de radio 45").toContain("A 45,45");
-    expect(sol.style.borderRadius, "el circulo ya no usa border-radius").not.toBe("50%");
+    const arc = sunItem.querySelector("path");
+    expect(arc, "the circle was not drawn").toBeTruthy();
+    expect(arc!.getAttribute("d"), "not an arc of radius 45").toContain("A 45,45");
+    expect(sunItem.style.borderRadius, "the circle no longer uses border-radius").not.toBe("50%");
   });
 });
 
-describe("el sobredimensionado llega al nodo", () => {
-  it("una capa pegada al borde recibe `--oim-scale`", async () => {
+describe("the oversizing reaches the node", () => {
+  it("a layer pinned to the edge receives `--oim-scale`", async () => {
     const host = document.createElement("div");
     (host as any).attachShadow({ mode: "open" });
     document.body.appendChild(host);
@@ -488,8 +488,8 @@ describe("el sobredimensionado llega al nodo", () => {
   });
 });
 
-describe("una capa con bucle infinito no se sobredimensiona", () => {
-  it("la pista ya cubre el lienzo; agrandarla la deformaria", async () => {
+describe("a layer with an infinite loop is not oversized", () => {
+  it("the track already covers the canvas; enlarging it would distort it", async () => {
     // Seen by eye before any test caught it: the player mounted the track
     // whenever speed was non-zero, ignoring the mode, so a layer with
     // `mode: mouse` AND `infinite.enabled` got BOTH. The editor mounts only
@@ -513,11 +513,11 @@ describe("una capa con bucle infinito no se sobredimensiona", () => {
     };
     await motor.renderSlots();
     const el = shadow.querySelector('[data-slot-id="cielo"]') as HTMLElement;
-    expect(el.querySelector(`.${TRACK_CLASS}`), "no monto la pista: la prueba no mide nada").toBeTruthy();
+    expect(el.querySelector(`.${TRACK_CLASS}`), "I did not mount the track: the test measures nothing").toBeTruthy();
     expect(el.style.getPropertyValue("--oim-scale")).toBe("");
   });
 
-  it("y la MISMA capa sin bucle si se sobredimensiona", async () => {
+  it("and the SAME layer without a loop IS oversized", async () => {
     const host = document.createElement("div");
     const shadow = (host as any).attachShadow({ mode: "open" });
     document.body.appendChild(host);
@@ -541,12 +541,12 @@ describe("una capa con bucle infinito no se sobredimensiona", () => {
   });
 });
 
-describe("las copies se solapan en el player, no solo en el plan", () => {
+describe("the copies overlap in the player, not only in the plan", () => {
   // The 1 px line at the join was seen in the published viewer. The plan already
   // carries the overlap; this checks that the engine applies it to EACH piece, the
   // origin included: without `transform-origin: 0 0` the stretch is split between
   // both sides and the mirrored copy spills out of its gap.
-  it("cada pieza lleva el origen y el estiramiento; las impares, ademas, el espejo", async () => {
+  it("each piece carries the origin and the stretch; the odd ones also the mirror", async () => {
     const host = document.createElement("div");
     document.body.appendChild(host);
     const shadow = host.attachShadow({ mode: "open" });
@@ -569,8 +569,8 @@ describe("las copies se solapan en el player, no solo en el plan", () => {
 
     await (engine as never as { renderSlots: () => Promise<void> }).renderSlots();
 
-    const pista = shadow.querySelector(`.${TRACK_CLASS}`) as HTMLElement;
-    const piezas = Array.from(pista.children) as HTMLElement[];
+    const trackItem = shadow.querySelector(`.${TRACK_CLASS}`) as HTMLElement;
+    const piezas = Array.from(trackItem.children) as HTMLElement[];
     expect(piezas.length).toBe(4);
     piezas.forEach((p, i) => {
       expect(p.style.transformOrigin, `pieza ${i}`).toBe("0 0");

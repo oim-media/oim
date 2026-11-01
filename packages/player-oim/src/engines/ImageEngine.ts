@@ -1,17 +1,17 @@
-import { OIMRegistry } from '../core/registry.js';
-import { getDeviceProfile, type DeviceProfile } from '../core/device-tier.js';
-import { fileCache, type VerifyResult, type VerifiedFile } from '../core/file-cache.js';
-import { injectStyles } from '../core/styles.js';
-import { renderMarkedText, plainOf, type Marks } from '../core/marked-text.js';
+import { OIMRegistry } from '../render/registry.js';
+import { getDeviceProfile, type DeviceProfile } from '../render/device-tier.js';
+import { fileCache, type VerifyResult, type VerifiedFile } from '../render/file-cache.js';
+import { injectStyles } from '../render/styles.js';
+import { renderMarkedText, plainOf, type Marks } from '../render/marked-text.js';
 import { dropCapStyle, splitDropCap } from '../../../core/src/drop-cap.js';
 import { layerTextureMask } from '../../../core/src/effects/texture-mask.js';
 import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entranceClips, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
-import { loadLottie } from '../core/lottie-loader.js';
-import { normalizeRawSlots } from '../core/normalize-raw-slots.js';
-import { sanitizeHtml, sanitizeFontFamily } from '../core/security.js';
-import { verifyInWorker, type WorkerReply } from '../core/verify-worker.js';
-import { extractOIM } from '../core/binary.js';
-import { validateOimMetadata, verifyMetadataSignature, securityVerdict, isRefused, ALTERED_FILE_ERROR, isSandboxImageSrc, keyExpiredForFile } from '../core/security.js';
+import { loadLottie } from '../render/lottie-loader.js';
+import { normalizeRawSlots } from '../render/normalize-raw-slots.js';
+import { sanitizeHtml, sanitizeFontFamily } from '../render/security.js';
+import { verifyInWorker, type WorkerReply } from '../render/verify-worker.js';
+import { extractOIM } from '../../../core/src/binary.js';
+import { validateOimMetadata, verifyMetadataSignature, securityVerdict, isRefused, ALTERED_FILE_ERROR, isSandboxImageSrc, keyExpiredForFile } from '../render/security.js';
 import {
   computeLayerComposition,
   getFilterCss,
@@ -26,49 +26,44 @@ import {
   DUOTONE_COLORS,
   type CompositionNode,
   type Slot as CompositionSlot
-} from '../core/layerComposition.js';
+} from '../render/layerComposition.js';
 import {
   buildWaveKeyframesCss,
   waveCharAnimationDelay,
   WAVE_PERIOD_SECONDS,
   WAVE_KEYFRAMES_NAME,
-} from '../core/waveText.js';
+} from '../render/waveText.js';
 import { calculateGlitchState, glitchLayers } from '../../../core/src/glitch.js';
 import { easingToCss, revealFrames, revealTiming } from '../../../core/src/reveal.js';
-import { calculateTypewriterState } from '../core/typewriterText.js';
-import { getFillCss, patternLayerCss, shapeMaskCss, svgSilhouetteMaskCss } from '../core/fill.js';
-import { paintPattern } from '../core/patternPaint.js';
-import { resolveCssColor, resolvePalette, DYNAMIC_COLOR_ROLES } from '../core/dynamicColors.js';
-import { nextWheelZoom, MIN_ZOOM, MAX_ZOOM } from '../core/wheelZoom.js';
-import { applyTrimToSvgPaths, ensureTrimKeyframes } from '../core/trimPath.js';
-import { ParallaxController } from '../core/ParallaxController.js';
-import { oversizeScale } from '../core/oversize.js';
-import { shapeDrawing } from '../core/geoShapes.js';
+import { calculateTypewriterState } from '../render/typewriterText.js';
+import { getFillCss, patternLayerCss, shapeMaskCss, svgSilhouetteMaskCss } from '../../../core/src/fill.js';
+import { paintPattern } from '../render/patternPaint.js';
+import { resolveCssColor, resolvePalette, DYNAMIC_COLOR_ROLES } from '../../../core/src/dynamic-colors.js';
+import { nextWheelZoom, MIN_ZOOM, MAX_ZOOM } from '../render/wheelZoom.js';
+import { applyTrimToSvgPaths, ensureTrimKeyframes } from '../render/trimPath.js';
+import { ParallaxController } from '../render/ParallaxController.js';
+import { oversizeScale } from '../../../core/src/oversize.js';
+import { shapeDrawing } from '../../../core/src/geoShapes.js';
 import { frameSilhouette } from '../../../core/src/frame-silhouette.js';
 import { mediaFilterCss } from '../../../core/src/media-filters.js';
-import { buildSvgNoiseFilter, buildLayerGrainFilter, GRAIN_LAYER_TYPES } from '../core/proceduralNoise.js';
-import { TEXTURE_CATALOG, type TexturePreset } from '../core/effects.js';
-import { infiniteLayerPlan, TRACK_CLASS, ensureParallaxKeyframes, type InfiniteLayer } from '../core/parallaxCss.js';
-import { localizedEntries, isImageContent, compareLangs } from '../core/localizedEntries.js';
-import { nodosA11y, etiquetaDeLaObra } from '../core/a11y.js';
-import { dropShadowCss, shadowColorCss, shadowFollowsGlyphs } from '../core/shadow.js';
-import { cropCss } from '../core/crop.js';
-import { montarRellenoDeImagen } from '../core/image-fill.js';
-import { flipScale } from '../core/flip.js';
-import { isGroup, childrenByGroup, wrapperStyle } from '../core/groups.js';
-import { resolveLineHeight, inkMargin } from '../core/typography.js';
-import { resolveDimensionToCss, resolveNumericDimension } from '../core/dimensions.js';
-import { slotClipping } from '../core/clipping.js';
-import {
-  whatTheReaderCannotDo,
-  describeMissing,
-  CONTRACT_VERSION,
-  PLAYER_CAPABILITIES,
-} from '../core/compatibility.js';
+import { buildSvgNoiseFilter, buildLayerGrainFilter, GRAIN_LAYER_TYPES } from '../../../core/src/generative/proceduralNoise.js';
+import { TEXTURE_CATALOG, type TexturePreset } from '../../../core/src/effects/index.js';
+import { infiniteLayerPlan, TRACK_CLASS, ensureParallaxKeyframes, type InfiniteLayer } from '../../../core/src/parallaxCss.js';
+import { localizedEntries, isImageContent, compareLangs } from '../render/localizedEntries.js';
+import { a11yNodes, artworkLabel } from '../render/a11y.js';
+import { dropShadowCss, shadowColorCss, shadowFollowsGlyphs } from '../render/shadow.js';
+import { cropCss } from '../../../core/src/crop.js';
+import { mountImageFill } from '../render/image-fill.js';
+import { flipScale } from '../../../core/src/flip.js';
+import { isGroup, childrenByGroup, wrapperStyle } from '../render/groups.js';
+import { resolveLineHeight, inkMargin } from '../../../core/src/typography.js';
+import { resolveDimensionToCss, resolveNumericDimension } from '../../../core/src/dimensions.js';
+import { slotClipping } from '../../../core/src/clipping.js';
+import { whatTheReaderCannotDo, describeMissing, CONTRACT_VERSION, PLAYER_CAPABILITIES } from '../../../core/src/compatibility.js';
 import { bindStates, resolveActions, applyMinHitArea, readInteraction, type ActionRunner, type RegisterOutsideTap } from './states.js';
-import { resolveMode } from '../core/modes.js';
-import { buildArtisticTextModelFromSlot, generateArtisticTextSvgString } from '../core/artisticText.js';
-import { readEmbeddedFonts, registerEmbeddedFonts, embeddedFontFamily } from '../core/embeddedFonts.js';
+import { resolveMode } from '../render/modes.js';
+import { buildArtisticTextModelFromSlot, generateArtisticTextSvgString } from '../render/artisticText.js';
+import { readEmbeddedFonts, registerEmbeddedFonts, embeddedFontFamily } from '../render/embeddedFonts.js';
 
 /**
  * Replaces the content of `hoverWrap` with one <span> per character, each
@@ -624,7 +619,7 @@ export class ImageEngine {
    * `palette` attribute, otherwise dark/light according to prefers-color-scheme, otherwise
    * defaultPalette. With allow-dynamic-colors="false" it writes none.
    */
-  aplicarPaleta(): void {
+  applyPalette(): void {
     const viewport = this._viewport as HTMLElement | null;
     if (!viewport) return;
     const prefersDark = typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches;
@@ -632,8 +627,8 @@ export class ImageEngine {
       ? resolvePalette(this.metadata ?? {}, { requested: this.host.getAttribute('palette'), prefersDark })
       : null;
     for (const role of DYNAMIC_COLOR_ROLES) {
-      const valor = palette?.colors[role];
-      if (valor) viewport.style.setProperty('--oim-palette-' + role, valor);
+      const value = palette?.colors[role];
+      if (value) viewport.style.setProperty('--oim-palette-' + role, value);
       else viewport.style.removeProperty('--oim-palette-' + role);
     }
   }
@@ -657,7 +652,7 @@ export class ImageEngine {
       this._lottieInstances = [];
     }
     this._animations.forEach(function (a) {
-      try { a.cancel(); } catch (e) { /* la animación ya murió con su nodo */ }
+      try { a.cancel(); } catch (e) { /* the animation already died with its node */ }
     });
     this._animations = [];
     this._timelines.clear();
@@ -729,7 +724,7 @@ export class ImageEngine {
           (this._viewport as HTMLElement).style.setProperty('--oim-color-' + role, 'initial');
         }
       }
-      this.aplicarPaleta();
+      this.applyPalette();
 
       // If the user has 'prefers-reduced-motion: reduce' enabled, the 14px blur is not
       // applied; it stays at 'none' (transitioning only opacity).
@@ -925,7 +920,7 @@ export class ImageEngine {
     }
     if (this.securityStatus === 'expired_key') {
       try { this.host.setAttribute('data-oim-clave-retirada', ''); } catch (e) {}
-      console.warn('[OimPlayer] Esta obra se firmó con una clave retirada. Pide al autor que la vuelva a exportar.');
+      console.warn('[OimPlayer] This work was signed with a retired key. Ask the author to export it again.');
     }
     if (v.announce) {
       self._announceUnsupported(this.metadata);
@@ -1027,7 +1022,7 @@ export class ImageEngine {
           detail: { mensaje: message, ...missing },
         }));
       }
-    } catch (e) { /* un anfitrion que no admite atributos no debe tumbar la carga */ }
+    } catch (e) { /* a host that does not accept attributes must not break loading */ }
   }
 
   updateScale(): void {
@@ -2184,7 +2179,7 @@ export class ImageEngine {
         slotEl.appendChild(svg);
         if (imageFill) {
           const d = silhouette.d ?? 'M ' + silhouette.points!.split(' ').join(' L ') + ' Z';
-          montarRellenoDeImagen(slotEl, style, { d, viewBox: silhouette.viewBox }, fillImageSrc);
+          mountImageFill(slotEl, style, { d, viewBox: silhouette.viewBox }, fillImageSrc);
         }
 
         // The colour goes on the <path>, not on the container, or the whole box would show
@@ -2219,7 +2214,7 @@ export class ImageEngine {
         const radio = parseFloat(String(style.borderRadius)) || 0;
         const cajaW = slot.width_px || baseWidth;
         const cajaH = slot.height_px || baseHeight;
-        montarRellenoDeImagen(slotEl, style, {
+        mountImageFill(slotEl, style, {
           d: '',
           viewBox: '0 0 1 1',
           rect: { rx: Math.min(Math.max(radio / cajaW, 0), 0.5), ry: Math.min(Math.max(radio / cajaH, 0), 0.5) },
@@ -2840,8 +2835,8 @@ export class ImageEngine {
               if (!targetEl && !warnedTargets.has(act.target)) {
                 warnedTargets.add(act.target);
                 console.warn(
-                  '[OimPlayer] El slot "' + slot.id + '" tiene una accion "' + act.type +
-                    '" hacia "' + act.target + '", que no existe en este archivo. No hara nada.'
+                  '[OimPlayer] The slot "' + slot.id + '" has an action "' + act.type +
+                    '" aimed at "' + act.target + '", which does not exist in this file. It does nothing.'
                 );
               }
 
@@ -3445,10 +3440,10 @@ export class ImageEngine {
     const hidden = this._a11yHidden, shown = this._a11yShown;
     const slots = (meta.slots || meta.elements || []).filter(function (s: any) { return !hidden.has(String(s && s.id)); })
       .map(function (s: any) { return shown.has(String(s && s.id)) ? Object.assign({}, s, { style: Object.assign({}, s.style, { isVisible: true }) }) : s; });
-    const nodos = nodosA11y(slots, this.lang, principal, !this.disableActions);
+    const nodes = a11yNodes(slots, this.lang, principal, !this.disableActions);
     if (this._overlay) this._overlay.setAttribute('aria-hidden', 'true');
     viewport.setAttribute('role', 'figure');
-    viewport.setAttribute('aria-label', etiquetaDeLaObra(meta, nodos, this.lang, principal));
+    viewport.setAttribute('aria-label', artworkLabel(meta, nodes, this.lang, principal));
     let box = viewport.querySelector('.oim-a11y') as HTMLElement | null;
     if (!box) {
       box = document.createElement('div');
@@ -3458,20 +3453,20 @@ export class ImageEngine {
     }
     box.textContent = '';
     const self = this;
-    nodos.forEach(function (n) {
+    nodes.forEach(function (n) {
       let el: HTMLElement;
-      if (n.tipo === 'texto') {
+      if (n.type === 'text') {
         el = document.createElement('p');
         el.setAttribute('lang', n.lang);
-        el.textContent = n.texto;
-      } else if (n.tipo === 'imagen') {
+        el.textContent = n.text;
+      } else if (n.type === 'image') {
         el = document.createElement('span');
         el.setAttribute('role', 'img');
-        el.setAttribute('aria-label', n.etiqueta);
+        el.setAttribute('aria-label', n.label);
       } else {
         el = document.createElement('button');
         el.setAttribute('type', 'button');
-        el.textContent = n.etiqueta;
+        el.textContent = n.label;
         // Same action as clicking the painted layer: forward the click to it.
         const fire = function () {
           const target = self._overlay && self._overlay.querySelector('[data-slot-id="' + CSS.escape(n.slotId) + '"]');

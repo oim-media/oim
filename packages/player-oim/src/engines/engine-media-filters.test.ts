@@ -31,7 +31,7 @@ async function slotDe(slots: any[], id: string): Promise<HTMLElement> {
   return host.shadowRoot!.querySelector(`[data-slot-id="${id}"]`) as HTMLElement;
 }
 
-const imagen = (style: any = {}) => ({
+const imageItem = (style: any = {}) => ({
   id: "img", type: "image", align: "center", position: [0.5, 0.5], width_px: 200, height_px: 200,
   content: { "*": PNG }, style: { width: "100cqw", height: "56.25cqw", ...style },
 });
@@ -43,13 +43,13 @@ const forma = (style: any = {}) => ({
 
 describe("media filters on an image layer", () => {
   it("a grayscale preset is set on the picture", async () => {
-    const el = await slotDe([imagen({ filterPreset: "grayscale" })], "img");
+    const el = await slotDe([imageItem({ filterPreset: "grayscale" })], "img");
     const img = el.querySelector("img") as HTMLImageElement;
     expect(img.style.filter).toBe(FILTER_PRESET_CSS.grayscale);
   });
 
   it("neutral adjustments leave no filter in the DOM", async () => {
-    const el = await slotDe([imagen({ filterPreset: "none", filterBlur: 0, filterHueRotate: 0, filterBrightness: 100 })], "img");
+    const el = await slotDe([imageItem({ filterPreset: "none", filterBlur: 0, filterHueRotate: 0, filterBrightness: 100 })], "img");
     const img = el.querySelector("img") as HTMLImageElement;
     expect(img.style.filter).toBe("");
   });
@@ -69,9 +69,9 @@ describe("media filters on a photo frame", () => {
     const el = await slotDe([forma({ filterBlur: 6, strokeWidth: 3, strokeColor: "#111111" })], "c");
     const img = el.querySelector(".oim-image-fill img") as HTMLImageElement;
     expect(img.style.filter).toBe("blur(6px)");
-    const trazo = Array.from(el.children).find((h) => h.tagName.toLowerCase() === "svg") as SVGElement;
-    expect(trazo.style.filter).toBe("");
-    expect(trazo.firstElementChild!.getAttribute("style") ?? "").not.toMatch(/filter/);
+    const strokeItem = Array.from(el.children).find((h) => h.tagName.toLowerCase() === "svg") as SVGElement;
+    expect(strokeItem.style.filter).toBe("");
+    expect(strokeItem.firstElementChild!.getAttribute("style") ?? "").not.toMatch(/filter/);
     expect(el.style.filter).toBe("");
   });
 

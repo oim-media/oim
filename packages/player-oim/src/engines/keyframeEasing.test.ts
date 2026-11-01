@@ -37,7 +37,7 @@ describe("keyframesToWaapi — easing por keyframe", () => {
     expect(frames[0].easing).toBe("steps(1, end)");
   });
 
-  it("conserva las cuatro curvas nombradas", () => {
+  it("keeps the four named curves", () => {
     for (const curva of ["linear", "ease-in", "ease-out", "ease-in-out"]) {
       const frames = keyframesToWaapi([{ t: 0, o: 0, e: curva }], 1);
       expect(frames[0].easing).toBe(curva);
@@ -49,12 +49,12 @@ describe("keyframesToWaapi — easing por keyframe", () => {
     expect(frames[0].easing).toBe("cubic-bezier(0.4,0,0.2,1)");
   });
 
-  it("no pone easing cuando el keyframe no trae ninguno", () => {
+  it("does not set easing when the keyframe carries none", () => {
     const frames = keyframesToWaapi([{ t: 0, o: 0 }], 1);
     expect(frames[0].easing).toBeUndefined();
   });
 
-  it("el offset se normaliza al rango [0,1] segun la duracion", () => {
+  it("the offset is normalized to the range [0,1] according to the duration", () => {
     const frames = keyframesToWaapi(
       [
         { t: 0, o: 0 },

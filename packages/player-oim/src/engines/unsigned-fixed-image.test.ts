@@ -13,8 +13,8 @@ import path from 'node:path';
 
 let currentVerdict: string = 'unsigned';
 
-vi.mock('../core/security.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../core/security.js')>();
+vi.mock('../render/security.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../render/security.js')>();
   return {
     ...actual,
     securityVerdict: vi.fn((input: any) => currentVerdict as any),
@@ -41,7 +41,7 @@ function montarConVeredicto(veredicto: string) {
   return engine;
 }
 
-describe('sin firma, imagen fija', () => {
+describe('unsigned, fixed image', () => {
   let createdHosts: HTMLElement[] = [];
 
   beforeEach(() => {
@@ -59,7 +59,7 @@ describe('sin firma, imagen fija', () => {
   // An unsigned .oim is a PNG with data inside: it is seen, but it does not animate nor
   // respond. Interactivity is the only thing that can touch the host page, so it only
   // proceeds from files of known origin.
-  it('con veredicto unsigned no compone ninguna capa', async () => {
+  it('with an unsigned verdict it composes no layer', async () => {
     const engine = montarConVeredicto('unsigned');
     createdHosts.push(engine.host);
     await engine.load(blobDePrueba());
@@ -68,7 +68,7 @@ describe('sin firma, imagen fija', () => {
     expect(engine.host.getAttribute('data-oim-sin-firma')).not.toBeNull();
   });
 
-  it('con sello antiguo (image_unsealed) SI compone: son archivos legitimos', async () => {
+  it('with an old seal (image_unsealed) it DOES compose: these are legitimate files', async () => {
     const engine = montarConVeredicto('image_unsealed');
     createdHosts.push(engine.host);
     await engine.load(blobDePrueba());

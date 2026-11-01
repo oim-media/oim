@@ -44,23 +44,23 @@ function masReciente(dir) {
   return max;
 }
 
-describe("el paquete construido no puede ser mas viejo que la fuente", () => {
+describe("the built package cannot be older than the source", () => {
   it("existe dist/oim-player.js", () => {
     expect(
       fs.existsSync(construido),
-      "no hay build. `oim-player.test.js` lo importa: ejecuta `pnpm build`."
+      "there is no build. `oim-player.test.js` imports it: run `pnpm build`."
     ).toBe(true);
   });
 
-  it("y se construyo DESPUES del ultimo cambio en src/", () => {
+  it("and it was built AFTER the last change in src/", () => {
     const construidoEn = fs.statSync(construido).mtimeMs;
     const fuenteEn = masReciente(fuente);
     const atraso = Math.round((fuenteEn - construidoEn) / 1000);
     expect(
       construidoEn >= fuenteEn,
-      `dist/oim-player.js va ${atraso}s por detras de src/. Las siete pruebas de ` +
-      `\`oim-player.test.js\` estan validando el build ANTERIOR y su verde no ` +
-      `significa nada. Ejecuta \`pnpm build\`.`
+      `dist/oim-player.js is ${atraso}s behind src/. The seven tests in ` +
+      `\`oim-player.test.js\` are validating the PREVIOUS build, so a green run ` +
+      `means nothing. Run \`pnpm build\`.`
     ).toBe(true);
   });
 });

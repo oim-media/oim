@@ -32,13 +32,13 @@ async function slotDe(style: any, svg: string): Promise<HTMLElement> {
 
 const ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 2h20v20z" fill="none" stroke="#000" stroke-width="2"/></svg>`;
 const GEN = { generatorId: "stacked-waves", seed: 1, params: {}, colors: { mode: "palette", stops: ["#f59e0b", "#7c3aed"], direction: "forward", background: "#000000", backgroundVisible: true } };
-const capa = (el: HTMLElement) => el.querySelector(".oim-fill-layer") as HTMLElement | null;
+const layerItem = (el: HTMLElement) => el.querySelector(".oim-fill-layer") as HTMLElement | null;
 const mascara = (c: HTMLElement) => (c.style as any).maskImage || (c.style as any).webkitMaskImage;
 
-describe("relleno de patron o generativo en un vector", () => {
-  it("generativo: capa de relleno recortada con la silueta del icono", async () => {
+describe("pattern or generative fill on a vector", () => {
+  it("generative: fill layer clipped with the icon's silhouette", async () => {
     const el = await slotDe({ fillType: "generative", fillGenerative: GEN }, ICON);
-    const c = capa(el)!;
+    const c = layerItem(el)!;
     expect(c).not.toBeNull();
     expect(c.style.backgroundImage).toMatch(/^url\("data:image\/svg\+xml/);
     // Built from the SVG as the player draws it (it normalises size and viewBox).
@@ -47,16 +47,16 @@ describe("relleno de patron o generativo en un vector", () => {
     expect(svg).toContain('fill="#000"');
   });
 
-  it("patron: tambien, y el dibujo queda por encima de la capa", async () => {
+  it("pattern: likewise, and the drawing stays above the layer", async () => {
     const el = await slotDe({ fillType: "pattern", fillPatternType: "clouds", fillPatternColor: "#ffffff", fillPatternBgColor: "#000000" }, ICON);
-    const c = capa(el)!;
+    const c = layerItem(el)!;
     expect(mascara(c)).toMatch(/^url\("data:image\/svg\+xml/);
     const dibujo = [...el.children].find((n) => n !== c && n.querySelector("svg")) as HTMLElement;
     expect(dibujo.style.position).toBe("relative");
   });
 
-  it("un degradado no crea capa: viaja dentro del SVG", async () => {
+  it("a gradient creates no layer: it travels inside the SVG", async () => {
     const el = await slotDe({ fillType: "gradient", fillGradient: "linear-gradient(90deg, #000 0%, #fff 100%)" }, ICON);
-    expect(capa(el)).toBeNull();
+    expect(layerItem(el)).toBeNull();
   });
 });

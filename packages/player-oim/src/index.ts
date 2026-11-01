@@ -1,7 +1,7 @@
-import './core/own-script.js';
-import { resolveMode } from './core/modes.js';
+import './render/own-script.js';
+import { resolveMode } from './render/modes.js';
 import { ImageEngine } from './engines/ImageEngine.js';
-import { fileCache } from './core/file-cache.js';
+import { fileCache } from './render/file-cache.js';
 
 interface OimPlayerOptions {
   allowZoom?: boolean;
@@ -94,7 +94,7 @@ OimPlayerElement.connectedCallback = function (this: any) {
 
   // System dark/light mode: live, without reloading. Removed in disconnectedCallback.
   this._mqOscuro = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : null;
-  this._onEsquema = () => this._engine && this._engine.aplicarPaleta();
+  this._onEsquema = () => this._engine && this._engine.applyPalette();
   if (this._mqOscuro) this._mqOscuro.addEventListener('change', this._onEsquema);
 
   this._replantearActividad();
@@ -312,7 +312,7 @@ OimPlayerElement.attributeChangedCallback = function (this: any, name: string, o
     if (!this._oimOptions) this._oimOptions = {};
     this._oimOptions.placeholder = newVal;
   } else if (name === 'palette' && oldVal !== newVal) {
-    if (this._engine) this._engine.aplicarPaleta();
+    if (this._engine) this._engine.applyPalette();
   } else if (name === 'src' && oldVal !== newVal) {
     // `_initPlayer()` is NOT called here, and this is the whole fix.
     //

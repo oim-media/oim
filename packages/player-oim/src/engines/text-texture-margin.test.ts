@@ -12,7 +12,7 @@
 // «p» was left unfilled while its stroke still showed.
 import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine";
-import { inkMargin } from "../core/typography.js";
+import { inkMargin } from "../../../core/src/typography.js";
 
 function mount(style: any) {
   const host = document.createElement("div");

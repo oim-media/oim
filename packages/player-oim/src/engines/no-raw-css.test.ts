@@ -23,7 +23,7 @@
 import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine";
 
-function montar(animation: any) {
+function mount(animation: any) {
   const host = document.createElement("div");
   // Animations are OFF unless the host asks for the full mode.
   host.setAttribute("mode", "full");
@@ -55,19 +55,19 @@ const HOSTIL = {
   custom_hover_css: "} :host { background: url(https://tercero.example/c) } .x {",
 };
 
-describe("el player no aplica CSS en crudo de un .oim", () => {
-  it("control: una animacion de catalogo SI se aplica", async () => {
+describe("the player does not apply raw CSS from a .oim", () => {
+  it("control: a catalogue animation IS applied", async () => {
     // Without this, the test below could pass because the animation block
     // never ran at all.
-    const { host, motor } = montar({ loop: "pulse", hover: "grow" });
+    const { host, motor } = mount({ loop: "pulse", hover: "grow" });
     await motor.renderSlots();
     const shadow = host.shadowRoot!;
     expect(shadow.querySelector(".oim-loop-pulse")).not.toBeNull();
     expect(shadow.querySelector(".oim-hover-grow")).not.toBeNull();
   });
 
-  it("custom_keyframes y custom_hover_css no llegan a ninguna hoja de estilo", async () => {
-    const { host, motor } = montar(HOSTIL);
+  it("custom_keyframes and custom_hover_css do not reach any stylesheet", async () => {
+    const { host, motor } = mount(HOSTIL);
     await motor.renderSlots();
     const hojas = [...host.shadowRoot!.querySelectorAll("style")].map((s) => s.textContent || "");
     expect(hojas.join("\n")).not.toContain("tercero.example");
@@ -75,8 +75,8 @@ describe("el player no aplica CSS en crudo de un .oim", () => {
     expect(host.shadowRoot!.getElementById("oim-dynamic-hover-a")).toBeNull();
   });
 
-  it("custom_loop_css no llega al estilo de la capa", async () => {
-    const { host, motor } = montar(HOSTIL);
+  it("custom_loop_css does not reach the layer's style", async () => {
+    const { host, motor } = mount(HOSTIL);
     await motor.renderSlots();
     const conAnimacion = [...host.shadowRoot!.querySelectorAll<HTMLElement>("*")]
       .filter((el) => el.style && el.style.animation.includes("k 1s"));

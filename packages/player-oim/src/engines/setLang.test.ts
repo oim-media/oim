@@ -10,7 +10,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import ImageEngine from "./ImageEngine";
 
-function montar(slots: any[]) {
+function mount(slots: any[]) {
   const host = document.createElement("div");
   const shadow = (host as any).attachShadow({ mode: "open" });
   document.body.appendChild(host);
@@ -34,47 +34,47 @@ const proyecto = () => ([
 describe("setLang quirurgico", () => {
   let host: HTMLElement, motor: any;
   beforeEach(async () => {
-    ({ host, motor } = montar(proyecto()));
+    ({ host, motor } = mount(proyecto()));
     motor.lang = "es";
     await motor.renderSlots();
   });
 
-  const nodo = (id: string) => host.shadowRoot!.querySelector('[data-slot-id="' + id + '"]');
+  const nodeItem = (id: string) => host.shadowRoot!.querySelector('[data-slot-id="' + id + '"]');
 
-  it("una capa con el mismo text en los dos idiomas conserva su nodo", async () => {
-    const antes = nodo("quieto");
+  it("a layer with the same text in both languages keeps its node", async () => {
+    const beforeItem = nodeItem("quieto");
     motor.setLang("en");
     await new Promise((r) => setTimeout(r, 250));
-    expect(nodo("quieto")).toBe(antes);
+    expect(nodeItem("quieto")).toBe(beforeItem);
   });
 
-  it("la capa cuyo text cambia si se reconstruye", async () => {
-    const antes = nodo("titulo");
+  it("the layer whose text changes is rebuilt", async () => {
+    const beforeItem = nodeItem("titulo");
     motor.setLang("en");
     await new Promise((r) => setTimeout(r, 250));
-    expect(nodo("titulo")).not.toBe(antes);
-    expect(nodo("titulo")!.textContent).toContain("Hello");
+    expect(nodeItem("titulo")).not.toBe(beforeItem);
+    expect(nodeItem("titulo")!.textContent).toContain("Hello");
   });
 
-  it("un cambio de SOLO size escribe la propiedad sin reconstruir", async () => {
+  it("a change of ONLY size writes the property without rebuilding", async () => {
     // The editor case: adjusting the German size must not restart the
     // animation of the layer you are looking at.
-    const antes = nodo("grande");
+    const beforeItem = nodeItem("grande");
     motor.setLang("en");
     await new Promise((r) => setTimeout(r, 250));
-    expect(nodo("grande")).toBe(antes);
-    expect((nodo("grande") as HTMLElement).style.fontSize).toBe("13px");
+    expect(nodeItem("grande")).toBe(beforeItem);
+    expect((nodeItem("grande") as HTMLElement).style.fontSize).toBe("13px");
   });
 
-  it("volver al idioma original devuelve el size heredado", async () => {
+  it("switching back to the original language returns the inherited size", async () => {
     motor.setLang("en");
     await new Promise((r) => setTimeout(r, 250));
     motor.setLang("es");
     await new Promise((r) => setTimeout(r, 250));
-    expect((nodo("grande") as HTMLElement).style.fontSize).toBe("16px");
+    expect((nodeItem("grande") as HTMLElement).style.fontSize).toBe("16px");
   });
 
-  it("emite oim:langchange una sola vez", async () => {
+  it("emits oim:langchange only once", async () => {
     let veces = 0;
     host.addEventListener("oim:langchange", () => { veces++; });
     motor.setLang("en");
@@ -83,12 +83,12 @@ describe("setLang quirurgico", () => {
   });
 });
 
-describe("el bucle de parallax infinito sobrevive al cambio de idioma", () => {
-  it("la pista de una capa que no cambia sigue siendo el MISMO nodo", async () => {
+describe("the infinite parallax loop survives the language change", () => {
+  it("the track of a layer that does not change is still the SAME node", async () => {
     // This is the reason for this whole task: before, switching language rebuilt
     // the entire canvas and sent all the tracks back to position 0. The jump
     // that was closed earlier had a back door here.
-    const { host, motor } = montar([
+    const { host, motor } = mount([
       { id: "titulo", type: "text", content: { es: "Hola", en: "Hello" }, position: [50, 20], style: {} },
       {
         id: "cielo", type: "image",
@@ -114,12 +114,12 @@ describe("el bucle de parallax infinito sobrevive al cambio de idioma", () => {
   });
 });
 
-describe("la transicion del cambio de idioma", () => {
+describe("the language-change transition", () => {
   const visorDe = (m: any) => m._viewport as HTMLElement;
 
-  it("si no cambia ninguna capa no hay transicion", () => {
+  it("if no layer changes there is no transition", () => {
     // Blurring to show the same image is a flicker that lies.
-    const { motor } = montar([
+    const { motor } = mount([
       { id: "solo", type: "text", content: { es: "OIM", en: "OIM" }, position: [50, 50], style: {} },
     ]);
     motor.lang = "es";
@@ -127,29 +127,29 @@ describe("la transicion del cambio de idioma", () => {
     expect(visorDe(motor).style.filter).not.toContain("blur");
   });
 
-  it("difumina TODO el lienzo a 14px, no la capa suelta", async () => {
+  it("blurs the WHOLE canvas to 14px, not the loose layer", async () => {
     // A language switch should read as "another image". A small blur on just
     // the changing layer does the opposite: you watch it being modified.
-    const { motor } = montar(proyecto());
+    const { motor } = mount(proyecto());
     motor.lang = "es";
     await motor.renderSlots();
     motor.setLang("en");
     expect(visorDe(motor).style.filter).toBe("blur(14px)");
   });
 
-  it("el cambio se aplica en el PICO, no durante la rampa", async () => {
-    const { host, motor } = montar(proyecto());
+  it("the change is applied at the PEAK, not during the ramp", async () => {
+    const { host, motor } = mount(proyecto());
     motor.lang = "es";
     await motor.renderSlots();
-    const antes = host.shadowRoot!.querySelector('[data-slot-id="titulo"]');
+    const beforeItem = host.shadowRoot!.querySelector('[data-slot-id="titulo"]');
 
     motor.setLang("en");
     await new Promise((r) => setTimeout(r, 60));
     // At 60ms it is still blurring: the canvas has not changed yet.
-    expect(host.shadowRoot!.querySelector('[data-slot-id="titulo"]')).toBe(antes);
+    expect(host.shadowRoot!.querySelector('[data-slot-id="titulo"]')).toBe(beforeItem);
 
     await new Promise((r) => setTimeout(r, 400));
-    expect(host.shadowRoot!.querySelector('[data-slot-id="titulo"]')).not.toBe(antes);
+    expect(host.shadowRoot!.querySelector('[data-slot-id="titulo"]')).not.toBe(beforeItem);
   });
 
   /**
@@ -165,7 +165,7 @@ describe("la transicion del cambio de idioma", () => {
       addEventListener() {}, removeEventListener() {},
     });
     try {
-      const { host, motor } = montar([
+      const { host, motor } = mount([
         { id: "titulo", type: "text", content: { es: "Hola", en: "Hello" },
           position: [50, 20], style: { fontSize: "16px", opacity: 40 } },
         // It changes ONLY the size: it is not rebuilt, so the only opacity visible
@@ -196,7 +196,7 @@ describe("la transicion del cambio de idioma", () => {
   const op = (h: HTMLElement, id: string) =>
     (h.shadowRoot!.querySelector('[data-slot-id="' + id + '"]') as HTMLElement).style.opacity;
 
-  it("con reduced-motion no difumina el lienzo, pero SI funde lo que cambia", async () => {
+  it("with reduced-motion it does not blur the canvas, but DOES fade what changes", async () => {
     // Removing the transition altogether would leave a dry jump right where the
     // eye is looking. An opacity fade displaces nothing: it meets the request.
     await conMenosMovimiento(async (host, motor) => {
@@ -207,7 +207,7 @@ describe("la transicion del cambio de idioma", () => {
     });
   });
 
-  it("el fundido devuelve la capa a SU opacidad, no a 1", async () => {
+  it("the fade returns the layer to ITS opacity, not to 1", async () => {
     await conMenosMovimiento(async (host, motor) => {
       motor.setLang("en");
       // At 150ms our fade has already restored (120ms), and the `animationend`
@@ -221,19 +221,19 @@ describe("la transicion del cambio de idioma", () => {
     });
   });
 
-  it("una capa con animacion propia de opacidad cambia sin fundido", async () => {
+  it("a layer with its own opacity animation changes without a fade", async () => {
     // The two fades would fight each other and a flicker would appear that
     // nobody could explain. A dry change is better than two animations arguing.
     await conMenosMovimiento(async (host, motor) => {
       const el = host.shadowRoot!.querySelector('[data-slot-id="pulsante"]') as HTMLElement;
       el.style.animationName = "oim-latido-opacity";
-      const antes = el.style.opacity;
+      const beforeItem = el.style.opacity;
       motor.setLang("en");
-      expect(op(host, "pulsante")).toBe(antes);
+      expect(op(host, "pulsante")).toBe(beforeItem);
     });
   });
 
-  it("una capa que no cambia no se funde", async () => {
+  it("a layer that does not change does not fade", async () => {
     await conMenosMovimiento(async (host, motor) => {
       motor.setLang("en");
       // "quieto" says the same in both languages: it has no reason to flicker.

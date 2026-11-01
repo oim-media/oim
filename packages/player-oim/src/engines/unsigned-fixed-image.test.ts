@@ -13,8 +13,8 @@ import path from 'node:path';
 
 let currentVerdict: string = 'unsigned';
 
-vi.mock('../core/security.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../core/security.js')>();
+vi.mock('../render/security.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../render/security.js')>();
   return {
     ...actual,
     securityVerdict: vi.fn((input: any) => currentVerdict as any),

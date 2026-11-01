@@ -22,7 +22,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 import ImageEngine from "./ImageEngine";
-import { buildArtisticTextModelFromSlot } from "../core/artisticText";
+import { buildArtisticTextModelFromSlot } from "../render/artisticText";
 
 function montar(slots: any[]) {
   const host = document.createElement("div");
@@ -117,14 +117,14 @@ describe("texto artistico", () => {
 
 describe("la validacion estructural mira las claves vigentes", () => {
   it("un fillColor que no es texto o es enorme invalida la capa", async () => {
-    const { validateOimMetadata } = await import("../core/security");
+    const { validateOimMetadata } = await import("../render/security");
     expect(validateOimMetadata({ slots: [{ style: { fillColor: 42 } }] })).toContain("slot[0].style.fillColor invalid");
     expect(validateOimMetadata({ slots: [{ style: { fillColor: "x".repeat(65) } }] })).toContain("slot[0].style.fillColor invalid");
     expect(validateOimMetadata({ slots: [{ style: { fillColor: "#fff" } }] })).toEqual([]);
   });
 
   it("`color`, retirado, ya no se valida: no se pinta", async () => {
-    const { validateOimMetadata } = await import("../core/security");
+    const { validateOimMetadata } = await import("../render/security");
     expect(validateOimMetadata({ slots: [{ style: { color: 42 } }] })).toEqual([]);
   });
 });

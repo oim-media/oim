@@ -15,8 +15,8 @@
 
 import { describe, it, expect, vi } from "vitest";
 import ImageEngine from "./ImageEngine";
-import { renderMarkedText } from "../core/marked-text";
-import { PLAYER_CAPABILITIES } from "../core/compatibility";
+import { renderMarkedText } from "../render/marked-text";
+import { PLAYER_CAPABILITIES } from "../../../core/src/compatibility.js";
 
 const MARKS = {
   hl: { color: "#5a7d1f", bold: true, highlight: { style: "marker" as const, color: "#d9f99d" } },

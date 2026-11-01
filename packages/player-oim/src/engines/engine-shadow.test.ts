@@ -160,18 +160,18 @@ describe("el sello depende de si el archivo tiene autoria", () => {
     const { motor } = conPermiso();
     // `signatureStamp(permissionOf({}))` -> 'verified'. The rule is checked, which is
     // what the engine consults.
-    const { permissionOf, signatureStamp } = await import("../core/reeditPermission");
+    const { permissionOf, signatureStamp } = await import("../../../core/src/reeditPermission.js");
     expect(signatureStamp(permissionOf({}))).toBe("verified");
     expect(motor.securityStatus).toBe("unsigned");
   });
 
   it("un publico pide su propio sello", async () => {
-    const { permissionOf, signatureStamp } = await import("../core/reeditPermission");
+    const { permissionOf, signatureStamp } = await import("../../../core/src/reeditPermission.js");
     expect(signatureStamp(permissionOf({ reedicion: "publico" }))).toBe("verified_sin_autoria");
   });
 
   it("y un valor raro NO consigue el sello de publico", async () => {
-    const { permissionOf, signatureStamp } = await import("../core/reeditPermission");
+    const { permissionOf, signatureStamp } = await import("../../../core/src/reeditPermission.js");
     expect(signatureStamp(permissionOf({ reedicion: "libre" }))).toBe("verified");
   });
 });

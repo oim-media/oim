@@ -15,7 +15,7 @@
 
 import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine";
-import { shapeMaskCss } from "../core/fill.js";
+import { shapeMaskCss } from "../../../core/src/fill.js";
 
 // Harness copied from `pattern-layer.test.ts`.
 async function slotDe(type: string, style: any): Promise<HTMLElement> {

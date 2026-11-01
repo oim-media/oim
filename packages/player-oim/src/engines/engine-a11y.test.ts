@@ -12,7 +12,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 import ImageEngine from "./ImageEngine";
-import { ordenDeLectura, nodosA11y, etiquetaDeLaObra } from "../core/a11y";
+import { ordenDeLectura, nodosA11y, etiquetaDeLaObra } from "../render/a11y";
 
 function montar(slots: any[], extra: any = {}) {
   const host = document.createElement("div");

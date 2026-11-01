@@ -1,4 +1,4 @@
-import { extractOIM } from './binary.js';
+import { extractOIM } from '../../../core/src/binary.js';
 import { normalizeRawSlots } from './normalize-raw-slots.js';
 import {
   verifyMetadataSignature,

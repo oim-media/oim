@@ -21,7 +21,7 @@ import { describe, it, expect, vi } from "vitest";
 
 const created: Array<{ options: any; play: any; pause: any; goToAndStop: any; destroy: any }> = [];
 
-vi.mock("../core/lottie-loader.js", () => ({
+vi.mock("../render/lottie-loader.js", () => ({
   loadLottie: () => Promise.resolve({
     loadAnimation(options: any) {
       const anim = { options, play: vi.fn(), pause: vi.fn(), goToAndStop: vi.fn(), destroy: vi.fn() };

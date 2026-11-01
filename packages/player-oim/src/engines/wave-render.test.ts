@@ -3,7 +3,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { applyWaveText } from "./ImageEngine";
-import { WAVE_KEYFRAMES_NAME, WAVE_PERIOD_SECONDS } from "../core/waveText";
+import { WAVE_KEYFRAMES_NAME, WAVE_PERIOD_SECONDS } from "../render/waveText";
 
 function makeWrap(): HTMLElement {
   return document.createElement("div");

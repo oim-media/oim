@@ -17,7 +17,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 import ImageEngine from "./ImageEngine";
-import { patternLayerCss } from "../core/fill.js";
+import { patternLayerCss } from "../../../core/src/fill.js";
 
 // Harness copied from `text-fill.test.ts`: same `attachShadow`, same
 // `_viewport` and `_overlay`.

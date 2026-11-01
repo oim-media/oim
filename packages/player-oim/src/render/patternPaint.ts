@@ -5,7 +5,7 @@
  */
 
 import { patternTileUri, isMultiColorPattern, resolvePatternColors } from '../../../core/src/patterns.js';
-import { resolveCssColor } from './dynamicColors.js';
+import { resolveCssColor } from '../../../core/src/dynamic-colors.js';
 
 /**
  * Paints a pattern (canvas background or pattern layer) that uses colour roles.

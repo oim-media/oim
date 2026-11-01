@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { cropCss } from './crop.js';
-import { resolveCssColor } from './dynamicColors.js';
+import { cropCss } from '../../../core/src/crop.js';
+import { resolveCssColor } from '../../../core/src/dynamic-colors.js';
 import { mediaFilterCss } from '../../../core/src/media-filters.js';
-import { flipScale } from './flip.js';
+import { flipScale } from '../../../core/src/flip.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 let secuencia = 0;

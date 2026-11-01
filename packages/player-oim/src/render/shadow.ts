@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { resolveCssColor } from './dynamicColors.js';
+import { resolveCssColor } from '../../../core/src/dynamic-colors.js';
 
 /**
  * The shadow as `drop-shadow`, which follows the SILHOUETTE and not the box.

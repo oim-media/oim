@@ -11,7 +11,7 @@ import { extractKeys, serialize } from "./keys-json.mjs";
 
 const require = createRequire(new URL("../packages/player-oim/package.json", import.meta.url));
 const ts = require("typescript");
-const tsSource = readFileSync(new URL("../packages/player-oim/src/core/keys.ts", import.meta.url), "utf8");
+const tsSource = readFileSync(new URL("../packages/player-oim/src/render/keys.ts", import.meta.url), "utf8");
 
 describe("spec keys.json", () => {
   it("is exactly what keys.ts embeds (run node tools/keys-json.mjs after changing keys)", async () => {

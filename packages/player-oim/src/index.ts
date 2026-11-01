@@ -1,7 +1,7 @@
-import './core/own-script.js';
-import { resolveMode } from './core/modes.js';
+import './render/own-script.js';
+import { resolveMode } from './render/modes.js';
 import { ImageEngine } from './engines/ImageEngine.js';
-import { fileCache } from './core/file-cache.js';
+import { fileCache } from './render/file-cache.js';
 
 interface OimPlayerOptions {
   allowZoom?: boolean;

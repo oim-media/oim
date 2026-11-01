@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import { getStylesText } from "../core/styles";
+import { getStylesText } from "../render/styles";
 import ImageEngine from "./ImageEngine";
 
 describe("Efecto de desenfoque (blur 14px) en la carga inicial", () => {

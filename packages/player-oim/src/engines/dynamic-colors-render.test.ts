@@ -8,7 +8,7 @@
  */
 import { describe, it, expect, vi } from "vitest";
 import ImageEngine from "./ImageEngine";
-import { DYNAMIC_COLOR_ROLES } from "../core/dynamicColors.js";
+import { DYNAMIC_COLOR_ROLES } from "../../../core/src/dynamic-colors.js";
 
 function montarMotor(slots: any[]) {
   const host = document.createElement("div");

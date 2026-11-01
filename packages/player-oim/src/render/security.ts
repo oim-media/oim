@@ -1,5 +1,5 @@
 import { embeddedKey, effectiveNotAfter, keysEndpoint, signatureIsWithinKeyWindow, keyExpiredAt, type PlayerKey } from './keys.js';
-import { serializeCanonical } from './binary.js';
+import { serializeCanonical } from '../../../core/src/canonical.js';
 
 const _cachedKeys: Record<string, any> = {};
 let _keysFetchPromise: Promise<void> | null = null;
@@ -255,9 +255,9 @@ export async function verifyMetadataSignature(metadata: any, origin?: string): P
   }
 }
 
-import { permissionOf, signatureStamp } from './reeditPermission.js';
+import { permissionOf, signatureStamp } from '../../../core/src/reeditPermission.js';
 // The format limit, not a copied literal: `limits.js` does not pull in zod.
-import { MAX_SLOTS } from './limits.js';
+import { MAX_SLOTS } from '../../../core/src/limits.js';
 
 /**
  * What the player can say about a file, from strongest to weakest claim.

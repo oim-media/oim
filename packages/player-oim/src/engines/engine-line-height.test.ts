@@ -23,7 +23,7 @@
 
 import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine";
-import { DEFAULT_LINE_HEIGHT } from "../core/typography";
+import { DEFAULT_LINE_HEIGHT } from "../../../core/src/typography.js";
 
 function montar(slots: any[]) {
   const host = document.createElement("div");

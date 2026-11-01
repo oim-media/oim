@@ -165,6 +165,8 @@ export interface MissingSupport {
   /** Is a required capability missing, or is the version too old to render faithfully? */
   cannotRender: boolean;
   /** Is there anything to report? */
+  hasNotice: boolean;
+  /** @deprecated use hasNotice; removed in 2.0.0 */
   hayAlgoQueDecir: boolean;
 }
 
@@ -220,6 +222,7 @@ export function whatTheReaderCannotDo(metadata: any, reader: Reader): MissingSup
 
   const versionTooOld = isNewer(required, reader.version);
   const cannotRender = versionTooOld || missingRequiredCapabilities.length > 0;
+  const hasNotice = versionTooOld || missingCapabilities.length > 0 || missingRequiredCapabilities.length > 0;
 
   return {
     requiredVersion: required,
@@ -227,7 +230,8 @@ export function whatTheReaderCannotDo(metadata: any, reader: Reader): MissingSup
     missingCapabilities,
     missingRequiredCapabilities,
     cannotRender,
-    hayAlgoQueDecir: versionTooOld || missingCapabilities.length > 0 || missingRequiredCapabilities.length > 0,
+    hasNotice,
+    hayAlgoQueDecir: hasNotice,
   };
 }
 

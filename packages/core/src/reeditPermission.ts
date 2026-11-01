@@ -77,9 +77,16 @@ export function permissionFields(permission: ReeditPermission): {
 }
 
 export interface Verdict {
+  allowed: boolean;
+  /** @deprecated use allowed; removed in 2.0.0 */
   permitido: boolean;
   /** Why not, so the person can be told without guessing. */
-  reason?: "sellado" | "no_eres_el_autor";
+  reason?: "sealed" | "not_the_author";
+}
+
+/** Builds a verdict; `permitido` mirrors `allowed` until 2.0.0. */
+function verdict(allowed: boolean, reason?: Verdict["reason"]): Verdict {
+  return reason ? { allowed, permitido: allowed, reason } : { allowed, permitido: allowed };
 }
 
 /**
@@ -93,11 +100,11 @@ export function canReedit(
   permission: ReeditPermission,
   isAuthor: boolean | null
 ): Verdict {
-  if (permission === "sealed") return { permitido: false, reason: "sellado" };
-  if (permission === "public") return { permitido: true };
+  if (permission === "sealed") return verdict(false, "sealed");
+  if (permission === "public") return verdict(true);
   return isAuthor === true
-    ? { permitido: true }
-    : { permitido: false, reason: "no_eres_el_autor" };
+    ? verdict(true)
+    : verdict(false, "not_the_author");
 }
 
 /**
@@ -121,11 +128,11 @@ export function mustRejectWithoutAsking(
   permission: ReeditPermission,
   isAuthor: boolean | null
 ): Verdict {
-  if (permission === "sealed") return { permitido: false, reason: "sellado" };
+  if (permission === "sealed") return verdict(false, "sealed");
   if (permission === "author_only" && isAuthor === false) {
-    return { permitido: false, reason: "no_eres_el_autor" };
+    return verdict(false, "not_the_author");
   }
-  return { permitido: true };
+  return verdict(true);
 }
 
 /**

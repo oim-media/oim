@@ -25,15 +25,15 @@ describe("the twelve new catalog shapes", () => {
   it("they are closed and fillable", () => {
     for (const name of NEW_SHAPES) {
       const d = GEO_SHAPES[name];
-      if (d.tipo === "path") expect(d.rellenable, name).toBe(true);
+      if (d.kind === "path") expect(d.fillable, name).toBe(true);
     }
   });
 
   it("all their coordinates fall within 0-100", () => {
     for (const name of NEW_SHAPES) {
       const d = GEO_SHAPES[name];
-      const values = d.tipo === "polygon"
-        ? d.puntos.flat()
+      const values = d.kind === "polygon"
+        ? d.points.flat()
         : numbers(d.d);
       for (const v of values) {
         expect(v, `${name} overflows the viewBox`).toBeGreaterThanOrEqual(0);

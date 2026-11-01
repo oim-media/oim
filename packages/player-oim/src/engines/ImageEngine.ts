@@ -48,7 +48,7 @@ import { frameSilhouette } from '../../../core/src/frame-silhouette.js';
 import { mediaFilterCss } from '../../../core/src/media-filters.js';
 import { buildSvgNoiseFilter, buildLayerGrainFilter, GRAIN_LAYER_TYPES } from '../../../core/src/generative/proceduralNoise.js';
 import { TEXTURE_CATALOG, type TexturePreset } from '../../../core/src/effects/index.js';
-import { infiniteLayerPlan, TRACK_CLASS, ensureParallaxKeyframes, type InfiniteLayer } from '../../../core/src/parallaxCss.js';
+import { infiniteLayerPlan, TRACK_CLASS, LEGACY_TRACK_CLASS, ensureParallaxKeyframes, type InfiniteLayer } from '../../../core/src/parallaxCss.js';
 import { localizedEntries, isImageContent, compareLangs } from '../render/localizedEntries.js';
 import { a11yNodes, artworkLabel } from '../render/a11y.js';
 import { dropShadowCss, shadowColorCss, shadowFollowsGlyphs } from '../render/shadow.js';
@@ -997,7 +997,7 @@ export class ImageEngine {
     } catch (e) {
       return; // Warning about an incompatibility must never be what breaks anything.
     }
-    if (!missing.hayAlgoQueDecir) return;
+    if (!missing.hasNotice) return;
 
     const message = describeMissing(missing);
     try { console.warn('[OimPlayer] ' + message); } catch (e) { /* consola ajena */ }
@@ -1833,7 +1833,7 @@ export class ImageEngine {
           ensureParallaxKeyframes(self.host.shadowRoot);
 
           const track = document.createElement('div');
-          track.className = TRACK_CLASS;
+          track.className = `${TRACK_CLASS} ${LEGACY_TRACK_CLASS}`;
           for (const [k, v] of Object.entries(plan.container)) {
             track.style.setProperty(k, v);
           }
@@ -2143,7 +2143,7 @@ export class ImageEngine {
 
         // An open stroke (the line or freehand drawing) with fill becomes a bar.
         // A custom svgPath keeps its colour fill off (as before); only a photo may fill it.
-        const fillable = drawing && (drawing.tipo === 'polygon' || drawing.rellenable);
+        const fillable = drawing && (drawing.kind === 'polygon' || drawing.fillable);
         const resolvedSvgFill = resolveCssColor(style.fillColorRole, style.fillColor);
         const imageFill = (!drawing || !!fillable) && imageSrcSafe;
         figure.setAttribute(
@@ -2153,7 +2153,7 @@ export class ImageEngine {
         // The doodle is the only shape to which the editor gives stroke fallbacks:
         // without thickness it paints 2, and without a stroke colour it uses the fill colour.
         // These must be replicated, because being an open stroke it carries no fill
-        // (`rellenable: false`) and without a stroke nothing is left to see: the doodle
+        // (`fillable: false`) and without a stroke nothing is left to see: the doodle
         // was visible in the editor and published invisible. The line, by contrast,
         // uses `strokeWidth ?? 0` in the editor, so it is left as it was.
         const isScribble = style.geoShape === 'scribble';

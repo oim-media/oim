@@ -80,26 +80,26 @@ describe("reading the permission from the file", () => {
 
 describe("who may re-edit", () => {
   it("a sealed one: nobody, not even its author", () => {
-    expect(canReedit("sealed", true)).toEqual({ permitido: false, reason: "sellado" });
-    expect(canReedit("sealed", false)).toEqual({ permitido: false, reason: "sellado" });
+    expect(canReedit("sealed", true)).toEqual({ allowed: false, permitido: false, reason: "sealed" });
+    expect(canReedit("sealed", false)).toEqual({ allowed: false, permitido: false, reason: "sealed" });
   });
 
   it("a public one: anyone, even without knowing who you are", () => {
     // This is what makes it useful for a library: it resolves without a session and
     // without asking the server anything.
-    expect(canReedit("public", null)).toEqual({ permitido: true });
-    expect(canReedit("public", false)).toEqual({ permitido: true });
+    expect(canReedit("public", null)).toEqual({ allowed: true, permitido: true });
+    expect(canReedit("public", false)).toEqual({ allowed: true, permitido: true });
   });
 
   it("an `author_only`: only its author", () => {
-    expect(canReedit("author_only", true)).toEqual({ permitido: true });
-    expect(canReedit("author_only", false)).toEqual({ permitido: false, reason: "no_eres_el_autor" });
+    expect(canReedit("author_only", true)).toEqual({ allowed: true, permitido: true });
+    expect(canReedit("author_only", false)).toEqual({ allowed: false, permitido: false, reason: "not_the_author" });
   });
 
   it("and if it is NOT known whether you are the author, it is not granted", () => {
     // Without a session or without having asked the registry. Granting "just in case"
     // would turn a permission into a suggestion.
-    expect(canReedit("author_only", null)).toEqual({ permitido: false, reason: "no_eres_el_autor" });
+    expect(canReedit("author_only", null)).toEqual({ allowed: false, permitido: false, reason: "not_the_author" });
   });
 });
 
@@ -132,11 +132,11 @@ describe("the viewer seal", () => {
 
 describe("what can be rejected WITHOUT asking anyone", () => {
   it("a sealed one, yes: it is known by reading the file", () => {
-    expect(mustRejectWithoutAsking("sealed", null).permitido).toBe(false);
+    expect(mustRejectWithoutAsking("sealed", null).allowed).toBe(false);
   });
 
   it("a public one, no: anyone can", () => {
-    expect(mustRejectWithoutAsking("public", null).permitido).toBe(true);
+    expect(mustRejectWithoutAsking("public", null).allowed).toBe(true);
   });
 
   it("an `author_only` with UNKNOWN authorship is let through", () => {
@@ -144,20 +144,20 @@ describe("what can be rejected WITHOUT asking anyone", () => {
     // files carries authorship inside: the backend deletes `creator_user_id` from the
     // canonical form before signing, for personal data. Rejecting here would block
     // everyone, even their OWN files.
-    expect(mustRejectWithoutAsking("author_only", null).permitido).toBe(true);
+    expect(mustRejectWithoutAsking("author_only", null).allowed).toBe(true);
   });
 
   it("...but if it is KNOWN that you are not the author, it is rejected", () => {
     expect(mustRejectWithoutAsking("author_only", false))
-      .toEqual({ permitido: false, reason: "no_eres_el_autor" });
+      .toEqual({ allowed: false, permitido: false, reason: "not_the_author" });
   });
 
   it("and it is not the same as `canReedit`", () => {
     // `canReedit` decides with the answer already in hand, and so it DENIES
     // when in doubt. `mustRejectWithoutAsking` decides before asking, and so it only
     // rejects when it is certain. Confusing them breaks the normal case.
-    expect(canReedit("author_only", null).permitido).toBe(false);
-    expect(mustRejectWithoutAsking("author_only", null).permitido).toBe(true);
+    expect(canReedit("author_only", null).allowed).toBe(false);
+    expect(mustRejectWithoutAsking("author_only", null).allowed).toBe(true);
   });
 });
 
@@ -182,5 +182,12 @@ describe("writing the permission into the file", () => {
     // The 14 real files carry it as false. If writing it that way made the
     // permission fall back to the default, publishing a public one would be impossible.
     expect(permissionOf(permissionFields("public"))).toBe("public");
+  });
+});
+
+describe("English verdict and deprecated permitido", () => {
+  it("canReedit returns allowed, the English reason, and permitido with the same value", () => {
+    const v = canReedit("author_only", false);
+    expect(v).toEqual({ allowed: false, permitido: false, reason: "not_the_author" });
   });
 });

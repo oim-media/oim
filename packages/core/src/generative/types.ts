@@ -60,15 +60,15 @@ export interface GenerativeLayer {
   primitive: PrimitiveName;
   fixed: Record<string, unknown>;
   blend?: 'normal' | 'screen' | 'multiply' | 'overlay' | 'soft-light' | 'lighten' | 'darken';
-  opacidad?: number;    // 0-1
-  desenfoque?: number;  // px
+  opacity?: number;    // 0-1
+  blur?: number;  // px
 }
 
 export interface GeneratorSpec {
   id: string;
   layers: GenerativeLayer[];
   schema: ParamSchema[];
-  grano?: { intensidad: number };  // 0-1
+  grain?: { intensity: number };  // 0-1
 }
 
 /**

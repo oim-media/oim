@@ -185,6 +185,7 @@ const SUPERFICIE = [
   "usesFrameShapes",
   // parallaxCss.ts — the parallax CSS and its endless track.
   "TRACK_CLASS",
+  "LEGACY_TRACK_CLASS",
   "CSS_PARALLAX",
   "ensureParallaxKeyframes",
   "infiniteLayerPlan",

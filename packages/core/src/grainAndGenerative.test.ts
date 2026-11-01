@@ -73,10 +73,10 @@ describe("Grain and Generative Schema Extensions", () => {
 
     const blobDrawing = shapeDrawing("blob");
     expect(blobDrawing).toBeDefined();
-    expect(blobDrawing?.tipo).toBe("path");
+    expect(blobDrawing?.kind).toBe("path");
 
     const scribbleDrawing = shapeDrawing("scribble");
     expect(scribbleDrawing).toBeDefined();
-    expect(scribbleDrawing?.tipo).toBe("path");
+    expect(scribbleDrawing?.kind).toBe("path");
   });
 });

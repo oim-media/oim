@@ -176,9 +176,9 @@ export function shapeMaskCss(geoShape?: string): CSSProperties {
   // Every closed catalogue shape, not a fixed list: shapes added later (arch,
   // cloud...) painted their fill colour over the whole box.
   const drawing = GEO_SHAPES[geoShape];
-  if (!drawing || (drawing.tipo === "path" && !drawing.rellenable)) return {};
-  const body = drawing.tipo === "polygon"
-    ? `<polygon points="${pointsToAttribute(drawing.puntos)}" fill="black"/>`
+  if (!drawing || (drawing.kind === "path" && !drawing.fillable)) return {};
+  const body = drawing.kind === "polygon"
+    ? `<polygon points="${pointsToAttribute(drawing.points)}" fill="black"/>`
     : `<path d="${drawing.d}" fill="black"/>`;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">${body}</svg>`;
   const uri = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;

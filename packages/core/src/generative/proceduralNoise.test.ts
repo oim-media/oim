@@ -35,7 +35,7 @@ describe("Procedural Noise & Blob Geometry Pure Functions", () => {
 
       expect(pathA.startsWith("M")).toBe(true);
       expect(pathA.endsWith("Z")).toBe(true);
-      expect(pathA).toBe(pathB); // Determinista con la misma semilla
+      expect(pathA).toBe(pathB); // Deterministic with the same seed
       expect(pathA).not.toBe(pathDifferent);
     });
 

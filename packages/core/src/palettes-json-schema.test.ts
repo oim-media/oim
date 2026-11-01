@@ -10,7 +10,7 @@ import { DYNAMIC_COLOR_ROLES } from "./dynamic-colors.js";
 
 // The published JSON contract must reject a role key that the TypeScript
 // contract rejects. Checked on the file other readers actually load.
-describe("palettes en oim.schema.json", () => {
+describe("palettes in oim.schema.json", () => {
   const json = JSON.parse(
     readFileSync(join(__dirname, "..", "..", "spec", "schema", "oim.schema.json"), "utf8"),
   );
@@ -18,12 +18,12 @@ describe("palettes en oim.schema.json", () => {
     (d) => d.propertyNames?.enum && d.additionalProperties?.maxLength === 128,
   );
 
-  it("las claves de cada paleta son exactamente los doce roles", () => {
+  it("the keys of each palette are exactly the twelve roles", () => {
     expect(palette).toBeDefined();
     expect([...palette.propertyNames.enum].sort()).toEqual([...DYNAMIC_COLOR_ROLES].sort());
   });
 
-  it("el valor de cada rol es una cadena de como mucho 128 caracteres", () => {
+  it("the value of each role is a string of at most 128 characters", () => {
     expect(palette.additionalProperties).toEqual({ type: "string", maxLength: 128 });
   });
 });

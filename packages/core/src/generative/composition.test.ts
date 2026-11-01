@@ -9,11 +9,11 @@ import { renderGenerativeSVG } from "./index.js";
 import { GENERATOR_CATALOG } from "./catalog.js";
 import type { GeneratorSpec } from "./types.js";
 
-describe("generador compuesto por layers", () => {
-  it("dos layers emiten dos grupos con su modo de fusion", () => {
+describe("generator composed of layers", () => {
+  it("two layers emit two groups with their blend mode", () => {
     // Temporarily add a test spec to the catalog to exercise the composition
     const testSpec: GeneratorSpec = {
-      id: "prueba-dos-layers",
+      id: "probe-dos-layers",
       layers: [
         { primitive: "gradient", fixed: { kind: "linear" }, blend: "screen" },
         { primitive: "radial", fixed: { kind: "rays" }, blend: "screen" }
@@ -24,7 +24,7 @@ describe("generador compuesto por layers", () => {
 
     try {
       const svg = decodeURIComponent(renderGenerativeSVG(
-        { generatorId: "prueba-dos-layers", seed: 1 },
+        { generatorId: "probe-dos-layers", seed: 1 },
         { width: 200, height: 200 }
       ));
       expect(svg.match(/<g style="mix-blend-mode:/g)).toHaveLength(2);
@@ -35,11 +35,11 @@ describe("generador compuesto por layers", () => {
     }
   });
 
-  it("el grano va en MOSAICO, no a pantalla completa", () => {
+  it("the grain is TILED, not full-screen", () => {
     // Measured: full screen costs three times as much (3.3 ms vs 1.1); in
     // 128px tiles it costs nothing measurable.
     const testSpec: GeneratorSpec = {
-      id: "prueba-con-grano",
+      id: "probe-with-grain",
       layers: [
         { primitive: "gradient", fixed: { kind: "linear" } }
       ],
@@ -50,7 +50,7 @@ describe("generador compuesto por layers", () => {
 
     try {
       const svg = decodeURIComponent(renderGenerativeSVG(
-        { generatorId: "prueba-con-grano", seed: 1 },
+        { generatorId: "probe-with-grain", seed: 1 },
         { width: 800, height: 600 }
       ));
       expect(svg).toContain("<pattern");
@@ -62,12 +62,12 @@ describe("generador compuesto por layers", () => {
     }
   });
 
-  it("una capa con opacidad y desenfoque emite ambos, y el filtro se deduplica", () => {
+  it("a layer with opacity and blur emits both, and the filter is deduplicated", () => {
     // `luz-difusa`, the first composed generator in the repertoire, is a translucent radial
     // in `screen` BLURRED. No test exercised this branch of the wrapper, and it is the
     // one that generator debuts.
     const testSpec: GeneratorSpec = {
-      id: "prueba-desenfoque",
+      id: "probe-desenfoque",
       layers: [
         { primitive: "gradient", fixed: { kind: "linear" } },
         { primitive: "radial", fixed: { kind: "rings" }, opacidad: 0.5, desenfoque: 4 },
@@ -79,7 +79,7 @@ describe("generador compuesto por layers", () => {
 
     try {
       const svg = decodeURIComponent(
-        renderGenerativeSVG({ generatorId: "prueba-desenfoque", seed: 1 }, { width: 200, height: 200 })
+        renderGenerativeSVG({ generatorId: "probe-desenfoque", seed: 1 }, { width: 200, height: 200 })
       );
 
       expect(svg).toContain("opacity:0.5");
@@ -100,7 +100,7 @@ describe("generador compuesto por layers", () => {
     }
   });
 
-  it("una capa sin fusion declarada no emite mix-blend-mode", () => {
+  it("a layer without a declared blend emits no mix-blend-mode", () => {
     // So as not to clutter the SVG of single-layer generators.
     const svg = decodeURIComponent(renderGenerativeSVG(
       { generatorId: "stacked-waves", seed: 1 },

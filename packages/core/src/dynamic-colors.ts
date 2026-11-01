@@ -60,12 +60,12 @@ export function isValidDynamicColorRole(role: unknown): role is DynamicColorRole
  */
 const HEX = /^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 // Only numbers, units and separators: no quotes, no `;`, no `url(`.
-const FUNCION_COLOR = /^(?:rgb|rgba|hsl|hsla)\(\s*[0-9a-zA-Z.,%/\s+-]*\)$/;
-const PALABRAS = new Set(["transparent", "currentcolor", "none", "inherit"]);
+const COLOR_FUNCTION = /^(?:rgb|rgba|hsl|hsla)\(\s*[0-9a-zA-Z.,%/\s+-]*\)$/;
+const KEYWORDS = new Set(["transparent", "currentcolor", "none", "inherit"]);
 // A variable's name cannot inject anything; the danger lives in its default
 // value, which is validated separately and recursively.
 const VAR_SIMPLE = /^var\(\s*(--[A-Za-z0-9_-]+)\s*\)$/;
-const VAR_CON_RESPALDO = /^var\(\s*(--[A-Za-z0-9_-]+)\s*,([\s\S]+)\)$/;
+const VAR_WITH_FALLBACK = /^var\(\s*(--[A-Za-z0-9_-]+)\s*,([\s\S]+)\)$/;
 
 /**
  * The same whitelist as a single regex source, for the portable contract.
@@ -77,38 +77,38 @@ const VAR_CON_RESPALDO = /^var\(\s*(--[A-Za-z0-9_-]+)\s*,([\s\S]+)\)$/;
  * of what the player paints safely; a test holds that line.
  */
 const P_HEX = "#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})";
-const P_FUNCION = "(?:rgb|rgba|hsl|hsla)\\(\\s*[0-9a-zA-Z.,%/\\s+-]*\\)";
-const P_PALABRA = "(?:transparent|currentColor|currentcolor|none|inherit)";
-const P_NOMBRE = "--[A-Za-z0-9_-]+";
-const P_BASE = `(?:${P_HEX}|${P_FUNCION}|${P_PALABRA})`;
-const P_VAR0 = `var\\(\\s*${P_NOMBRE}\\s*\\)`;
-const P_VAR1 = `var\\(\\s*${P_NOMBRE}\\s*,\\s*(?:${P_BASE}|${P_VAR0})\\s*\\)`;
-const P_VAR2 = `var\\(\\s*${P_NOMBRE}\\s*,\\s*(?:${P_BASE}|${P_VAR0}|${P_VAR1})\\s*\\)`;
+const P_FUNCTION = "(?:rgb|rgba|hsl|hsla)\\(\\s*[0-9a-zA-Z.,%/\\s+-]*\\)";
+const P_KEYWORD = "(?:transparent|currentColor|currentcolor|none|inherit)";
+const P_NAME = "--[A-Za-z0-9_-]+";
+const P_BASE = `(?:${P_HEX}|${P_FUNCTION}|${P_KEYWORD})`;
+const P_VAR0 = `var\\(\\s*${P_NAME}\\s*\\)`;
+const P_VAR1 = `var\\(\\s*${P_NAME}\\s*,\\s*(?:${P_BASE}|${P_VAR0})\\s*\\)`;
+const P_VAR2 = `var\\(\\s*${P_NAME}\\s*,\\s*(?:${P_BASE}|${P_VAR0}|${P_VAR1})\\s*\\)`;
 
 export const CSS_COLOR_PATTERN = `^(?:${P_BASE}|${P_VAR0}|${P_VAR1}|${P_VAR2})$`;
 
 /**
  * Whether a value is a color expression that can be painted safely.
  *
- * `profundidad` (depth) cuts off nested `var()` calls: without it, a file with
+ * `depth` cuts off nested `var()` calls: without it, a file with
  * a thousand levels would exhaust the stack.
  */
-export function isSafeCssColor(valor: unknown, profundidad = 0): boolean {
-  if (typeof valor !== "string") return false;
-  const v = valor.trim();
-  if (!v || v.length > 128 || profundidad > 4) return false;
+export function isSafeCssColor(value: unknown, depth = 0): boolean {
+  if (typeof value !== "string") return false;
+  const v = value.trim();
+  if (!v || v.length > 128 || depth > 4) return false;
   // A second lock, and REDUNDANT today: a mutation check showed that removing it
   // breaks no test, because the allowlist below -positive and anchored- already
-  // rejects these payloads. It is kept in case someone widens `FUNCION_COLOR`,
+  // rejects these payloads. It is kept in case someone widens `COLOR_FUNCTION`,
   // not because it is catching anything now.
   if (/[;{}<>"]/.test(v) || v.includes(String.fromCharCode(92))) return false;
   if (/url\(|expression\(|\/\*/i.test(v)) return false;
   if (HEX.test(v)) return true;
-  if (PALABRAS.has(v.toLowerCase())) return true;
-  if (FUNCION_COLOR.test(v)) return true;
+  if (KEYWORDS.has(v.toLowerCase())) return true;
+  if (COLOR_FUNCTION.test(v)) return true;
   if (VAR_SIMPLE.test(v)) return true;
-  const conRespaldo = VAR_CON_RESPALDO.exec(v);
-  if (conRespaldo) return isSafeCssColor(conRespaldo[2], profundidad + 1);
+  const withFallback = VAR_WITH_FALLBACK.exec(v);
+  if (withFallback) return isSafeCssColor(withFallback[2], depth + 1);
   return false;
 }
 
@@ -124,20 +124,20 @@ export function resolvePalette(
   doc: { palettes?: Record<string, Palette>; defaultPalette?: string },
   opts: { requested?: string | null; prefersDark?: boolean } = {}
 ): { name: string; colors: Palette } | null {
-  const paletas = doc.palettes ?? {};
+  const palettes = doc.palettes ?? {};
   // The preference only decides when the document carries BOTH palettes; with
   // only one there is nothing to choose between, and defaultPalette wins.
-  const ambas = Object.hasOwn(paletas, "dark") && Object.hasOwn(paletas, "light");
-  const porPreferencia = ambas && opts.prefersDark !== undefined ? (opts.prefersDark ? "dark" : "light") : undefined;
-  const nombre = [opts.requested, porPreferencia, doc.defaultPalette]
-    .find((n): n is string => typeof n === "string" && Object.hasOwn(paletas, n));
-  if (nombre === undefined) return null;
+  const both = Object.hasOwn(palettes, "dark") && Object.hasOwn(palettes, "light");
+  const byPreference = both && opts.prefersDark !== undefined ? (opts.prefersDark ? "dark" : "light") : undefined;
+  const name = [opts.requested, byPreference, doc.defaultPalette]
+    .find((n): n is string => typeof n === "string" && Object.hasOwn(palettes, n));
+  if (name === undefined) return null;
   const colors: Palette = {};
   for (const role of DYNAMIC_COLOR_ROLES) {
-    const valor = paletas[nombre][role];
-    if (isSafeCssColor(valor)) colors[role] = String(valor).trim();
+    const value = palettes[name][role];
+    if (isSafeCssColor(value)) colors[role] = String(value).trim();
   }
-  return { name: nombre, colors };
+  return { name, colors };
 }
 
 /**

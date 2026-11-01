@@ -24,7 +24,7 @@ const GRADIENT = new RegExp(CSS_GRADIENT_PATTERN);
 
 // Measured over the real .oim files on disk, plus the shapes
 // `resolveCssColor` writes for dynamic colours.
-const COLORES_REALES = [
+const REAL_COLORS = [
   "#f59e0b", "#FFF", "#00000080", "rgb(0, 0, 0)", "rgba(255,255,255,0.5)",
   "hsl(210 40% 50%)", "transparent", "none", "currentColor",
   "var(--primary)", "var(--text)", "var(--oim-color-accent, #f59e0b)",
@@ -32,7 +32,7 @@ const COLORES_REALES = [
   "var(--a, var(--b, #000))",
 ];
 
-const COLORES_HOSTILES = [
+const HOSTILE_COLORS = [
   "red; background-image: url(https://tercero.example/b)",
   "url(https://tercero.example/b)",
   "var(--x, url(https://tercero.example/b))",
@@ -43,7 +43,7 @@ const COLORES_HOSTILES = [
   "",
 ];
 
-const GRADIENTES_REALES = [
+const REAL_GRADIENTS = [
   "linear-gradient(135deg, #f59e0b 0%, #7c3aed 100%)",
   "radial-gradient(circle 40px at 50% 50%, #000 0%, #fff 100%)",
   "radial-gradient(circle closest-side at 30% 70%, rgba(0, 0, 0, 0.5) 0%, transparent 100%)",
@@ -51,7 +51,7 @@ const GRADIENTES_REALES = [
   "linear-gradient(90deg, var(--oim-color-accent, #f59e0b) 0%, #000 100%)",
 ];
 
-const GRADIENTES_HOSTILES = [
+const HOSTILE_GRADIENTS = [
   "linear-gradient(red, blue), url(https://tercero.example/baliza)",
   "linear-gradient(red, url(https://tercero.example/b))",
   "linear-gradient(90deg, image-set(1x) 0%, #000 100%)",
@@ -59,36 +59,36 @@ const GRADIENTES_HOSTILES = [
   "linear-gradient(red, blue); color: red",
 ];
 
-describe("colores del contrato 1.8.0", () => {
-  it.each(COLORES_REALES)("el contrato y el player aceptan %s", (c) => {
+describe("colors of the 1.8.0 contract", () => {
+  it.each(REAL_COLORS)("the contract and the player accept %s", (c) => {
     expect(COLOR.test(c)).toBe(true);
     expect(isSafeCssColor(c)).toBe(true);
   });
 
-  it.each(COLORES_HOSTILES)("el contrato rechaza %s", (c) => {
+  it.each(HOSTILE_COLORS)("the contract rejects %s", (c) => {
     expect(COLOR.test(c)).toBe(false);
   });
 
-  it("nada que acepte el contrato lo rechaza el player", () => {
-    for (const c of [...COLORES_REALES, ...COLORES_HOSTILES]) {
+  it("nothing the contract accepts is rejected by the player", () => {
+    for (const c of [...REAL_COLORS, ...HOSTILE_COLORS]) {
       if (COLOR.test(c)) expect(isSafeCssColor(c), c).toBe(true);
     }
   });
 });
 
-describe("gradientes del contrato 1.8.0", () => {
-  it.each(GRADIENTES_REALES)("el contrato y el player aceptan %s", (g) => {
+describe("gradients of the 1.8.0 contract", () => {
+  it.each(REAL_GRADIENTS)("the contract and the player accept %s", (g) => {
     expect(GRADIENT.test(g)).toBe(true);
     expect(isSafeCssGradient(g)).toBe(true);
   });
 
-  it.each(GRADIENTES_HOSTILES)("el contrato rechaza %s", (g) => {
+  it.each(HOSTILE_GRADIENTS)("the contract rejects %s", (g) => {
     expect(GRADIENT.test(g)).toBe(false);
   });
 });
 
-describe("styleSchema 1.8.0 con valores del editor", () => {
-  it("acepta un relleno completo tal como lo escribe el editor", () => {
+describe("styleSchema 1.8.0 with editor values", () => {
+  it("accepts a complete fill exactly as the editor writes it", () => {
     const r = styleSchema.safeParse({
       fillType: "generative",
       fillColor: "none",
@@ -113,20 +113,20 @@ describe("styleSchema 1.8.0 con valores del editor", () => {
   });
 
   it.each([
-    ["un color con inyeccion", { strokeColor: "red; background: url(x)" }],
-    ["un rol que el player no conoce", { fillColorRole: "brand" }],
-    ["un patron que no existe", { fillPatternType: "kittens" }],
-    ["la direccion del parallax en el patron", { fillPatternDirection: "left_to_right" }],
-    ["un gradiente con segunda imagen", { fillGradient: "linear-gradient(red, blue), url(x)" }],
-    ["un generativo sin forma", { fillGenerative: "blurry-gradient" }],
-    ["un recorte sin silueta", { cuts: [{ id: "c", x: 0, y: 0, width: 1, height: 1 }] }],
-  ])("rechaza %s", (_nombre, estilo) => {
-    expect(styleSchema.safeParse(estilo).success).toBe(false);
+    ["a color with injection", { strokeColor: "red; background: url(x)" }],
+    ["a role the player does not know", { fillColorRole: "brand" }],
+    ["a pattern that does not exist", { fillPatternType: "kittens" }],
+    ["the parallax direction in the pattern", { fillPatternDirection: "left_to_right" }],
+    ["a gradient with a second image", { fillGradient: "linear-gradient(red, blue), url(x)" }],
+    ["a generative with no shape", { fillGenerative: "blurry-gradient" }],
+    ["a cut with no silhouette", { cuts: [{ id: "c", x: 0, y: 0, width: 1, height: 1 }] }],
+  ])("rechaza %s", (_name, stylePatch) => {
+    expect(styleSchema.safeParse(stylePatch).success).toBe(false);
   });
 });
 
-describe("styleSchema 1.9.0: sin CSS en crudo", () => {
-  it("acepta el cssAnimation que escribe el editor", () => {
+describe("styleSchema 1.9.0: no raw CSS", () => {
+  it("accepts the cssAnimation the editor writes", () => {
     for (const v of ["background-animation-right 8s linear infinite", "background-animation-zoom-in 2.5s linear infinite"]) {
       expect(styleSchema.safeParse({ cssAnimation: v }).success, v).toBe(true);
     }

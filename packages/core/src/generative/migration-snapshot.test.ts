@@ -10,10 +10,10 @@ import { renderGenerativeSVG } from "./index.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-describe("Paso 0: Snapshot baseline de los 17 generadores antes de migrar a layers", () => {
+describe("Step 0: baseline snapshot of the 17 generators before migrating to layers", () => {
   const snapshotPath = path.join(__dirname, "__baseline_snapshots__.json");
 
-  it("captura o valida que los 17 generadores producen exactamente el mismo SVG byte a byte", () => {
+  it("captures or validates that the 17 generators produce exactly the same SVG, byte for byte", () => {
     const current: Record<string, string> = {};
     for (const g of GENERATOR_CATALOG) {
       const svg = renderGenerativeSVG({ generatorId: g.id, seed: 7 }, { width: 400, height: 300 });
@@ -29,7 +29,7 @@ describe("Paso 0: Snapshot baseline de los 17 generadores antes de migrar a laye
       const baselineKeys = Object.keys(baseline);
       expect(baselineKeys.length).toBe(17);
       for (const id of baselineKeys) {
-        expect(current[id], `El SVG del generador preexistente "${id}" debe ser idéntico byte a byte al baseline`).toBe(baseline[id]);
+        expect(current[id], `The SVG of the pre-existing generator "${id}" must be byte-identical to the baseline`).toBe(baseline[id]);
       }
     }
   });

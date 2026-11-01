@@ -22,61 +22,61 @@
 import { describe, it, expect } from 'vitest';
 import { isGroup, slotParent, childrenByGroup } from './groups';
 
-const grupo = (id: string) => ({ id, type: 'group', style: {} });
-const hijo = (id: string, groupId?: string) => ({
+const group = (id: string) => ({ id, type: 'group', style: {} });
+const child = (id: string, groupId?: string) => ({
   id, type: 'geo', style: groupId ? { groupId } : {}
 });
 
-describe('quien es el padre de cada slot', () => {
-  it('lo lee de `style`, que es donde el editor lo escribe', () => {
-    expect(slotParent(hijo('a', 'g1'))).toBe('g1');
+describe('who is the parent of each slot', () => {
+  it('reads it from `style`, which is where the editor writes it', () => {
+    expect(slotParent(child('a', 'g1'))).toBe('g1');
   });
 
-  it('NO lo lee de la raiz del slot', () => {
+  it('does NOT read it from the root of the slot', () => {
     // The root does not survive the backend: `RawSlot` is a Pydantic model with
     // `extra='ignore'`. If the player read it from there, it would work in tests
     // and fail on every signed file — which is exactly how the parallax got lost.
     expect(slotParent({ id: 'a', type: 'geo', groupId: 'g1', style: {} })).toBeNull();
   });
 
-  it('un slot sin `style` no revienta', () => {
+  it('a slot without `style` does not blow up', () => {
     expect(slotParent({ id: 'a', type: 'geo' })).toBeNull();
     expect(slotParent(null)).toBeNull();
   });
 
-  it('un `groupId` que no es texto no cuenta', () => {
+  it('a `groupId` that is not text does not count', () => {
     expect(slotParent({ id: 'a', style: { groupId: 7 } })).toBeNull();
     expect(slotParent({ id: 'a', style: { groupId: '' } })).toBeNull();
   });
 
-  it('reconoce el tipo grupo', () => {
-    expect(isGroup(grupo('g1'))).toBe(true);
-    expect(isGroup(hijo('a'))).toBe(false);
+  it('recognizes the group type', () => {
+    expect(isGroup(group('g1'))).toBe(true);
+    expect(isGroup(child('a'))).toBe(false);
     expect(isGroup(undefined)).toBe(false);
   });
 });
 
-describe('quien va dentro de quien', () => {
-  it('agrupa a los hijos por su padre, en orden de pila', () => {
-    const mapa = childrenByGroup([grupo('g1'), hijo('a', 'g1'), hijo('b', 'g1')]);
-    expect(mapa.get('g1')).toEqual(['a', 'b']);
+describe('who goes inside whom', () => {
+  it('groups the children by their parent, in stack order', () => {
+    const map = childrenByGroup([group('g1'), child('a', 'g1'), child('b', 'g1')]);
+    expect(map.get('g1')).toEqual(['a', 'b']);
   });
 
-  it('dos grupos no se mezclan', () => {
-    const mapa = childrenByGroup([
-      grupo('g1'), hijo('a', 'g1'), grupo('g2'), hijo('b', 'g2'),
+  it('two groups do not mix', () => {
+    const map = childrenByGroup([
+      group('g1'), child('a', 'g1'), group('g2'), child('b', 'g2'),
     ]);
-    expect(mapa.get('g1')).toEqual(['a']);
-    expect(mapa.get('g2')).toEqual(['b']);
+    expect(map.get('g1')).toEqual(['a']);
+    expect(map.get('g2')).toEqual(['b']);
   });
 
-  it('una capa suelta no entra en ningun grupo', () => {
-    expect(childrenByGroup([grupo('g1'), hijo('suelta')]).size).toBe(0);
+  it('a loose layer does not join any group', () => {
+    expect(childrenByGroup([group('g1'), child('loose')]).size).toBe(0);
   });
 });
 
-describe('lo que NO puede pasar aunque el archivo venga roto', () => {
-  it('un archivo antiguo no anida nada', () => {
+describe('what must NOT happen even if the file arrives broken', () => {
+  it('an old file nests nothing', () => {
     // No slot carries `style.groupId`: the viewer paints things as always.
     expect(childrenByGroup([
       { id: 'g1', type: 'group', style: {} },
@@ -84,36 +84,36 @@ describe('lo que NO puede pasar aunque el archivo venga roto', () => {
     ]).size).toBe(0);
   });
 
-  it('un `groupId` que apunta a un grupo que no llego deja al hijo suelto', () => {
-    expect(childrenByGroup([hijo('a', 'g_perdido')]).size).toBe(0);
+  it('a `groupId` pointing to a group that never arrived leaves the child loose', () => {
+    expect(childrenByGroup([child('a', 'g_lost')]).size).toBe(0);
   });
 
-  it('un `groupId` que apunta a algo que no es un grupo tampoco anida', () => {
-    expect(childrenByGroup([{ id: 't', type: 'text', style: {} }, hijo('a', 't')]).size).toBe(0);
+  it('a `groupId` pointing to something that is not a group does not nest either', () => {
+    expect(childrenByGroup([{ id: 't', type: 'text', style: {} }, child('a', 't')]).size).toBe(0);
   });
 
-  it('un grupo dentro de otro grupo no se anida', () => {
+  it('a group inside another group does not nest', () => {
     // The editor forbids it, but the file can come from anywhere.
-    const mapa = childrenByGroup([
-      grupo('g1'), { id: 'g2', type: 'group', style: { groupId: 'g1' } },
+    const map = childrenByGroup([
+      group('g1'), { id: 'g2', type: 'group', style: { groupId: 'g1' } },
     ]);
-    expect(mapa.size).toBe(0);
+    expect(map.size).toBe(0);
   });
 
-  it('dos grupos que se apuntan mutuamente no cuelgan el anidado', () => {
-    const mapa = childrenByGroup([
+  it('two groups that point at each other do not hang the nesting', () => {
+    const map = childrenByGroup([
       { id: 'p', type: 'group', style: { groupId: 'q' } },
       { id: 'q', type: 'group', style: { groupId: 'p' } },
     ]);
-    expect(mapa.size).toBe(0);
+    expect(map.size).toBe(0);
   });
 
-  it('un grupo que se apunta a si mismo no se traga a si mismo', () => {
-    const mapa = childrenByGroup([{ id: 'g1', type: 'group', style: { groupId: 'g1' } }]);
-    expect(mapa.get('g1')).toBeUndefined();
+  it('a group that points at itself does not swallow itself', () => {
+    const map = childrenByGroup([{ id: 'g1', type: 'group', style: { groupId: 'g1' } }]);
+    expect(map.get('g1')).toBeUndefined();
   });
 
-  it('una lista vacia o rota no revienta', () => {
+  it('an empty or broken list does not blow up', () => {
     expect(childrenByGroup([]).size).toBe(0);
     expect(childrenByGroup([null as any, undefined as any]).size).toBe(0);
   });

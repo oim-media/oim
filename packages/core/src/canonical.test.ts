@@ -7,8 +7,8 @@
 import { describe, it, expect } from 'vitest';
 import { serializeCanonical } from './canonical.js';
 
-describe('serializeCanonical - 7 Reglas Canónicas (RFC 8785)', () => {
-  it('Regla 2: excluye signature, key_version, timestamp y creator_user_id SOLO de la raíz', () => {
+describe('serializeCanonical - 7 canonical rules (RFC 8785)', () => {
+  it('Rule 2: excludes signature, key_version, timestamp and creator_user_id ONLY from the root', () => {
     const input = {
       signature: 'sig123',
       key_version: 'v1',
@@ -28,7 +28,7 @@ describe('serializeCanonical - 7 Reglas Canónicas (RFC 8785)', () => {
     expect(out).toBe('{"name":"Cartel","slots":[{"creator_user_id":"preserved_inside","id":"s1","timestamp":9999}]}');
   });
 
-  it('Regla 3: enteros flotantes a enteros, y números decimales redondeados a 6 cifras', () => {
+  it('Rule 3: float integers become integers, and decimal numbers are rounded to 6 digits', () => {
     const input = {
       enteroFloat: 2.0,
       ceroFloat: -0.0,
@@ -41,7 +41,7 @@ describe('serializeCanonical - 7 Reglas Canónicas (RFC 8785)', () => {
     expect(out).toBe('{"ceroFloat":0,"decimalCorto":0.5,"decimalLargo":0.123457,"enteroFloat":2,"negativoLargo":-45.123456}');
   });
 
-  it('Regla 4: ordenación recursiva por punto de código Unicode en objetos y dentro de arrays', () => {
+  it('Rule 4: recursive sorting by Unicode code point in objects and inside arrays', () => {
     const input = {
       b: 1,
       a: 2,
@@ -52,7 +52,7 @@ describe('serializeCanonical - 7 Reglas Canónicas (RFC 8785)', () => {
     expect(out).toBe('{"a":2,"b":1,"z":[{"x":20,"y":10}]}');
   });
 
-  it('Regla 6 y 7: caracteres UTF-8 no-ASCII sin secuencias \\uXXXX', () => {
+  it('Rules 6 and 7: non-ASCII UTF-8 characters without \\uXXXX sequences', () => {
     const input = {
       titulo: 'Diseño para niños con acción',
     };

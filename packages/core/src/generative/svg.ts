@@ -71,8 +71,8 @@ export function createDefsRegistry(): DefsRegistry {
       return id;
     },
 
-    registerGrain(intensidad: number): string {
-      const key = `grain|${intensidad}`;
+    registerGrain(intensity: number): string {
+      const key = `grain|${intensity}`;
       const existingId = gradientMap.get(key);
       if (existingId) {
         return existingId;

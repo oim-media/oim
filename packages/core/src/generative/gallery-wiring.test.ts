@@ -7,7 +7,7 @@
 import { describe, it, expect } from "vitest";
 import { GENERATOR_CATALOG, getGeneratorSpec } from "./catalog.js";
 
-describe("Cableado galería ↔ catálogo generativo", () => {
+describe("Wiring: gallery ↔ generative catalog", () => {
   const catalogIds = new Set(GENERATOR_CATALOG.map((s) => s.id));
 
   it("every catalog generator is valid and accessible", () => {

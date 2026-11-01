@@ -13,27 +13,27 @@ import { grainConfigSchema } from "../schema";
  * `color` is optional, and without it the filter must stay byte for byte the
  * one every published .oim was made with.
  */
-describe("grano global con color", () => {
+describe("global grain with color", () => {
   const SIN_COLOR =
     '<filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>';
 
-  it("sin color el filtro es exactamente el de siempre", () => {
+  it("without color the filter is exactly the usual one", () => {
     expect(buildSvgNoiseFilter("g", { intensity: 15, baseFrequency: 0.8 })).toBe(SIN_COLOR);
   });
 
-  it("con color el ruido se tine de ese color", () => {
+  it("with color the noise is tinted with that color", () => {
     const f = buildSvgNoiseFilter("g", { color: "#fb0101" });
     expect(f).toContain('flood-color="#fb0101"');
     expect(f).toContain("luminanceToAlpha");
     expect(f).not.toContain('type="saturate"');
   });
 
-  it("un color que no es hex ni rgb se ignora: grano de siempre, nada inyectado", () => {
+  it("a color that is neither hex nor rgb is ignored: usual grain, nothing injected", () => {
     const f = buildSvgNoiseFilter("g", { color: '"/><script>alert(1)</script>' });
     expect(f).toBe(SIN_COLOR);
   });
 
-  it("el esquema acepta grain.color y rechaza lo que no es un color", () => {
+  it("the schema accepts grain.color and rejects what is not a color", () => {
     expect(grainConfigSchema.parse({ enabled: true, color: "#fb0101" }).color).toBe("#fb0101");
     expect(() => grainConfigSchema.parse({ enabled: true, color: "javascript:alert(1)" })).toThrow();
   });

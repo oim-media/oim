@@ -65,7 +65,7 @@ describe('compressAndEncodeJSON / decodeAndDecompressJSON', () => {
   it('rejects zip bomb / payload exceeding maxBytes', async () => {
     const largePayload = { filler: 'A'.repeat(50000) };
     const encoded = await compressAndEncodeJSON(largePayload);
-    await expect(decodeAndDecompressJSON(encoded, 1000)).rejects.toThrow(/Zip Bomb Detectado/);
+    await expect(decodeAndDecompressJSON(encoded, 1000)).rejects.toThrow(/zip bomb detected/);
   });
 });
 

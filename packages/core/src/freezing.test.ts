@@ -241,53 +241,53 @@ const ALIAS = Object.entries(CONCEPTO)
   .filter(([, c]) => c.endsWith("/alias"))
   .map(([k]) => k);
 
-function clavesDeclaradas(): string[] {
+function declaredKeys(): string[] {
   const j = z.toJSONSchema(styleSchema, { io: "input" }) as any;
   return Object.keys(j.properties ?? {});
 }
 
-describe("la superficie de `style` esta congelada", () => {
-  it("toda clave declarada dice que concepto cubre", () => {
-    const sinMapear = clavesDeclaradas().filter((k) => !(k in CONCEPTO));
+describe("the surface of `style` is frozen", () => {
+  it("every declared key says which concept it covers", () => {
+    const unmapped = declaredKeys().filter((k) => !(k in CONCEPTO));
     expect(
-      sinMapear,
-      "Hay claves en el esquema que no dicen que concepto cubren. Añadelas a " +
-        "CONCEPTO en esta prueba: si el concepto ya existe, estas creando un " +
-        "segundo nombre para algo que ya lo tenia y hay que elegir uno.",
+      unmapped,
+      "There are keys in the schema that do not say which concept they cover. Add them to " +
+        "CONCEPTO in this test: if the concept already exists, you are creating a " +
+        "second name for something that already had one, so one of them must be chosen.",
     ).toEqual([]);
   });
 
-  it("el mapa no habla de claves que ya no existen", () => {
-    const declaradas = new Set(clavesDeclaradas());
-    const fantasmas = Object.keys(CONCEPTO).filter((k) => !declaradas.has(k));
-    expect(fantasmas, "sobran en CONCEPTO: se retiraron del esquema").toEqual([]);
+  it("the map does not mention keys that no longer exist", () => {
+    const declaradas = new Set(declaredKeys());
+    const ghosts = Object.keys(CONCEPTO).filter((k) => !declaradas.has(k));
+    expect(ghosts, "extra entries in CONCEPTO: they were removed from the schema").toEqual([]);
   });
 
-  it("ningun concepto tiene dos claves canonicas", () => {
+  it("no concept has two canonical keys", () => {
     // The heart of the freeze. A concept may have ONE canonical key plus whatever
     // aliases are needed; two canonical keys is the debt we are paying down.
-    const porConcepto = new Map<string, string[]>();
-    for (const [clave, concepto] of Object.entries(CONCEPTO)) {
-      if (concepto.endsWith("/alias")) continue;
-      porConcepto.set(concepto, [...(porConcepto.get(concepto) ?? []), clave]);
+    const byConcept = new Map<string, string[]>();
+    for (const [key, concept] of Object.entries(CONCEPTO)) {
+      if (concept.endsWith("/alias")) continue;
+      byConcept.set(concept, [...(byConcept.get(concept) ?? []), key]);
     }
-    const repetidos = [...porConcepto.entries()].filter(([, ks]) => ks.length > 1);
+    const repetidos = [...byConcept.entries()].filter(([, ks]) => ks.length > 1);
     expect(
       repetidos,
-      "Dos claves canonicas para un mismo concepto. Una de las dos tiene que " +
+      "Two canonical keys for the same concept. One of the two has to " +
         "pasar a alias.",
     ).toEqual([]);
   });
 
-  it("todo alias apunta a un concepto que existe de verdad", () => {
+  it("every alias points to a concept that really exists", () => {
     const canonicos = new Set(
       Object.values(CONCEPTO).filter((c) => !c.endsWith("/alias")),
     );
-    const huerfanos = ALIAS.filter((a) => !canonicos.has(CONCEPTO[a].replace("/alias", "")));
-    expect(huerfanos, "alias sin clave canonica que los acoja").toEqual([]);
+    const orphans = ALIAS.filter((a) => !canonicos.has(CONCEPTO[a].replace("/alias", "")));
+    expect(orphans, "aliases with no canonical key to take them in").toEqual([]);
   });
 
-  it("ya no queda ningun alias", () => {
+  it("no alias is left", () => {
     // All seven were removed before 1.0 with no deprecation phase: no
     // production .oim files existed yet, so there was no compatibility to keep.
     //

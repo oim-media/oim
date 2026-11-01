@@ -33,12 +33,12 @@ const PACKAGES = join(DIR, "..", "..");
  * Everything that ends up in a published tarball: the sources of the three
  * code packages (compiled or bundled into `dist/`) and the spec documents.
  */
-function fuentesPublicadas(): { nombre: string; texto: string }[] {
+function publishedSources(): { name: string; text: string }[] {
   const roots = ["core/src", "player-oim/src", "player-ovm/src", "spec"].map((r) => join(PACKAGES, r));
   return roots.flatMap((root) =>
     (readdirSync(root, { recursive: true }) as string[])
       .filter((f) => /\.(ts|js|md)$/.test(f) && !/\.test\.ts$/.test(f) && !f.includes("node_modules"))
-      .map((f) => ({ nombre: relative(PACKAGES, join(root, f)), texto: readFileSync(join(root, f), "utf8") })),
+      .map((f) => ({ name: relative(PACKAGES, join(root, f)), text: readFileSync(join(root, f), "utf8") })),
   );
 }
 
@@ -146,11 +146,11 @@ const SUPERFICIE = [
   // fontFile.ts — whether an uploaded font may be embedded.
   "readFontInfo",
   "fontEmbedding",
-  // grupos.ts — the membership rule.
+  // groups.ts — the membership rule.
   "isGroup",
   "childrenByGroup",
   "slotParent",
-  // tipografia.ts — line spacing and margin for the ink.
+  // typography.ts — line spacing and margin for the ink.
   "MAX_FONT_HEIGHT",
   "MAX_LINE_HEIGHT",
   "MIN_LINE_HEIGHT",
@@ -172,7 +172,7 @@ const SUPERFICIE = [
   "FILTER_PRESET_CSS",
   "mediaFilterCss",
   "hasMediaFilter",
-  // recorte.ts — who clips and who does not.
+  // clipping.ts — who clips and who does not.
   "slotClipping",
   // formasGeo.ts — the geometry of the catalog shapes.
   "GEO_SHAPES",
@@ -196,7 +196,7 @@ const SUPERFICIE = [
   "permissionOf",
   "canReedit",
   "signatureStamp",
-  // sobredimensionado.ts — how much parallax enlarges a layer at the edge.
+  // oversize.ts — how much parallax enlarges a layer at the edge.
   "MAX_SCALE",
   "maxOffset",
   "oversizeScale",
@@ -258,18 +258,18 @@ const SUPERFICIE = [
   "oimTextureEffectSchema",
 ].sort();
 
-describe("superficie publica de @oim-media/core", () => {
-  it("exporta exactamente lo declarado, ni una cosa mas", () => {
+describe("public surface of @oim-media/core", () => {
+  it("exports exactly what is declared, not one thing more", () => {
     expect(Object.keys(core).sort()).toEqual(SUPERFICIE);
   });
 });
 
-describe("nada sensible viaja en el paquete", () => {
+describe("nothing sensitive travels in the package", () => {
   /**
    * Cryptographic material. The private signing key lives in the backend and
    * must never cross into a package installed on third-party machines.
    */
-  it("no incluye claves privadas ni tokens de servicio", () => {
+  it("does not include private keys or service tokens", () => {
     const prohibido = [
       /-----BEGIN [A-Z ]*PRIVATE KEY-----/,
       /service_role/i,
@@ -281,9 +281,9 @@ describe("nada sensible viaja en el paquete", () => {
       /apps\/(backend|studio|workers)/, // private monorepo paths
       /OIM-Studio/, // private repository name
     ];
-    for (const { nombre, texto } of fuentesPublicadas()) {
-      for (const patron of prohibido) {
-        expect(patron.test(texto), `${nombre} contiene ${patron}`).toBe(false);
+    for (const { name, text } of publishedSources()) {
+      for (const pattern of prohibido) {
+        expect(pattern.test(text), `${name} contiene ${pattern}`).toBe(false);
       }
     }
   });
@@ -294,11 +294,11 @@ describe("nada sensible viaja en el paquete", () => {
    * means that published ones called the machine of whoever used them. With the
    * package published, that error spreads by itself.
    */
-  it("no fija localhost como destino por defecto", () => {
-    for (const { nombre, texto } of fuentesPublicadas()) {
-      const defectos = texto.match(/^\s*export const \w*(?:URL|HOST)\w*\s*=\s*["'][^"']*["']/gm) ?? [];
-      for (const linea of defectos) {
-        expect(/localhost|127\.0\.0\.1|0\.0\.0\.0/.test(linea), `${nombre}: ${linea}`).toBe(false);
+  it("does not set localhost as the default target", () => {
+    for (const { name, text } of publishedSources()) {
+      const defaults = text.match(/^\s*export const \w*(?:URL|HOST)\w*\s*=\s*["'][^"']*["']/gm) ?? [];
+      for (const line of defaults) {
+        expect(/localhost|127\.0\.0\.1|0\.0\.0\.0/.test(line), `${name}: ${line}`).toBe(false);
       }
     }
   });
@@ -309,7 +309,7 @@ describe("nada sensible viaja en el paquete", () => {
    * `npm publish` packages the WHOLE package directory. NOTICE travels too:
    * Apache-2.0 asks for it to accompany redistributions.
    */
-  it("el manifiesto limita el tarball a dist/", () => {
+  it("the manifest limits the tarball to dist/", () => {
     const pkg = JSON.parse(readFileSync(join(DIR, "..", "package.json"), "utf8"));
     expect(pkg.files).toEqual(["dist", "NOTICE"]);
   });

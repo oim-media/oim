@@ -45,32 +45,32 @@ const validarConElContrato = ajv.compile(contrato);
 const validarConZod = (doc: unknown) => OimMetadataSchema.safeParse(doc).success;
 
 /** Cases chosen for what they separate, not for covering fields. */
-const CASOS: [nombre: string, documento: unknown, esperado: boolean][] = [
-  ["el minimo valido", { slots: [] }, true],
-  ["sin slots", {}, false],
-  ["slots que no es lista", { slots: "dos" }, false],
+const CASES: [name: string, doc: unknown, expected: boolean][] = [
+  ["the minimum valid", { slots: [] }, true],
+  ["no slots", {}, false],
+  ["slots that is not a list", { slots: "dos" }, false],
 
   // How a new .oim survives in an old player.
-  ["clave desconocida arriba", { slots: [], clave_de_2027: 1 }, true],
+  ["unknown key at the top", { slots: [], clave_de_2027: 1 }, true],
   [
-    "clave desconocida anidada en canvas",
+    "unknown key nested in canvas",
     { slots: [], canvas: { natural_width: 10, natural_height: 5, futuro: 1 } },
     true,
   ],
 
   // The two formats that failed in the production .oim files.
-  ["marca de tiempo con desplazamiento", { slots: [], timestamp: "2026-06-12T20:38:40.713579+00:00" }, true],
-  ["marca de tiempo con Z", { slots: [], timestamp: "2026-06-12T20:38:40Z" }, true],
-  ["marca de tiempo sin zona", { slots: [], timestamp: "2026-06-12T20:38:40" }, false],
-  ["marca de tiempo que no es fecha", { slots: [], timestamp: "ayer" }, false],
+  ["timestamp with offset", { slots: [], timestamp: "2026-06-12T20:38:40.713579+00:00" }, true],
+  ["timestamp with Z", { slots: [], timestamp: "2026-06-12T20:38:40Z" }, true],
+  ["timestamp without zone", { slots: [], timestamp: "2026-06-12T20:38:40" }, false],
+  ["timestamp that is not a date", { slots: [], timestamp: "ayer" }, false],
   ["color transparent", { slots: [{ id: "a", style: { fillColor: "transparent" } }] }, true],
   ["color hexadecimal", { slots: [{ id: "a", style: { fillColor: "#ffffff" } }] }, true],
-  ["color con nombre CSS", { slots: [{ id: "a", style: { fillColor: "red" } }] }, false],
-  ["color con url", { slots: [{ id: "a", style: { fillColor: "url(http://malo.io/x)" } }] }, false],
+  ["color by CSS name", { slots: [{ id: "a", style: { fillColor: "red" } }] }, false],
+  ["color with url", { slots: [{ id: "a", style: { fillColor: "url(http://malo.io/x)" } }] }, false],
 
   // Numeric limits.
-  ["posicion dentro del lienzo", { slots: [{ id: "a", position: [50, 50] }] }, true],
-  ["posicion fuera del lienzo", { slots: [{ id: "a", position: [150, 50] }] }, false],
+  ["position inside the canvas", { slots: [{ id: "a", position: [50, 50] }] }, true],
+  ["position outside the canvas", { slots: [{ id: "a", position: [150, 50] }] }, false],
 
   /**
    * The discrepancy this test found. Zod requires exactly two elements;
@@ -78,32 +78,32 @@ const CASOS: [nombre: string, documento: unknown, esperado: boolean][] = [
    * means "the first two like this, the rest whatever". A foreign player
    * would have accepted a malformed position and painted wherever it liked.
    */
-  ["posicion de tres elementos", { slots: [{ id: "a", position: [10, 20, 30] }] }, false],
-  ["posicion de un elemento", { slots: [{ id: "a", position: [10] }] }, false],
-  ["canvas de anchura cero", { slots: [], canvas: { natural_width: 0, natural_height: 5 } }, false],
+  ["position of three elements", { slots: [{ id: "a", position: [10, 20, 30] }] }, false],
+  ["position of an element", { slots: [{ id: "a", position: [10] }] }, false],
+  ["canvas of zero width", { slots: [], canvas: { natural_width: 0, natural_height: 5 } }, false],
 ];
 
-describe("el contrato publicado y Zod coinciden", () => {
-  it.each(CASOS)("%s", (_nombre, documento, esperado) => {
-    const zod = validarConZod(documento);
-    const json = validarConElContrato(documento) as boolean;
+describe("the published contract and Zod agree", () => {
+  it.each(CASES)("%s", (_nombre, doc, expected) => {
+    const zod = validarConZod(doc);
+    const json = validarConElContrato(doc) as boolean;
     // The agreement first: it is the property that makes the contract useful.
-    expect({ zod, json }).toEqual({ zod: esperado, json: esperado });
+    expect({ zod, json }).toEqual({ zod: expected, json: expected });
   });
 });
 
-describe("los .oim reales pasan por las dos puertas", () => {
-  it("el contrato acepta lo que el sistema produce", async () => {
+describe("real .oim files pass both gates", () => {
+  it("the contract accepts what the system produces", async () => {
     const { extractOIM } = await import("./binary");
-    const rutas = [
+    const files = [
       join(__dirname, "..", "test", "fixtures", "object_sport.oim"),
       join(__dirname, "..", "test", "fixtures", "flyer_cafe.oim.png"),
     ];
-    for (const ruta of rutas) {
-      const { metadata } = await extractOIM(new Blob([readFileSync(ruta)]));
+    for (const file of files) {
+      const { metadata } = await extractOIM(new Blob([readFileSync(file)]));
       const json = validarConElContrato(metadata) as boolean;
-      const problemas = json ? [] : (validarConElContrato.errors ?? []).map((e) => `${e.instancePath} ${e.message}`);
-      expect(problemas, ruta).toEqual([]);
+      const problems = json ? [] : (validarConElContrato.errors ?? []).map((e) => `${e.instancePath} ${e.message}`);
+      expect(problems, file).toEqual([]);
       expect(validarConZod(metadata)).toBe(true);
     }
   });

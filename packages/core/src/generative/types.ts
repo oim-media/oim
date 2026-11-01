@@ -14,7 +14,7 @@ export interface DefsRegistry {
   registerLinearGradient(stops: Array<{ offset: number; color: string; opacity?: number }>, x1?: string, y1?: string, x2?: string, y2?: string): string;
   registerRadialGradient(stops: Array<{ offset: number; color: string; opacity?: number }>, cx?: string, cy?: string, r?: string): string;
   registerBlur(px: number): string;
-  registerGrain(intensidad: number): string;
+  registerGrain(intensity: number): string;
   serialize(): string;
 }
 

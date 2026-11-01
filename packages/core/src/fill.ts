@@ -62,13 +62,13 @@ const DIRECCIONES = new Set([
  * pattern LAYER: repeat, size and movement. One place, so the two cannot drift.
  */
 function patternTileCss(shape: Shape): CSSProperties {
-  const escala = shape.fillPatternScale || 1;
-  const tesela = 160 * escala;
+  const scale = shape.fillPatternScale || 1;
+  const tile = 160 * scale;
   const uri = generatePatternSVG({
     type: shape.fillPatternType || "clouds",
     bgColor: shape.fillPatternBgColor || "transparent",
     fgColor: shape.fillPatternColor || "#000000",
-    scale: escala,
+    scale: scale,
     svgs: shape.fillPatternSvgs,
     colors: shape.fillPatternColors,
     sizes: shape.fillPatternSizes,
@@ -77,9 +77,9 @@ function patternTileCss(shape: Shape): CSSProperties {
   });
   const css: CSSProperties = {
     backgroundImage: `url("${uri}")`,
-    backgroundSize: `${tesela}px ${tesela}px`,
+    backgroundSize: `${tile}px ${tile}px`,
     backgroundRepeat: "repeat",
-    ["--oim-bg-tile" as any]: `${tesela}px`,
+    ["--oim-bg-tile" as any]: `${tile}px`,
   };
   const direccion = shape.fillPatternDirection || "right";
   const velocidad = shape.fillPatternSpeed;
@@ -100,13 +100,13 @@ export function getFillCss(shape: Shape): CSSProperties {
   // editor's copy: a layer with `fillColor` and no `fillType` was painted there and came
   // out with no fill in the viewer. This version is taken because the other discards a
   // datum that the file does carry.
-  const tipo = shape.fillType || (shape.fillColor ? "color" : "none");
-  if (tipo === "none") return {};
+  const type = shape.fillType || (shape.fillColor ? "color" : "none");
+  if (type === "none") return {};
   const isText = shape.type === "text";
 
   let res: CSSProperties = {};
 
-  if (tipo === "generative") {
+  if (type === "generative") {
     if (!shape.fillGenerative) {
       res = shape.fillColor
         ? isText ? { color: shape.fillColor } : { backgroundColor: shape.fillColor }
@@ -123,7 +123,7 @@ export function getFillCss(shape: Shape): CSSProperties {
         backgroundRepeat: "no-repeat"
       };
     }
-  } else if (tipo === "pattern") {
+  } else if (type === "pattern") {
     if (!shape.fillPatternType) {
       res = shape.fillColor
         ? isText ? { color: shape.fillColor } : { backgroundColor: shape.fillColor }
@@ -133,11 +133,11 @@ export function getFillCss(shape: Shape): CSSProperties {
       // ONE tile over the shape and ignore speed and direction.
       res = patternTileCss(shape);
     }
-  } else if (tipo === "gradient") {
+  } else if (type === "gradient") {
     // Foreign data headed for `backgroundImage`, which takes an image list:
     // an unchecked value could smuggle a `url()` past it. See css-gradient.ts.
     res = isSafeCssGradient(shape.fillGradient) ? { backgroundImage: shape.fillGradient! } : {};
-  } else if (tipo === "color" || tipo === "image") {
+  } else if (type === "color" || type === "image") {
     // An image fill keeps its colour underneath: the photo is painted over it by the renderers.
     res = shape.fillColor
       ? isText ? { color: shape.fillColor } : { backgroundColor: shape.fillColor }
@@ -148,7 +148,7 @@ export function getFillCss(shape: Shape): CSSProperties {
   // background. Here it used `shape.fillType` while the branches above used the deduced
   // one (in the editor's copy), an inconsistency that did not show because the deduction
   // only ever produces "color".
-  if (isText && (tipo === "gradient" || (tipo === "generative" && shape.fillGenerative) || (tipo === "pattern" && shape.fillPatternType))) {
+  if (isText && (type === "gradient" || (type === "generative" && shape.fillGenerative) || (type === "pattern" && shape.fillPatternType))) {
     return {
       ...res,
       backgroundClip: "text",

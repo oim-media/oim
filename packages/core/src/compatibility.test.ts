@@ -23,24 +23,24 @@ import {
   BASE_CONTRACT_VERSION,
 } from "./compatibility";
 
-const lector = { version: "1.2.0", capabilities: ["vector_parallax", "infinite_parallax"] };
-const mirar = (metadata: any) => whatTheReaderCannotDo(metadata, lector);
+const reader = { version: "1.2.0", capabilities: ["vector_parallax", "infinite_parallax"] };
+const inspect = (metadata: any) => whatTheReaderCannotDo(metadata, reader);
 
-describe("cuando NO hay nada que decir", () => {
-  it("un archivo sin min_player no exige nada", () => {
-    expect(mirar({ slots: [] }).hayAlgoQueDecir).toBe(false);
+describe("when there is nothing to report", () => {
+  it("a file without min_player requires nothing", () => {
+    expect(inspect({ slots: [] }).hayAlgoQueDecir).toBe(false);
   });
 
-  it("una version anterior se lee sin ruido", () => {
-    expect(mirar({ min_player: "1.0.0" }).hayAlgoQueDecir).toBe(false);
+  it("an older version is read without noise", () => {
+    expect(inspect({ min_player: "1.0.0" }).hayAlgoQueDecir).toBe(false);
   });
 
-  it("la version exacta tampoco", () => {
-    expect(mirar({ min_player: "1.2.0" }).hayAlgoQueDecir).toBe(false);
+  it("the exact version does not either", () => {
+    expect(inspect({ min_player: "1.2.0" }).hayAlgoQueDecir).toBe(false);
   });
 
-  it("una capacidad que si se implementa no se menciona", () => {
-    expect(mirar({ capabilities: ["vector_parallax"] }).hayAlgoQueDecir).toBe(false);
+  it("a capability that is implemented is not mentioned", () => {
+    expect(inspect({ capabilities: ["vector_parallax"] }).hayAlgoQueDecir).toBe(false);
   });
 
   /**
@@ -48,62 +48,62 @@ describe("cuando NO hay nada que decir", () => {
    * warning would lose its meaning before it served any purpose.
    */
   it.each(["", "1.2", "proxima", "v2.0.0", 3, null, {}])(
-    "un min_player ilegible (%p) no inventa una advertencia",
+    "an unreadable min_player (%p) does not invent a warning",
     (v) => {
-      expect(mirar({ min_player: v }).hayAlgoQueDecir).toBe(false);
+      expect(inspect({ min_player: v }).hayAlgoQueDecir).toBe(false);
     },
   );
 
   it("aguanta metadatos rotos", () => {
-    expect(mirar(null).hayAlgoQueDecir).toBe(false);
-    expect(mirar({ capabilities: "vector_parallax" }).hayAlgoQueDecir).toBe(false);
-    expect(mirar({ capabilities: [null, 7, ""] }).hayAlgoQueDecir).toBe(false);
+    expect(inspect(null).hayAlgoQueDecir).toBe(false);
+    expect(inspect({ capabilities: "vector_parallax" }).hayAlgoQueDecir).toBe(false);
+    expect(inspect({ capabilities: [null, 7, ""] }).hayAlgoQueDecir).toBe(false);
   });
 });
 
-describe("cuando SI hay algo que decir", () => {
-  it("el archivo pide una version posterior", () => {
-    const f = mirar({ min_player: "1.3.0" });
+describe("when there is something to report", () => {
+  it("the file asks for a later version", () => {
+    const f = inspect({ min_player: "1.3.0" });
     expect(f.versionTooOld).toBe(true);
     expect(f.requiredVersion).toBe("1.3.0");
   });
 
-  it("compara por numero, no por texto", () => {
+  it("compares by number, not by text", () => {
     // "1.10.0" > "1.9.0" numerically, but the other way round alphabetically. It is the
     // classic bug, and the day comes when there are ten minor versions.
     expect(whatTheReaderCannotDo({ min_player: "1.10.0" }, { version: "1.9.0", capabilities: [] }).versionTooOld).toBe(true);
     expect(whatTheReaderCannotDo({ min_player: "1.9.0" }, { version: "1.10.0", capabilities: [] }).versionTooOld).toBe(false);
   });
 
-  it("nombra las capabilities que faltan", () => {
-    const f = mirar({ capabilities: ["vector_parallax", "physics_2d", "path_morph"] });
+  it("names the missing capabilities", () => {
+    const f = inspect({ capabilities: ["vector_parallax", "physics_2d", "path_morph"] });
     expect(f.missingCapabilities).toEqual(["path_morph", "physics_2d"]);
   });
 
-  it("no repite una capacidad declarada dos veces", () => {
-    expect(mirar({ capabilities: ["physics_2d", "physics_2d"] }).missingCapabilities).toEqual(["physics_2d"]);
+  it("does not repeat a capability declared twice", () => {
+    expect(inspect({ capabilities: ["physics_2d", "physics_2d"] }).missingCapabilities).toEqual(["physics_2d"]);
   });
 
   /**
    * The two questions are independent: a file can have the right version and still
    * ask for an effect that this reader does not implement.
    */
-  it("la version correcta no exime de las capabilities", () => {
-    const f = mirar({ min_player: "1.0.0", capabilities: ["physics_2d"] });
+  it("the right version does not exempt from capabilities", () => {
+    const f = inspect({ min_player: "1.0.0", capabilities: ["physics_2d"] });
     expect(f.versionTooOld).toBe(false);
     expect(f.hayAlgoQueDecir).toBe(true);
     expect(f.cannotRender).toBe(false);
   });
 
-  it("capacidades requeridas satisfechas no impiden renderizar ni generan advertencia", () => {
-    const f = mirar({ capabilities_required: ["vector_parallax"] });
+  it("satisfied required capabilities neither block rendering nor warn", () => {
+    const f = inspect({ capabilities_required: ["vector_parallax"] });
     expect(f.missingRequiredCapabilities).toEqual([]);
     expect(f.cannotRender).toBe(false);
     expect(f.hayAlgoQueDecir).toBe(false);
   });
 
-  it("capacidades requeridas faltantes marcan cannotRender y se listan por separado", () => {
-    const f = mirar({
+  it("missing required capabilities set cannotRender and are listed separately", () => {
+    const f = inspect({
       capabilities: ["vector_parallax", "path_morph"],
       capabilities_required: ["physics_2d", "path_morph"],
     });
@@ -113,39 +113,39 @@ describe("cuando SI hay algo que decir", () => {
     expect(f.hayAlgoQueDecir).toBe(true);
   });
 
-  it("describeMissing advierte con precisión cuando faltan capacidades requeridas", () => {
-    const f = mirar({ capabilities_required: ["physics_2d"] });
-    const texto = describeMissing(f);
-    expect(texto).toContain("No se puede reproducir completamente");
-    expect(texto).toContain("physics_2d");
+  it("describeMissing warns precisely when required capabilities are missing", () => {
+    const f = inspect({ capabilities_required: ["physics_2d"] });
+    const text = describeMissing(f);
+    expect(text).toContain("It cannot be fully rendered");
+    expect(text).toContain("physics_2d");
   });
 });
 
-describe("como se cuenta", () => {
-  it("calla cuando no hay nada", () => {
-    expect(describeMissing(mirar({}))).toBe("");
+describe("how it is reported", () => {
+  it("stays silent when there is nothing", () => {
+    expect(describeMissing(inspect({}))).toBe("");
   });
 
-  it("dice que se pinto lo que se pudo, no que fallo", () => {
-    const texto = describeMissing(mirar({ min_player: "2.0.0", capabilities: ["physics_2d"] }));
-    expect(texto).toContain("Se pinto lo que se pudo");
-    expect(texto).toContain("2.0.0");
-    expect(texto).toContain("physics_2d");
+  it("says it rendered what was possible, not that it failed", () => {
+    const text = describeMissing(inspect({ min_player: "2.0.0", capabilities: ["physics_2d"] }));
+    expect(text).toContain("Rendered what was possible");
+    expect(text).toContain("2.0.0");
+    expect(text).toContain("physics_2d");
   });
 });
 
-describe("lo que el player declara implementar", () => {
+describe("what the player declares it implements", () => {
   /**
    * `path_morph` and `physics_2d` are in the schema's enum and NOT in the player's
    * code: zero occurrences, measured. Declaring them would promise what is not
    * done, which is the silence that all of this is meant to break.
    */
-  it("no promete path_morph ni physics_2d", () => {
+  it("does not promise path_morph or physics_2d", () => {
     expect(PLAYER_CAPABILITIES).not.toContain("path_morph");
     expect(PLAYER_CAPABILITIES).not.toContain("physics_2d");
   });
 
-  it("la version del contrato se puede comparar", () => {
+  it("the contract version can be compared", () => {
     expect(CONTRACT_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
   });
 });
@@ -155,7 +155,7 @@ describe("minVersionFor", () => {
    * Today nothing requires more than the base, and that is correct: the four
    * capabilities of the schema were born with 1.0.0.
    */
-  it("un documento de hoy exige la version base", () => {
+  it("a document from today requires the base version", () => {
     expect(minVersionFor({ slots: [] })).toBe(BASE_CONTRACT_VERSION);
     expect(minVersionFor({ capabilities: ["vector_parallax", "physics_2d"] })).toBe(BASE_CONTRACT_VERSION);
   });
@@ -167,27 +167,27 @@ describe("minVersionFor", () => {
    * readers capable of painting it, and the author would not notice because it looks
    * fine in their editor.
    */
-  it("no sube por el mero hecho de que el contrato haya avanzado", () => {
+  it("does not rise merely because the contract has moved on", () => {
     expect(minVersionFor({ capabilities: ["vector_parallax"] }, { path_morph: "1.4.0" }))
       .toBe(BASE_CONTRACT_VERSION);
   });
 
-  it("sube cuando el documento SI usa algo posterior", () => {
+  it("rises when the document DOES use something later", () => {
     expect(minVersionFor({ capabilities: ["path_morph"] }, { path_morph: "1.4.0" })).toBe("1.4.0");
   });
 
-  it("con varias, se queda con la mayor", () => {
-    const mapa = { a: "1.2.0", b: "1.10.0", c: "1.3.0" };
-    expect(minVersionFor({ capabilities: ["a", "b", "c"] }, mapa)).toBe("1.10.0");
+  it("with several, keeps the highest", () => {
+    const versionMap = { a: "1.2.0", b: "1.10.0", c: "1.3.0" };
+    expect(minVersionFor({ capabilities: ["a", "b", "c"] }, versionMap)).toBe("1.10.0");
   });
 
-  it("una capacidad desconocida no inventa una exigencia", () => {
+  it("an unknown capability does not invent a requirement", () => {
     expect(minVersionFor({ capabilities: ["algo_que_no_existe"] }, { path_morph: "1.4.0" }))
       .toBe(BASE_CONTRACT_VERSION);
   });
 
   it("aguanta metadatos rotos", () => {
     expect(minVersionFor(null)).toBe(BASE_CONTRACT_VERSION);
-    expect(minVersionFor({ capabilities: "no es lista" })).toBe(BASE_CONTRACT_VERSION);
+    expect(minVersionFor({ capabilities: "not a list" })).toBe(BASE_CONTRACT_VERSION);
   });
 });

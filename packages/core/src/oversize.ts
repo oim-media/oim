@@ -66,10 +66,10 @@ export function maxOffset(depth: number): number {
  * was already a real bug in this editor.
  */
 export function oversizeScale(
-  caja: LayerBox,
+  box: LayerBox,
   canvas: CanvasSize,
   depth: number,
-  eje: ParallaxAxis = "both",
+  axis: ParallaxAxis = "both",
   /**
    * The layer is wrapped in an infinite-loop track.
    *
@@ -87,45 +87,45 @@ export function oversizeScale(
    * exists. If each one also decided on its own whether to oversize, there would be two rules
    * instead of one.
    */
-  tienePistaInfinita: boolean = false
+  hasInfiniteTrack: boolean = false
 ): number {
-  if (tienePistaInfinita) return 1;
+  if (hasInfiniteTrack) return 1;
   const d = maxOffset(depth);
   if (d <= 0) return 1;
-  if (!(caja.width > 0) || !(caja.height > 0)) return 1;
+  if (!(box.width > 0) || !(box.height > 0)) return 1;
 
-  const seMueveEnX = eje === "both" || eje === "x_only";
-  const seMueveEnY = eje === "both" || eje === "y_only";
+  const movesOnX = axis === "both" || axis === "x_only";
+  const movesOnY = axis === "both" || axis === "y_only";
 
   /**
    * What must be added on one side, or 0 if that side is not anchored.
    *
-   * `margen` is the distance from the layer's edge to the canvas edge; NEGATIVE if the
+   * `margin` is the distance from the layer's edge to the canvas edge; NEGATIVE if the
    * layer already overhangs.
    *
    * Two different things, and confusing them was the first bug of this function:
    *
-   * - **Anchored**: only the side that REACHES the edge is corrected, `margen <= d`.
+   * - **Anchored**: only the side that REACHES the edge is corrected, `margin <= d`.
    *   A layer 300px from the edge has a design gap; moving apart a bit more while moving
    *   is the effect, not a bug.
-   * - **How much**: `d + margen`. With the layer flush (`margen = 0`) `d` is needed;
+   * - **How much**: `d + margin`. With the layer flush (`margin = 0`) `d` is needed;
    *   if it already overhangs 50px and only moves 15, NOTHING is needed, and with the naive
-   *   subtraction `d - margen` it would have asked for 65.
+   *   subtraction `d - margin` it would have asked for 65.
    */
-  const porUnLado = (margen: number) => (margen <= d ? Math.max(0, d + margen) : 0);
-  const falta = (margenA: number, margenB: number) =>
-    Math.max(porUnLado(margenA), porUnLado(margenB));
+  const perSide = (margin: number) => (margin <= d ? Math.max(0, d + margin) : 0);
+  const gap = (marginA: number, marginB: number) =>
+    Math.max(perSide(marginA), perSide(marginB));
 
-  const faltaX = seMueveEnX
-    ? falta(caja.left, canvas.width - (caja.left + caja.width))
+  const gapX = movesOnX
+    ? gap(box.left, canvas.width - (box.left + box.width))
     : 0;
-  const faltaY = seMueveEnY
-    ? falta(caja.top, canvas.height - (caja.top + caja.height))
+  const gapY = movesOnY
+    ? gap(box.top, canvas.height - (box.top + box.height))
     : 0;
 
-  if (faltaX <= 0 && faltaY <= 0) return 1;
+  if (gapX <= 0 && gapY <= 0) return 1;
 
   // The scale is centered, so it grows `width * (s - 1) / 2` per side.
-  const escala = Math.max(1 + (2 * faltaX) / caja.width, 1 + (2 * faltaY) / caja.height);
-  return Math.min(MAX_SCALE, Number(escala.toFixed(4)));
+  const scale = Math.max(1 + (2 * gapX) / box.width, 1 + (2 * gapY) / box.height);
+  return Math.min(MAX_SCALE, Number(scale.toFixed(4)));
 }

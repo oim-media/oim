@@ -40,23 +40,23 @@ const SRC = join(RAIZ, "src");
 const DIST = join(RAIZ, "dist");
 
 /** Relative paths of everything inside, including subdirectories. */
-function contenido(dir: string, prefijo = ""): string[] {
-  const salida: string[] = [];
-  for (const entrada of readdirSync(dir, { withFileTypes: true })) {
-    const rel = prefijo ? `${prefijo}/${entrada.name}` : entrada.name;
-    if (entrada.isDirectory()) salida.push(...contenido(join(dir, entrada.name), rel));
-    else salida.push(rel);
+function listing(dir: string, prefijo = ""): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const rel = prefijo ? `${prefijo}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) out.push(...listing(join(dir, entry.name), rel));
+    else out.push(rel);
   }
-  return salida.sort();
+  return out.sort();
 }
 
-function masReciente(dir: string): number {
+function newestMtime(dir: string): number {
   let max = 0;
-  for (const entrada of readdirSync(dir, { withFileTypes: true })) {
-    const ruta = join(dir, entrada.name);
-    if (entrada.isDirectory()) max = Math.max(max, masReciente(ruta));
-    else if (entrada.name.endsWith(".ts") && !entrada.name.endsWith(".test.ts")) {
-      max = Math.max(max, statSync(ruta).mtimeMs);
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const filePath = join(dir, entry.name);
+    if (entry.isDirectory()) max = Math.max(max, newestMtime(filePath));
+    else if (entry.name.endsWith(".ts") && !entry.name.endsWith(".test.ts")) {
+      max = Math.max(max, statSync(filePath).mtimeMs);
     }
   }
   return max;
@@ -72,23 +72,23 @@ function masReciente(dir: string): number {
  * Files that are not `.ts` (such as `__baseline_snapshots__.json`, which a test reads)
  * are not compiled, so they do not appear in `dist` and do not count.
  */
-function modulosDe(dir: string, prefijo = ""): string[] {
-  const salida: string[] = [];
-  for (const entrada of readdirSync(dir, { withFileTypes: true })) {
-    const rel = prefijo ? `${prefijo}/${entrada.name}` : entrada.name;
-    if (entrada.isDirectory()) salida.push(...modulosDe(join(dir, entrada.name), rel));
-    else if (entrada.name.endsWith(".ts") && !entrada.name.endsWith(".test.ts")) {
-      salida.push(rel.replace(/\.ts$/, ""));
+function modulesOf(dir: string, prefijo = ""): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const rel = prefijo ? `${prefijo}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) out.push(...modulesOf(join(dir, entry.name), rel));
+    else if (entry.name.endsWith(".ts") && !entry.name.endsWith(".test.ts")) {
+      out.push(rel.replace(/\.ts$/, ""));
     }
   }
-  return salida.sort();
+  return out.sort();
 }
 
-const MODULOS = modulosDe(SRC);
+const MODULES = modulesOf(SRC);
 
-describe("el artefacto que se empaqueta", () => {
+describe("the packaged artifact", () => {
   it("existe", () => {
-    expect(existsSync(DIST), "no hay dist/. Ejecuta `pnpm --filter @oim-media/core build`").toBe(true);
+    expect(existsSync(DIST), "dist/ is missing. Run `pnpm --filter @oim-media/core build`").toBe(true);
   });
 
   /**
@@ -96,13 +96,13 @@ describe("el artefacto que se empaqueta", () => {
    * the source, an old tree) shows up here as a name that `src` does not
    * have.
    */
-  it("contiene exactamente los modulos de src, ni uno mas", () => {
-    const esperado = MODULOS.flatMap((m) => [`${m}.d.ts`, `${m}.js`]).sort();
-    expect(contenido(DIST)).toEqual(esperado);
+  it("contains exactly the modules of src, no more", () => {
+    const expected = MODULES.flatMap((m) => [`${m}.d.ts`, `${m}.js`]).sort();
+    expect(listing(DIST)).toEqual(expected);
   });
 
-  it("no lleva pruebas compiladas", () => {
-    expect(contenido(DIST).filter((f) => /\.test\.(js|d\.ts)$/.test(f))).toEqual([]);
+  it("does not ship compiled tests", () => {
+    expect(listing(DIST).filter((f) => /\.test\.(js|d\.ts)$/.test(f))).toEqual([]);
   });
 
   /**
@@ -113,12 +113,12 @@ describe("el artefacto que se empaqueta", () => {
    * so it checks that whatever is there comes out of `src`. A `dist/src/` has no counterpart
    * there and still fails.
    */
-  it("sus subdirectorios son los de src, y no otros", () => {
-    const enDist = new Set(
-      contenido(DIST).filter((f) => f.includes("/")).map((f) => f.split("/")[0]),
+  it("its subdirectories are the ones in src, and no others", () => {
+    const inDist = new Set(
+      listing(DIST).filter((f) => f.includes("/")).map((f) => f.split("/")[0]),
     );
-    const enSrc = new Set(MODULOS.filter((m) => m.includes("/")).map((m) => m.split("/")[0]));
-    expect([...enDist].sort()).toEqual([...enSrc].sort());
+    const inSrc = new Set(MODULES.filter((m) => m.includes("/")).map((m) => m.split("/")[0]));
+    expect([...inDist].sort()).toEqual([...inSrc].sort());
   });
 
   /**
@@ -126,13 +126,13 @@ describe("el artefacto que se empaqueta", () => {
    * says something else. It is the same failure that `dist-al-dia.test.js` watches for in the
    * player.
    */
-  it("no es mas viejo que src", () => {
-    const construido = Math.max(...contenido(DIST).map((f) => statSync(join(DIST, f)).mtimeMs));
-    const fuente = masReciente(SRC);
-    const atraso = Math.round((fuente - construido) / 1000);
+  it("is not older than src", () => {
+    const built = Math.max(...listing(DIST).map((f) => statSync(join(DIST, f)).mtimeMs));
+    const source = newestMtime(SRC);
+    const lag = Math.round((source - built) / 1000);
     expect(
-      construido >= fuente,
-      `dist/ va ${atraso}s por detras de src/. Ejecuta \`pnpm --filter @oim-media/core build\``,
+      built >= source,
+      `dist/ is ${lag}s behind src/. Run \`pnpm --filter @oim-media/core build\``,
     ).toBe(true);
   });
 });

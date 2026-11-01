@@ -7,7 +7,7 @@ import { describe, it, expect } from "vitest";
 import { isValidDynamicColorRole, isSafeCssColor, resolveCssColor, resolvePalette, DYNAMIC_COLOR_ROLES } from "./dynamic-colors.js";
 
 describe("dynamic-colors (Core)", () => {
-  it("reconoce todos los 12 roles oficiales de la lista blanca", () => {
+  it("recognizes all 12 official roles in the allowlist", () => {
     expect(DYNAMIC_COLOR_ROLES).toHaveLength(12);
     expect(DYNAMIC_COLOR_ROLES).toContain("text-primary");
     expect(DYNAMIC_COLOR_ROLES).toContain("text-on-accent");
@@ -16,7 +16,7 @@ describe("dynamic-colors (Core)", () => {
     }
   });
 
-  it("rechaza roles invalidos o peligrosos", () => {
+  it("rejects invalid or dangerous roles", () => {
     expect(isValidDynamicColorRole("malicious-role")).toBe(false);
     expect(isValidDynamicColorRole("")).toBe(false);
     expect(isValidDynamicColorRole(null)).toBe(false);
@@ -25,17 +25,17 @@ describe("dynamic-colors (Core)", () => {
     expect(isValidDynamicColorRole("var(--danger)")).toBe(false);
   });
 
-  it("resuelve variables CSS cuando el rol es valido y hay fallback", () => {
+  it("resolves CSS variables when the role is valid and there is a fallback", () => {
     expect(resolveCssColor("accent", "#2563EB")).toBe("var(--oim-color-accent, var(--oim-palette-accent, #2563EB))");
     expect(resolveCssColor("primary", "rgba(37, 99, 235, 0.15)")).toBe("var(--oim-color-primary, var(--oim-palette-primary, rgba(37, 99, 235, 0.15)))");
   });
 
-  it("resuelve variables CSS cuando el rol es valido y NO hay fallback", () => {
+  it("resolves CSS variables when the role is valid and there is NO fallback", () => {
     expect(resolveCssColor("surface", undefined)).toBe("var(--oim-color-surface, var(--oim-palette-surface))");
     expect(resolveCssColor("outline", "")).toBe("var(--oim-color-outline, var(--oim-palette-outline))");
   });
 
-  it("devuelve el color directo de fallback si el rol no es valido o es undefined", () => {
+  it("returns the direct fallback color if the role is invalid or undefined", () => {
     expect(resolveCssColor(undefined, "#FF0000")).toBe("#FF0000");
     expect(resolveCssColor("non-existent", "#00FF00")).toBe("#00FF00");
     expect(resolveCssColor(null, "#0000FF")).toBe("#0000FF");
@@ -43,10 +43,10 @@ describe("dynamic-colors (Core)", () => {
   });
 });
 
-describe("isSafeCssColor — lista blanca de colores del archivo", () => {
+describe("isSafeCssColor — allowlist of colors in the file", () => {
   // The FOUR forms that really exist in the 19 real projects
   // (391 measured values): 343 six-digit hex, 20 var(), 16 rgb/rgba, 12 transparent.
-  it("acepta lo que producen los proyectos reales", () => {
+  it("accepts what real projects produce", () => {
     for (const v of ["#06B6D4", "#FFF", "#18181Bff",
                      "rgba(139, 92, 246, 0.15)", "rgb(37,99,235)",
                      "hsl(210 40% 96%)",
@@ -57,7 +57,7 @@ describe("isSafeCssColor — lista blanca de colores del archivo", () => {
     }
   });
 
-  it("rechaza la inyeccion que abria el visor a un tercero", () => {
+  it("rejects the injection that would open the viewer to a third party", () => {
     //     // This payload, pasted into a `style` attribute, is parsed as TWO
     //     // declarations and requests a resource from a foreign server.
     expect(isSafeCssColor("red; background-image: url(https://tercero/baliza)")).toBe(false);
@@ -68,57 +68,57 @@ describe("isSafeCssColor — lista blanca de colores del archivo", () => {
     expect(isSafeCssColor('#fff" onload="x')).toBe(false);
   });
 
-  it("valida el respaldo de var() de forma recursiva: ahi vive el peligro", () => {
+  it("validates the var() fallback recursively: that is where the danger lives", () => {
     expect(isSafeCssColor("var(--x, #2563EB)")).toBe(true);
     expect(isSafeCssColor("var(--x, red; background: url(//evil))")).toBe(false);
     expect(isSafeCssColor("var(--x, var(--y, #fff))")).toBe(true);
     expect(isSafeCssColor("var(--x, var(--y, url(//evil)))")).toBe(false);
   });
 
-  it("corta los var() anidados sin fondo y las cadenas enormes", () => {
+  it("cuts off unbounded nested var() calls and oversized strings", () => {
     expect(isSafeCssColor("var(--a, ".repeat(9) + "#fff" + ")".repeat(9))).toBe(false);
     expect(isSafeCssColor("#" + "a".repeat(200))).toBe(false);
   });
 
-  it("rechaza lo que no es una cadena", () => {
+  it("rejects what is not a string", () => {
     for (const v of [null, undefined, 42, {}, [], true]) {
       expect(isSafeCssColor(v as unknown)).toBe(false);
     }
   });
 });
 
-describe("resolveCssColor DESCARTA el color invalido", () => {
-  it("sin rol, un color malicioso no sale al renderizador", () => {
+describe("resolveCssColor DISCARDS the invalid color", () => {
+  it("without a role, a malicious color never reaches the renderer", () => {
     expect(resolveCssColor(undefined, "red; background-image: url(//evil)")).toBe("");
   });
 
-  it("con rol valido, tampoco entra en el respaldo del var()", () => {
+  it("with a valid role, it does not enter the var() fallback either", () => {
     //     // The variable is kept (it is useful) and the poisoned fallback is discarded.
     expect(resolveCssColor("accent", "red; background: url(//evil)"))
       .toBe("var(--oim-color-accent, var(--oim-palette-accent))");
   });
 
-  it("el camino legitimo no cambia", () => {
+  it("the legitimate path does not change", () => {
     expect(resolveCssColor("accent", "rgba(37, 99, 235, 0.15)"))
       .toBe("var(--oim-color-accent, var(--oim-palette-accent, rgba(37, 99, 235, 0.15)))");
     expect(resolveCssColor(undefined, "#2563EB")).toBe("#2563EB");
   });
 });
 
-describe("resolveCssColor con paletas con nombre (1.20.0)", () => {
-  it("el rol de texto pasa por la paleta y luego al fijo", () => {
+describe("resolveCssColor with named palettes (1.20.0)", () => {
+  it("the text role goes through the palette and then to the fixed color", () => {
     expect(resolveCssColor("text-primary", "#111")).toBe("var(--oim-color-text-primary, var(--oim-palette-text-primary, #111))");
   });
 
-  it("sin fallback, la paleta se queda como respaldo", () => {
+  it("without a fallback, the palette stays as the fallback", () => {
     expect(resolveCssColor("text-muted")).toBe("var(--oim-color-text-muted, var(--oim-palette-text-muted))");
   });
 
-  it("un rol invalido sigue devolviendo solo el fijo", () => {
+  it("an invalid role still returns only the fixed color", () => {
     expect(resolveCssColor("nope", "#111")).toBe("#111");
   });
 
-  it("el resultado anidado sigue siendo un color seguro", () => {
+  it("the nested result is still a safe color", () => {
     expect(isSafeCssColor(resolveCssColor("text-primary", "#111"))).toBe(true);
     expect(isSafeCssColor(resolveCssColor("text-primary"))).toBe(true);
   });
@@ -133,43 +133,43 @@ describe("resolvePalette", () => {
     defaultPalette: "light",
   };
 
-  it("una paleta pedida y existente gana", () => {
+  it("a requested palette that exists wins", () => {
     expect(resolvePalette(doc, { requested: "dark", prefersDark: false })).toEqual({
       name: "dark",
       colors: { primary: "#0A0A0A", "text-primary": "#FFFFFF" },
     });
   });
 
-  it("una paleta pedida inexistente se ignora", () => {
+  it("a requested palette that does not exist is ignored", () => {
     expect(resolvePalette(doc, { requested: "neon", prefersDark: true })?.name).toBe("dark");
   });
 
-  it("con dark y light, prefersDark elige cual", () => {
+  it("with dark and light, prefersDark chooses which one", () => {
     expect(resolvePalette(doc, { prefersDark: true })?.name).toBe("dark");
     expect(resolvePalette(doc, { prefersDark: false })?.name).toBe("light");
   });
 
-  it("prefersDark solo elige si existen dark Y light; si falta una, cae a defaultPalette", () => {
+  it("prefersDark only chooses when dark AND light both exist; if one is missing, it falls back to defaultPalette", () => {
     expect(resolvePalette({ palettes: { dark: { primary: "#000" } }, defaultPalette: "light" }, { prefersDark: true })).toBeNull();
   });
 
-  it("sin prefersDark, usa defaultPalette", () => {
+  it("without prefersDark, uses defaultPalette", () => {
     expect(resolvePalette(doc)?.name).toBe("light");
     expect(resolvePalette(doc, { prefersDark: undefined })?.name).toBe("light");
   });
 
-  it("defaultPalette que no existe da null", () => {
+  it("a defaultPalette that does not exist gives null", () => {
     expect(resolvePalette({ palettes: { dark: {} }, defaultPalette: "light" })).toBeNull();
   });
 
-  it("sin paletas da null", () => {
+  it("without palettes gives null", () => {
     expect(resolvePalette({})).toBeNull();
   });
 
-  it("un color invalido se descarta y el resto de la paleta se mantiene", () => {
+  it("an invalid color is discarded and the rest of the palette is kept", () => {
     const r = resolvePalette({
-      palettes: { mala: { primary: "red; background: url(//evil)", accent: "#2563EB", "no-rol": "#000" } },
-      defaultPalette: "mala",
+      palettes: { bad: { primary: "red; background: url(//evil)", accent: "#2563EB", "no-rol": "#000" } },
+      defaultPalette: "bad",
     });
     expect(r?.colors).toEqual({ accent: "#2563EB" });
   });

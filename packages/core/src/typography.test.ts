@@ -23,23 +23,23 @@ import {
 } from "./typography";
 
 describe("resolveLineHeight", () => {
-  it("lee el numero", () => {
+  it("reads the number", () => {
     expect(resolveLineHeight({ lineHeight: 1.6 })).toBe(1.6);
   });
 
   /** What published .oim files carry, measured across three of them. */
-  it("lee la cadena numerica, que es lo que hay en los archivos reales", () => {
+  it("reads the numeric string, which is what real files contain", () => {
     expect(resolveLineHeight({ lineHeight: "1.2" })).toBe(1.2);
   });
 
-  it("sin interlineado devuelve el mismo valor que pinta el editor", () => {
+  it("without line height it returns the same value the editor paints", () => {
     expect(resolveLineHeight({})).toBe(DEFAULT_LINE_HEIGHT);
     expect(resolveLineHeight(undefined)).toBe(DEFAULT_LINE_HEIGHT);
     expect(resolveLineHeight(null)).toBe(DEFAULT_LINE_HEIGHT);
   });
 
   it.each([0, -1, "0", "-2", "", "   ", "alto", NaN, Infinity, {}, []])(
-    "vuelve al valor por defecto ante %p",
+    "falls back to the default value for %p",
     (v) => {
       expect(resolveLineHeight({ lineHeight: v })).toBe(DEFAULT_LINE_HEIGHT);
     },
@@ -51,13 +51,13 @@ describe("resolveLineHeight", () => {
    * carry 99, and 99 lines of height per line is text that covers the rest of
    * the document.
    */
-  it("acota a los limites que ofrece el editor", () => {
+  it("clamps to the limits the editor offers", () => {
     expect(resolveLineHeight({ lineHeight: 99 })).toBe(MAX_LINE_HEIGHT);
     expect(resolveLineHeight({ lineHeight: 0.1 })).toBe(MIN_LINE_HEIGHT);
     expect(resolveLineHeight({ lineHeight: "500" })).toBe(MAX_LINE_HEIGHT);
   });
 
-  it("los extremos del rango pasan tal cual", () => {
+  it("the range ends pass through unchanged", () => {
     expect(resolveLineHeight({ lineHeight: MIN_LINE_HEIGHT })).toBe(MIN_LINE_HEIGHT);
     expect(resolveLineHeight({ lineHeight: MAX_LINE_HEIGHT })).toBe(MAX_LINE_HEIGHT);
   });
@@ -66,7 +66,7 @@ describe("resolveLineHeight", () => {
    * The default value must fall within the range, or the editor and the player
    * would disagree in the most common case: the layer that says nothing.
    */
-  it("el valor por defecto esta dentro del rango", () => {
+  it("the default value is within the range", () => {
     expect(DEFAULT_LINE_HEIGHT).toBeGreaterThanOrEqual(MIN_LINE_HEIGHT);
     expect(DEFAULT_LINE_HEIGHT).toBeLessThanOrEqual(MAX_LINE_HEIGHT);
   });
@@ -79,11 +79,11 @@ describe("inkMargin", () => {
    * side-. Without that margin, the "j" and the "p" lose their fill at the
    * bottom.
    */
-  it("con el interlineado de los archivos reales, deja margen", () => {
+  it("with the line height of real files, it leaves margin", () => {
     expect(inkMargin(1.2)).toBeCloseTo(0.1, 3);
   });
 
-  it("cuanto mas apretado, mas margen hace falta", () => {
+  it("the tighter it is, the more margin is needed", () => {
     expect(inkMargin(1.0)).toBeGreaterThan(inkMargin(1.2));
     expect(inkMargin(0.8)).toBeGreaterThan(inkMargin(1.0));
   });
@@ -93,17 +93,17 @@ describe("inkMargin", () => {
    * background area, and a VERTICAL gradient is spread over it: its colors would
    * move even when there is nothing to compensate.
    */
-  it("con un interlineado holgado NO anade nada", () => {
+  it("with a generous line height it adds NOTHING", () => {
     expect(inkMargin(1.4)).toBe(0);
     expect(inkMargin(1.5)).toBe(0);
     expect(inkMargin(3)).toBe(0);
   });
 
-  it("el limite exacto no anade margen", () => {
+  it("the exact limit adds no margin", () => {
     expect(inkMargin(MAX_FONT_HEIGHT)).toBe(0);
   });
 
-  it("un valor imposible cae al interlineado por defecto", () => {
+  it("an impossible value falls back to the default line height", () => {
     expect(inkMargin(0)).toBe(inkMargin(DEFAULT_LINE_HEIGHT));
     expect(inkMargin(NaN)).toBe(inkMargin(DEFAULT_LINE_HEIGHT));
     expect(inkMargin(-1)).toBe(inkMargin(DEFAULT_LINE_HEIGHT));
@@ -114,7 +114,7 @@ describe("inkMargin", () => {
    * height, the largest of the six fonts measured. If it were lowered, the font
    * that protrudes the most would be cut off again.
    */
-  it("el alto maximo cubre a Poppins, que es la peor medida", () => {
+  it("the maximum height covers Poppins, which is the worst case", () => {
     expect(MAX_FONT_HEIGHT).toBeGreaterThanOrEqual(1.396);
   });
 });

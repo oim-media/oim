@@ -59,16 +59,16 @@ export const MAX_LINE_HEIGHT = 3;
  * unreadable text is worse than text with the usual line height.
  */
 export function resolveLineHeight(style: any): number {
-  const crudo = style && style.lineHeight;
+  const raw = style && style.lineHeight;
 
-  let valor: number;
-  if (typeof crudo === 'number') valor = crudo;
-  else if (typeof crudo === 'string' && crudo.trim() !== '') valor = Number(crudo);
+  let value: number;
+  if (typeof raw === 'number') value = raw;
+  else if (typeof raw === 'string' && raw.trim() !== '') value = Number(raw);
   else return DEFAULT_LINE_HEIGHT;
 
-  if (!Number.isFinite(valor) || valor <= 0) return DEFAULT_LINE_HEIGHT;
+  if (!Number.isFinite(value) || value <= 0) return DEFAULT_LINE_HEIGHT;
 
-  return Math.min(MAX_LINE_HEIGHT, Math.max(MIN_LINE_HEIGHT, valor));
+  return Math.min(MAX_LINE_HEIGHT, Math.max(MIN_LINE_HEIGHT, value));
 }
 
 /**
@@ -113,13 +113,13 @@ export const MAX_FONT_HEIGHT = 1.4;
  * line height the ink already fits and there is nothing to compensate; returning
  * a fixed value would change the gradient for no reason.
  */
-export function inkMargin(altura: number): number {
-  if (!Number.isFinite(altura) || altura <= 0) altura = DEFAULT_LINE_HEIGHT;
-  const sobra = MAX_FONT_HEIGHT - altura;
-  if (sobra <= 0) return 0;
+export function inkMargin(height: number): number {
+  if (!Number.isFinite(height) || height <= 0) height = DEFAULT_LINE_HEIGHT;
+  const excess = MAX_FONT_HEIGHT - height;
+  if (excess <= 0) return 0;
   // Rounded to the ten-thousandth because this number ends up LITERALLY in the
   // CSS: `1.4 - 1.25` gives 0.15000000000000002 in floating point, and from that
   // came a `padding-top: 0.07499999999999996em`. It is valid and it is absurd,
   // and four decimals of `em` are more precision than any font size needs.
-  return Math.round((sobra / 2) * 10000) / 10000;
+  return Math.round((excess / 2) * 10000) / 10000;
 }

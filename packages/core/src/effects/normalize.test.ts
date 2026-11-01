@@ -9,7 +9,7 @@ import { normalizeSlotEffects } from "./normalize";
 import type { OimEffect } from "./types";
 
 describe("normalizeSlotEffects", () => {
-  it("preserva el array effects si ya viene definido", () => {
+  it("keeps the effects array if it is already defined", () => {
     const effects: OimEffect[] = [
       {
         type: "texture",
@@ -23,7 +23,7 @@ describe("normalizeSlotEffects", () => {
     expect(normalizeSlotEffects({ effects })).toEqual(effects);
   });
 
-  it("convierte campos legacy de grano a un efecto texture", () => {
+  it("converts legacy grain fields into a texture effect", () => {
     const legacy = { grain: true, grainIntensity: 35, grainBlend: "soft-light" };
     const res = normalizeSlotEffects(legacy);
     expect(res).toHaveLength(1);
@@ -86,7 +86,7 @@ describe("normalizeSlotEffects", () => {
     });
   });
 
-  it("devuelve array vacío si no hay efectos ni campos legacy", () => {
+  it("returns an empty array if there are no effects or legacy fields", () => {
     expect(normalizeSlotEffects({})).toEqual([]);
   });
 });

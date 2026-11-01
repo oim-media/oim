@@ -207,20 +207,20 @@ describe('styleSchema keyframes validation', () => {
   });
 });
 
-describe('slotSchema — tipos de capa anadidos despues del schema original', () => {
+describe('slotSchema — layer types added after the original schema', () => {
   // Without this, the enum falls behind every time a layer is added and nobody
   // notices: nothing validates with Zod at runtime, so the only place the drift
   // can come to light is a test.
-  const nuevos = ['filter', 'container', 'group', 'component', 'mask'] as const;
+  const newTypes = ['filter', 'container', 'group', 'component', 'mask'] as const;
 
-  for (const tipo of nuevos) {
-    it(`acepta type "${tipo}"`, () => {
-      const result = slotSchema.safeParse({ id: `slot-${tipo}`, type: tipo });
+  for (const type of newTypes) {
+    it(`accepts type "${type}"`, () => {
+      const result = slotSchema.safeParse({ id: `slot-${type}`, type: type });
       expect(result.success).toBe(true);
     });
   }
 
-  it('sigue rechazando un tipo inventado', () => {
+  it('still rejects an invented type', () => {
     const result = slotSchema.safeParse({ id: 'slot-x', type: 'icon' });
     expect(result.success).toBe(false);
   });
@@ -234,8 +234,8 @@ describe('slotSchema — tipos de capa anadidos despues del schema original', ()
  * dictionary: to reproduce the behaviour it had to DEDUCE it by reading the
  * player, which is the divergence a contract exists to prevent.
  */
-describe('la interactividad declarada', () => {
-  it('acepta una capa interactiva con sus acciones', () => {
+describe('the declared interactivity', () => {
+  it('accepts an interactive layer with its actions', () => {
     const r = slotStatesSchema.safeParse({
       hover: { scale: 1.2, opacity: 80 },
       active: { actions: [{ target: "ficha", type: "toggle" }] },
@@ -250,21 +250,21 @@ describe('la interactividad declarada', () => {
    * any layer with hover opacity became invisible. It was uncovered by
    * declaring the range here rather than in a behaviour test.
    */
-  it('la opacidad va de 0 a 100, como la de capa', () => {
+  it('opacity goes from 0 to 100, like the layer one', () => {
     expect(interactiveStateSchema.safeParse({ opacity: 100 }).success).toBe(true);
     expect(interactiveStateSchema.safeParse({ opacity: 0 }).success).toBe(true);
     expect(interactiveStateSchema.safeParse({ opacity: 101 }).success).toBe(false);
     expect(interactiveStateSchema.safeParse({ opacity: -1 }).success).toBe(false);
   });
 
-  it('solo admite los cuatro tipos de accion que el player ejecuta', () => {
+  it('only accepts the four action types the player executes', () => {
     for (const type of ["show", "hide", "toggle", "setText"]) {
       expect(stateActionSchema.safeParse({ target: "x", type }).success).toBe(true);
     }
     expect(stateActionSchema.safeParse({ target: "x", type: "navigate" }).success).toBe(false);
   });
 
-  it('una accion sin destino no es una accion', () => {
+  it('an action without a target is not an action', () => {
     expect(stateActionSchema.safeParse({ type: "show" }).success).toBe(false);
     expect(stateActionSchema.safeParse({ target: "", type: "show" }).success).toBe(false);
   });
@@ -273,19 +273,19 @@ describe('la interactividad declarada', () => {
    * A .oim does not declare where a click takes you. These were removed from the
    * backend and the editor's mirror; the schema was the third place.
    */
-  it('un slot ya no puede declarar una redireccion', () => {
+  it('a slot can no longer declare a redirect', () => {
     const r = slotSchema.safeParse({ id: "s1", link: "https://ejemplo.com", target: "_blank" });
     expect(r.success).toBe(true);           // it is not rejected: it is ignored
     expect(r.data).not.toHaveProperty("link");
     expect(r.data).not.toHaveProperty("target");
   });
 
-  it('pero si su nombre, que es lo unico legible que lleva', () => {
+  it('but yes its name, which is the only readable thing it carries', () => {
     const r = slotSchema.safeParse({ id: "shape_text_k3j9x2m1p", name: "Boton1" });
     expect(r.success && r.data.name).toBe("Boton1");
   });
 
-  it('admite textRuns estructurados por idioma en style', () => {
+  it('accepts textRuns structured by language in style', () => {
     const r = slotSchema.safeParse({
       id: "text-runs-1",
       type: "text",
@@ -318,7 +318,7 @@ describe('la interactividad declarada', () => {
     }
   });
 
-  it('rechaza lineas de textRuns con tipos o anchos invalidos', () => {
+  it('rejects textRuns lines with invalid types or widths', () => {
     const r = slotSchema.safeParse({
       id: "text-runs-invalid",
       type: "text",
@@ -336,14 +336,14 @@ describe('la interactividad declarada', () => {
   });
 });
 
-describe("el tope de slots", () => {
-  it("vale 150, que es lo que el backend rechaza", () => {
+describe("the slot cap", () => {
+  it("is 150, which is what the backend rejects", () => {
     expect(MAX_SLOTS).toBe(150);
   });
 
   // It is the cap that makes everything else useful: if the schema does not bound
   // it, the contract does not publish it and the editor cannot warn in advance.
-  it("el esquema acepta 150 slots y rechaza 151", () => {
+  it("the schema accepts 150 slots and rejects 151", () => {
     const slot = () => ({ id: "s", type: "text", position: [0, 0], content: {} });
     const conN = (n: number) => ({ slots: Array.from({ length: n }, slot) });
     expect(OimMetadataSchema.safeParse(conN(150)).success).toBe(true);
@@ -363,7 +363,7 @@ describe("el tope de slots", () => {
    * bounded for consistency, so that the three fields that carry slots say the same.
    */
   it.each(["elements", "layers"] as const)(
-    "el tope alcanza tambien a `%s`, que lleva los mismos slots",
+    "the cap also applies to `%s`, which carries the same slots",
     (campo) => {
       const slot = () => ({ id: "s", type: "text", position: [0, 0], content: {} });
       const conN = (n: number) => ({ slots: [], [campo]: Array.from({ length: n }, slot) });
@@ -374,7 +374,7 @@ describe("el tope de slots", () => {
     }
   );
 
-  it("acepta todas las propiedades emitidas por serializeSlots de OIM-Studio", () => {
+  it("accepts all the properties emitted by serializeSlots in OIM-Studio", () => {
     const fullStyleSlot = {
       id: "slot-full-test",
       type: "text",
@@ -440,7 +440,7 @@ describe("el tope de slots", () => {
     expect(result.success).toBe(true);
   });
 
-  it("valida el stack canónico de efectos en styleSchema y rechaza efectos inválidos", () => {
+  it("validates the canonical effects stack in styleSchema and rejects invalid effects", () => {
     const slotWithEffects = {
       id: "slot-effects-1",
       type: "geo",
@@ -470,7 +470,7 @@ describe("el tope de slots", () => {
     expect(invalidResult.success).toBe(false);
   });
 
-  it("valida tipos de animación de texto canónicos extendidos (glitch y typewriter)", () => {
+  it("validates extended canonical text animation types (glitch and typewriter)", () => {
     const validStyles = [
       { textAnimationType: "glitch-cyberpunk", textAnimationSpeed: 1.5, textAnimationDelay: 0, textAnimationIntensity: 60 },
       { textAnimationType: "glitch-slice", textAnimationSpeed: 2.0, textAnimationDelay: 0.1 },
@@ -482,7 +482,7 @@ describe("el tope de slots", () => {
     }
   });
 
-  it("valida configuración de textHighlight y dropCap", () => {
+  it("validates textHighlight and dropCap configuration", () => {
     const styleConHighlight = {
       textHighlight: {
         enabled: true,
@@ -504,7 +504,7 @@ describe("el tope de slots", () => {
     expect(res.success).toBe(true);
   });
 
-  it("valida roles de color dinámico en patrones de capa y fondo", () => {
+  it("validates dynamic color roles in layer and background patterns", () => {
     const parsed = styleSchema.parse({
       fillPatternColorRole: "accent",
       fillPatternBgColorRole: "surface",
@@ -517,38 +517,38 @@ describe("el tope de slots", () => {
     expect(parsed.backgroundPatternBgColorRole).toBe("outline");
   });
 
-  it("rechaza roles de color inválidos en patrones", () => {
+  it("rejects invalid color roles in patterns", () => {
     expect(() => styleSchema.parse({ fillPatternColorRole: "invalid-role" })).toThrow();
     expect(() => styleSchema.parse({ backgroundPatternColorRole: "invalid-role" })).toThrow();
   });
 });
 
 
-describe('paletas con nombre (1.20.0)', () => {
+describe('named palettes (1.20.0)', () => {
   const pal = (n: number) => Object.fromEntries(Array.from({ length: n }, (_, i) => [`p${i}`, { primary: '#fff' }]));
   const doc = (palettes: unknown) => OimMetadataSchema.safeParse({ slots: [], palettes });
 
-  it('acepta seis paletas y rechaza siete', () => {
+  it('accepts six palettes and rejects seven', () => {
     expect(doc(pal(6)).success).toBe(true);
     expect(doc(pal(7)).success).toBe(false);
   });
 
-  it('rechaza nombres fuera de ^[a-z][a-z0-9-]{0,23}$', () => {
+  it('rejects names outside ^[a-z][a-z0-9-]{0,23}$', () => {
     expect(doc({ Dark: {} }).success).toBe(false);
     expect(doc({ '1x': {} }).success).toBe(false);
     expect(doc({ dark: {} }).success).toBe(true);
   });
 
-  it('el contrato JSON lleva el tope de seis paletas', () => {
+  it('the JSON contract carries the cap of six palettes', () => {
     const json = z.toJSONSchema(OimMetadataSchema, { io: 'input' }) as any;
     expect(json.properties.palettes.maxProperties).toBe(6);
   });
 
-  it('un documento sin palettes sigue validando', () => {
+  it('a document without palettes keeps validating', () => {
     expect(OimMetadataSchema.safeParse({ slots: [] }).success).toBe(true);
   });
 
-  it('defaultPalette es texto libre; el resolutor decide si existe', () => {
+  it('defaultPalette is free text; the resolver decides whether it exists', () => {
     expect(OimMetadataSchema.safeParse({ slots: [], defaultPalette: 'dark', palettes: { dark: {} } }).success).toBe(true);
   });
 });

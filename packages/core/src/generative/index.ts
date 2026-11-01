@@ -83,23 +83,23 @@ export function renderGenerativeSVG(config: GenerativeConfig, canvas: CanvasDime
 
   // 3. Render each layer
   let contentMarkup = spec.layers
-    .map((capa) => {
-      const resolvedParams = { ...capa.fixed, ...baseParams };
-      const primitiveFn = PRIMITIVE_MAP[capa.primitive];
+    .map((layer) => {
+      const resolvedParams = { ...layer.fixed, ...baseParams };
+      const primitiveFn = PRIMITIVE_MAP[layer.primitive];
       const marcas = primitiveFn(resolvedParams, ctx);
 
       const estilos = [
-        capa.blend && capa.blend !== "normal" ? `mix-blend-mode:${capa.blend}` : null,
-        capa.opacidad !== undefined && capa.opacidad !== 1 ? `opacity:${capa.opacidad}` : null
+        layer.blend && layer.blend !== "normal" ? `mix-blend-mode:${layer.blend}` : null,
+        layer.opacidad !== undefined && layer.opacidad !== 1 ? `opacity:${layer.opacidad}` : null
       ]
         .filter(Boolean)
         .join(";");
 
       // Without styles or blur the layer is not wrapped: a single-layer generator produces
       // the same SVG as before, byte for byte.
-      if (!estilos && !capa.desenfoque) return marcas;
+      if (!estilos && !layer.desenfoque) return marcas;
 
-      const filtro = capa.desenfoque ? ` filter="url(#${ctx.defs.registerBlur(capa.desenfoque)})"` : "";
+      const filtro = layer.desenfoque ? ` filter="url(#${ctx.defs.registerBlur(layer.desenfoque)})"` : "";
       const styleAttr = estilos ? ` style="${estilos}"` : "";
       return `<g${styleAttr}${filtro}>${marcas}</g>`;
     })

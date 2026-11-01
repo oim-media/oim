@@ -47,7 +47,7 @@ describe("Advanced Primitives (radial, gradient, iso-grid)", () => {
       const decoded = decodeURIComponent(fullSvg);
       const gradCount = (decoded.match(/<linearGradient/g) || []).length;
 
-      // Debe haber exactamente 1 definición en <defs>, NO 192 duplicados
+      // There must be exactly 1 definition in <defs>, NOT 192 duplicates
       expect(gradCount).toBe(1);
     });
   });

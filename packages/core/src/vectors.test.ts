@@ -49,30 +49,30 @@ function ficherosReales(): string[] {
   return encontrados.sort();
 }
 
-const FICHEROS = ficherosReales();
+const FILES = ficherosReales();
 
-describe("los .oim publicados validan contra su propio esquema", () => {
+describe("published .oim files validate against their own schema", () => {
   /**
    * Without this the suite would pass green the day someone moves or renames the
    * folders: zero files found, zero checks, everything correct.
    */
-  it("encuentra ficheros que comprobar", () => {
-    expect(FICHEROS.length).toBeGreaterThanOrEqual(2);
+  it("finds files to check", () => {
+    expect(FILES.length).toBeGreaterThanOrEqual(2);
   });
 
-  it.each(FICHEROS)("%s valida", async (ruta) => {
-    const { metadata } = await extractOIM(new Blob([readFileSync(ruta)]));
-    const resultado = OimMetadataSchema.safeParse(metadata);
-    const problemas = resultado.success
+  it.each(FILES)("%s validates", async (file) => {
+    const { metadata } = await extractOIM(new Blob([readFileSync(file)]));
+    const result = OimMetadataSchema.safeParse(metadata);
+    const problemas = result.success
       ? []
-      : resultado.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`);
+      : result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`);
     expect(problemas).toEqual([]);
   });
 });
 
-describe("los dos formatos que fallaban", () => {
+describe("the two formats that were failing", () => {
   /** The backend uses `+00:00`; requiring `Z` rejected everything signed. */
-  it("admite la marca de tiempo con desplazamiento, no solo con Z", () => {
+  it("accepts the timestamp with an offset, not only with Z", () => {
     const base = { slots: [] };
     expect(OimMetadataSchema.safeParse({ ...base, timestamp: "2026-06-12T20:38:40.713579+00:00" }).success).toBe(true);
     expect(OimMetadataSchema.safeParse({ ...base, timestamp: "2026-06-12T20:38:40Z" }).success).toBe(true);
@@ -80,14 +80,14 @@ describe("los dos formatos que fallaban", () => {
     expect(OimMetadataSchema.safeParse({ ...base, timestamp: "ayer por la tarde" }).success).toBe(false);
   });
 
-  it("admite transparent sin abrir la mano con otros colores", () => {
-    const conColor = (color: string) =>
+  it("accepts transparent without opening the door to other colors", () => {
+    const withColor = (color: string) =>
       OimMetadataSchema.safeParse({ slots: [{ id: "a", style: { fillColor: color } }] }).success;
-    expect(conColor("transparent")).toBe(true);
-    expect(conColor("#ffffff")).toBe(true);
+    expect(withColor("transparent")).toBe(true);
+    expect(withColor("#ffffff")).toBe(true);
     // `transparent` is an exact keyword: it must not let its neighbours through.
-    expect(conColor("transparente")).toBe(false);
-    expect(conColor("url(http://malo.io/x)")).toBe(false);
-    expect(conColor("red")).toBe(false);
+    expect(withColor("transparente")).toBe(false);
+    expect(withColor("url(http://malo.io/x)")).toBe(false);
+    expect(withColor("red")).toBe(false);
   });
 });

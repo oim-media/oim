@@ -16,12 +16,12 @@ function versionedCopyPlugin() {
   return {
     name: 'copy-versioned-player',
     closeBundle() {
-      const src = resolve(__dirname, 'dist/oim-player.js');
-      const versionedDir = resolve(__dirname, 'dist/player/v1');
+      const src = resolve(import.meta.dirname, 'dist/oim-player.js');
+      const versionedDir = resolve(import.meta.dirname, 'dist/player/v1');
       mkdirSync(versionedDir, { recursive: true });
       copyFileSync(src, resolve(versionedDir, 'oim-player.js'));
       for (const dir of ['dist/vendor', 'dist/player/v1/vendor']) {
-        const out = resolve(__dirname, dir);
+        const out = resolve(import.meta.dirname, dir);
         mkdirSync(out, { recursive: true });
         copyFileSync(LOTTIE_LIGHT, resolve(out, `lottie_light-${LOTTIE_VERSION}.js`));
       }
@@ -34,7 +34,7 @@ function versionedCopyPlugin() {
 // no CDN files. The default build is the single-file iife served by the CDN.
 export default defineConfig(({ command, mode }) => mode === 'esm' ? {
   build: {
-    lib: { entry: resolve(__dirname, 'src/index.ts'), formats: ['es'], fileName: () => 'index.js' },
+    lib: { entry: resolve(import.meta.dirname, 'src/index.ts'), formats: ['es'], fileName: () => 'index.js' },
     outDir: 'dist/esm',
     emptyOutDir: true,
     copyPublicDir: false,
@@ -52,11 +52,11 @@ export default defineConfig(({ command, mode }) => mode === 'esm' ? {
   // lottie_light would land in the bundle. vitest runs as `serve` and keeps
   // the real library.
   resolve: command === 'build'
-    ? { alias: { 'lottie-web/build/player/lottie_light': resolve(__dirname, 'src/render/lottie-external.ts') } }
+    ? { alias: { 'lottie-web/build/player/lottie_light': resolve(import.meta.dirname, 'src/render/lottie-external.ts') } }
     : {},
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
+      entry: resolve(import.meta.dirname, 'src/index.ts'),
       name: 'OimPlayer',
       fileName: () => 'oim-player.js',
       formats: ['iife']

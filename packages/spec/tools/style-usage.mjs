@@ -158,7 +158,7 @@ for (const f of files) {
   console.log(`  ${f.date}  ${String(f.slots).padStart(3)} slots  ${String(f.styleKeys).padStart(3)} keys  ${f.name}`);
 }
 
-console.log(`\nClaves de style`);
+console.log(`\nStyle keys`);
 console.log(`  declared in the contract         ${declared.size}`);
 console.log(`  read by the player               ${read.size}`);
 console.log(`  present in these files           ${used.size}`);

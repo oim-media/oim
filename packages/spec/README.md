@@ -347,3 +347,10 @@ Por eso siguen cubiertas con casos de respuesta conocida dentro del guion:
 acuerdo**. Demostrarlo de verdad pediría un vector escrito a mano, con claves
 desordenadas y un decimal largo, y firmado sobre su forma canónica: un
 archivo que la tubería real no produce nunca.
+
+## Embedded player keys
+
+`keys.json` lists the public keys every player embeds (`kid`, `jwk`, and the
+`not_after` / `verify_until` dates where they apply). It is generated from the
+player's key set by `tools/keys-json.mjs`, and a test fails if the two disagree.
+Only public components are ever written.

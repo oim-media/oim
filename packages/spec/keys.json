@@ -1,0 +1,22 @@
+{
+  "keys": [
+    {
+      "kid": "v1",
+      "jwk": {
+        "kty": "EC",
+        "crv": "P-256",
+        "x": "5Qavr4M_npVognquI5k5D9K8wcXBXM9Z0mZHjqyehAs",
+        "y": "oh7rz5Q7SlZT_ms2buyOw0bPX77QsXimc0X92Ymj2_o"
+      }
+    },
+    {
+      "kid": "v2",
+      "jwk": {
+        "kty": "EC",
+        "crv": "P-256",
+        "x": "pRSLtFHe9p8sR8jyqP5eoaBGbHdJgjjrdClda2lNp4A",
+        "y": "oopYYhgja8m2iAlSMPigeWw-F72KJLNCRFQzlyWdt2I"
+      }
+    }
+  ]
+}

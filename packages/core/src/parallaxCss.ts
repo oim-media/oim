@@ -102,21 +102,21 @@ export const CSS_PARALLAX = `@keyframes oim-parallax-infinite {
  * - Mirroring only affects the second copy, never the container.
  *
  * @param cfg Configuration of the infinite layer
- * @param anchoPiezaPx Width of the element or artboard in pixels
+ * @param pieceWidthPx Width of the element or artboard in pixels
  */
 export function infiniteLayerPlan(
   cfg: InfiniteLayer,
-  anchoPiezaPx: number,
-  anchoLienzoPx: number = anchoPiezaPx
+  pieceWidthPx: number,
+  canvasWidthPx: number = pieceWidthPx
 ): LayerPlan {
   if (
     !cfg ||
     typeof cfg.speedPxSec !== "number" ||
     !Number.isFinite(cfg.speedPxSec) ||
     cfg.speedPxSec <= 0 ||
-    typeof anchoPiezaPx !== "number" ||
-    !Number.isFinite(anchoPiezaPx) ||
-    anchoPiezaPx <= 0
+    typeof pieceWidthPx !== "number" ||
+    !Number.isFinite(pieceWidthPx) ||
+    pieceWidthPx <= 0
   ) {
     return {
       duplicate: false,
@@ -130,8 +130,8 @@ export function infiniteLayerPlan(
   // THE UNIT that repeats: one piece without mirroring, the PAIR with mirroring.
   // With `A | mirror(A)` the lap does not close until both have passed, because
   // mirror(A) != A.
-  const piezasPorUnidad = cfg.mirror ? 2 : 1;
-  const unidadPx = anchoPiezaPx * piezasPorUnidad;
+  const piecesPerUnit = cfg.mirror ? 2 : 1;
+  const unitPx = pieceWidthPx * piecesPerUnit;
 
   // HOW MANY PIECES: as many as needed for the track to cover the canvas during
   // the WHOLE lap, that is `unit + canvas`. This is what 2D engines do
@@ -141,13 +141,13 @@ export function infiniteLayerPlan(
   //
   // Without this, a layer narrower than the canvas leaves empty bands at the
   // sides -the fault seen in the editor- and a wider one builds pieces nobody sees.
-  const canvas = Number.isFinite(anchoLienzoPx) && anchoLienzoPx > 0 ? anchoLienzoPx : anchoPiezaPx;
-  let copies = Math.ceil(canvas / anchoPiezaPx) + piezasPorUnidad;
+  const canvas = Number.isFinite(canvasWidthPx) && canvasWidthPx > 0 ? canvasWidthPx : pieceWidthPx;
+  let copies = Math.ceil(canvas / pieceWidthPx) + piecesPerUnit;
   // With mirroring the number must be EVEN: half a pair breaks the symmetry and
   // brings back the jump.
   if (cfg.mirror && copies % 2 !== 0) copies += 1;
 
-  const duracion = unidadPx / cfg.speedPxSec;
+  const duracion = unitPx / cfg.speedPxSec;
 
   if (!Number.isFinite(duracion) || duracion <= 0) {
     return {
@@ -167,7 +167,7 @@ export function infiniteLayerPlan(
     // (library). Ignored where the parent is not a flex box.
     "align-self": "flex-start",
     "flex-shrink": "0",
-    "--oim-parallax-unidad": `${unidadPx}px`,
+    "--oim-parallax-unidad": `${unitPx}px`,
     "animation-name": "oim-parallax-infinite",
     "animation-duration": `${duracion}s`,
     "animation-timing-function": "linear",
@@ -189,9 +189,9 @@ export function infiniteLayerPlan(
   // shows through as a 1 px line travelling with the scene (seen in the viewer
   // at the time). Stretching instead of shifting keeps every column of the
   // art and keeps the unit exact; the scale is (w + 1) / w, invisible.
-  const stretch = (anchoPiezaPx + SEAM_OVERLAP_PX) / anchoPiezaPx;
+  const stretch = (pieceWidthPx + SEAM_OVERLAP_PX) / pieceWidthPx;
   const copy: Record<string, string> = {
-    flex: `0 0 ${anchoPiezaPx}px`,
+    flex: `0 0 ${pieceWidthPx}px`,
     "transform-origin": "0 0",
     transform: `scaleX(${stretch})`,
   };
@@ -200,7 +200,7 @@ export function infiniteLayerPlan(
   if (cfg.mirror) {
     // Mirrored about the stretched width, so it still spans [0, w + 1]: its
     // left edge lands on the right and overlaps the next piece the same way.
-    secondCopy["transform"] = `translateX(${anchoPiezaPx + SEAM_OVERLAP_PX}px) scaleX(-1) scaleX(${stretch})`;
+    secondCopy["transform"] = `translateX(${pieceWidthPx + SEAM_OVERLAP_PX}px) scaleX(-1) scaleX(${stretch})`;
   }
 
   return {

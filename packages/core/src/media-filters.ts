@@ -33,9 +33,9 @@ export const FILTER_PRESET_CSS: Record<string, string> = {
 };
 
 /** Numeric value clamped to the schema range; NaN, Infinity or non-numeric → undefined (neutral). */
-function acotado(valor: unknown, min: number, max: number): number | undefined {
-  if (typeof valor !== "number" || !Number.isFinite(valor)) return undefined;
-  return Math.min(max, Math.max(min, valor));
+function clamp(value: unknown, min: number, max: number): number | undefined {
+  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+  return Math.min(max, Math.max(min, value));
 }
 
 interface NormalizedSettings {
@@ -52,11 +52,11 @@ function normalize(style: Record<string, unknown>): NormalizedSettings {
   const { filterPreset: preset } = style;
   return {
     preset: typeof preset === "string" && Object.prototype.hasOwnProperty.call(FILTER_PRESET_CSS, preset) ? preset : undefined,
-    blur: acotado(style.filterBlur, 0, 100) ?? 0,
-    brightness: acotado(style.filterBrightness, 0, 500) ?? 100,
-    contrast: acotado(style.filterContrast, 0, 500) ?? 100,
-    saturate: acotado(style.filterSaturate, 0, 500) ?? 100,
-    hue: acotado(style.filterHueRotate, 0, 360) ?? 0,
+    blur: clamp(style.filterBlur, 0, 100) ?? 0,
+    brightness: clamp(style.filterBrightness, 0, 500) ?? 100,
+    contrast: clamp(style.filterContrast, 0, 500) ?? 100,
+    saturate: clamp(style.filterSaturate, 0, 500) ?? 100,
+    hue: clamp(style.filterHueRotate, 0, 360) ?? 0,
   };
 }
 

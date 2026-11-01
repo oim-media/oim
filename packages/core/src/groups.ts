@@ -74,19 +74,19 @@ export function slotParent(slot: any): string | null {
  * this cut, two groups that point at each other would hang the nesting.
  */
 export function childrenByGroup(slots: any[]): Map<string, string[]> {
-  const grupos = new Set<string>();
+  const groupIds = new Set<string>();
   for (const s of slots || []) {
-    if (isGroup(s) && s.id) grupos.add(String(s.id));
+    if (isGroup(s) && s.id) groupIds.add(String(s.id));
   }
 
-  const mapa = new Map<string, string[]>();
+  const byParent = new Map<string, string[]>();
   for (const s of slots || []) {
     if (!s || !s.id || isGroup(s)) continue;
-    const padre = slotParent(s);
-    if (!padre || !grupos.has(padre)) continue;
-    const lista = mapa.get(padre);
-    if (lista) lista.push(String(s.id));
-    else mapa.set(padre, [String(s.id)]);
+    const parent = slotParent(s);
+    if (!parent || !groupIds.has(parent)) continue;
+    const list = byParent.get(parent);
+    if (list) list.push(String(s.id));
+    else byParent.set(parent, [String(s.id)]);
   }
-  return mapa;
+  return byParent;
 }

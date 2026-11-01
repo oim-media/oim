@@ -205,7 +205,7 @@ export const GENERATOR_CATALOG: GeneratorSpec[] = [
   },
   {
     // No accent mark on purpose: the id is persisted and compared with `===`.
-    // "retícula" has two different Unicode forms (NFC and NFD) that are NOT
+    // The Spanish word for grid ("retícula") has two different Unicode forms (NFC and NFD) that are NOT
     // equal as strings, so a layer that normalizes differently would make
     // getGeneratorSpec fail and fall back to the default background with no
     // visible error.

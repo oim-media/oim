@@ -77,7 +77,7 @@ export const renderLayerStack: Primitive = (rawParams, ctx) => {
     const currentPoints = allPoints[l];
     let pathD = "";
 
-    // 1. Trazado del borde frontal hacia adelante
+    // 1. Trace the front edge forward
     if (interpolation === "step") {
       pathD = `M ${currentPoints[0].x} ${currentPoints[0].y}`;
       for (let p = 0; p < currentPoints.length - 1; p++) {
@@ -117,7 +117,7 @@ export const renderLayerStack: Primitive = (rawParams, ctx) => {
       }
     }
 
-    // 2. Cierre del polígono (boundary: 'shared' vs 'independent')
+    // 2. Close the polygon (boundary: 'shared' vs 'independent')
     if (boundary === "shared" && l > 0) {
       const prev = allPoints[l - 1];
       const dy = anchor === "bottom" ? bleed : (anchor === "top" ? -bleed : 0);
@@ -127,7 +127,7 @@ export const renderLayerStack: Primitive = (rawParams, ctx) => {
         pathD += ` L ${prev[p].x + dx} ${prev[p].y + dy}`;
       }
     } else {
-      // Borde de cierre al marco exterior
+      // Closing edge to the outer frame
       if (anchor === "bottom") {
         pathD += ` L ${width} ${height + bleed} L 0 ${height + bleed}`;
       } else if (anchor === "top") {

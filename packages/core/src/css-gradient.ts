@@ -20,9 +20,9 @@ import { isSafeCssColor } from "./dynamic-colors.js";
  * header of words, numbers and units, and stops that are a colour plus up to
  * two positions. Anything else is dropped, and the shape paints without fill.
  */
-const FUNCION = /^(?:repeating-)?(?:linear|radial|conic)-gradient\(([\s\S]*)\)$/;
+const GRADIENT_FN = /^(?:repeating-)?(?:linear|radial|conic)-gradient\(([\s\S]*)\)$/;
 // `to right`, `135deg`, `circle 40px at 50% 50%`, `from 45deg at 50% 50%`.
-const CABECERA = /^[A-Za-z0-9.%\s-]+$/;
+const HEADER = /^[A-Za-z0-9.%\s-]+$/;
 // A colour, then zero to two positions. The lazy colour leaves the positions
 // to the tail, so `rgba(0, 0, 0, 0.5) 0%` splits at the right place.
 const PARADA = /^(.*?)((?:\s+-?\d*\.?\d+(?:%|px|deg|em|rem)?){0,2})$/;
@@ -32,12 +32,12 @@ const COLOR_NAME = /^[A-Za-z]+$/;
 const MAX_GRADIENTE = 2048;
 
 /** Splits on the commas at depth 0; null if the parentheses do not balance. */
-function partirNivelCero(cuerpo: string): string[] | null {
-  const partes: string[] = [];
+function partirNivelCero(body: string): string[] | null {
+  const parts: string[] = [];
   let profundidad = 0;
-  let desde = 0;
-  for (let i = 0; i < cuerpo.length; i++) {
-    const c = cuerpo[i];
+  let start = 0;
+  for (let i = 0; i < body.length; i++) {
+    const c = body[i];
     if (c === "(") profundidad++;
     else if (c === ")") {
       // Closing below zero means the outer function ended early and something
@@ -47,37 +47,37 @@ function partirNivelCero(cuerpo: string): string[] | null {
       // in case someone widens what a stop accepts.
       if (--profundidad < 0) return null;
     } else if (c === "," && profundidad === 0) {
-      partes.push(cuerpo.slice(desde, i).trim());
-      desde = i + 1;
+      parts.push(body.slice(start, i).trim());
+      start = i + 1;
     }
   }
   if (profundidad !== 0) return null;
-  partes.push(cuerpo.slice(desde).trim());
-  return partes;
+  parts.push(body.slice(start).trim());
+  return parts;
 }
 
-function esParada(parte: string): boolean {
-  const m = PARADA.exec(parte);
+function isStop(part: string): boolean {
+  const m = PARADA.exec(part);
   if (!m) return false;
   const color = m[1].trim();
   return COLOR_NAME.test(color) || isSafeCssColor(color);
 }
 
-export function isSafeCssGradient(valor: unknown): boolean {
-  if (typeof valor !== "string") return false;
-  const v = valor.trim();
+export function isSafeCssGradient(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  const v = value.trim();
   if (!v || v.length > MAX_GRADIENTE) return false;
   // Nothing a gradient needs, everything an escape does.
   if (/[;{}<>"'`]/.test(v) || v.includes(String.fromCharCode(92)) || v.includes("/*")) return false;
 
-  const m = FUNCION.exec(v);
+  const m = GRADIENT_FN.exec(v);
   if (!m) return false;
-  const partes = partirNivelCero(m[1]);
-  if (!partes || partes.some((p) => !p)) return false;
+  const parts = partirNivelCero(m[1]);
+  if (!parts || parts.some((p) => !p)) return false;
 
   // The first part is a header only if it is not already a stop: `red` is
   // both, and reading it as a stop is the stricter choice.
-  const [primera, ...resto] = partes;
-  const paradas = esParada(primera) ? partes : CABECERA.test(primera) ? resto : null;
-  return !!paradas && paradas.length > 0 && paradas.every(esParada);
+  const [first, ...rest] = parts;
+  const stops = isStop(first) ? parts : HEADER.test(first) ? rest : null;
+  return !!stops && stops.length > 0 && stops.every(isStop);
 }

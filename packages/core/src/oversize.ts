@@ -87,9 +87,9 @@ export function oversizeScale(
    * exists. If each one also decided on its own whether to oversize, there would be two rules
    * instead of one.
    */
-  tienePistaInfinita: boolean = false
+  hasInfiniteTrack: boolean = false
 ): number {
-  if (tienePistaInfinita) return 1;
+  if (hasInfiniteTrack) return 1;
   const d = maxOffset(depth);
   if (d <= 0) return 1;
   if (!(caja.width > 0) || !(caja.height > 0)) return 1;
@@ -126,6 +126,6 @@ export function oversizeScale(
   if (faltaX <= 0 && faltaY <= 0) return 1;
 
   // The scale is centered, so it grows `width * (s - 1) / 2` per side.
-  const escala = Math.max(1 + (2 * faltaX) / caja.width, 1 + (2 * faltaY) / caja.height);
-  return Math.min(MAX_SCALE, Number(escala.toFixed(4)));
+  const scale = Math.max(1 + (2 * faltaX) / caja.width, 1 + (2 * faltaY) / caja.height);
+  return Math.min(MAX_SCALE, Number(scale.toFixed(4)));
 }

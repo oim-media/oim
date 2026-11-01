@@ -22,7 +22,7 @@ export type ReeditPermission = "publico" | "solo_autor" | "sellado";
 /** The value when the file says nothing. ALL current .oim files fall here. */
 export const DEFAULT_PERMISSION: ReeditPermission = "solo_autor";
 
-const VALIDOS: readonly ReeditPermission[] = ["publico", "solo_autor", "sellado"];
+const VALID_PERMISSIONS: readonly ReeditPermission[] = ["publico", "solo_autor", "sellado"];
 
 /**
  * Reads the permission from the metadata.
@@ -42,7 +42,7 @@ export function permissionOf(metadata: unknown): ReeditPermission {
   if (m.immutable_lock === true || m.immutable === true) return "sellado";
 
   const v = m.reedicion;
-  return typeof v === "string" && (VALIDOS as readonly string[]).includes(v)
+  return typeof v === "string" && (VALID_PERMISSIONS as readonly string[]).includes(v)
     ? (v as ReeditPermission)
     : DEFAULT_PERMISSION;
 }
@@ -67,11 +67,11 @@ export function permissionOf(metadata: unknown): ReeditPermission {
  * A declaration without enforcement is a suggestion; enforcement without a
  * declaration is a locked door with no sign.
  */
-export function permissionFields(permiso: ReeditPermission): {
+export function permissionFields(permission: ReeditPermission): {
   reedicion: ReeditPermission;
   immutable_lock: boolean;
 } {
-  return { reedicion: permiso, immutable_lock: permiso === "sellado" };
+  return { reedicion: permission, immutable_lock: permission === "sellado" };
 }
 
 export interface Verdict {
@@ -83,18 +83,17 @@ export interface Verdict {
 /**
  * Can this person re-edit this document?
  *
- * `esElAutor` is `null` when it is not known (no session, or the registry was never
+ * `isAuthor` is `null` when it is not known (no session, or the registry was never
  * asked). In that case it is NOT granted: only the `publico` permission resolves
  * without knowing who you are, which is exactly what makes it useful for a library.
- * biblioteca.
  */
 export function canReedit(
-  permiso: ReeditPermission,
-  esElAutor: boolean | null
+  permission: ReeditPermission,
+  isAuthor: boolean | null
 ): Verdict {
-  if (permiso === "sellado") return { permitido: false, reason: "sellado" };
-  if (permiso === "publico") return { permitido: true };
-  return esElAutor === true
+  if (permission === "sellado") return { permitido: false, reason: "sellado" };
+  if (permission === "publico") return { permitido: true };
+  return isAuthor === true
     ? { permitido: true }
     : { permitido: false, reason: "no_eres_el_autor" };
 }
@@ -117,11 +116,11 @@ export function canReedit(
  * of the .oim files that exist today carries authorship within it.
  */
 export function mustRejectWithoutAsking(
-  permiso: ReeditPermission,
-  esElAutor: boolean | null
+  permission: ReeditPermission,
+  isAuthor: boolean | null
 ): Verdict {
-  if (permiso === "sellado") return { permitido: false, reason: "sellado" };
-  if (permiso === "solo_autor" && esElAutor === false) {
+  if (permission === "sellado") return { permitido: false, reason: "sellado" };
+  if (permission === "solo_autor" && isAuthor === false) {
     return { permitido: false, reason: "no_eres_el_autor" };
   }
   return { permitido: true };
@@ -136,8 +135,8 @@ export function mustRejectWithoutAsking(
  * it could seal someone else's document. If a public file never looks up its id,
  * nobody can claim it by that route.
  */
-export function registryQuery(permiso: ReeditPermission): boolean {
-  return permiso !== "publico";
+export function registryQuery(permission: ReeditPermission): boolean {
+  return permission !== "publico";
 }
 
 /**
@@ -149,6 +148,6 @@ export function registryQuery(permiso: ReeditPermission): boolean {
  * —it is what public means— but the seal has to say so,
  * or it stops meaning anything.
  */
-export function signatureStamp(permiso: ReeditPermission): "verified" | "verified_sin_autoria" {
-  return permiso === "publico" ? "verified_sin_autoria" : "verified";
+export function signatureStamp(permission: ReeditPermission): "verified" | "verified_sin_autoria" {
+  return permission === "publico" ? "verified_sin_autoria" : "verified";
 }

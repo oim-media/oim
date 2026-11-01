@@ -2,18 +2,18 @@ export * from "./schema.js";
 export * from "./binary.js";
 export * from "./canonical.js";
 export * from "./api.js";
-// `./grupos.js`: the membership rule (who is whose child). It is the
+// `./groups.js`: the membership rule (who is whose child). It is the
 // only part of the groups where the editor and the player must agree; if
 // they disagree, the same file is painted differently depending on who opens it.
 export * from "./groups.js";
-// `./tipografia.js`: line spacing. It is shared because the bug WAS that the
+// `./typography.js`: line spacing. It is shared because the bug WAS that the
 // editor and the player did not agree on it.
 export * from "./typography.js";
-// `./recorte.js`: who crops and who does not. Shared because the editor had
+// `./clipping.js`: who crops and who does not. Shared because the editor had
 // the same bug as the player (it cropped the text glyphs), and two
 // implementations would disagree again.
 export * from "./clipping.js";
-// `./compatibilidad.js`: letting a reader say what it does NOT understand. The
+// `./compatibility.js`: letting a reader say what it does NOT understand. The
 // format already degraded gracefully; what was missing was not doing it silently.
 export * from "./compatibility.js";
 export * from "./media-filters.js";

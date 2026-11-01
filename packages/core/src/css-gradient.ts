@@ -34,24 +34,24 @@ const MAX_GRADIENTE = 2048;
 /** Splits on the commas at depth 0; null if the parentheses do not balance. */
 function partirNivelCero(body: string): string[] | null {
   const parts: string[] = [];
-  let profundidad = 0;
+  let depth = 0;
   let start = 0;
   for (let i = 0; i < body.length; i++) {
     const c = body[i];
-    if (c === "(") profundidad++;
+    if (c === "(") depth++;
     else if (c === ")") {
       // Closing below zero means the outer function ended early and something
       // follows it: "linear-gradient(a), url(b)" read as one body.
       // REDUNDANT today, checked by mutation: the leftover pieces (`b)`,
       // `url(...`) never pass as stops, so dropping this breaks no test. Kept
       // in case someone widens what a stop accepts.
-      if (--profundidad < 0) return null;
-    } else if (c === "," && profundidad === 0) {
+      if (--depth < 0) return null;
+    } else if (c === "," && depth === 0) {
       parts.push(body.slice(start, i).trim());
       start = i + 1;
     }
   }
-  if (profundidad !== 0) return null;
+  if (depth !== 0) return null;
   parts.push(body.slice(start).trim());
   return parts;
 }

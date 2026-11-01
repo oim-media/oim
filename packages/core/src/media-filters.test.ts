@@ -9,7 +9,7 @@ import { FILTER_PRESET_CSS, mediaFilterCss, hasMediaFilter } from "./media-filte
 import { minVersionFor } from "./compatibility";
 
 describe("mediaFilterCss", () => {
-  it("devuelve undefined cuando todos los ajustes son neutros", () => {
+  it("returns undefined when all the adjustments are neutral", () => {
     expect(mediaFilterCss({})).toBeUndefined();
     expect(mediaFilterCss({ filterBrightness: 100, filterBlur: 0 })).toBeUndefined();
   });
@@ -21,23 +21,23 @@ describe("mediaFilterCss", () => {
 });
 
 describe("hasMediaFilter", () => {
-  it("un preset none no cuenta como filtro", () => {
+  it("a none preset does not count as a filter", () => {
     expect(hasMediaFilter({ filterPreset: "none" })).toBe(false);
   });
 
-  it("un ajuste no neutro sí cuenta", () => {
+  it("a non-neutral adjustment does count", () => {
     expect(hasMediaFilter({ filterSaturate: 120 })).toBe(true);
   });
 });
 
-describe("capacidad media_filters", () => {
-  it("exige el contrato 1.18.0", () => {
+describe("media_filters capability", () => {
+  it("requires the 1.18.0 contract", () => {
     expect(minVersionFor({ capabilities: ["media_filters"] })).toBe("1.18.0");
   });
 });
 
-describe("mediaFilterCss, orden y valores", () => {
-  it("con los seis ajustes puestos, el orden es preset, blur, brillo, contraste, saturación, hue", () => {
+describe("mediaFilterCss, order and values", () => {
+  it("with all six adjustments set, the order is preset, blur, brightness, contrast, saturation, hue", () => {
     const css = mediaFilterCss({
       filterPreset: "sepia", filterBlur: 2, filterBrightness: 110,
       filterContrast: 120, filterSaturate: 90, filterHueRotate: 45,
@@ -47,13 +47,13 @@ describe("mediaFilterCss, orden y valores", () => {
     );
   });
 
-  it("NaN y un blur negativo no generan parte de blur", () => {
+  it("NaN and a negative blur produce no blur part", () => {
     expect(mediaFilterCss({ filterBlur: NaN })).toBeUndefined();
     expect(mediaFilterCss({ filterBlur: -5 })).toBeUndefined();
     expect(hasMediaFilter({ filterBlur: NaN })).toBe(false);
   });
 
-  it("brillo 600 se acota a 500", () => {
+  it("brightness 600 is clamped to 500", () => {
     expect(mediaFilterCss({ filterBrightness: 600 })).toBe("brightness(500%)");
     expect(hasMediaFilter({ filterBrightness: 600 })).toBe(true);
   });

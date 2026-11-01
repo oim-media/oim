@@ -27,8 +27,8 @@ const CATALOGO = [
   "line", "arrow", "hexagon", "diamond", "heart",
 ];
 
-describe("la tabla cubre TODO el catalogo", () => {
-  it("ninguna forma se queda sin dibujo", () => {
+describe("the table covers ALL of the catalog", () => {
+  it("no shape is left without a drawing", () => {
     // Without this, the player knew 3 of 8 and the other 5 were published as
     // coloured rectangles. Silently: nothing would detect it.
     const sinDibujo = CATALOGO
@@ -37,21 +37,21 @@ describe("la tabla cubre TODO el catalogo", () => {
     expect(sinDibujo).toEqual([]);
   });
 
-  it("el rectangulo NO esta en la tabla, y es a proposito", () => {
+  it("the rectangle is NOT in the table, on purpose", () => {
     // It is drawn with width, height and radius in real pixels: a corner radius
     // inside a stretched viewBox comes out oval.
     expect(shapeDrawing("rectangle")).toBeUndefined();
     expect(shapeDrawing("rect")).toBeUndefined();
   });
 
-  it("una forma desconocida devuelve undefined, no una por defecto", () => {
+  it("an unknown shape returns undefined, not a default", () => {
     expect(shapeDrawing("trapecio")).toBeUndefined();
     expect(shapeDrawing(undefined)).toBeUndefined();
   });
 });
 
-describe("la geometria, numero a numero", () => {
-  it("el triangulo va metido un 5%, no a sangre", () => {
+describe("the geometry, number by number", () => {
+  it("the triangle is inset by 5%, not run to the edge", () => {
     // The player drew it as `50,0 0,100 100,100` and the editor as `50,5 95,90 5,90`:
     // the same file, two different triangles.
     expect(shapeDrawing("triangle")).toEqual({
@@ -60,20 +60,20 @@ describe("la geometria, numero a numero", () => {
     });
   });
 
-  it("la estrella tiene diez puntos y el primero es 50,2", () => {
+  it("the star has ten points and the first is 50,2", () => {
     const d = shapeDrawing("star")!;
     expect(d.tipo).toBe("polygon");
     expect((d as any).puntos).toHaveLength(10);
     expect((d as any).puntos[0]).toEqual([50, 2]);
   });
 
-  it("el circulo es un arco de radio 45, no un poligono", () => {
+  it("the circle is an arc of radius 45, not a polygon", () => {
     const d = shapeDrawing("circle")!;
     expect(d.tipo).toBe("path");
     expect((d as any).d).toContain("A 45,45");
   });
 
-  it("la linea y el garabato son los unicos trazos sin relleno", () => {
+  it("the line and the scribble are the only strokes without fill", () => {
     const abiertas = Object.entries(GEO_SHAPES)
       .filter(([, d]) => d.tipo === "path" && !(d as any).rellenable)
       .map(([n]) => n)
@@ -81,21 +81,21 @@ describe("la geometria, numero a numero", () => {
     expect(abiertas).toEqual(["line", "scribble"]);
   });
 
-  it("todos los poligonos caben en el viewBox", () => {
-    for (const [nombre, d] of Object.entries(GEO_SHAPES)) {
+  it("all polygons fit in the viewBox", () => {
+    for (const [name, d] of Object.entries(GEO_SHAPES)) {
       if (d.tipo !== "polygon") continue;
       for (const [x, y] of d.puntos) {
-        expect(x, `${nombre} se sale por x`).toBeGreaterThanOrEqual(0);
-        expect(x, `${nombre} se sale por x`).toBeLessThanOrEqual(100);
-        expect(y, `${nombre} se sale por y`).toBeGreaterThanOrEqual(0);
-        expect(y, `${nombre} se sale por y`).toBeLessThanOrEqual(100);
+        expect(x, `${name} overflows on x`).toBeGreaterThanOrEqual(0);
+        expect(x, `${name} overflows on x`).toBeLessThanOrEqual(100);
+        expect(y, `${name} overflows on y`).toBeGreaterThanOrEqual(0);
+        expect(y, `${name} overflows on y`).toBeLessThanOrEqual(100);
       }
     }
   });
 });
 
 describe("pointsToAttribute", () => {
-  it("produce el atributo `points` de SVG", () => {
+  it("produces the SVG `points` attribute", () => {
     expect(pointsToAttribute([[50, 5], [95, 90]])).toBe("50,5 95,90");
   });
 });

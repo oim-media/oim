@@ -10,7 +10,7 @@ import { getFillCss } from "./fill";
 
 // What the OIM editor's gradient serializer actually writes, plus the
 // shapes the player's own tests and older files use.
-const DEL_EDITOR = [
+const FROM_EDITOR = [
   "linear-gradient(135deg, #f59e0b 0%, #7c3aed 100%)",
   "linear-gradient(90deg, #3B82F6 0%, #9333EA 100%)",
   "radial-gradient(circle 40px at 50% 50%, #000 0%, #fff 100%)",
@@ -36,8 +36,8 @@ const ATAQUES = [
   "",
 ];
 
-describe("gradientes de un .oim: lista blanca", () => {
-  it.each(DEL_EDITOR)("acepta lo que escribe el editor: %s", (g) => {
+describe("gradients in a .oim: allowlist", () => {
+  it.each(FROM_EDITOR)("accepts what the editor writes: %s", (g) => {
     expect(isSafeCssGradient(g)).toBe(true);
   });
 
@@ -45,14 +45,14 @@ describe("gradientes de un .oim: lista blanca", () => {
     expect(isSafeCssGradient(g)).toBe(false);
   });
 
-  it("rechaza lo que no es cadena", () => {
+  it("rejects what is not a string", () => {
     expect(isSafeCssGradient(undefined)).toBe(false);
     expect(isSafeCssGradient({ toString: () => "linear-gradient(red, blue)" })).toBe(false);
   });
 });
 
-describe("getFillCss no deja pasar un gradiente que pida recursos", () => {
-  it("un url() dentro de fillGradient no llega al estilo", () => {
+describe("getFillCss does not let through a gradient that requests resources", () => {
+  it("a url() inside fillGradient never reaches the style", () => {
     // Until recently this went straight to `style.backgroundImage`, and
     // CSSOM accepts an image list: opening a crafted file pinged a third party.
     const css = getFillCss({
@@ -63,7 +63,7 @@ describe("getFillCss no deja pasar un gradiente que pida recursos", () => {
     expect(css).not.toHaveProperty("backgroundImage");
   });
 
-  it("un gradiente legitimo sigue pintandose igual", () => {
+  it("a legitimate gradient still paints the same", () => {
     const g = "linear-gradient(135deg, #f59e0b 0%, #7c3aed 100%)";
     expect(getFillCss({ width: 10, height: 10, fillType: "gradient", fillGradient: g }))
       .toEqual({ backgroundImage: g });

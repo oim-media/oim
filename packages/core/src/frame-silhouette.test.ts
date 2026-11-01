@@ -9,35 +9,35 @@ import { GEO_SHAPES, FRAME_SHAPES } from "./geoShapes";
 import { frameSilhouette, usesFrameShapes } from "./frame-silhouette";
 import { styleSchema } from "./schema";
 
-const NUEVAS = [
+const NEW_SHAPES = [
   "pill", "octagon", "pentagon", "cross", "moon", "cloud", "drop",
   "bolt", "bubble", "flower", "burst", "arch",
 ];
 
 /** All the numbers of a path; with only absolute M/L/C/Z they come in x,y pairs. */
-const numeros = (d: string): number[] => (d.match(/-?\d+(\.\d+)?/g) ?? []).map(Number);
+const numbers = (d: string): number[] => (d.match(/-?\d+(\.\d+)?/g) ?? []).map(Number);
 
-describe("las doce formas nuevas del catalogo", () => {
+describe("the twelve new catalog shapes", () => {
   it("estan todas en GEO_SHAPES", () => {
-    expect(NUEVAS.filter((n) => !(n in GEO_SHAPES))).toEqual([]);
+    expect(NEW_SHAPES.filter((n) => !(n in GEO_SHAPES))).toEqual([]);
   });
 
   it("son cerradas y rellenables", () => {
-    for (const nombre of NUEVAS) {
-      const d = GEO_SHAPES[nombre];
-      if (d.tipo === "path") expect(d.rellenable, nombre).toBe(true);
+    for (const name of NEW_SHAPES) {
+      const d = GEO_SHAPES[name];
+      if (d.tipo === "path") expect(d.rellenable, name).toBe(true);
     }
   });
 
-  it("todas sus coordenadas caen en 0-100", () => {
-    for (const nombre of NUEVAS) {
-      const d = GEO_SHAPES[nombre];
-      const valores = d.tipo === "polygon"
+  it("all their coordinates fall within 0-100", () => {
+    for (const name of NEW_SHAPES) {
+      const d = GEO_SHAPES[name];
+      const values = d.tipo === "polygon"
         ? d.puntos.flat()
-        : numeros(d.d);
-      for (const v of valores) {
-        expect(v, `${nombre} se sale del viewBox`).toBeGreaterThanOrEqual(0);
-        expect(v, `${nombre} se sale del viewBox`).toBeLessThanOrEqual(100);
+        : numbers(d.d);
+      for (const v of values) {
+        expect(v, `${name} se sale del viewBox`).toBeGreaterThanOrEqual(0);
+        expect(v, `${name} se sale del viewBox`).toBeLessThanOrEqual(100);
       }
     }
   });
@@ -50,77 +50,77 @@ describe("FRAME_SHAPES", () => {
     expect(FRAME_SHAPES).not.toContain("scribble");
   });
 
-  it("incluye las doce formas nuevas", () => {
-    expect(NUEVAS.filter((n) => !FRAME_SHAPES.includes(n))).toEqual([]);
+  it("includes the twelve new shapes", () => {
+    expect(NEW_SHAPES.filter((n) => !FRAME_SHAPES.includes(n))).toEqual([]);
   });
 });
 
 describe("frameSilhouette", () => {
-  it("una forma del catalogo da su trazado", () => {
+  it("a catalog shape yields its path", () => {
     const s = frameSilhouette({ geoShape: "cloud" });
     expect(s).not.toBeNull();
     expect(s!.d).toBe((GEO_SHAPES.cloud as { d: string }).d);
     expect(s!.viewBox).toBe("0 0 100 100");
   });
 
-  it("una forma de poligono da sus puntos", () => {
+  it("a polygon shape yields its points", () => {
     const s = frameSilhouette({ geoShape: "octagon" });
     expect(s!.points).toContain("30,5");
     expect(s!.d).toBeUndefined();
   });
 
-  it("un svgPath se devuelve tal cual, con el viewBox por defecto", () => {
+  it("an svgPath is returned as is, with the default viewBox", () => {
     expect(frameSilhouette({ svgPath: "M0 0L100 0L50 100Z" })).toEqual({
       d: "M0 0L100 0L50 100Z",
       viewBox: "0 0 100 100",
     });
   });
 
-  it("un svgPath usa su svgViewBox cuando lo trae", () => {
+  it("an svgPath uses its svgViewBox when it has one", () => {
     expect(frameSilhouette({ svgPath: "M0 0Z", svgViewBox: "0 0 24 24" })!.viewBox).toBe("0 0 24 24");
   });
 
-  it("el blob usa customBlobPath, luego svgPath, luego el catalogo", () => {
+  it("the blob uses customBlobPath, then svgPath, then the catalog", () => {
     expect(frameSilhouette({ geoShape: "blob", customBlobPath: "M1 1Z", svgPath: "M2 2Z" })!.d).toBe("M1 1Z");
     expect(frameSilhouette({ geoShape: "blob", svgPath: "M2 2Z" })!.d).toBe("M2 2Z");
     expect(frameSilhouette({ geoShape: "blob" })!.d).toBe((GEO_SHAPES.blob as { d: string }).d);
   });
 
-  it("el rectangulo y las formas desconocidas dan null", () => {
+  it("the rectangle and unknown shapes give null", () => {
     expect(frameSilhouette({ geoShape: "rectangle" })).toBeNull();
     expect(frameSilhouette({ geoShape: "trapecio" })).toBeNull();
     expect(frameSilhouette({})).toBeNull();
   });
 });
 
-describe("el esquema del svgPath", () => {
+describe("the svgPath schema", () => {
   const acepta = (svgPath: string) => styleSchema.safeParse({ svgPath }).success;
 
-  it("rechaza marcado, comillas y url()", () => {
+  it("rejects markup, quotes and url()", () => {
     expect(acepta("M0 0<script>")).toBe(false);
     expect(acepta("url(x)")).toBe(false);
     expect(acepta('M0 0"')).toBe(false);
   });
 
-  it("acepta un trazado normal", () => {
+  it("accepts a normal path", () => {
     expect(acepta("M 10,10 L 90 90 Z")).toBe(true);
   });
 });
 
-describe("usesFrameShapes: cuando un .oim exige frame_shapes", () => {
-  it("una forma nueva con foto la exige", () => {
+describe("usesFrameShapes: when a .oim requires frame_shapes", () => {
+  it("a new shape with a photo requires it", () => {
     expect(usesFrameShapes({ type: "geo", geoShape: "cloud", fillType: "image" })).toBe(true);
   });
 
-  it("un svgPath con foto la exige", () => {
+  it("an svgPath with a photo requires it", () => {
     expect(usesFrameShapes({ type: "geo", svgPath: "M0 0Z", fillType: "image" })).toBe(true);
   });
 
-  it("un volteo de la foto la exige", () => {
+  it("flipping the photo requires it", () => {
     expect(usesFrameShapes({ type: "geo", geoShape: "star", fillType: "image", fillImageFlipX: true })).toBe(true);
   });
 
-  it("una estrella sin volteo no la exige", () => {
+  it("a star without flipping does not require it", () => {
     expect(usesFrameShapes({ type: "geo", geoShape: "star", fillType: "image" })).toBe(false);
   });
 });

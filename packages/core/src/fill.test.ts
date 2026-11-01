@@ -17,12 +17,12 @@ describe("getFillCss en @oim-media/player-oim", () => {
     ...overrides
   });
 
-  it("devuelve objeto vacio cuando no hay fillType o es 'none'", () => {
+  it("returns an empty object when there is no fillType or it is 'none'", () => {
     expect(getFillCss(makeShape({ fillType: "none" }))).toEqual({});
     expect(getFillCss(makeShape({}))).toEqual({});
   });
 
-  it("traduce fillType 'color' correctamente para formas y texto", () => {
+  it("translates fillType 'color' correctly for shapes and text", () => {
     const cssGeo = getFillCss(makeShape({ fillType: "color", fillColor: "#FF0000", type: "geo" }));
     expect(cssGeo).toEqual({ backgroundColor: "#FF0000" });
 
@@ -30,7 +30,7 @@ describe("getFillCss en @oim-media/player-oim", () => {
     expect(cssText).toEqual({ color: "#00FF00" });
   });
 
-  it("traduce fillType 'gradient' para texto con clip", () => {
+  it("translates fillType 'gradient' for clipped text", () => {
     const cssText = getFillCss(makeShape({
       type: "text",
       fillType: "gradient",
@@ -44,7 +44,7 @@ describe("getFillCss en @oim-media/player-oim", () => {
     });
   });
 
-  it("traduce fillType 'pattern' con generador SVG", () => {
+  it("translates fillType 'pattern' with an SVG generator", () => {
     const css = getFillCss(makeShape({
       fillType: "pattern",
       fillPatternType: "clouds",
@@ -58,36 +58,36 @@ describe("getFillCss en @oim-media/player-oim", () => {
 });
 
 describe("patternLayerCss", () => {
-  const capa = (extra: Record<string, unknown> = {}) =>
+  const layer = (extra: Record<string, unknown> = {}) =>
     ({ id: "p", type: "pattern", width: 200, height: 200,
        fillPatternType: "clouds", ...extra }) as any;
 
   // What SEPARATES the layer from the fill: the fill adjusts once ("cover",
   // "no-repeat"); the layer tiles.
-  it("tesela: repeat y un tamaño, nunca cover", () => {
-    const css = patternLayerCss(capa());
+  it("tile: repeat and a size, never cover", () => {
+    const css = patternLayerCss(layer());
     expect(css.backgroundRepeat).toBe("repeat");
     expect(css.backgroundSize).toBe("160px 160px");
     expect(css.backgroundSize).not.toBe("cover");
   });
 
-  it("la escala multiplica la tesela: 160 * escala", () => {
-    expect(patternLayerCss(capa({ fillPatternScale: 2.5 })).backgroundSize)
+  it("the scale multiplies the tile: 160 * scale", () => {
+    expect(patternLayerCss(layer({ fillPatternScale: 2.5 })).backgroundSize)
       .toBe("400px 400px");
   });
 
   it("pinta el patron pedido", () => {
-    const css = patternLayerCss(capa({ fillPatternColor: "#F59E0B" }));
+    const css = patternLayerCss(layer({ fillPatternColor: "#F59E0B" }));
     expect(String(css.backgroundImage)).toContain("data:image/svg+xml");
   });
 
-  it("emite la animacion con la direccion y la velocidad de la capa", () => {
-    expect(patternLayerCss(capa({ fillPatternDirection: "left", fillPatternSpeed: 4 })).animation)
+  it("emits the animation with the direction and speed of the layer", () => {
+    expect(patternLayerCss(layer({ fillPatternDirection: "left", fillPatternSpeed: 4 })).animation)
       .toBe("background-animation-left 4s linear infinite");
   });
 
-  it("sin direccion declarada se desplaza a la derecha, como el fondo", () => {
-    expect(String(patternLayerCss(capa({ fillPatternSpeed: 4 })).animation))
+  it("with no declared direction it moves right, like the background", () => {
+    expect(String(patternLayerCss(layer({ fillPatternSpeed: 4 })).animation))
       .toContain("background-animation-right");
   });
 
@@ -96,65 +96,65 @@ describe("patternLayerCss", () => {
     ["direccion none", { fillPatternDirection: "none", fillPatternSpeed: 8 }],
     ["velocidad 0",    { fillPatternSpeed: 0 }],
     ["velocidad negativa", { fillPatternSpeed: -4 }],
-    ["sin velocidad",  {}],
+    ["no speed",  {}],
   ])("NO emite animacion: %s", (_caso, extra) => {
-    expect(patternLayerCss(capa(extra)).animation).toBeUndefined();
+    expect(patternLayerCss(layer(extra)).animation).toBeUndefined();
   });
 
   // A foreign `.oim` can carry anything.
-  it("una direccion desconocida no emite animacion y no lanza", () => {
-    expect(patternLayerCss(capa({ fillPatternDirection: "diagonal", fillPatternSpeed: 8 } as any)).animation)
+  it("an unknown direction emits no animation and does not throw", () => {
+    expect(patternLayerCss(layer({ fillPatternDirection: "diagonal", fillPatternSpeed: 8 } as any)).animation)
       .toBeUndefined();
   });
 
-  it("publica la tesela como --oim-bg-tile, que es lo que leen los keyframes", () => {
-    expect((patternLayerCss(capa({ fillPatternScale: 2 })) as any)["--oim-bg-tile"])
+  it("publishes the tile as --oim-bg-tile, which is what the keyframes read", () => {
+    expect((patternLayerCss(layer({ fillPatternScale: 2 })) as any)["--oim-bg-tile"])
       .toBe("320px");
   });
 
   // A pattern type that the generator does not know: the layer comes out transparent,
   // but it is NOT thrown. A foreign `.oim` must not be able to bring the viewer down.
-  it("un tipo de patron desconocido no lanza", () => {
-    expect(() => patternLayerCss(capa({ fillPatternType: "no-existe" }))).not.toThrow();
+  it("an unknown pattern type does not throw", () => {
+    expect(() => patternLayerCss(layer({ fillPatternType: "no-existe" }))).not.toThrow();
   });
 });
 
-describe("la capa de patron es una VENTANA, no un lienzo que estira", () => {
-  const capa = (extra: Record<string, unknown> = {}) =>
+describe("the pattern layer is a WINDOW, not a canvas that stretches", () => {
+  const layer = (extra: Record<string, unknown> = {}) =>
     ({ id: "p", type: "pattern", fillPatternType: "clouds", ...extra }) as any;
 
   // The invariant that defines the layer: resizing it shows MORE or LESS
   // pattern, not a bigger or smaller one. What fixes it is the
   // scale, not the node's size -just like the moving background-.
-  it("el tamaño del motivo NO depende del tamaño de la capa", () => {
-    const pequena = patternLayerCss(capa({ width: 120, height: 90 }));
-    const grande = patternLayerCss(capa({ width: 960, height: 720 }));
-    expect(pequena.backgroundSize).toBe(grande.backgroundSize);
-    expect(pequena.backgroundSize).toBe("160px 160px");
+  it("the motif size does NOT depend on the layer size", () => {
+    const small = patternLayerCss(layer({ width: 120, height: 90 }));
+    const large = patternLayerCss(layer({ width: 960, height: 720 }));
+    expect(small.backgroundSize).toBe(large.backgroundSize);
+    expect(small.backgroundSize).toBe("160px 160px");
   });
 
   // What DOES change it is the scale, which is the author's control.
-  it("pero la escala si lo cambia", () => {
-    expect(patternLayerCss(capa({ width: 120, fillPatternScale: 2 })).backgroundSize)
+  it("but the scale does change it", () => {
+    expect(patternLayerCss(layer({ width: 120, fillPatternScale: 2 })).backgroundSize)
       .toBe("320px 320px");
   });
 
   // `repeat` is what makes enlarging the window show more pattern instead of
   // a gap.
-  it("y al agrandarla aparece mas patron, no un hueco", () => {
-    expect(patternLayerCss(capa({ width: 960, height: 720 })).backgroundRepeat)
+  it("and when enlarged, more pattern appears, not a gap", () => {
+    expect(patternLayerCss(layer({ width: 960, height: 720 })).backgroundRepeat)
       .toBe("repeat");
   });
 });
 
-describe("las formas de la capa de patron", () => {
+describe("the shapes of the pattern layer", () => {
   const svgOf = (css: any) => decodeURIComponent(String(css.maskImage).replace(/^url\("data:image\/svg\+xml,/, "").replace(/"\)$/, ""));
 
-  it("son exactamente estas nueve, en este orden", () => {
+  it("are exactly these nine, in this order", () => {
     expect(PATTERN_SHAPES).toEqual(["rectangle", "circle", "triangle", "star", "diamond", "hexagon", "heart", "arrow", "blob"]);
   });
 
-  it("cada forma lleva EXACTAMENTE la geometria de GEO_SHAPES, estirada a la caja", () => {
+  it("each shape carries EXACTLY the GEO_SHAPES geometry, stretched to the box", () => {
     for (const id of PATTERN_SHAPES.filter((s) => s !== "rectangle")) {
       const css: any = patternShapeMask(id);
       const svg = svgOf(css);
@@ -169,48 +169,48 @@ describe("las formas de la capa de patron", () => {
     }
   });
 
-  it("el rectangulo, las formas abiertas y lo desconocido no llevan mascara", () => {
+  it("the rectangle, open shapes and unknown ones carry no mask", () => {
     for (const id of [undefined, "rectangle", "rect", "line", "scribble", "no-existe"]) {
       expect(patternShapeMask(id as any)).toEqual({});
     }
   });
 
-  it("patternLayerCss incluye la mascara de la forma", () => {
+  it("patternLayerCss includes the shape mask", () => {
     const css: any = patternLayerCss({ type: "pattern", fillPatternType: "clouds", geoShape: "circle" } as any);
     expect(css.maskImage).toBe((patternShapeMask("circle") as any).maskImage);
     expect(css.backgroundRepeat).toBe("repeat");
   });
 });
 
-describe("fase A: el relleno de patron de una forma tesela y se mueve", () => {
+describe("phase A: a pattern fill on a shape tiles and moves", () => {
   const conPatron = (extra: Record<string, unknown> = {}) =>
     getFillCss({ type: "geo", width: 200, height: 100, fillType: "pattern", fillPatternType: "clouds",
       fillPatternColor: "#FFFFFF", fillPatternBgColor: "#000000", ...extra } as any) as any;
 
-  it("repite la tesela en vez de estirar una sola", () => {
+  it("repeats the tile instead of stretching a single one", () => {
     const css = conPatron({ fillPatternScale: 0.5 });
     expect(css.backgroundRepeat).toBe("repeat");
     expect(css.backgroundSize).toBe("80px 80px");
     expect(css["--oim-bg-tile"]).toBe("80px");
   });
 
-  it("con velocidad se mueve en su direccion; sin velocidad, no", () => {
+  it("with speed it moves in its direction; without speed, it does not", () => {
     expect(conPatron({ fillPatternSpeed: 6, fillPatternDirection: "up" }).animation).toBe("background-animation-up 6s linear infinite");
     expect(conPatron({ fillPatternSpeed: 0 }).animation).toBeUndefined();
   });
 
-  it("la tesela es la misma que la de la capa de patron", () => {
-    const campos = { fillPatternType: "stars", fillPatternColor: "#111111", fillPatternBgColor: "#EEEEEE", fillPatternScale: 1.5, fillPatternSpeed: 4, fillPatternDirection: "left" };
-    const relleno: any = getFillCss({ type: "geo", fillType: "pattern", ...campos } as any);
-    const capa: any = patternLayerCss({ type: "pattern", ...campos } as any);
+  it("the tile is the same as the one of the pattern layer", () => {
+    const fields = { fillPatternType: "stars", fillPatternColor: "#111111", fillPatternBgColor: "#EEEEEE", fillPatternScale: 1.5, fillPatternSpeed: 4, fillPatternDirection: "left" };
+    const fillCss: any = getFillCss({ type: "geo", fillType: "pattern", ...fields } as any);
+    const layer: any = patternLayerCss({ type: "pattern", ...fields } as any);
     for (const k of ["backgroundImage", "backgroundSize", "backgroundRepeat", "animation", "--oim-bg-tile"]) {
-      expect(relleno[k]).toBe(capa[k]);
+      expect(fillCss[k]).toBe(layer[k]);
     }
   });
 });
 
 describe("fase A: shapeMaskCss", () => {
-  it("es la mascara de las formas, y patternShapeMask sigue siendo la misma", () => {
+  it("is the shape mask, and patternShapeMask stays the same", () => {
     expect(shapeMaskCss("circle")).toEqual(patternShapeMask("circle"));
     expect((shapeMaskCss("heart") as any).maskImage).toMatch(/^url\("data:image\/svg\+xml,/);
     expect(shapeMaskCss("rectangle")).toEqual({});
@@ -235,8 +235,8 @@ describe("fase A: shapeMaskCss", () => {
   });
 });
 
-describe("fase B: el relleno de patron pasa sus figuras", () => {
-  it("las listas de la forma llegan a la tesela", () => {
+describe("phase B: the pattern fill passes its figures through", () => {
+  it("the lists of the shape reach the tile", () => {
     const css: any = getFillCss({ type: "geo", fillType: "pattern", fillPatternType: "stars", fillPatternSvgs: ["🔥"], fillPatternColors: ["#FF0000"], fillPatternCounts: [1], fillPatternDispersions: [0] } as any);
     const svg = decodeURIComponent(String(css.backgroundImage).replace(/^url\("data:image\/svg\+xml;utf8,/, "").replace(/"\)$/, ""));
     expect(svg).toContain("🔥");
@@ -286,7 +286,7 @@ describe("getFillCss: image fill paints its colour underneath (contract 1.17.0)"
 });
 
 describe("resolvePatternColors", () => {
-  it("resolvePatternColors resuelve roles de paleta con respaldo seguro", () => {
+  it("resolvePatternColors resolves palette roles with a safe fallback", () => {
     const shape = {
       fillPatternColor: "#112233",
       fillPatternColorRole: "accent" as const,

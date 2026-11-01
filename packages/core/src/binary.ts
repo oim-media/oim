@@ -1,4 +1,10 @@
 /**
+ * @license
+ * Copyright (c) 2026 Xue Studios LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
  * Binary packing, unpacking, compression (deflate), and base64 logic.
  * Handles extracting and embedding metadata chunks in PNG and OVM files.
  */

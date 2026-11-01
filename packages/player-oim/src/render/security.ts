@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright (c) 2026 Xue Studios LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { embeddedKey, effectiveNotAfter, keysEndpoint, signatureIsWithinKeyWindow, keyExpiredAt, type PlayerKey } from './keys.js';
 import { serializeCanonical } from '../../../core/src/canonical.js';
 

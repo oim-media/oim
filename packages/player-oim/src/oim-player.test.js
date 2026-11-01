@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright (c) 2026 Xue Studios LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import fs from 'fs';
 import { REFERENCE_OIM } from '../../core/test/fixtures/index';

@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright (c) 2026 Xue Studios LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { OIMRegistry } from '../render/registry.js';
 import { setFlag } from '../render/attrs.js';
 import { playerString } from '../render/strings.js';

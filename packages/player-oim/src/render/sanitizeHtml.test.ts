@@ -1,4 +1,10 @@
 /**
+ * @license
+ * Copyright (c) 2026 Xue Studios LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
  * @vitest-environment jsdom
  *
  * `sanitizeHtml` had a shortcut that skipped ALL sanitizing for anything that starts with

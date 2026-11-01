@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright (c) 2026 Xue Studios LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { describe, it, expect } from "vitest";
 import { computeLayerComposition, getFilterCss, getMaskPathData, getMaskSilhouettePath, MASK_SHAPE_PATHS, getMaskClipPathD, getWindowMaskCanvasD } from "./layerComposition";
 import type { Slot } from "./layerComposition";

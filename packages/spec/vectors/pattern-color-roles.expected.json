@@ -1,5 +1,5 @@
 {
-  "description": "Roles de color en patrones (contrato 1.21.0): fondo de patron con accent y surface, una capa de patron con accent y una sombra con accent al 30%.",
+  "description": "Colour roles in patterns (contract 1.21.0): a pattern background with accent and surface, a pattern layer with accent, and a shadow with accent at 30%.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

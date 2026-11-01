@@ -1,5 +1,5 @@
 {
-  "description": "Recorte de imagen (contrato 1.15.0): `imageCrop` encuadra sobre «cubrir» en x 20 %, y 70 % y zoom 2.",
+  "description": "Image crop (contract 1.15.0): `imageCrop` frames an image covering its box, at x 20 %, y 70 % and zoom 2.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

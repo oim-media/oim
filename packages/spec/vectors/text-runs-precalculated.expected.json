@@ -1,5 +1,5 @@
 {
-  "description": "Estructura precalculada de líneas de texto para renderizadores nativos y embebidos.",
+  "description": "Precalculated text line layout for native and embedded renderers.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

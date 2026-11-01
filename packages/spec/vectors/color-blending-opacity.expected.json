@@ -1,5 +1,5 @@
 {
-  "description": "Opacidad de capa y modos de fusión de mezcla visual.",
+  "description": "Layer opacity and visual blend modes.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

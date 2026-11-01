@@ -1,5 +1,5 @@
 {
-  "description": "Pila de capas superpuestas en idénticas coordenadas para verificar orden de pintado.",
+  "description": "A stack of layers overlapping at identical coordinates, to check the paint order.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

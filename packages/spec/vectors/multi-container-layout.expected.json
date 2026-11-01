@@ -1,5 +1,5 @@
 {
-  "description": "Disposición con slots de tipo contenedor organizando el espacio de lienzo.",
+  "description": "Layout with container-type slots organising the canvas space.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

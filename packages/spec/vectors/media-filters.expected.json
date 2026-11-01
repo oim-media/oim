@@ -1,5 +1,5 @@
 {
-  "description": "Filtros de medios (contrato 1.18.0): una foto en blanco y negro y un marco circular con desenfoque y trazo; el filtro solo toca la foto.",
+  "description": "Media filters (contract 1.18.0): a black-and-white photo and a circular frame with blur and stroke; the filter touches only the photo.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

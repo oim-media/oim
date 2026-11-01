@@ -1,5 +1,5 @@
 {
-  "description": "Accesibilidad (contrato 1.16.0): `description` de la obra, `alt` por idioma en una imagen y `decorative` en una forma.",
+  "description": "Accessibility (contract 1.16.0): the work's `description`, a per-language `alt` on an image and `decorative` on a shape.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

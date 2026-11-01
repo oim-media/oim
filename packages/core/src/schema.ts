@@ -777,10 +777,9 @@ export const OimMetadataSchema = z.object({
   // (`permissionFields`). An unknown value falls back to `author_only`, never
   // to `public` -- see reeditPermission.ts, which is canonical.
   reedit: z.enum(["public", "author_only", "sealed"]).optional(),
-  // @deprecated Contract 1.23.0 renamed `reedicion` to `reedit`. Read-only for
-  // legacy signed files: writers emit `reedit` only; readers map this key with
-  // normalizeLegacyKeys.
-  reedicion: z.enum(["publico", "solo_autor", "sellado"]).optional(),
+  // Contract 1.23.0 renamed `reedicion` to `reedit`. Read-only for legacy signed
+  // files: writers emit `reedit` only; readers map this key with normalizeLegacyKeys.
+  reedicion: z.enum(["publico", "solo_autor", "sellado"]).meta({ deprecated: true, description: "Renamed to `reedit` in 1.23.0. Read forever as a legacy alias; never written." }).optional(),
   // The title of the work. Every published file carries it at the root and
   // the contract did not declare it, so a reader built from the contract
   // alone would not know to look for it. Not to be confused with `slot.name`

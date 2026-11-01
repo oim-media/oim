@@ -1,5 +1,5 @@
 {
-  "description": "Radios de curvatura independientes por cada esquina.",
+  "description": "Independent corner radii for each corner.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

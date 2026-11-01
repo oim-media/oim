@@ -43,7 +43,11 @@
  * the format can change without the player being touched. Tying both numbers
  * together would make an internal fix look like a format break.
  */
-export const CONTRACT_VERSION = "1.22.2";
+export const CONTRACT_VERSION = "1.23.0";
+// 1.23.0: format keys in English. `reedit` replaces `reedicion` (values `public`,
+// `author_only`, `sealed`); `reedicion` is read forever as a legacy alias and never written.
+// Exported names in English with deprecated aliases until 2.0.0. The `data-oim-*`
+// attributes are doubled in the player (Task 4), not a format change.
 // 1.22.2: patch. The format is unchanged; the schema version follows the release tag.
 // 1.22.1: patch. The format is unchanged; the schema version follows the release tag.
 // 1.22.0: per-layer reveal transition (`reveal`), `animation.trigger` and the `play` action.

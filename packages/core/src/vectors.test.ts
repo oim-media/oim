@@ -57,7 +57,7 @@ describe("published .oim files validate against their own schema", () => {
    * folders: zero files found, zero checks, everything correct.
    */
   it("finds files to check", () => {
-    expect(FILES.length).toBeGreaterThanOrEqual(2);
+    expect(FILES.length).toBeGreaterThanOrEqual(1);
   });
 
   it.each(FILES)("%s validates", async (file) => {

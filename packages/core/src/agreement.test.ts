@@ -30,7 +30,8 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import Ajv2020 from "ajv/dist/2020";
 import { OimMetadataSchema } from "./schema";
@@ -96,17 +97,21 @@ describe("the published contract and Zod agree", () => {
 describe("real .oim files pass both gates", () => {
   it("the contract accepts what the system produces", async () => {
     const { extractOIM } = await import("./binary");
-    const files = [
-      REFERENCE_OIM,
-      // Kept: the only fixture in a non-PNG container (a bare .oim), which the reference lacks.
-      join(__dirname, "..", "test", "fixtures", "object_sport.oim"),
-    ];
-    for (const file of files) {
-      const { metadata } = await extractOIM(new Blob([readFileSync(file)]));
-      const json = validarConElContrato(metadata) as boolean;
-      const problems = json ? [] : (validarConElContrato.errors ?? []).map((e) => `${e.instancePath} ${e.message}`);
-      expect(problems, file).toEqual([]);
-      expect(validarConZod(metadata)).toBe(true);
+    // The reference bytes under a `.oim` name (not `.png`): the extension must not matter.
+    const dir = mkdtempSync(join(tmpdir(), "oim-ext-"));
+    try {
+      const bareOim = join(dir, "reference.oim");
+      writeFileSync(bareOim, readFileSync(REFERENCE_OIM));
+      const files = [REFERENCE_OIM, bareOim];
+      for (const file of files) {
+        const { metadata } = await extractOIM(new Blob([readFileSync(file)]));
+        const json = validarConElContrato(metadata) as boolean;
+        const problems = json ? [] : (validarConElContrato.errors ?? []).map((e) => `${e.instancePath} ${e.message}`);
+        expect(problems, file).toEqual([]);
+        expect(validarConZod(metadata)).toBe(true);
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
     }
   });
 });

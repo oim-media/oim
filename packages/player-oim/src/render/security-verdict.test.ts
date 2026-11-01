@@ -17,7 +17,7 @@
  *
  * BUT only if the file declares `image_hash_alg: "sha256-idat"`. Once, a client
  * sent its own `image_hash` and the backend signed it without checking it:
- * `object_view.oim` carries the SHA-256 of an EMPTY input. Requiring those
+ * an early real file carried the SHA-256 of an EMPTY input. Requiring those
  * hashes would reject legitimate files as altered.
  */
 
@@ -26,7 +26,7 @@ import { securityVerdict, isRefused } from "./security";
 
 const HASH = "a".repeat(64);
 const ALG = "sha256-idat";
-/** SHA-256 of nothing: what `object_view.oim` carries signed. */
+/** SHA-256 of nothing: what that early real file carried signed. */
 const HASH_DE_NADA = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 const base = { isSigned: true, isSigValid: true, imageHash: HASH };
 const sellado = (extra: object = {}) => ({ image_hash: HASH, image_hash_alg: ALG, ...extra });

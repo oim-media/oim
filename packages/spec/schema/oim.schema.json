@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://oim.media/spec/1.22.1/oim.schema.json",
+  "$id": "https://oim.media/spec/1.22.2/oim.schema.json",
   "title": "OIM document metadata",
-  "specVersion": "1.22.1",
+  "specVersion": "1.22.2",
   "type": "object",
   "properties": {
     "description": {

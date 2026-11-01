@@ -1,6 +1,6 @@
 {
   "name": "@oim-media/spec",
-  "version": "1.22.1",
+  "version": "1.22.2",
   "description": "OIM format contract: JSON Schema, normative specification and conformance vectors that every OIM player must pass.",
   "keywords": [
     "oim",

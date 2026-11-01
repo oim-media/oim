@@ -28,12 +28,12 @@ const oim = fs.readFileSync(path.resolve(process.cwd(), "../core/test/fixtures/o
 /**
  * An observer that only reports: geometry is the one that decides.
  *
- * Since `_decidir` reads `getBoundingClientRect()` instead of trusting the
+ * Since `_decide` reads `getBoundingClientRect()` instead of trusting the
  * observer's report, "is far away" is a geometric fact and not a property of
  * the double. That is correct: the observer's report can be born before layout
  * and lie, which is exactly the failure that was fixed.
  */
-const OBSERVADOR = class {
+const OBSERVER = class {
   constructor(cb) { this._cb = cb; }
   observe(el) { this._cb([{ target: el }], this); }
   unobserve() {}
@@ -41,19 +41,19 @@ const OBSERVADOR = class {
 };
 
 /** Places the element wherever we want. happy-dom returns zeros for everything. */
-function situar(el, { top, height = 400 }) {
+function placeAt(el, { top, height = 400 }) {
   el.getBoundingClientRect = () => ({
     top, bottom: top + height, left: 0, right: 800, width: 800, height,
     x: 0, y: top, toJSON() { return this; },
   });
 }
-const LEJOS = (el) => situar(el, { top: 5000 });
-const CERCA = (el) => situar(el, { top: 10 });
+const FAR = (el) => placeAt(el, { top: 5000 });
+const NEAR = (el) => placeAt(el, { top: 10 });
 
-/** Lets through the frame that `_programarDecision` waits for. */
-const pasarUnFrame = () => new Promise((r) => setTimeout(r, 60));
+/** Lets through the frame that `_scheduleDecision` waits for. */
+const nextFrame = () => new Promise((r) => setTimeout(r, 60));
 
-function servirElArchivo() {
+function serveFile() {
   global.fetch = vi.fn(() => Promise.resolve({
     ok: true, status: 200,
     headers: { get: (h) => h.toLowerCase() === "content-length" ? String(oim.length) : null },
@@ -62,7 +62,7 @@ function servirElArchivo() {
   }));
 }
 
-describe("un player que nadie ve no se carga", () => {
+describe("a player nobody sees does not load", () => {
   beforeEach(async () => {
     document.body.innerHTML = "";
     // The element is registered when the built package is imported, as in
@@ -70,160 +70,160 @@ describe("un player que nadie ve no se carga", () => {
     if (!customElements.get("oim-player")) await import("../dist/oim-player.js");
   });
 
-  it("fuera del viewport NO crea motor", async () => {
+  it("outside the viewport it does NOT create an engine", async () => {
     // happy-dom does not implement IntersectionObserver: a stub is installed that
     // never reports an intersection, which is exactly the "far away" case.
-    window.IntersectionObserver = OBSERVADOR;
+    window.IntersectionObserver = OBSERVER;
     const el = document.createElement("oim-player");
-    LEJOS(el);
-    el.setAttribute("src", "cualquiera.oim");
+    FAR(el);
+    el.setAttribute("src", "anything.oim");
     document.body.appendChild(el);
-    await pasarUnFrame();
-    expect(el._engine, "se creo el motor sin que nadie lo viera").toBeFalsy();
+    await nextFrame();
+    expect(el._engine, "the engine was created although nobody saw it").toBeFalsy();
   });
 
-  it("y tampoco pide el archivo", async () => {
-    window.IntersectionObserver = OBSERVADOR;
-    const espia = vi.fn(() => Promise.reject(new Error("no deberia pedirse")));
+  it("and it does not fetch the file either", async () => {
+    window.IntersectionObserver = OBSERVER;
+    const spy = vi.fn(() => Promise.reject(new Error("should not be requested")));
     const original = global.fetch;
-    global.fetch = espia;
+    global.fetch = spy;
     try {
       const el = document.createElement("oim-player");
-      LEJOS(el);
-      el.setAttribute("src", "cualquiera.oim");
+      FAR(el);
+      el.setAttribute("src", "anything.oim");
       document.body.appendChild(el);
-      await pasarUnFrame();
-      expect(espia, "descargo un archivo que nadie ha visto").not.toHaveBeenCalled();
+      await nextFrame();
+      expect(spy, "downloaded a file nobody has seen").not.toHaveBeenCalled();
     } finally {
       global.fetch = original;
     }
   });
 });
 
-describe("el contrato del estado de actividad", () => {
+describe("the activity state contract", () => {
   let fetchOriginal;
   beforeEach(async () => {
     document.body.innerHTML = "";
     fetchOriginal = global.fetch;
-    servirElArchivo();
+    serveFile();
     if (!customElements.get("oim-player")) await import("../dist/oim-player.js");
   });
   afterEach(() => { global.fetch = fetchOriginal; });
 
-  const montar = (attrs = {}, donde = CERCA) => {
+  const mount = (attrs = {}, where = NEAR) => {
     const el = document.createElement("oim-player");
-    donde(el);
+    where(el);
     for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
-    el.setAttribute("src", "cualquiera.oim");
+    el.setAttribute("src", "anything.oim");
     document.body.appendChild(el);
     return el;
   };
 
-  it("a la vista SI se carga", async () => {
-    window.IntersectionObserver = OBSERVADOR;
-    const el = montar();
+  it("in view it DOES load", async () => {
+    window.IntersectionObserver = OBSERVER;
+    const el = mount();
     await new Promise((r) => setTimeout(r, 150));
     expect(el._engine).toBeTruthy();
   });
 
-  it("al desconectarlo no queda ningun listener de mousemove en window", async () => {
+  it("disconnecting it leaves no mousemove listener on window", async () => {
     // The ParallaxController adds one to `window` in its constructor and only
     // removes it in `destroy()`. Measured in the browser: 12 players, 1 visible,
     // 12 live listeners.
-    window.IntersectionObserver = OBSERVADOR;
-    let vivos = 0;
+    window.IntersectionObserver = OBSERVER;
+    let live = 0;
     const add = window.addEventListener.bind(window);
     const rem = window.removeEventListener.bind(window);
-    window.addEventListener = (t, f, o) => { if (t === "mousemove") vivos++; return add(t, f, o); };
-    window.removeEventListener = (t, f, o) => { if (t === "mousemove") vivos--; return rem(t, f, o); };
+    window.addEventListener = (t, f, o) => { if (t === "mousemove") live++; return add(t, f, o); };
+    window.removeEventListener = (t, f, o) => { if (t === "mousemove") live--; return rem(t, f, o); };
     try {
-      const el = montar();
+      const el = mount();
       await new Promise((r) => setTimeout(r, 150));
       el.remove();
       await new Promise((r) => setTimeout(r, 50));
-      expect(vivos, "quedaron listeners de mousemove tras quitar el player").toBe(0);
+      expect(live, "mousemove listeners remain after removing the player").toBe(0);
     } finally {
       window.addEventListener = add;
       window.removeEventListener = rem;
     }
   });
 
-  it("`getMetadata()` despierta a un player dormido", async () => {
+  it("`getMetadata()` wakes a dormant player", async () => {
     // Without this, lazy loading would break whoever uses the API: it would
     // return `null` where it used to return data.
-    window.IntersectionObserver = OBSERVADOR;
-    const el = montar({}, LEJOS);
+    window.IntersectionObserver = OBSERVER;
+    const el = mount({}, FAR);
     await new Promise((r) => setTimeout(r, 50));
-    expect(el._engine, "no deberia haberse cargado solo").toBeFalsy();
+    expect(el._engine, "it should not have loaded by itself").toBeFalsy();
     el.getMetadata();
     await new Promise((r) => setTimeout(r, 150));
-    expect(el._engine, "getMetadata no desperto al player").toBeTruthy();
+    expect(el._engine, "getMetadata did not wake the player").toBeTruthy();
   });
 
-  it("el atributo `lang` NO lo despierta", async () => {
+  it("the `lang` attribute does NOT wake it", async () => {
     // `<oim-player src lang="es">` is the normal way to write it, and the
     // attribute went through the public `setLang()`, which wakes the player.
     // All 24 in a list loaded anyway: 23 dormant and 24 with an engine, measured
     // in the browser. An attribute is configuration; a JS call is a request, and
     // only the second justifies a download.
-    window.IntersectionObserver = OBSERVADOR;
+    window.IntersectionObserver = OBSERVER;
     const el = document.createElement("oim-player");
-    LEJOS(el);
+    FAR(el);
     el.setAttribute("lang", "en");
-    el.setAttribute("src", "cualquiera.oim");
+    el.setAttribute("src", "anything.oim");
     document.body.appendChild(el);
     el.setAttribute("lang", "pt");
     await new Promise((r) => setTimeout(r, 100));
-    expect(el._engine, "el atributo lang desperto al player").toBeFalsy();
+    expect(el._engine, "the lang attribute woke the player").toBeFalsy();
   });
 
-  it("pero `setLang()` llamado a mano SI", async () => {
-    window.IntersectionObserver = OBSERVADOR;
+  it("but a manual `setLang()` DOES", async () => {
+    window.IntersectionObserver = OBSERVER;
     const el = document.createElement("oim-player");
-    LEJOS(el);
-    el.setAttribute("src", "cualquiera.oim");
+    FAR(el);
+    el.setAttribute("src", "anything.oim");
     document.body.appendChild(el);
-    await pasarUnFrame();
+    await nextFrame();
     el.setLang("en");
     await new Promise((r) => setTimeout(r, 150));
     expect(el._engine).toBeTruthy();
   });
 
-  it("`play()` tambien lo despierta", async () => {
-    window.IntersectionObserver = OBSERVADOR;
-    const el = montar({}, LEJOS);
+  it("`play()` also wakes it", async () => {
+    window.IntersectionObserver = OBSERVER;
+    const el = mount({}, FAR);
     await new Promise((r) => setTimeout(r, 50));
     el.play();
     await new Promise((r) => setTimeout(r, 150));
     expect(el._engine).toBeTruthy();
   });
 
-  it("con `activate-on=hover` y sin cursor encima, se carga pero no se anima", async () => {
-    window.IntersectionObserver = OBSERVADOR;
+  it("with `activate-on=hover` and no cursor over it, it loads but does not animate", async () => {
+    window.IntersectionObserver = OBSERVER;
     window.matchMedia = (q) => ({ matches: q.includes("hover: hover"), media: q,
       addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
-    const el = montar({ "activate-on": "hover" });
+    const el = mount({ "activate-on": "hover" });
     await new Promise((r) => setTimeout(r, 150));
-    expect(el._engine, "deberia estar construido").toBeTruthy();
-    expect(el.classList.contains("oim-player-paused"), "no deberia animarse sin cursor").toBe(true);
+    expect(el._engine, "it should be built").toBeTruthy();
+    expect(el.classList.contains("oim-player-paused"), "it should not animate without a cursor").toBe(true);
   });
 
-  it("y al pasar el cursor se anima", async () => {
-    window.IntersectionObserver = OBSERVADOR;
+  it("and when the cursor hovers it animates", async () => {
+    window.IntersectionObserver = OBSERVER;
     window.matchMedia = (q) => ({ matches: q.includes("hover: hover"), media: q,
       addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
-    const el = montar({ "activate-on": "hover" });
+    const el = mount({ "activate-on": "hover" });
     await new Promise((r) => setTimeout(r, 150));
     el.dispatchEvent(new MouseEvent("mouseenter"));
     await new Promise((r) => setTimeout(r, 50));
     expect(el.classList.contains("oim-player-paused")).toBe(false);
   });
 
-  it("y al salir el cursor vuelve a pausarse", async () => {
-    window.IntersectionObserver = OBSERVADOR;
+  it("and when the cursor leaves it pauses again", async () => {
+    window.IntersectionObserver = OBSERVER;
     window.matchMedia = (q) => ({ matches: q.includes("hover: hover"), media: q,
       addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
-    const el = montar({ "activate-on": "hover" });
+    const el = mount({ "activate-on": "hover" });
     await new Promise((r) => setTimeout(r, 150));
     el.dispatchEvent(new MouseEvent("mouseenter"));
     await new Promise((r) => setTimeout(r, 50));
@@ -233,64 +233,64 @@ describe("el contrato del estado de actividad", () => {
     expect(el.classList.contains("oim-player-paused")).toBe(true);
   });
 
-  it("en tactil, `hover` se comporta como `visible`", async () => {
+  it("on touch, `hover` behaves like `visible`", async () => {
     // Without a cursor, requiring it would leave the file still forever on a phone.
-    window.IntersectionObserver = OBSERVADOR;
+    window.IntersectionObserver = OBSERVER;
     window.matchMedia = (q) => ({ matches: false, media: q,
       addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
-    const el = montar({ "activate-on": "hover" });
+    const el = mount({ "activate-on": "hover" });
     await new Promise((r) => setTimeout(r, 150));
     expect(el.classList.contains("oim-player-paused")).toBe(false);
   });
   // A carousel animates only its centred card; visibility must not restart the
   // cards beside it.
-  it("con `activate-on=manual`, visible se carga pero solo se anima con play()", async () => {
-    window.IntersectionObserver = OBSERVADOR;
-    const el = montar({ "activate-on": "manual" });
+  it("with `activate-on=manual`, visible loads but only animates with play()", async () => {
+    window.IntersectionObserver = OBSERVER;
+    const el = mount({ "activate-on": "manual" });
     await new Promise((r) => setTimeout(r, 150));
-    expect(el._engine, "deberia estar construido").toBeTruthy();
+    expect(el._engine, "it should be built").toBeTruthy();
     expect(el.classList.contains("oim-player-paused")).toBe(true);
     el.play();
     expect(el.classList.contains("oim-player-paused")).toBe(false);
     el.pause();
-    el._decidir();
-    expect(el.classList.contains("oim-player-paused"), "la visibilidad no lo reanuda").toBe(true);
+    el._decide();
+    expect(el.classList.contains("oim-player-paused"), "visibility does not resume it").toBe(true);
   });
 });
 
-describe("un player sin cargar reserva su hueco", () => {
+describe("a dormant player reserves its gap", () => {
   beforeEach(async () => {
     document.body.innerHTML = "";
-    const est = document.getElementById("oim-player-hueco");
+    const est = document.getElementById("oim-player-gap");
     if (est) est.remove();
     if (!customElements.get("oim-player")) await import("../dist/oim-player.js");
   });
 
-  it("inyecta la regla del hueco al conectarse el primero", () => {
+  it("injects the gap rule when the first player connects", () => {
     document.body.appendChild(document.createElement("oim-player"));
-    const est = document.getElementById("oim-player-hueco");
-    expect(est, "no se reservo hueco: en una lista los players se apilan").toBeTruthy();
+    const est = document.getElementById("oim-player-gap");
+    expect(est, "no gap was reserved: in a list the players stack up").toBeTruthy();
     expect(est.textContent).toContain("min-height");
   });
 
-  it("la regla se apaga con una señal que SOLO existe tras cargar", () => {
+  it("the rule is switched off by a signal that ONLY exists after loading", () => {
     // It was tried with `.oim-player-host` and it was no good: that class is set
     // in `connectedCallback`, before anything is loaded, so the gap was NEVER
     // reserved. Measured in the browser: 24 players stacked on the same pixel and
     // all 24 downloading. The 358 tests passed with the bug in place.
     const el = document.createElement("oim-player");
     document.body.appendChild(el);
-    const regla = document.getElementById("oim-player-hueco").textContent;
-    const señal = (regla.match(/:not\(([^)]+)\)/) || [])[1];
-    expect(señal, "la regla no se apaga con nada").toBeTruthy();
+    const rule = document.getElementById("oim-player-gap").textContent;
+    const signal = (rule.match(/:not\(([^)]+)\)/) || [])[1];
+    expect(signal, "the rule is not switched off by anything").toBeTruthy();
     expect(
-      el.matches(señal),
-      `un player recien conectado ya cumple "${señal}", asi que el hueco no se reserva`
+      el.matches(signal),
+      `a freshly connected player already matches "${signal}", so the gap is not reserved`
     ).toBe(false);
   });
 
-  it("y con especificidad cero, para que el autor mande", () => {
+  it("and with zero specificity, so the author wins", () => {
     document.body.appendChild(document.createElement("oim-player"));
-    expect(document.getElementById("oim-player-hueco").textContent).toContain(":where(");
+    expect(document.getElementById("oim-player-gap").textContent).toContain(":where(");
   });
 });

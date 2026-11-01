@@ -60,7 +60,10 @@ export interface LayerPlan {
 
 /** Class of the track that is animated. Both the player and the editor set it: if
  *  each one invented its own, the CSS below would only work in one of the two. */
-export const TRACK_CLASS = "oim-parallax-pista";
+export const TRACK_CLASS = "oim-parallax-track";
+
+/** @deprecated use TRACK_CLASS; removed in 2.0.0. Set alongside it, so pages styling the old name keep working. */
+export const LEGACY_TRACK_CLASS = "oim-parallax-pista";
 
 /** How far each piece reaches under the next one, in layer pixels. */
 const SEAM_OVERLAP_PX = 1;
@@ -74,7 +77,7 @@ const SEAM_OVERLAP_PX = 1;
  * behind and the result is a setting that adjusts nothing -exactly what happened
  * to `damping` and `seamlessTile` in the old engine.
  *
- * The displacement is exactly ONE UNIT -`--oim-parallax-unidad`-, not a
+ * The displacement is exactly ONE UNIT -`--oim-parallax-unit`-, not a
  * percentage: the number of pieces depends on the canvas, so a fixed -50% would
  * only be correct when the track measures exactly two units.
  *
@@ -84,12 +87,12 @@ const SEAM_OVERLAP_PX = 1;
  */
 export const CSS_PARALLAX = `@keyframes oim-parallax-infinite {
   0% { transform: translateX(0px); }
-  100% { transform: translateX(calc(-1 * var(--oim-parallax-unidad, 0px))); }
+  100% { transform: translateX(calc(-1 * var(--oim-parallax-unit, 0px))); }
 }
-.${TRACK_CLASS} { display: flex; width: max-content; will-change: transform; }
-.${TRACK_CLASS}:hover { animation-play-state: var(--oim-parallax-hover, running); }
+.${TRACK_CLASS}, .${LEGACY_TRACK_CLASS} { display: flex; width: max-content; will-change: transform; }
+.${TRACK_CLASS}:hover, .${LEGACY_TRACK_CLASS}:hover { animation-play-state: var(--oim-parallax-hover, running); }
 @media (prefers-reduced-motion: reduce) {
-  .${TRACK_CLASS} { animation: none !important; }
+  .${TRACK_CLASS}, .${LEGACY_TRACK_CLASS} { animation: none !important; }
 }`;
 
 /**
@@ -167,6 +170,8 @@ export function infiniteLayerPlan(
     // (library). Ignored where the parent is not a flex box.
     "align-self": "flex-start",
     "flex-shrink": "0",
+    "--oim-parallax-unit": `${unitPx}px`,
+    // Legacy name, same value: a page may read it from the inline style until 2.0.0.
     "--oim-parallax-unidad": `${unitPx}px`,
     "animation-name": "oim-parallax-infinite",
     "animation-duration": `${duracion}s`,

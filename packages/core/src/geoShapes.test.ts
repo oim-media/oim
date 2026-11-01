@@ -55,27 +55,27 @@ describe("the geometry, number by number", () => {
     // The player drew it as `50,0 0,100 100,100` and the editor as `50,5 95,90 5,90`:
     // the same file, two different triangles.
     expect(shapeDrawing("triangle")).toEqual({
-      tipo: "polygon",
-      puntos: [[50, 5], [95, 90], [5, 90]],
+      kind: "polygon",
+      points: [[50, 5], [95, 90], [5, 90]],
     });
   });
 
   it("the star has ten points and the first is 50,2", () => {
     const d = shapeDrawing("star")!;
-    expect(d.tipo).toBe("polygon");
-    expect((d as any).puntos).toHaveLength(10);
-    expect((d as any).puntos[0]).toEqual([50, 2]);
+    expect(d.kind).toBe("polygon");
+    expect((d as any).points).toHaveLength(10);
+    expect((d as any).points[0]).toEqual([50, 2]);
   });
 
   it("the circle is an arc of radius 45, not a polygon", () => {
     const d = shapeDrawing("circle")!;
-    expect(d.tipo).toBe("path");
+    expect(d.kind).toBe("path");
     expect((d as any).d).toContain("A 45,45");
   });
 
   it("the line and the scribble are the only strokes without fill", () => {
     const abiertas = Object.entries(GEO_SHAPES)
-      .filter(([, d]) => d.tipo === "path" && !(d as any).rellenable)
+      .filter(([, d]) => d.kind === "path" && !(d as any).fillable)
       .map(([n]) => n)
       .sort();
     expect(abiertas).toEqual(["line", "scribble"]);
@@ -83,8 +83,8 @@ describe("the geometry, number by number", () => {
 
   it("all polygons fit in the viewBox", () => {
     for (const [name, d] of Object.entries(GEO_SHAPES)) {
-      if (d.tipo !== "polygon") continue;
-      for (const [x, y] of d.puntos) {
+      if (d.kind !== "polygon") continue;
+      for (const [x, y] of d.points) {
         expect(x, `${name} overflows on x`).toBeGreaterThanOrEqual(0);
         expect(x, `${name} overflows on x`).toBeLessThanOrEqual(100);
         expect(y, `${name} overflows on y`).toBeGreaterThanOrEqual(0);

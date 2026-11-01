@@ -159,7 +159,7 @@ describe("the shapes of the pattern layer", () => {
       const css: any = patternShapeMask(id);
       const svg = svgOf(css);
       const d = GEO_SHAPES[id];
-      if (d.tipo === "polygon") expect(svg).toContain(`points="${pointsToAttribute(d.puntos)}"`);
+      if (d.kind === "polygon") expect(svg).toContain(`points="${pointsToAttribute(d.points)}"`);
       else expect(svg).toContain(`d="${d.d}"`);
       expect(svg).toContain('viewBox="0 0 100 100"');
       expect(svg).toContain('preserveAspectRatio="none"');
@@ -220,7 +220,7 @@ describe("fase A: shapeMaskCss", () => {
   // painted the whole box around an arch (the shape list stopped at 9 shapes).
   it("masks every closed catalogue shape, not only the pattern ones", () => {
     const closed = Object.entries(GEO_SHAPES)
-      .filter(([, d]) => d.tipo === "polygon" || d.rellenable)
+      .filter(([, d]) => d.kind === "polygon" || d.fillable)
       .map(([name]) => name);
     expect(closed).toContain("arch");
     for (const name of closed) {

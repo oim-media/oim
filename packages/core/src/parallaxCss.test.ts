@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { infiniteLayerPlan, CSS_PARALLAX, TRACK_CLASS, ensureParallaxKeyframes } from "./parallaxCss";
+import { infiniteLayerPlan, CSS_PARALLAX, TRACK_CLASS, LEGACY_TRACK_CLASS, ensureParallaxKeyframes } from "./parallaxCss";
 
 describe("parallaxCss - infiniteLayerPlan", () => {
   it("a still layer is not duplicated or animated", () => {
@@ -83,7 +83,7 @@ describe("the CSS that gives meaning to what the generator emits", () => {
   it("the keyframes shift ONE UNIT, not a fixed percentage", () => {
     // A -50% would only be correct if the track always measured two units, and
     // the number of pieces depends on the canvas. The unit travels in a variable.
-    expect(CSS_PARALLAX).toContain("var(--oim-parallax-unidad");
+    expect(CSS_PARALLAX).toContain("var(--oim-parallax-unit");
     expect(CSS_PARALLAX).not.toContain("translateX(-50%)");
   });
 
@@ -222,8 +222,8 @@ describe("how many pieces: whatever the canvas requires, not a fixed number", ()
   });
 
   it("the unit travels as a CSS variable and is one piece, or the pair with a mirror", () => {
-    expect(infiniteLayerPlan(cfg(false), 180, 800).container["--oim-parallax-unidad"]).toBe("180px");
-    expect(infiniteLayerPlan(cfg(true), 180, 800).container["--oim-parallax-unidad"]).toBe("360px");
+    expect(infiniteLayerPlan(cfg(false), 180, 800).container["--oim-parallax-unit"]).toBe("180px");
+    expect(infiniteLayerPlan(cfg(true), 180, 800).container["--oim-parallax-unit"]).toBe("360px");
   });
 
   it("the duration is that of the unit: the speed still means px/s", () => {
@@ -269,8 +269,8 @@ describe("the copies overlap: no gap at the seam", () => {
   });
 
   it("the overlap does not change the loop: the unit is still the piece width", () => {
-    expect(plan(false).container["--oim-parallax-unidad"]).toBe("576px");
-    expect(plan(true).container["--oim-parallax-unidad"]).toBe("1152px");
+    expect(plan(false).container["--oim-parallax-unit"]).toBe("576px");
+    expect(plan(true).container["--oim-parallax-unit"]).toBe("1152px");
     expect(plan(false).copy["flex"]).toBe("0 0 576px");
   });
 });

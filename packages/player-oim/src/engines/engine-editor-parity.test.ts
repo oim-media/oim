@@ -115,7 +115,7 @@ describe("Editor <-> player parity for geometric shapes", () => {
   });
 
   describe("doodle stroke fallbacks", () => {
-    // The doodle is `rellenable: false`, so without a stroke NOTHING is
+    // The doodle is `fillable: false`, so without a stroke NOTHING is
     // visible. The editor covers this with two fallbacks; the player did not have them.
 
     // CanvasArea.tsx: strokeWidth={shape.strokeWidth > 0 ? shape.strokeWidth : 2}

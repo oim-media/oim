@@ -44,7 +44,7 @@ describe("generator composed of layers", () => {
         { primitive: "gradient", fixed: { kind: "linear" } }
       ],
       schema: [],
-      grano: { intensidad: 0.25 }
+      grain: { intensity: 0.25 }
     };
     GENERATOR_CATALOG.push(testSpec);
 
@@ -67,11 +67,11 @@ describe("generator composed of layers", () => {
     // in `screen` BLURRED. No test exercised this branch of the wrapper, and it is the
     // one that generator debuts.
     const testSpec: GeneratorSpec = {
-      id: "probe-desenfoque",
+      id: "probe-blur",
       layers: [
         { primitive: "gradient", fixed: { kind: "linear" } },
-        { primitive: "radial", fixed: { kind: "rings" }, opacidad: 0.5, desenfoque: 4 },
-        { primitive: "radial", fixed: { kind: "rays" }, desenfoque: 4 }
+        { primitive: "radial", fixed: { kind: "rings" }, opacity: 0.5, blur: 4 },
+        { primitive: "radial", fixed: { kind: "rays" }, blur: 4 }
       ],
       schema: []
     };
@@ -79,7 +79,7 @@ describe("generator composed of layers", () => {
 
     try {
       const svg = decodeURIComponent(
-        renderGenerativeSVG({ generatorId: "probe-desenfoque", seed: 1 }, { width: 200, height: 200 })
+        renderGenerativeSVG({ generatorId: "probe-blur", seed: 1 }, { width: 200, height: 200 })
       );
 
       expect(svg).toContain("opacity:0.5");

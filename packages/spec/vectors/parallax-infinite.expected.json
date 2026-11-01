@@ -1,5 +1,5 @@
 {
-  "description": "Parallax continuo en bucle horizontal infinito.",
+  "description": "Continuous parallax in an infinite horizontal loop.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

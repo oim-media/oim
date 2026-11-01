@@ -1,5 +1,5 @@
 {
-  "description": "Revelado por capa y accion play (contrato 1.22.0): un panel oculto que entra deslizando hacia arriba, un icono cuya animacion espera a una accion y un boton que muestra el uno y reproduce el otro.",
+  "description": "Per-layer reveal and the play action (contract 1.22.0): a hidden panel that slides up into view, an icon whose animation waits for an action, and a button that reveals one and plays the other.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

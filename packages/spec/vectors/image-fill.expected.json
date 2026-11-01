@@ -1,5 +1,5 @@
 {
-  "description": "Relleno de imagen (contrato 1.17.0): un circulo y una estrella rellenos con una foto incrustada, uno con `fillImageCrop`.",
+  "description": "Image fill (contract 1.17.0): a circle and a star filled with an embedded photo, one of them with `fillImageCrop`.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

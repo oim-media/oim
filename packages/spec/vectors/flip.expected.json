@@ -1,5 +1,5 @@
 {
-  "description": "Volteo de capa (contrato 1.14.0): `flipX` en una forma y `flipY` en otra rotada; se voltea en sus propios ejes.",
+  "description": "Layer flip (contract 1.14.0): `flipX` on one shape and `flipY` on another, rotated; each flips on its own axes.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

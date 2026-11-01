@@ -17,31 +17,33 @@
  * there was no way to say "anyone".
  */
 
-export type ReeditPermission = "publico" | "solo_autor" | "sellado";
+import { normalizeLegacyKeys } from "./legacyKeys.js";
+
+export type ReeditPermission = "public" | "author_only" | "sealed";
 
 /** The value when the file says nothing. ALL current .oim files fall here. */
-export const DEFAULT_PERMISSION: ReeditPermission = "solo_autor";
+export const DEFAULT_PERMISSION: ReeditPermission = "author_only";
 
-const VALID_PERMISSIONS: readonly ReeditPermission[] = ["publico", "solo_autor", "sellado"];
+const VALID_PERMISSIONS: readonly ReeditPermission[] = ["public", "author_only", "sealed"];
 
 /**
  * Reads the permission from the metadata.
  *
- * **An unknown value falls back to `solo_autor`, never to `publico`.** This is the
+ * **An unknown value falls back to `author_only`, never to `public`.** This is the
  * rule that stops corrupt —or tampered— data from loosening a permission. A
  * permission system's default is chosen by what happens when something goes wrong,
  * not by what happens when it goes right.
  */
 export function permissionOf(metadata: unknown): ReeditPermission {
   if (!metadata || typeof metadata !== "object") return DEFAULT_PERMISSION;
-  const m = metadata as Record<string, unknown>;
+  const m = normalizeLegacyKeys(metadata as Record<string, unknown>);
 
   // The legacy lock wins over everything else: there are published files that carry
-  // it, and none carries `reedicion` yet. If a file said `reedicion: "publico"` and
+  // it, and none carries `reedit` yet. If a file said `reedit: "public"` and
   // `immutable_lock: true`, the prudent choice is sealing.
-  if (m.immutable_lock === true || m.immutable === true) return "sellado";
+  if (m.immutable_lock === true || m.immutable === true) return "sealed";
 
-  const v = m.reedicion;
+  const v = m.reedit;
   return typeof v === "string" && (VALID_PERMISSIONS as readonly string[]).includes(v)
     ? (v as ReeditPermission)
     : DEFAULT_PERMISSION;
@@ -52,14 +54,14 @@ export function permissionOf(metadata: unknown): ReeditPermission {
  *
  * **The inverse of `permissionOf`, and it lives here so the two cannot drift apart.** The
  * lock and the permission were two mechanisms for one idea: `permissionOf` already
- * translated `immutable_lock: true` to `"sellado"`, but when WRITING each side decided
+ * translated `immutable_lock: true` to `"sealed"`, but when WRITING each side decided
  * on its own. The editor exported only the lock, with a label that also said something
  * else: «the JSON can no longer be modified after render», which is what the SIGNATURE
  * does, not this.
  *
  * Both fields are written, and that is not redundancy:
  *
- *   - `reedicion` travels INSIDE the file. It is the declaration: anyone who
+ *   - `reedit` travels INSIDE the file. It is the declaration: anyone who
  *     opens it knows what its author wanted, without asking anyone.
  *   - `immutable_lock` is what the backend stores in the registry. It is the
  *     enforcement: the only thing that can truly refuse to sign.
@@ -68,34 +70,41 @@ export function permissionOf(metadata: unknown): ReeditPermission {
  * declaration is a locked door with no sign.
  */
 export function permissionFields(permission: ReeditPermission): {
-  reedicion: ReeditPermission;
+  reedit: ReeditPermission;
   immutable_lock: boolean;
 } {
-  return { reedicion: permission, immutable_lock: permission === "sellado" };
+  return { reedit: permission, immutable_lock: permission === "sealed" };
 }
 
 export interface Verdict {
+  allowed: boolean;
+  /** @deprecated use allowed; removed in 2.0.0 */
   permitido: boolean;
   /** Why not, so the person can be told without guessing. */
-  reason?: "sellado" | "no_eres_el_autor";
+  reason?: "sealed" | "not_the_author";
+}
+
+/** Builds a verdict; `permitido` mirrors `allowed` until 2.0.0. */
+function verdict(allowed: boolean, reason?: Verdict["reason"]): Verdict {
+  return reason ? { allowed, permitido: allowed, reason } : { allowed, permitido: allowed };
 }
 
 /**
  * Can this person re-edit this document?
  *
  * `isAuthor` is `null` when it is not known (no session, or the registry was never
- * asked). In that case it is NOT granted: only the `publico` permission resolves
+ * asked). In that case it is NOT granted: only the `public` permission resolves
  * without knowing who you are, which is exactly what makes it useful for a library.
  */
 export function canReedit(
   permission: ReeditPermission,
   isAuthor: boolean | null
 ): Verdict {
-  if (permission === "sellado") return { permitido: false, reason: "sellado" };
-  if (permission === "publico") return { permitido: true };
+  if (permission === "sealed") return verdict(false, "sealed");
+  if (permission === "public") return verdict(true);
   return isAuthor === true
-    ? { permitido: true }
-    : { permitido: false, reason: "no_eres_el_autor" };
+    ? verdict(true)
+    : verdict(false, "not_the_author");
 }
 
 /**
@@ -104,9 +113,9 @@ export function canReedit(
  * Only when the answer is certain. It is a different question from `canReedit`, and
  * confusing them breaks the most common case:
  *
- * - `sellado` → yes, nobody can, and that is known by reading the file.
- * - `publico` → no, anyone can.
- * - `solo_autor` → **NOT rejected here**, unless it is known for certain that you are
+ * - `sealed` → yes, nobody can, and that is known by reading the file.
+ * - `public` → no, anyone can.
+ * - `author_only` → **NOT rejected here**, unless it is known for certain that you are
  *   not the author. And that is almost never known: the backend deletes
  *   `creator_user_id` from the canonical before signing (it is personal data), so a
  *   `.oim` does not carry within it who made it. The authoritative answer lives
@@ -119,11 +128,11 @@ export function mustRejectWithoutAsking(
   permission: ReeditPermission,
   isAuthor: boolean | null
 ): Verdict {
-  if (permission === "sellado") return { permitido: false, reason: "sellado" };
-  if (permission === "solo_autor" && isAuthor === false) {
-    return { permitido: false, reason: "no_eres_el_autor" };
+  if (permission === "sealed") return verdict(false, "sealed");
+  if (permission === "author_only" && isAuthor === false) {
+    return verdict(false, "not_the_author");
   }
-  return { permitido: true };
+  return verdict(true);
 }
 
 /**
@@ -136,7 +145,7 @@ export function mustRejectWithoutAsking(
  * nobody can claim it by that route.
  */
 export function registryQuery(permission: ReeditPermission): boolean {
-  return permission !== "publico";
+  return permission !== "public";
 }
 
 /**
@@ -148,6 +157,6 @@ export function registryQuery(permission: ReeditPermission): boolean {
  * —it is what public means— but the seal has to say so,
  * or it stops meaning anything.
  */
-export function signatureStamp(permission: ReeditPermission): "verified" | "verified_sin_autoria" {
-  return permission === "publico" ? "verified_sin_autoria" : "verified";
+export function signatureStamp(permission: ReeditPermission): "verified" | "verified_authorless" {
+  return permission === "public" ? "verified_authorless" : "verified";
 }

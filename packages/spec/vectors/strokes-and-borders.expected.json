@@ -1,5 +1,5 @@
 {
-  "description": "Contorno vectorial y bordes con estilo dashed y ancho personalizado.",
+  "description": "Vector outline and borders with a dashed style and a custom width.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

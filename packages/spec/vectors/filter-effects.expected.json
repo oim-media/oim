@@ -1,5 +1,5 @@
 {
-  "description": "Filtros visuales CSS: desenfoque, brillo, contraste, saturación y rotación de tono.",
+  "description": "CSS visual filters: blur, brightness, contrast, saturation and hue rotation.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

@@ -266,7 +266,7 @@ import { MAX_SLOTS } from '../../../core/src/limits.js';
  */
 export type SecurityStatus =
   | 'verified'
-  | 'verified_sin_autoria'
+  | 'verified_authorless'
   | 'image_unsealed'
   | 'unsigned'
   | 'expired_key'

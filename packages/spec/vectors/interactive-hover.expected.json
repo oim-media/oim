@@ -1,5 +1,5 @@
 {
-  "description": "Interactividad de puntero: escala y rotación dinámica al hacer hover.",
+  "description": "Pointer interactivity: scale and rotation on hover.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

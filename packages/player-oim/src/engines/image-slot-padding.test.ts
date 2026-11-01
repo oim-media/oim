@@ -67,7 +67,7 @@ describe("an image slot", () => {
   it("its parallax track starts at its left edge", async () => {
     const parallax = { enabled: true, depth: 1, mode: "infinite_horizontal", axis: "x_only", infinite: { enabled: true, speedPxSec: 20, direction: "right_to_left", seamlessTile: false, pauseOnHover: false } };
     const el = await slot([image({ parallax })], "img");
-    const track = el.querySelector(".oim-parallax-pista") as HTMLElement;
+    const track = el.querySelector(".oim-parallax-track") as HTMLElement;
     expect(track).not.toBeNull();
     expect(track.style.getPropertyValue("align-self")).toBe("flex-start");
     expect(el.style.getPropertyValue("--oim-tx")).toBe("0%");

@@ -1,5 +1,5 @@
 {
-  "description": "Acciones interactivas múltiples y encadenadas al activar capa.",
+  "description": "Several interactive actions chained when a layer is activated.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

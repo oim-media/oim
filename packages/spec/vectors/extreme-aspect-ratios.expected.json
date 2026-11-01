@@ -1,5 +1,5 @@
 {
-  "description": "Lienzo ultra-ancho panorámico probando consistencia del contenedor.",
+  "description": "Ultra-wide panoramic canvas testing container consistency.",
   "canvas": {
     "natural_height": 400,
     "natural_width": 1600

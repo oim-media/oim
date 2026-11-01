@@ -1,4 +1,6 @@
 import { OIMRegistry } from '../render/registry.js';
+import { setFlag } from '../render/attrs.js';
+import { playerString } from '../render/strings.js';
 import { getDeviceProfile, type DeviceProfile } from '../render/device-tier.js';
 import { fileCache, type VerifyResult, type VerifiedFile } from '../render/file-cache.js';
 import { injectStyles } from '../render/styles.js';
@@ -48,7 +50,7 @@ import { frameSilhouette } from '../../../core/src/frame-silhouette.js';
 import { mediaFilterCss } from '../../../core/src/media-filters.js';
 import { buildSvgNoiseFilter, buildLayerGrainFilter, GRAIN_LAYER_TYPES } from '../../../core/src/generative/proceduralNoise.js';
 import { TEXTURE_CATALOG, type TexturePreset } from '../../../core/src/effects/index.js';
-import { infiniteLayerPlan, TRACK_CLASS, ensureParallaxKeyframes, type InfiniteLayer } from '../../../core/src/parallaxCss.js';
+import { infiniteLayerPlan, TRACK_CLASS, LEGACY_TRACK_CLASS, ensureParallaxKeyframes, type InfiniteLayer } from '../../../core/src/parallaxCss.js';
 import { localizedEntries, isImageContent, compareLangs } from '../render/localizedEntries.js';
 import { a11yNodes, artworkLabel } from '../render/a11y.js';
 import { dropShadowCss, shadowColorCss, shadowFollowsGlyphs } from '../render/shadow.js';
@@ -802,7 +804,7 @@ export class ImageEngine {
           shadow.innerHTML = '<div class="oim-player-error oim-player-refused" part="error"></div>';
           injectStyles(shadow);
           const box = shadow.querySelector('.oim-player-error') as HTMLElement | null;
-          if (box) box.textContent = 'Archivo alterado: no coincide con su firma. OIM no lo muestra.';
+          if (box) box.textContent = playerString('tampered', self.lang);
         }
         host.dispatchEvent(new CustomEvent('error', { detail: err }));
         throw err;
@@ -812,7 +814,7 @@ export class ImageEngine {
       shadow.innerHTML = '<div class="oim-player-error" part="error"></div>';
       const errorDiv = shadow.querySelector('.oim-player-error') as HTMLElement;
       if (errorDiv) {
-        errorDiv.textContent = 'Error cargando OIM: ' + err.message;
+        errorDiv.textContent = playerString('loadError', this.lang) + err.message;
       }
       host.dispatchEvent(new CustomEvent('error', { detail: err }));
       return false;
@@ -915,11 +917,11 @@ export class ImageEngine {
     // that it is the original file.
     this.securityStatus = v.security;
     if (this.securityStatus === 'unsigned') {
-      try { this.host.setAttribute('data-oim-sin-firma', ''); } catch (e) {}
+      try { setFlag(this.host, 'data-oim-unsigned', 'data-oim-sin-firma'); } catch (e) {}
       console.warn('[OimPlayer] Unsigned file: painting the base image only. Interactive layers need a signature.');
     }
     if (this.securityStatus === 'expired_key') {
-      try { this.host.setAttribute('data-oim-clave-retirada', ''); } catch (e) {}
+      try { setFlag(this.host, 'data-oim-key-retired', 'data-oim-clave-retirada'); } catch (e) {}
       console.warn('[OimPlayer] This work was signed with a retired key. Ask the author to export it again.');
     }
     if (v.announce) {
@@ -997,20 +999,20 @@ export class ImageEngine {
     } catch (e) {
       return; // Warning about an incompatibility must never be what breaks anything.
     }
-    if (!missing.hayAlgoQueDecir) return;
+    if (!missing.hasNotice) return;
 
     const message = describeMissing(missing);
     try { console.warn('[OimPlayer] ' + message); } catch (e) { /* consola ajena */ }
 
     try {
       if (missing.missingCapabilities && missing.missingCapabilities.length > 0) {
-        this.host.setAttribute('data-oim-sin-soporte', missing.missingCapabilities.join(' '));
+        setFlag(this.host, 'data-oim-unsupported', 'data-oim-sin-soporte', missing.missingCapabilities.join(' '));
       }
       if (missing.missingRequiredCapabilities && missing.missingRequiredCapabilities.length > 0) {
-        this.host.setAttribute('data-oim-requeridas-faltantes', missing.missingRequiredCapabilities.join(' '));
+        setFlag(this.host, 'data-oim-missing-required', 'data-oim-requeridas-faltantes', missing.missingRequiredCapabilities.join(' '));
       }
       if (missing.versionTooOld && missing.requiredVersion) {
-        this.host.setAttribute('data-oim-version-exigida', missing.requiredVersion);
+        setFlag(this.host, 'data-oim-required-version', 'data-oim-version-exigida', missing.requiredVersion);
       }
       this.host.dispatchEvent(new CustomEvent('oim:incomplete', {
         bubbles: true, composed: true,
@@ -1833,7 +1835,7 @@ export class ImageEngine {
           ensureParallaxKeyframes(self.host.shadowRoot);
 
           const track = document.createElement('div');
-          track.className = TRACK_CLASS;
+          track.className = `${TRACK_CLASS} ${LEGACY_TRACK_CLASS}`;
           for (const [k, v] of Object.entries(plan.container)) {
             track.style.setProperty(k, v);
           }
@@ -2143,7 +2145,7 @@ export class ImageEngine {
 
         // An open stroke (the line or freehand drawing) with fill becomes a bar.
         // A custom svgPath keeps its colour fill off (as before); only a photo may fill it.
-        const fillable = drawing && (drawing.tipo === 'polygon' || drawing.rellenable);
+        const fillable = drawing && (drawing.kind === 'polygon' || drawing.fillable);
         const resolvedSvgFill = resolveCssColor(style.fillColorRole, style.fillColor);
         const imageFill = (!drawing || !!fillable) && imageSrcSafe;
         figure.setAttribute(
@@ -2153,7 +2155,7 @@ export class ImageEngine {
         // The doodle is the only shape to which the editor gives stroke fallbacks:
         // without thickness it paints 2, and without a stroke colour it uses the fill colour.
         // These must be replicated, because being an open stroke it carries no fill
-        // (`rellenable: false`) and without a stroke nothing is left to see: the doodle
+        // (`fillable: false`) and without a stroke nothing is left to see: the doodle
         // was visible in the editor and published invisible. The line, by contrast,
         // uses `strokeWidth ?? 0` in the editor, so it is left as it was.
         const isScribble = style.geoShape === 'scribble';
@@ -2671,7 +2673,7 @@ export class ImageEngine {
         // children hung from `slotEl` they would be SIBLINGS of the animation instead of inside it,
         // and animating a group would move an empty wrapper
         // and leave them still.
-        loopWrap.dataset.oimGrupo = String(slot.id);
+        setFlag(loopWrap, 'data-oim-group', 'data-oim-grupo', String(slot.id));
         // And it has to rotate around the center of the GROUP.
         // `.oim-slot-loop-wrap` carries `center center`, which on a wrapper of the canvas size is
         // the center of the CANVAS: rotating from there would send the group
@@ -3066,7 +3068,7 @@ export class ImageEngine {
           // anything else hanging from an element (svg, lottie wrappers) belongs to it
           // and is already rebuilt.
           // 
-          const inside = previous.querySelectorAll('[data-oim-grupo] > [data-slot-id], :scope > [data-slot-id]');
+          const inside = previous.querySelectorAll('[data-oim-group] > [data-slot-id], :scope > [data-slot-id]');
           for (let i = 0; i < inside.length; i++) {
             res.slotEl.appendChild(inside[i]);
           }
@@ -3113,8 +3115,8 @@ export class ImageEngine {
         // in a group would reposition it without anyone asking.
         if (!groupSlot || inZone(groupSlot)) return;
         // Inside the container that ANIMATES, not the slot: see the comment on
-        // `data-oim-grupo` above.
-        const groupEl = groupSlot.querySelector('[data-oim-grupo="' + groupId + '"]') || groupSlot;
+        // `data-oim-group` above.
+        const groupEl = groupSlot.querySelector('[data-oim-group="' + groupId + '"]') || groupSlot;
         childIds.forEach(function (childId: string) {
           const childEl = layer.querySelector('[data-slot-id="' + childId + '"]');
           if (!childEl || inZone(childEl)) return;

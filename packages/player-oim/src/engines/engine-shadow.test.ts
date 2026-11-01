@@ -167,7 +167,7 @@ describe("the seal depends on whether the file has authorship", () => {
 
   it("a public one asks for its own seal", async () => {
     const { permissionOf, signatureStamp } = await import("../../../core/src/reeditPermission.js");
-    expect(signatureStamp(permissionOf({ reedicion: "publico" }))).toBe("verified_sin_autoria");
+    expect(signatureStamp(permissionOf({ reedicion: "publico" }))).toBe("verified_authorless");
   });
 
   it("and a strange value does NOT get the public seal", async () => {

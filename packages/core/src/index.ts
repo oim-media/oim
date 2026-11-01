@@ -30,6 +30,8 @@ export * from "./geoShapes.js";
 export * from "./frame-silhouette.js";
 export * from "./parallaxCss.js";
 export * from "./reeditPermission.js";
+// `./legacyKeys.js`: reads the Spanish keys of files signed before 1.23.0 as English.
+export * from "./legacyKeys.js";
 export * from "./oversize.js";
 // The fill and pattern engine. `fill.ts` was duplicated with a
 // REAL divergence: the editor inferred the type from the colour and the player did not,

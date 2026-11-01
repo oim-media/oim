@@ -86,29 +86,29 @@ export function renderGenerativeSVG(config: GenerativeConfig, canvas: CanvasDime
     .map((layer) => {
       const resolvedParams = { ...layer.fixed, ...baseParams };
       const primitiveFn = PRIMITIVE_MAP[layer.primitive];
-      const marcas = primitiveFn(resolvedParams, ctx);
+      const marks = primitiveFn(resolvedParams, ctx);
 
-      const estilos = [
+      const styles = [
         layer.blend && layer.blend !== "normal" ? `mix-blend-mode:${layer.blend}` : null,
-        layer.opacidad !== undefined && layer.opacidad !== 1 ? `opacity:${layer.opacidad}` : null
+        layer.opacity !== undefined && layer.opacity !== 1 ? `opacity:${layer.opacity}` : null
       ]
         .filter(Boolean)
         .join(";");
 
       // Without styles or blur the layer is not wrapped: a single-layer generator produces
       // the same SVG as before, byte for byte.
-      if (!estilos && !layer.desenfoque) return marcas;
+      if (!styles && !layer.blur) return marks;
 
-      const filtro = layer.desenfoque ? ` filter="url(#${ctx.defs.registerBlur(layer.desenfoque)})"` : "";
-      const styleAttr = estilos ? ` style="${estilos}"` : "";
-      return `<g${styleAttr}${filtro}>${marcas}</g>`;
+      const filterAttr = layer.blur ? ` filter="url(#${ctx.defs.registerBlur(layer.blur)})"` : "";
+      const styleAttr = styles ? ` style="${styles}"` : "";
+      return `<g${styleAttr}${filterAttr}>${marks}</g>`;
     })
     .join("");
 
   // 4. Tiled grain, 128px
-  if (spec.grano && spec.grano.intensidad > 0) {
-    const grainPatternId = defs.registerGrain(spec.grano.intensidad);
-    contentMarkup += `<rect width="100%" height="100%" fill="url(#${grainPatternId})" opacity="${spec.grano.intensidad}"/>`;
+  if (spec.grain && spec.grain.intensity > 0) {
+    const grainPatternId = defs.registerGrain(spec.grain.intensity);
+    contentMarkup += `<rect width="100%" height="100%" fill="url(#${grainPatternId})" opacity="${spec.grain.intensity}"/>`;
   }
 
   // 5. Assemble the SVG document with a dynamic viewBox

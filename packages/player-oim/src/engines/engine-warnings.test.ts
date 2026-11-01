@@ -63,6 +63,7 @@ describe("when the file asks for something this player does not have", () => {
     const { host, motor } = mount();
     motor._announceUnsupported({ min_player: "9.0.0" });
     expect(host.getAttribute("data-oim-version-exigida")).toBe("9.0.0");
+    expect(host.getAttribute("data-oim-required-version")).toBe("9.0.0");
     expect(host.getAttribute("data-oim-sin-soporte")).toBeNull();
     expect(host.getAttribute("data-oim-requeridas-faltantes")).toBeNull();
   });
@@ -80,6 +81,7 @@ describe("when the file asks for something this player does not have", () => {
     });
 
     expect(host.getAttribute("data-oim-requeridas-faltantes")).toBe("physics_2d");
+    expect(host.getAttribute("data-oim-missing-required")).toBe("physics_2d");
     expect(host.getAttribute("data-oim-sin-soporte")).toBeNull();
     expect(incompleteEvent).not.toBeNull();
     expect(unsupportedEvent?.cannotRender).toBe(true);

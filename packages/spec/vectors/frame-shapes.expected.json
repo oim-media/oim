@@ -1,5 +1,5 @@
 {
-  "description": "Formas de marco (contrato 1.19.0): una nube con foto, un trazado SVG propio con foto (viewBox 24) y una estrella con la foto volteada.",
+  "description": "Frame shapes (contract 1.19.0): a cloud with a photo, a custom SVG path with a photo (viewBox 24) and a star with a flipped photo.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

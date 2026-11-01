@@ -774,9 +774,12 @@ export const OimMetadataSchema = z.object({
   // Who may re-edit the work. It travels INSIDE the file: whoever opens it
   // knows what its author wanted without asking anyone. `immutable_lock` is
   // the enforcement side and the two are written together
-  // (`permissionFields`). An unknown value falls back to `solo_autor`, never
-  // to `publico` -- see reeditPermission.ts, which is canonical.
-  reedicion: z.enum(["publico", "solo_autor", "sellado"]).optional(),
+  // (`permissionFields`). An unknown value falls back to `author_only`, never
+  // to `public` -- see reeditPermission.ts, which is canonical.
+  reedit: z.enum(["public", "author_only", "sealed"]).optional(),
+  // Contract 1.23.0 renamed `reedicion` to `reedit`. Read-only for legacy signed
+  // files: writers emit `reedit` only; readers map this key with normalizeLegacyKeys.
+  reedicion: z.enum(["publico", "solo_autor", "sellado"]).meta({ deprecated: true, description: "Renamed to `reedit` in 1.23.0. Read forever as a legacy alias; never written." }).optional(),
   // The title of the work. Every published file carries it at the root and
   // the contract did not declare it, so a reader built from the contract
   // alone would not know to look for it. Not to be confused with `slot.name`

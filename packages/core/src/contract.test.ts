@@ -291,6 +291,11 @@ describe("1.4.0 closes the drift and marks what was retired", () => {
     expect(s.properties.reedicion.enum).toEqual(["publico", "solo_autor", "sellado"]);
   });
 
+  it("the root declares `reedit`, with its English values (contract 1.23.0)", () => {
+    const s = contractOf(OimMetadataSchema, "oim", "x") as any;
+    expect(s.properties.reedit.enum).toEqual(["public", "author_only", "sealed"]);
+  });
+
   it("the root declares `name`", () => {
     const s = contractOf(OimMetadataSchema, "oim", "x") as any;
     expect(s.properties.name).toBeDefined();
@@ -346,8 +351,8 @@ describe("1.12.0 marks what nobody uses, without deleting it (audit of 10 Oct)",
   };
 
   // 1.21.0 added colour roles in patterns and backgrounds; 1.22.0 added reveal, trigger and play.
-  it("the contract declares 1.22.2", () => {
-    expect(CONTRACT_VERSION).toBe("1.22.2");
+  it("the contract declares 1.23.0", () => {
+    expect(CONTRACT_VERSION).toBe("1.23.0");
   });
 
   // A repeated definition goes to $defs and the property keeps a $ref.

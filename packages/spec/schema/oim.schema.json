@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://oim.media/spec/1.22.2/oim.schema.json",
+  "$id": "https://oim.media/spec/1.23.0/oim.schema.json",
   "title": "OIM document metadata",
-  "specVersion": "1.22.2",
+  "specVersion": "1.23.0",
   "type": "object",
   "properties": {
     "description": {
@@ -50,13 +50,23 @@
     "immutable_lock": {
       "type": "boolean"
     },
+    "reedit": {
+      "type": "string",
+      "enum": [
+        "public",
+        "author_only",
+        "sealed"
+      ]
+    },
     "reedicion": {
       "type": "string",
       "enum": [
         "publico",
         "solo_autor",
         "sellado"
-      ]
+      ],
+      "deprecated": true,
+      "description": "Renamed to `reedit` in 1.23.0. Read forever as a legacy alias; never written."
     },
     "name": {
       "type": "string",

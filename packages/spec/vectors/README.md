@@ -37,6 +37,7 @@ exhaustively covers every dimension of the format:
 | 18 | `transparent-background` | Strictly transparent background (`fillColor: "transparent"`) under the normative colour rule |
 | 19 | `layer-ordering-zindex` | Strict stacking sequence with slots overlapping at identical coordinates |
 | 20 | `full-monty-composite` | Comprehensive master document combining multilingual content, active/hover interactivity, groups, parallax and shadows |
+| 21 | `reedit-english` | Unsigned (`"signed": false`). The permission to re-edit the work in English: `reedit: "public"` (contract 1.23.0). Checks the key, not authorship |
 
 ## How to use it from another language
 
@@ -53,7 +54,10 @@ without a look, which is a vector that no longer checks anything.
 
 ## The signature
 
-The 20 vectors are signed with the public key published in `packages/spec/keys.json`. The signature covers the canonical serialisation
+The 20 vectors are signed with the public key published in `packages/spec/keys.json`.
+`reedit-english` is not: the signing service could not produce it, so its
+`expected.json` says `"signed": false` and the test does not require a signature
+from it. It checks the English key and the result, never who the author is. The signature covers the canonical serialisation
 of the metadata and the cryptographic hash of the pixels (`image_hash` over the `IDAT` chunks).
 A reader that verifies must rebuild that canonical form following the seven rules
 specified in the `README.md` at the root of `packages/spec`; one that only reads the format

@@ -1,5 +1,5 @@
 {
-  "description": "Grano por capa (contrato 1.10.0): intensidad, tamaño y mezcla en el estilo de un texto y de una forma.",
+  "description": "Per-layer grain (contract 1.10.0): intensity, size and blend on the style of a text and of a shape.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

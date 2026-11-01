@@ -10,6 +10,7 @@
 
 import { resolveByLang, resolveContent } from "./localizedEntries.js";
 import { plainOf } from "./marked-text.js";
+import { playerString } from "./strings.js";
 
 export type A11yNode =
   | { type: "text"; lang: string; text: string }
@@ -52,7 +53,7 @@ export function a11yNodes(slots: Slot[], lang: string, principal: string, action
       || (s.interaction && s.interaction.action_type === "toggle_elements"));
     let node: A11yNode | null = null;
     if (interactive) {
-      node = { type: "button", label: text || alt || (lang.startsWith("es") ? "Botón" : "Button"), slotId: String(s.id) };
+      node = { type: "button", label: text || alt || playerString("button", lang), slotId: String(s.id) };
     } else if (text && style.decorative !== true) {
       node = { type: "text", lang, text };
     } else if (alt) {
@@ -71,5 +72,5 @@ export function artworkLabel(meta: { description?: Record<string, string> }, nod
   if (typeof d === "string" && d.trim()) return d.trim();
   const t = nodes.find((n) => n.type === "text");
   if (t && t.type === "text") return t.text;
-  return lang.startsWith("es") ? "Imagen" : "Image";
+  return playerString("image", lang);
 }

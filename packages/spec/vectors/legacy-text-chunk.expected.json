@@ -1,5 +1,5 @@
 {
-  "description": "El mismo documento que basic-text en el contenedor antiguo: chunk tEXt con base64 de deflate crudo. Un lector conforme lo sigue leyendo.",
+  "description": "The same document as basic-text in the old container: a tEXt chunk with base64 of raw deflate. A conforming reader keeps reading it.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

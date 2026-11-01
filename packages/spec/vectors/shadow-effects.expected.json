@@ -1,5 +1,5 @@
 {
-  "description": "Capa con sombra configurada con color, difuminado, offset y opacidad.",
+  "description": "A layer with a shadow set by colour, blur, offset and opacity.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

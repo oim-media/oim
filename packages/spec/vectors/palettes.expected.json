@@ -1,5 +1,5 @@
 {
-  "description": "Paletas con nombre (contrato 1.20.0): dark y light, defaultPalette=dark, una capa de texto con text-primary y una superficie con surface.",
+  "description": "Named palettes (contract 1.20.0): dark and light, defaultPalette=dark, a text layer with text-primary and a surface with surface.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

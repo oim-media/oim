@@ -183,9 +183,9 @@ export const GENERATOR_CATALOG: GeneratorSpec[] = [
     id: "luz-difusa",
     layers: [
       { primitive: "gradient", fixed: { kind: "linear" } },
-      { primitive: "radial", fixed: { kind: "radial" }, blend: "screen", opacidad: 0.8, desenfoque: 20 }
+      { primitive: "radial", fixed: { kind: "radial" }, blend: "screen", opacity: 0.8, blur: 20 }
     ],
-    grano: { intensidad: 0.15 },
+    grain: { intensity: 0.15 },
     schema: [
       { key: "angle", kind: "range", group: "SHAPE", label: { es: "Ángulo Base", en: "Base Angle" }, min: 0, max: 360, step: 15, default: 135 },
       { key: "softness", kind: "range", group: "SHAPE", label: { es: "Difusión", en: "Diffusion" }, min: 0.1, max: 1, step: 0.05, default: 0.8 }
@@ -195,7 +195,7 @@ export const GENERATOR_CATALOG: GeneratorSpec[] = [
     id: "malla-suave",
     layers: [
       { primitive: "mesh", fixed: { borderWidth: 0 } },
-      { primitive: "radial", fixed: { kind: "radial" }, blend: "soft-light", opacidad: 0.7 }
+      { primitive: "radial", fixed: { kind: "radial" }, blend: "soft-light", opacity: 0.7 }
     ],
     schema: [
       { key: "resolution", kind: "range", group: "SHAPE", label: { es: "Resolución Malla", en: "Mesh Resolution" }, min: 3, max: 12, step: 1, default: 6 },
@@ -212,9 +212,9 @@ export const GENERATOR_CATALOG: GeneratorSpec[] = [
     id: "reticula",
     layers: [
       { primitive: "gradient", fixed: { kind: "linear" } },
-      { primitive: "iso-grid", fixed: { hollow: true }, blend: "screen", opacidad: 0.85 }
+      { primitive: "iso-grid", fixed: { hollow: true }, blend: "screen", opacity: 0.85 }
     ],
-    grano: { intensidad: 0.18 },
+    grain: { intensity: 0.18 },
     schema: [
       { key: "cols", kind: "range", group: "SHAPE", label: { es: "Densidad Rejilla", en: "Grid Density" }, min: 4, max: 24, step: 1, default: 10 },
       { key: "angle", kind: "range", group: "SHAPE", label: { es: "Inclinación Luz", en: "Light Angle" }, min: 0, max: 360, step: 15, default: 120 }
@@ -224,9 +224,9 @@ export const GENERATOR_CATALOG: GeneratorSpec[] = [
     id: "polvo",
     layers: [
       { primitive: "gradient", fixed: { kind: "radial" } },
-      { primitive: "scatter", fixed: { element: "circle" }, blend: "lighten", opacidad: 0.65 }
+      { primitive: "scatter", fixed: { element: "circle" }, blend: "lighten", opacity: 0.65 }
     ],
-    grano: { intensidad: 0.28 },
+    grain: { intensity: 0.28 },
     schema: [
       { key: "count", kind: "range", group: "VARIANTS", label: { es: "Partículas", en: "Particles" }, min: 10, max: 80, step: 5, default: 35 },
       { key: "sizeMin", kind: "range", group: "SHAPE", label: { es: "Tamaño Mín", en: "Min Size" }, min: 2, max: 20, step: 1, default: 4 },

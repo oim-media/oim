@@ -28,19 +28,19 @@ const inspect = (metadata: any) => whatTheReaderCannotDo(metadata, reader);
 
 describe("when there is nothing to report", () => {
   it("a file without min_player requires nothing", () => {
-    expect(inspect({ slots: [] }).hayAlgoQueDecir).toBe(false);
+    expect(inspect({ slots: [] }).hasNotice).toBe(false);
   });
 
   it("an older version is read without noise", () => {
-    expect(inspect({ min_player: "1.0.0" }).hayAlgoQueDecir).toBe(false);
+    expect(inspect({ min_player: "1.0.0" }).hasNotice).toBe(false);
   });
 
   it("the exact version does not either", () => {
-    expect(inspect({ min_player: "1.2.0" }).hayAlgoQueDecir).toBe(false);
+    expect(inspect({ min_player: "1.2.0" }).hasNotice).toBe(false);
   });
 
   it("a capability that is implemented is not mentioned", () => {
-    expect(inspect({ capabilities: ["vector_parallax"] }).hayAlgoQueDecir).toBe(false);
+    expect(inspect({ capabilities: ["vector_parallax"] }).hasNotice).toBe(false);
   });
 
   /**
@@ -50,14 +50,14 @@ describe("when there is nothing to report", () => {
   it.each(["", "1.2", "proxima", "v2.0.0", 3, null, {}])(
     "an unreadable min_player (%p) does not invent a warning",
     (v) => {
-      expect(inspect({ min_player: v }).hayAlgoQueDecir).toBe(false);
+      expect(inspect({ min_player: v }).hasNotice).toBe(false);
     },
   );
 
   it("aguanta metadatos rotos", () => {
-    expect(inspect(null).hayAlgoQueDecir).toBe(false);
-    expect(inspect({ capabilities: "vector_parallax" }).hayAlgoQueDecir).toBe(false);
-    expect(inspect({ capabilities: [null, 7, ""] }).hayAlgoQueDecir).toBe(false);
+    expect(inspect(null).hasNotice).toBe(false);
+    expect(inspect({ capabilities: "vector_parallax" }).hasNotice).toBe(false);
+    expect(inspect({ capabilities: [null, 7, ""] }).hasNotice).toBe(false);
   });
 });
 
@@ -91,7 +91,7 @@ describe("when there is something to report", () => {
   it("the right version does not exempt from capabilities", () => {
     const f = inspect({ min_player: "1.0.0", capabilities: ["physics_2d"] });
     expect(f.versionTooOld).toBe(false);
-    expect(f.hayAlgoQueDecir).toBe(true);
+    expect(f.hasNotice).toBe(true);
     expect(f.cannotRender).toBe(false);
   });
 
@@ -99,7 +99,7 @@ describe("when there is something to report", () => {
     const f = inspect({ capabilities_required: ["vector_parallax"] });
     expect(f.missingRequiredCapabilities).toEqual([]);
     expect(f.cannotRender).toBe(false);
-    expect(f.hayAlgoQueDecir).toBe(false);
+    expect(f.hasNotice).toBe(false);
   });
 
   it("missing required capabilities set cannotRender and are listed separately", () => {
@@ -110,7 +110,7 @@ describe("when there is something to report", () => {
     expect(f.missingCapabilities).toEqual(["path_morph"]);
     expect(f.missingRequiredCapabilities).toEqual(["path_morph", "physics_2d"]);
     expect(f.cannotRender).toBe(true);
-    expect(f.hayAlgoQueDecir).toBe(true);
+    expect(f.hasNotice).toBe(true);
   });
 
   it("describeMissing warns precisely when required capabilities are missing", () => {
@@ -189,5 +189,13 @@ describe("minVersionFor", () => {
   it("aguanta metadatos rotos", () => {
     expect(minVersionFor(null)).toBe(BASE_CONTRACT_VERSION);
     expect(minVersionFor({ capabilities: "not a list" })).toBe(BASE_CONTRACT_VERSION);
+  });
+});
+
+describe("deprecated alias hayAlgoQueDecir", () => {
+  it("keeps the value of hasNotice until 2.0.0", () => {
+    const f = whatTheReaderCannotDo({ min_player: "9.0.0" }, reader);
+    expect(f.hasNotice).toBe(true);
+    expect(f.hayAlgoQueDecir).toBe(f.hasNotice);
   });
 });

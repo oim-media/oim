@@ -1,5 +1,5 @@
 {
-  "description": "Un boton con accion de clic, esquinas por lado y dos idiomas. Exportado desde el editor, no generado aqui.",
+  "description": "A button with a click action, per-side corners and two languages. Exported from the editor, not generated here.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

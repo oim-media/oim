@@ -1,5 +1,5 @@
 {
-  "description": "Jerarquía multinivel: grupo raíz conteniendo subgrupo con elementos hijos.",
+  "description": "Multi-level hierarchy: a root group containing a subgroup with child elements.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

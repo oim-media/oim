@@ -41,7 +41,7 @@ describe("securityVerdict", () => {
   });
 
   it("a public file that matches: signed without authorship", () => {
-    expect(securityVerdict({ ...base, metadata: sellado({ reedicion: "publico" }) })).toBe("verified_sin_autoria");
+    expect(securityVerdict({ ...base, metadata: sellado({ reedicion: "publico" }) })).toBe("verified_authorless");
   });
 
   it("the image does not match the seal: altered", () => {
@@ -86,7 +86,7 @@ describe("isRefused", () => {
   });
 
   it("the other states are still shown", () => {
-    for (const s of ["verified", "verified_sin_autoria", "image_unsealed", "unsigned"] as const) {
+    for (const s of ["verified", "verified_authorless", "image_unsealed", "unsigned"] as const) {
       expect(isRefused(s)).toBe(false);
     }
   });

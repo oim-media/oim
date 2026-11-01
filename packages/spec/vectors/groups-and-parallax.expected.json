@@ -1,5 +1,5 @@
 {
-  "description": "Un grupo con dos hijos y una capa con parallax. Cubre la jerarquia y la profundidad.",
+  "description": "A group with two children and a parallax layer. Covers hierarchy and depth.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

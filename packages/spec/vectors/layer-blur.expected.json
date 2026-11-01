@@ -1,5 +1,5 @@
 {
-  "description": "Desenfoque de capa: `layerBlur` en el estilo de un texto y de una forma.",
+  "description": "Layer blur: `layerBlur` on the style of a text and of a shape.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800

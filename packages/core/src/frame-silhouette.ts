@@ -57,8 +57,8 @@ export function frameSilhouette(style: FrameStyle): FrameSilhouette | null {
     if (!svgPath) return null;
     return { d: svgPath, viewBox: viewBox(style.svgViewBox) };
   }
-  if (drawing.tipo === "polygon") {
-    return { points: drawing.puntos.map(([x, y]) => `${x},${y}`).join(" "), viewBox: DEFAULT_VIEW_BOX };
+  if (drawing.kind === "polygon") {
+    return { points: drawing.points.map(([x, y]) => `${x},${y}`).join(" "), viewBox: DEFAULT_VIEW_BOX };
   }
   // The blob and the scribble take their own path; the blob also an svgPath.
   const isGenerative = style.geoShape === "blob" || style.geoShape === "scribble";

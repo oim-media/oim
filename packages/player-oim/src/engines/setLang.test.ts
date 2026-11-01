@@ -100,7 +100,7 @@ describe("the infinite parallax loop survives the language change", () => {
     motor.lang = "es";
     await motor.renderSlots();
 
-    const pistaAntes = host.shadowRoot!.querySelector(".oim-parallax-pista");
+    const pistaAntes = host.shadowRoot!.querySelector(".oim-parallax-track");
     expect(pistaAntes).toBeTruthy();
 
     motor.setLang("en");
@@ -108,7 +108,7 @@ describe("the infinite parallax loop survives the language change", () => {
 
     // The same node, not an equivalent one: a new node is a CSS animation that
     // starts again, which is exactly what was seen as a jump.
-    expect(host.shadowRoot!.querySelector(".oim-parallax-pista")).toBe(pistaAntes);
+    expect(host.shadowRoot!.querySelector(".oim-parallax-track")).toBe(pistaAntes);
     // And the title did change, so the test does not pass by doing nothing.
     expect(host.shadowRoot!.querySelector('[data-slot-id="titulo"]')!.textContent).toContain("Hello");
   });

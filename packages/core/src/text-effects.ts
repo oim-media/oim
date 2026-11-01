@@ -15,7 +15,6 @@
  * engine has cheap — plus, per effect, whether each unit sits behind a
  * rectangular clip of its own box (`entranceClips`). `blur-chars` is retired for that reason (per-letter blur is not
  * portable); the schema keeps it so old files still validate.
- * Spec: docs/superpowers/specs/2026-10-10-text-effects-design.md
  */
 
 export const ENTRANCE_EFFECTS = ["fade-chars", "slide-up", "bounce-chars", "reveal-mask", "scale-in", "rise-words"] as const;

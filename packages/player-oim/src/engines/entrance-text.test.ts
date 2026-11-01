@@ -9,7 +9,6 @@
 
 // Entrance text effects in the player: one span per unit, a CSS animation
 // sampled from @oim-media/core, paused by the host class like any CSS animation.
-// Spec: docs/superpowers/specs/2026-10-10-text-effects-design.md
 
 import { describe, it, expect } from "vitest";
 import { applyEntranceText, ensureEntranceKeyframes } from "./ImageEngine";

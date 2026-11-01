@@ -8,7 +8,6 @@
  * Text marks: the one interpretation of `{name}…{/name}` and `{{` / `}}`.
  * The cases live in packages/spec/marks-cases.json so the backend's Python
  * validator is tested against the very same inputs.
- * Spec: docs/superpowers/specs/2026-10-10-text-marks-design.md
  */
 
 import { describe, it, expect } from "vitest";

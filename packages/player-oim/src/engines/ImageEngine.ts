@@ -1020,14 +1020,16 @@ export class ImageEngine {
       if (missing.versionTooOld && missing.requiredVersion) {
         setFlag(this.host, 'data-oim-required-version', 'data-oim-version-exigida', missing.requiredVersion);
       }
+      // `mensaje` is the Spanish name, kept for existing embedders. Deprecated: removed in 2.0.0
+      // (same policy as the legacy data-oim-* attributes). Use `message`.
       this.host.dispatchEvent(new CustomEvent('oim:incomplete', {
         bubbles: true, composed: true,
-        detail: { mensaje: message, ...missing },
+        detail: { message, mensaje: message, ...missing },
       }));
       if (missing.cannotRender) {
         this.host.dispatchEvent(new CustomEvent('oim:unsupported', {
           bubbles: true, composed: true,
-          detail: { mensaje: message, ...missing },
+          detail: { message, mensaje: message, ...missing },
         }));
       }
     } catch (e) { /* a host that does not accept attributes must not break loading */ }

@@ -328,7 +328,7 @@ export const dropCapSchema = z.object({
  * that arrives from outside, not an attempt to reimplement the standard.
  */
 // Not exported: it is a building block of this schema, not part of the
-// package's public surface. `superficie-publicada.test.ts` guards that line.
+// package's public surface. `published-surface.test.ts` guards that line.
 const languageCodeSchema = z.string().max(10);
 
 export const styleSchema = z.object({

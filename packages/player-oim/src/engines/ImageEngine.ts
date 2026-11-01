@@ -628,11 +628,11 @@ export class ImageEngine {
     const viewport = this._viewport as HTMLElement | null;
     if (!viewport) return;
     const prefersDark = typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches;
-    const paleta = this.allowDynamicColors
+    const palette = this.allowDynamicColors
       ? resolvePalette(this.metadata ?? {}, { requested: this.host.getAttribute('palette'), prefersDark })
       : null;
     for (const role of DYNAMIC_COLOR_ROLES) {
-      const valor = paleta?.colors[role];
+      const valor = palette?.colors[role];
       if (valor) viewport.style.setProperty('--oim-palette-' + role, valor);
       else viewport.style.removeProperty('--oim-palette-' + role);
     }

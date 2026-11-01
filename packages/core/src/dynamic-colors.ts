@@ -165,8 +165,8 @@ export function resolveCssColor(
   const bruto = fallback != null && fallback !== "" ? String(fallback).trim() : undefined;
   const cleanFallback = bruto && isSafeCssColor(bruto) ? bruto : undefined;
   if (isValidDynamicColorRole(role)) {
-    const paleta = "var(--oim-palette-" + role + (cleanFallback ? ", " + cleanFallback : "") + ")";
-    return "var(--oim-color-" + role + ", " + paleta + ")";
+    const palette = "var(--oim-palette-" + role + (cleanFallback ? ", " + cleanFallback : "") + ")";
+    return "var(--oim-color-" + role + ", " + palette + ")";
   }
   return cleanFallback || "";
 }

@@ -27,7 +27,7 @@ const CABECERA = /^[A-Za-z0-9.%\s-]+$/;
 // to the tail, so `rgba(0, 0, 0, 0.5) 0%` splits at the right place.
 const PARADA = /^(.*?)((?:\s+-?\d*\.?\d+(?:%|px|deg|em|rem)?){0,2})$/;
 // A bare name (`red`) cannot request anything: only letters, no parenthesis.
-const NOMBRE_DE_COLOR = /^[A-Za-z]+$/;
+const COLOR_NAME = /^[A-Za-z]+$/;
 
 const MAX_GRADIENTE = 2048;
 
@@ -60,7 +60,7 @@ function esParada(parte: string): boolean {
   const m = PARADA.exec(parte);
   if (!m) return false;
   const color = m[1].trim();
-  return NOMBRE_DE_COLOR.test(color) || isSafeCssColor(color);
+  return COLOR_NAME.test(color) || isSafeCssColor(color);
 }
 
 export function isSafeCssGradient(valor: unknown): boolean {

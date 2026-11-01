@@ -7,7 +7,7 @@
 /**
  * That what gets packaged is what is in `src`, and nothing more.
  *
- * `superficie-publicada.test.ts` watches the EXPORTS of the source code.
+ * `published-surface.test.ts` watches the EXPORTS of the source code.
  * This watches the ARTIFACT, which is what really travels: `files: ["dist"]`
  * puts everything in that directory into the tarball, whether it was produced by
  * today's build or the one from three months ago. `tsc` deletes nothing when it recompiles.

@@ -30,12 +30,12 @@ const hijo = (id: string, groupId?: string) => ({
 
 
 describe('como se coloca el wrapper', () => {
-  const lienzo = { width: 800, height: 600 };
+  const canvas = { width: 800, height: 600 };
 
   it('cubre el lienzo entero y se ancla en su origen', () => {
     // The children carry CANVAS coordinates, not coordinates relative to the
     // group. If the wrapper stayed at the group's box, they would all end up misplaced.
-    const env = wrapperStyle({ x: 100, y: 50, width: 200, height: 100 }, lienzo);
+    const env = wrapperStyle({ x: 100, y: 50, width: 200, height: 100 }, canvas);
     expect(env.left).toBe('0px');
     expect(env.top).toBe('0px');
     expect(env.width).toBe('800px');
@@ -43,7 +43,7 @@ describe('como se coloca el wrapper', () => {
   });
 
   it('la transformada gira sobre el CENTRO DEL GRUPO, no del lienzo', () => {
-    const env = wrapperStyle({ x: 100, y: 50, width: 200, height: 100 }, lienzo);
+    const env = wrapperStyle({ x: 100, y: 50, width: 200, height: 100 }, canvas);
     expect(env.transformOrigin).toBe('200px 100px');
   });
 
@@ -51,12 +51,12 @@ describe('como se coloca el wrapper', () => {
     // Covers the full 800x600: without this, a 20x20 group would block any
     // interactive layer beneath it in the stack. The children reactivate it
     // themselves, because `.oim-slot` already declares `pointer-events: auto`.
-    expect(wrapperStyle({ x: 0, y: 0, width: 20, height: 20 }, lienzo).pointerEvents)
+    expect(wrapperStyle({ x: 0, y: 0, width: 20, height: 20 }, canvas).pointerEvents)
       .toBe('none');
   });
 
   it('un grupo sin size no produce NaN en el origen', () => {
-    const env = wrapperStyle({ x: 0, y: 0, width: 0, height: 0 }, lienzo);
+    const env = wrapperStyle({ x: 0, y: 0, width: 0, height: 0 }, canvas);
     expect(env.transformOrigin).toBe('0px 0px');
   });
 });

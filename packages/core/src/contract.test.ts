@@ -329,7 +329,7 @@ describe("1.4.0 cierra la deriva y marca lo retirado", () => {
   // Up to 1.6.0 the opposite was required here ("NOT marked: the player really
   // applies it"), because that was the case. In 1.7.0 the player stops applying
   // it (sandbox, a product decision) and the test changes with the fact:
-  // sandbox-sin-red.test.ts, in the player, pins that it is no longer applied.
+  // sandbox-no-network.test.ts, in the player, pins that it is no longer applied.
   it("`allowed_domains` va marcada desde 1.7.0: el player ya no la aplica", () => {
     const s = contrato(OimMetadataSchema, "oim", "x") as any;
     expect(s.properties.allowed_domains.deprecated).toBe(true);

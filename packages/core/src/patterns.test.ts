@@ -13,7 +13,7 @@ const base = { type: "stars", bgColor: "#0F172A", fgColor: "#38BDF8", scale: 1 }
 
 describe("fase B: cantidad y dispersion por figura", () => {
   it("sin listas por figura, la tesela es IDENTICA a la de antes", () => {
-    const antes = readFileSync(new URL("./__fixtures__/pattern-sin-listas.txt", import.meta.url), "utf8");
+    const antes = readFileSync(new URL("./__fixtures__/pattern-no-lists.txt", import.meta.url), "utf8");
     expect(generatePatternSVG({ ...base, colors: ["#38BDF8", "#EC4899"], svgs: ["stars", "heart"], sizes: [1, 1.5], count: 15, dispersion: 0.5 })).toBe(antes);
   });
 

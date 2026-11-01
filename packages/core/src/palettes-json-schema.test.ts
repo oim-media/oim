@@ -14,16 +14,16 @@ describe("palettes en oim.schema.json", () => {
   const json = JSON.parse(
     readFileSync(join(__dirname, "..", "..", "spec", "schema", "oim.schema.json"), "utf8"),
   );
-  const paleta = Object.values(json.$defs as Record<string, any>).find(
+  const palette = Object.values(json.$defs as Record<string, any>).find(
     (d) => d.propertyNames?.enum && d.additionalProperties?.maxLength === 128,
   );
 
   it("las claves de cada paleta son exactamente los doce roles", () => {
-    expect(paleta).toBeDefined();
-    expect([...paleta.propertyNames.enum].sort()).toEqual([...DYNAMIC_COLOR_ROLES].sort());
+    expect(palette).toBeDefined();
+    expect([...palette.propertyNames.enum].sort()).toEqual([...DYNAMIC_COLOR_ROLES].sort());
   });
 
   it("el valor de cada rol es una cadena de como mucho 128 caracteres", () => {
-    expect(paleta.additionalProperties).toEqual({ type: "string", maxLength: 128 });
+    expect(palette.additionalProperties).toEqual({ type: "string", maxLength: 128 });
   });
 });

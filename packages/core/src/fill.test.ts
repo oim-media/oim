@@ -293,8 +293,8 @@ describe("resolvePatternColors", () => {
       fillPatternBgColor: "#ffffff",
       fillPatternBgColorRole: "surface" as const,
     };
-    const paleta = { accent: "#ff0088", surface: "#000000" };
-    const resueltos = resolvePatternColors(shape, paleta);
+    const palette = { accent: "#ff0088", surface: "#000000" };
+    const resueltos = resolvePatternColors(shape, palette);
     expect(resueltos.fgColor).toBe("#ff0088");
     expect(resueltos.bgColor).toBe("#000000");
 

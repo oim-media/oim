@@ -44,6 +44,39 @@ fn read_oim_file(path: String) -> Result<Vec<u8>, String> {
 }
 
 #[tauri::command]
+async fn read_remote_oim_file(url: String) -> Result<Vec<u8>, String> {
+    if !url.starts_with("https://") && !url.starts_with("http://") {
+        return Err("Only HTTP/HTTPS URLs are allowed".into());
+    }
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
+
+    let res = client
+        .get(&url)
+        .send()
+        .await
+        .map_err(|e| format!("HTTP request failed: {e}"))?;
+
+    if !res.status().is_success() {
+        return Err(format!("Remote server returned HTTP {}", res.status()));
+    }
+
+    let bytes = res
+        .bytes()
+        .await
+        .map_err(|e| format!("Failed to read response body: {e}"))?;
+
+    if bytes.len() > 100 * 1024 * 1024 {
+        return Err("Remote file exceeds 100 MB limit".into());
+    }
+
+    Ok(bytes.to_vec())
+}
+
+
+#[tauri::command]
 async fn set_window_fullscreen(window: tauri::WebviewWindow, fullscreen: bool) -> Result<bool, String> {
     window
         .set_fullscreen(fullscreen)
@@ -93,6 +126,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             take_initial_file,
             read_oim_file,
+            read_remote_oim_file,
             set_window_fullscreen
         ])
         .run(tauri::generate_context!())

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { iconClose, iconSearch, iconSparkles } from "./icons.js";
+import { iconClose, iconSearch } from "./icons.js";
 import type { UiLang } from "./dropzone.js";
 import {
   type ShowcaseItem,
@@ -29,7 +29,7 @@ export class LibraryModal {
   private selectedCategory = "all";
   private searchQuery = "";
   private isLoading = true;
-  private isSelecting = false;
+  private activeLoadingId: string | null = null;
   private lastSeenDate: string | null = null;
 
   constructor(container: HTMLElement, handlers: LibraryModalHandlers, uiLang: UiLang = "es") {
@@ -58,13 +58,13 @@ export class LibraryModal {
     this.overlayEl.style.opacity = "0";
     const panel = this.overlayEl.querySelector("#library-dialog") as HTMLElement | null;
     if (panel) {
-      panel.style.transform = "scale(0.97) translateY(8px)";
+      panel.style.transform = "scale(0.98) translateY(6px)";
     }
     window.setTimeout(() => {
       this.overlayEl?.remove();
       this.overlayEl = null;
       this.handlers.onClose?.();
-    }, 180);
+    }, 150);
   }
 
   public isOpen(): boolean {
@@ -82,7 +82,6 @@ export class LibraryModal {
       this.isLoading = false;
       this.renderBody();
 
-      // Mark library as seen now that user has opened it
       if (items.length > 0) {
         this.client.markAsSeen(items[0].created_at);
       }
@@ -111,6 +110,11 @@ export class LibraryModal {
 
       return titleMatch || tagMatch || authorMatch;
     });
+
+    const countEl = this.overlayEl?.querySelector("#library-item-count");
+    if (countEl) {
+      countEl.textContent = `${this.filteredItems.length} ${this.t("obras", "items")}`;
+    }
   }
 
   private renderOverlay(): void {
@@ -119,7 +123,7 @@ export class LibraryModal {
     this.overlayEl.style.cssText = `
       position: fixed;
       inset: 0;
-      background: rgba(8, 8, 12, 0.82);
+      background: rgba(0, 0, 0, 0.76);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       z-index: 200;
@@ -128,145 +132,117 @@ export class LibraryModal {
       justify-content: center;
       padding: 24px;
       opacity: 0;
-      transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1);
       user-select: none;
     `;
 
     this.overlayEl.innerHTML = `
       <div id="library-dialog" role="dialog" aria-modal="true" style="
-        width: 100%;
+        width: 92vw;
         max-width: 960px;
-        height: 86vh;
-        max-height: 800px;
-        background: rgba(18, 18, 22, 0.94);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 16px;
-        box-shadow: 0 32px 80px -16px rgba(0, 0, 0, 0.85);
+        height: 84vh;
+        max-height: 740px;
+        background: #0f1013;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.85);
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        transform: scale(0.97) translateY(8px);
-        transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        transform: scale(0.98) translateY(6px);
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         color: #f4f4f5;
       ">
-        <!-- Header -->
+        <!-- Quiet Header -->
         <header style="
-          padding: 16px 20px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          padding: 14px 20px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 16px;
           flex-shrink: 0;
         ">
+          <div style="display: flex; align-items: baseline; gap: 8px;">
+            <h2 style="font-size: 14px; font-weight: 600; color: #f4f4f5; letter-spacing: -0.01em; margin: 0;">
+              ${this.t("Biblioteca Pública", "Public Library")}
+            </h2>
+            <span id="library-item-count" style="
+              font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+              font-size: 11px;
+              color: #71717a;
+            ">
+              ${this.items.length > 0 ? `${this.items.length} ${this.t("obras", "items")}` : ""}
+            </span>
+          </div>
+
           <div style="display: flex; align-items: center; gap: 10px;">
+            <!-- Live Search -->
             <div style="
-              width: 32px;
-              height: 32px;
-              border-radius: 10px;
-              background: rgba(255, 255, 255, 0.06);
-              border: 1px solid rgba(255, 255, 255, 0.1);
+              position: relative;
+              display: flex;
+              align-items: center;
+              width: 200px;
+            ">
+              <span style="
+                position: absolute;
+                left: 9px;
+                color: #71717a;
+                display: flex;
+                pointer-events: none;
+              ">${iconSearch}</span>
+              <input id="library-search-input" type="text" placeholder="${this.t("Buscar obra...", "Search artwork...")}" value="${this.searchQuery}" style="
+                width: 100%;
+                height: 30px;
+                padding: 0 10px 0 28px;
+                border-radius: 6px;
+                background: rgba(255, 255, 255, 0.04);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                color: #f4f4f5;
+                font-size: 12px;
+                outline: none;
+                transition: border-color 0.15s ease;
+              " />
+            </div>
+
+            <!-- Close Button -->
+            <button id="btn-close-modal" type="button" aria-label="Close" style="
+              width: 28px;
+              height: 28px;
+              border-radius: 6px;
+              background: transparent;
+              border: 1px solid transparent;
+              color: #a1a1aa;
               display: flex;
               align-items: center;
               justify-content: center;
-              color: #f59e0b;
+              cursor: pointer;
+              transition: color 0.15s ease, background 0.15s ease;
             ">
-              ${iconSparkles}
-            </div>
-            <div>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <h2 style="font-size: 15px; font-weight: 700; color: #ffffff; letter-spacing: -0.01em; margin: 0;">
-                  ${this.t("Biblioteca Pública OIM", "OIM Public Library")}
-                </h2>
-                <span style="
-                  font-size: 10px;
-                  font-weight: 700;
-                  padding: 2px 7px;
-                  border-radius: 9999px;
-                  background: rgba(34, 197, 94, 0.12);
-                  color: #4ade80;
-                  border: 1px solid rgba(34, 197, 94, 0.25);
-                ">
-                  ${this.t("Obras Verificadas", "Verified Artworks")}
-                </span>
-              </div>
-              <p style="font-size: 11px; color: #a1a1aa; margin: 2px 0 0 0;">
-                ${this.t(
-                  "Explora y reproduce imágenes interactivas en vivo (sin descarga local)",
-                  "Explore and run live interactive images in-memory (no local download)"
-                )}
-              </p>
-            </div>
+              ${iconClose}
+            </button>
           </div>
-
-          <button id="btn-close-modal" type="button" aria-label="Close" style="
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: #a1a1aa;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.15s ease;
-          ">
-            ${iconClose}
-          </button>
         </header>
 
-        <!-- Search & Filter Controls -->
+        <!-- Segmented Filter Bar -->
         <div style="
-          padding: 12px 20px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          padding: 10px 20px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          flex-wrap: wrap;
-          background: rgba(14, 14, 18, 0.4);
+          gap: 4px;
+          overflow-x: auto;
           flex-shrink: 0;
         ">
-          <!-- Category Chips -->
-          <div id="category-chips" style="display: flex; align-items: center; gap: 6px; overflow-x: auto;">
-            ${this.renderCategoryChips()}
-          </div>
-
-          <!-- Search Input -->
-          <div style="
-            position: relative;
-            display: flex;
-            align-items: center;
-            min-width: 220px;
-          ">
-            <span style="
-              position: absolute;
-              left: 10px;
-              color: #71717a;
-              display: flex;
-              pointer-events: none;
-            ">${iconSearch}</span>
-            <input id="library-search-input" type="text" placeholder="${this.t("Buscar por título o tag...", "Search title or tag...")}" value="${this.searchQuery}" style="
-              width: 100%;
-              padding: 6px 12px 6px 32px;
-              border-radius: 8px;
-              background: rgba(255, 255, 255, 0.05);
-              border: 1px solid rgba(255, 255, 255, 0.1);
-              color: #ffffff;
-              font-size: 12px;
-              outline: none;
-              transition: border-color 0.15s ease;
-            " />
-          </div>
+          ${this.renderCategoryChips()}
         </div>
 
-        <!-- Scrollable Cards Grid Container -->
+        <!-- Scrollable Artwork Grid Container -->
         <div id="library-dialog-body" style="
           flex: 1;
           overflow-y: auto;
           overflow-x: hidden;
-          padding: 20px;
+          padding: 16px 20px 24px 20px;
           display: flex;
           flex-direction: column;
         ">
@@ -276,7 +252,6 @@ export class LibraryModal {
 
     this.container.appendChild(this.overlayEl);
 
-    // Fade in
     requestAnimationFrame(() => {
       if (this.overlayEl) {
         this.overlayEl.style.opacity = "1";
@@ -287,15 +262,12 @@ export class LibraryModal {
       }
     });
 
-    // Close button
     this.overlayEl.querySelector("#btn-close-modal")?.addEventListener("click", () => this.close());
 
-    // Click outside backdrop
     this.overlayEl.addEventListener("click", (e) => {
       if (e.target === this.overlayEl) this.close();
     });
 
-    // Escape key
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && this.isOpen()) {
         this.close();
@@ -304,7 +276,6 @@ export class LibraryModal {
     };
     window.addEventListener("keydown", onKeyDown);
 
-    // Search input handler
     const searchInput = this.overlayEl.querySelector("#library-search-input") as HTMLInputElement | null;
     if (searchInput) {
       searchInput.addEventListener("input", (e) => {
@@ -314,7 +285,6 @@ export class LibraryModal {
       });
     }
 
-    // Category click handler
     this.wireCategoryClicks();
   }
 
@@ -335,12 +305,12 @@ export class LibraryModal {
             padding: 4px 10px;
             border-radius: 9999px;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: ${active ? "600" : "500"};
             cursor: pointer;
-            border: 1px solid ${active ? "#ffffff" : "rgba(255, 255, 255, 0.08)"};
-            background: ${active ? "#ffffff" : "rgba(255, 255, 255, 0.04)"};
-            color: ${active ? "#09090b" : "#d4d4d8"};
-            transition: all 0.15s ease;
+            border: 1px solid ${active ? "#ffffff" : "transparent"};
+            background: ${active ? "#ffffff" : "transparent"};
+            color: ${active ? "#09090b" : "#a1a1aa"};
+            transition: all 0.12s ease;
             white-space: nowrap;
           ">
             ${cat.label}
@@ -351,13 +321,15 @@ export class LibraryModal {
   }
 
   private wireCategoryClicks(): void {
-    const chipContainer = this.overlayEl?.querySelector("#category-chips");
-    if (!chipContainer) return;
-    chipContainer.querySelectorAll("button[data-cat]").forEach((btn) => {
+    const chipButtons = this.overlayEl?.querySelectorAll("button[data-cat]");
+    chipButtons?.forEach((btn) => {
       btn.addEventListener("click", () => {
         this.selectedCategory = btn.getAttribute("data-cat") || "all";
-        chipContainer.innerHTML = this.renderCategoryChips();
-        this.wireCategoryClicks();
+        const parent = btn.parentElement;
+        if (parent) {
+          parent.innerHTML = this.renderCategoryChips();
+          this.wireCategoryClicks();
+        }
         this.applyFilter();
         this.renderBody();
       });
@@ -370,16 +342,16 @@ export class LibraryModal {
 
     if (this.isLoading) {
       bodyEl.innerHTML = `
-        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: #a1a1aa;">
+        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #71717a;">
           <div style="
-            width: 24px;
-            height: 24px;
-            border: 2px solid rgba(255, 255, 255, 0.15);
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.12);
             border-top-color: #ffffff;
             border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+            animation: spin 0.7s linear infinite;
           "></div>
-          <span style="font-size: 12px;">${this.t("Cargando galería pública...", "Loading public gallery...")}</span>
+          <span style="font-size: 11px;">${this.t("Cargando obras...", "Loading artworks...")}</span>
           <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
         </div>
       `;
@@ -388,18 +360,18 @@ export class LibraryModal {
 
     if (isError) {
       bodyEl.innerHTML = `
-        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: #f87171;">
-          <p style="font-size: 13px; font-weight: 600;">
+        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #f87171;">
+          <span style="font-size: 12px; font-weight: 500;">
             ${this.t("No se pudo conectar con la biblioteca pública.", "Could not connect to public library.")}
-          </p>
+          </span>
           <button id="btn-retry-library" type="button" style="
             background: #ffffff;
-            color: #0b0c0e;
+            color: #09090b;
             border: none;
-            border-radius: 8px;
-            padding: 8px 16px;
-            font-size: 12px;
-            font-weight: 700;
+            border-radius: 6px;
+            padding: 6px 14px;
+            font-size: 11px;
+            font-weight: 600;
             cursor: pointer;
           ">
             ${this.t("Reintentar", "Retry")}
@@ -412,50 +384,51 @@ export class LibraryModal {
 
     if (this.filteredItems.length === 0) {
       bodyEl.innerHTML = `
-        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #71717a;">
-          <span style="font-size: 14px; font-weight: 600; color: #e4e4e7;">
-            ${this.t("No se encontraron obras", "No artworks found")}
+        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #71717a;">
+          <span style="font-size: 13px; font-weight: 500; color: #a1a1aa;">
+            ${this.t("Sin resultados", "No results")}
           </span>
-          <span style="font-size: 12px;">
-            ${this.t("Intenta buscar con otros términos o cambiar la categoría.", "Try different search terms or select another category.")}
+          <span style="font-size: 11px;">
+            ${this.t("Intenta buscar con otros términos.", "Try different search terms.")}
           </span>
         </div>
       `;
       return;
     }
 
-    // Grid of artworks
     bodyEl.innerHTML = `
       <div id="library-cards-grid" style="
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 16px;
+        grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+        gap: 14px;
         width: 100%;
       ">
         ${this.filteredItems
           .map((item) => {
             const title = (this.uiLang === "en" && item.title_en ? item.title_en : item.title) || item.id;
-            const compact = formatCompactTitle(title, 22);
+            const compact = formatCompactTitle(title, 24);
             const isNew =
               this.lastSeenDate && new Date(item.created_at).getTime() > new Date(this.lastSeenDate).getTime();
             const author = item.author?.username || "Xue Studios";
+            const isLoadingThis = this.activeLoadingId === item.id;
 
             return `
               <div class="library-card" data-id="${item.id}" role="button" tabindex="0" style="
-                background: rgba(255, 255, 255, 0.03);
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                border-radius: 12px;
+                background: #141519;
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 10px;
                 overflow: hidden;
                 cursor: pointer;
                 display: flex;
                 flex-direction: column;
-                transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease, box-shadow 0.18s ease;
+                position: relative;
+                transition: border-color 0.15s ease;
               ">
-                <!-- Thumbnail Container -->
+                <!-- Preview Canvas -->
                 <div style="
                   width: 100%;
                   aspect-ratio: 16 / 10;
-                  background: #121216;
+                  background: #0b0c0e;
                   position: relative;
                   overflow: hidden;
                 ">
@@ -463,65 +436,81 @@ export class LibraryModal {
                     width: 100%;
                     height: 100%;
                     object-fit: cover;
-                    transition: transform 0.25s ease;
+                    display: block;
                   " />
-                  
+
                   ${
                     isNew
                       ? `<span style="
                           position: absolute;
                           top: 8px;
                           left: 8px;
-                          background: #22c55e;
+                          background: rgba(34, 197, 94, 0.9);
                           color: #0b0c0e;
                           font-size: 9px;
-                          font-weight: 800;
-                          padding: 2px 6px;
-                          border-radius: 4px;
-                          letter-spacing: 0.04em;
+                          font-weight: 700;
+                          padding: 1px 5px;
+                          border-radius: 3px;
+                          letter-spacing: 0.03em;
                         ">${this.t("NUEVO", "NEW")}</span>`
                       : ""
                   }
 
                   <span style="
                     position: absolute;
-                    bottom: 8px;
-                    right: 8px;
-                    background: rgba(0, 0, 0, 0.65);
-                    backdrop-filter: blur(8px);
-                    color: #ffffff;
-                    font-size: 10px;
-                    font-weight: 600;
-                    padding: 2px 6px;
+                    bottom: 6px;
+                    right: 6px;
+                    background: rgba(0, 0, 0, 0.72);
+                    backdrop-filter: blur(4px);
+                    color: #a1a1aa;
+                    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+                    font-size: 9px;
+                    padding: 2px 5px;
                     border-radius: 4px;
-                    border: 1px solid rgba(255, 255, 255, 0.12);
                   ">
                     ${item.aspect_ratio || "1:1"}
                   </span>
+
+                  <!-- Loading Overlay -->
+                  <div class="card-loading-mask" style="
+                    position: absolute;
+                    inset: 0;
+                    background: rgba(14, 15, 18, 0.88);
+                    display: ${isLoadingThis ? "flex" : "none"};
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    color: #f4f4f5;
+                  ">
+                    <div style="
+                      width: 18px;
+                      height: 18px;
+                      border: 2px solid rgba(255, 255, 255, 0.15);
+                      border-top-color: #ffffff;
+                      border-radius: 50%;
+                      animation: spin 0.7s linear infinite;
+                    "></div>
+                    <span style="font-size: 11px; font-weight: 500;">
+                      ${this.t("Cargando obra...", "Loading artwork...")}
+                    </span>
+                  </div>
                 </div>
 
-                <!-- Info footer -->
-                <div style="padding: 12px; display: flex; flex-direction: column; gap: 6px; flex: 1;">
-                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                    <span style="
-                      font-size: 13px;
-                      font-weight: 700;
-                      color: #f4f4f5;
-                      overflow: hidden;
-                      text-overflow: ellipsis;
-                      white-space: nowrap;
-                    " title="${title}">${compact}</span>
-                  </div>
+                <!-- Clean Meta Footer -->
+                <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 3px;">
+                  <span style="
+                    font-size: 12px;
+                    font-weight: 500;
+                    color: #f4f4f5;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                  " title="${title}">${compact}</span>
 
                   <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #71717a;">
                     <span>@${author}</span>
-                    <span style="
-                      font-size: 10px;
-                      padding: 1px 6px;
-                      border-radius: 4px;
-                      background: rgba(255, 255, 255, 0.05);
-                      color: #a1a1aa;
-                    ">${item.category || "OIM"}</span>
+                    <span>${item.category || "OIM"}</span>
                   </div>
                 </div>
               </div>
@@ -531,39 +520,40 @@ export class LibraryModal {
       </div>
     `;
 
-    // Wire card interactions
     bodyEl.querySelectorAll(".library-card").forEach((card) => {
       const cardEl = card as HTMLElement;
       cardEl.addEventListener("mouseenter", () => {
-        cardEl.style.transform = "translateY(-3px)";
-        cardEl.style.borderColor = "rgba(255, 255, 255, 0.25)";
-        cardEl.style.boxShadow = "0 12px 28px -6px rgba(0, 0, 0, 0.6)";
+        if (!this.activeLoadingId) {
+          cardEl.style.borderColor = "rgba(255, 255, 255, 0.2)";
+        }
       });
       cardEl.addEventListener("mouseleave", () => {
-        cardEl.style.transform = "translateY(0)";
-        cardEl.style.borderColor = "rgba(255, 255, 255, 0.08)";
-        cardEl.style.boxShadow = "none";
+        if (!this.activeLoadingId) {
+          cardEl.style.borderColor = "rgba(255, 255, 255, 0.06)";
+        }
       });
 
       cardEl.addEventListener("click", async () => {
         const id = cardEl.getAttribute("data-id");
         const item = this.filteredItems.find((i) => i.id === id);
-        if (!item || this.isSelecting) return;
+        if (!item || this.activeLoadingId) return;
 
-        this.isSelecting = true;
-        cardEl.style.opacity = "0.6";
-        cardEl.style.pointerEvents = "none";
+        this.activeLoadingId = id;
+        const mask = cardEl.querySelector(".card-loading-mask") as HTMLElement | null;
+        if (mask) mask.style.display = "flex";
 
         try {
           const bytes = await this.client.fetchOimBytes(item.media_url);
-          const blob = new Blob([bytes.buffer as ArrayBuffer], { type: "image/png" });
+          const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+          const cleanBuffer = u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength) as ArrayBuffer;
+          const blob = new Blob([cleanBuffer], { type: "image/png" });
+
           this.close();
           this.handlers.onSelectItem(item, blob);
         } catch (err) {
           console.error("[LibraryModal] Failed to load selected item:", err);
-          cardEl.style.opacity = "1";
-          cardEl.style.pointerEvents = "auto";
-          this.isSelecting = false;
+          if (mask) mask.style.display = "none";
+          this.activeLoadingId = null;
         }
       });
     });

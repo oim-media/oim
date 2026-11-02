@@ -88,9 +88,10 @@ export class FloatingToolbar {
       justify-content: space-between;
       gap: 12px;
       padding: 0 14px;
-      background: rgba(14, 14, 17, 0.74);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      background: rgba(14, 14, 18, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      contain: paint;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       z-index: 90;
       transition: opacity 0.22s ease, transform 0.22s ease;
@@ -104,9 +105,10 @@ export class FloatingToolbar {
       width: 290px;
       min-width: 290px;
       height: 100%;
-      background: rgba(16, 16, 20, 0.82);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      background: rgba(16, 16, 20, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      contain: paint;
       border-left: 1px solid rgba(255, 255, 255, 0.08);
       display: flex;
       flex-direction: column;
@@ -131,9 +133,10 @@ export class FloatingToolbar {
       align-items: center;
       gap: 3px;
       padding: 4px 6px;
-      background: rgba(18, 18, 22, 0.82);
-      backdrop-filter: blur(22px) saturate(180%);
-      -webkit-backdrop-filter: blur(22px) saturate(180%);
+      background: rgba(18, 18, 22, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      contain: paint;
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 9999px;
       color: #f4f4f5;
@@ -180,7 +183,21 @@ export class FloatingToolbar {
     if (fullscreen) {
       this.isInspectorOpen = false;
       this.handlers.onInspectorVisibilityChange?.(false);
+      this.topBarEl.style.position = "absolute";
+      this.topBarEl.style.top = "0";
+      this.topBarEl.style.left = "0";
+      this.topBarEl.style.right = "0";
+      this.topBarEl.style.zIndex = "90";
+    } else {
+      this.topBarEl.style.position = "relative";
+      this.topBarEl.style.top = "auto";
+      this.topBarEl.style.left = "auto";
+      this.topBarEl.style.right = "auto";
+      this.topBarEl.style.visibility = "visible";
+      this.topBarEl.style.opacity = "1";
+      this.topBarEl.style.pointerEvents = "auto";
     }
+    this.show();
     this.render();
   }
 
@@ -244,10 +261,12 @@ export class FloatingToolbar {
   public show(): void {
     if (!this.isHudVisible) {
       this.isHudVisible = true;
+      this.element.style.visibility = "visible";
       this.element.style.opacity = "1";
       this.element.style.pointerEvents = "auto";
       this.element.style.transform = "translateX(-50%) translateY(0)";
       if (this.isFullscreen) {
+        this.topBarEl.style.visibility = "visible";
         this.topBarEl.style.opacity = "1";
         this.topBarEl.style.pointerEvents = "auto";
       }
@@ -265,6 +284,14 @@ export class FloatingToolbar {
       this.topBarEl.style.opacity = "0";
       this.topBarEl.style.pointerEvents = "none";
     }
+    window.setTimeout(() => {
+      if (!this.isHudVisible) {
+        this.element.style.visibility = "hidden";
+        if (this.isFullscreen) {
+          this.topBarEl.style.visibility = "hidden";
+        }
+      }
+    }, 240);
   }
 
   private resetTimer(): void {
@@ -277,9 +304,13 @@ export class FloatingToolbar {
   }
 
   private setupAutoHide(listenTarget: HTMLElement): void {
-    const onMouseMove = () => {
+    const onMouseMove = (e: MouseEvent) => {
       const now = Date.now();
-      if (this.isHudVisible && now - this.lastActivityMs < 220) {
+      if (this.isFullscreen && e.clientY < 50) {
+        this.show();
+        return;
+      }
+      if (this.isHudVisible && now - this.lastActivityMs < 250) {
         return;
       }
       this.lastActivityMs = now;
@@ -289,7 +320,7 @@ export class FloatingToolbar {
       this.lastActivityMs = Date.now();
       this.show();
     };
-    listenTarget.addEventListener("mousemove", onMouseMove, { passive: true });
+    listenTarget.addEventListener("mousemove", onMouseMove as EventListener, { passive: true });
     listenTarget.addEventListener("click", onClick, { passive: true });
     this.resetTimer();
   }

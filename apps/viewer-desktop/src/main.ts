@@ -50,6 +50,7 @@ playerContainer.style.cssText =
 playerFrame.appendChild(playerContainer);
 
 let toolbar: FloatingToolbar | null = null;
+let currentStageSize: StageSize | null = null;
 
 /**
  * Applies exact aspect-ratio bounding on `playerFrame` while keeping `playerContainer`
@@ -58,7 +59,9 @@ let toolbar: FloatingToolbar | null = null;
  * (preventing 1080x1080 cropping and avoiding any `ResizeObserver` feedback loop).
  */
 function applyStageAspectRatio(size: StageSize | null): void {
+  currentStageSize = size;
   if (!size) {
+    stageWrapper.style.padding = isFullscreen ? "0" : "20px";
     playerFrame.style.width = "100%";
     playerFrame.style.height = "100%";
     playerFrame.style.aspectRatio = "";
@@ -68,13 +71,17 @@ function applyStageAspectRatio(size: StageSize | null): void {
     return;
   }
   const ratio = Number((size.width / size.height).toFixed(4));
+  stageWrapper.style.padding = isFullscreen ? "0" : "20px";
   playerFrame.style.aspectRatio = `${size.width} / ${size.height}`;
-  playerFrame.style.width = `min(calc(100cqw - 24px), calc((100cqh - 24px) * ${ratio}))`;
+  playerFrame.style.width = isFullscreen
+    ? `min(100cqw, calc(100cqh * ${ratio}))`
+    : `min(calc(100cqw - 24px), calc((100cqh - 24px) * ${ratio}))`;
   playerFrame.style.height = "auto";
-  playerFrame.style.borderRadius = "8px";
+  playerFrame.style.borderRadius = isFullscreen ? "0" : "8px";
   playerFrame.style.overflow = "hidden";
-  playerFrame.style.boxShadow =
-    "0 24px 60px -12px rgba(0, 0, 0, 0.72), 0 0 0 1px rgba(255, 255, 255, 0.08)";
+  playerFrame.style.boxShadow = isFullscreen
+    ? "none"
+    : "0 24px 60px -12px rgba(0, 0, 0, 0.72), 0 0 0 1px rgba(255, 255, 255, 0.08)";
 }
 
 function ensureToolbar(): FloatingToolbar {
@@ -255,11 +262,30 @@ function toggleLottie(): void {
 }
 
 async function setFullscreenState(targetFullscreen: boolean): Promise<void> {
+  // Yield execution tick to allow any in-flight mouseup/click event to resolve
+  await new Promise((resolve) => setTimeout(resolve, 30));
+
+  try {
+    const { invoke } = await import("@tauri-apps/api/core");
+    const isFs = await invoke<boolean>("set_window_fullscreen", { fullscreen: targetFullscreen });
+    isFullscreen = isFs;
+    applyStageAspectRatio(currentStageSize);
+    toolbar?.setFullscreen(isFullscreen);
+    return;
+  } catch (err) {
+    console.warn("[ViewerDesktop] Custom set_window_fullscreen failed, falling back to window API:", err);
+  }
+
   try {
     const { getCurrentWindow } = await import("@tauri-apps/api/window");
     const win = getCurrentWindow();
     await win.setFullscreen(targetFullscreen);
+    try {
+      await win.setCursorVisible(true);
+      await win.setFocus();
+    } catch {}
     isFullscreen = targetFullscreen;
+    applyStageAspectRatio(currentStageSize);
     toolbar?.setFullscreen(isFullscreen);
     return;
   } catch {
@@ -275,6 +301,7 @@ async function setFullscreenState(targetFullscreen: boolean): Promise<void> {
   } else {
     isFullscreen = targetFullscreen;
   }
+  applyStageAspectRatio(currentStageSize);
   toolbar?.setFullscreen(isFullscreen);
 }
 

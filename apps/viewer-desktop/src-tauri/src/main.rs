@@ -43,6 +43,33 @@ fn read_oim_file(path: String) -> Result<Vec<u8>, String> {
     std::fs::read(&path).map_err(|e| format!("Cannot read file bytes: {e}"))
 }
 
+#[tauri::command]
+async fn set_window_fullscreen(window: tauri::WebviewWindow, fullscreen: bool) -> Result<bool, String> {
+    window
+        .set_fullscreen(fullscreen)
+        .map_err(|e| format!("Cannot set fullscreen: {e}"))?;
+
+    #[cfg(windows)]
+    {
+        // On Windows Win32, entering/exiting borderless fullscreen can trap mouse capture or clip rect.
+        // Explicitly releasing mouse capture and clearing the cursor clipping rect ensures the physical
+        // OS cursor moves freely across the screen without freezing.
+        unsafe {
+            use windows_sys::Win32::UI::Input::KeyboardAndMouse::ReleaseCapture;
+            use windows_sys::Win32::UI::WindowsAndMessaging::ClipCursor;
+            ReleaseCapture();
+            ClipCursor(std::ptr::null());
+        }
+    }
+
+    let _ = window.set_cursor_visible(true);
+    let _ = window.set_focus();
+
+    window
+        .is_fullscreen()
+        .map_err(|e| format!("Cannot check fullscreen state: {e}"))
+}
+
 fn main() {
     let initial_arg = std::env::args()
         .nth(1)
@@ -63,7 +90,11 @@ fn main() {
         }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
-        .invoke_handler(tauri::generate_handler![take_initial_file, read_oim_file])
+        .invoke_handler(tauri::generate_handler![
+            take_initial_file,
+            read_oim_file,
+            set_window_fullscreen
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

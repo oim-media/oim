@@ -1,17 +1,31 @@
-# Publishes the four @oim-media packages to GitHub Packages when a tag
-# vX.Y.Z is pushed. The tag must name CONTRACT_VERSION. A version that already
-# exists returns 409 and the job fails: versions are never overwritten.
+# Publishes the four @oim-media packages to GitHub Packages and builds + attaches
+# the Windows desktop viewer installers (.exe / .msi) to the GitHub Release when
+# a tag vX.Y.Z is pushed (or when desktop-windows is triggered via workflow_dispatch).
+# The tag must name CONTRACT_VERSION. A package version that already exists
+# returns 409 and the publish job fails: versions are never overwritten.
 name: release
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag matching CONTRACT_VERSION (e.g. v1.26.1)'
+        required: true
+        default: 'v1.26.1'
+        type: string
+
 permissions:
   contents: read
-  packages: write
+
 jobs:
   publish:
+    if: github.event_name == 'push'
     runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -34,7 +48,7 @@ jobs:
       # token goes into the project one, inside the job only (never committed).
       - run: |
           echo "//npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}" >> .npmrc
-          pnpm -r publish --no-git-checks
+          pnpm -r --filter "./packages/*" publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # pnpm skips a package silently in some cases; all four must exist.
@@ -47,3 +61,41 @@ jobs:
             versions=$(gh api --paginate "orgs/oim-media/packages/npm/$p/versions" --jq '.[].name')
             grep -qx "$v" <<< "$versions" || { echo "missing @oim-media/$p@$v"; exit 1; }
           done
+
+  desktop-windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Validate release tag matches CONTRACT_VERSION
+        shell: pwsh
+        run: |
+          $tag = if ("${{ github.event.inputs.tag }}" -ne "") { "${{ github.event.inputs.tag }}" } else { "${{ github.ref_name }}" }
+          node tools/versions.mjs "$tag"
+          "RELEASE_TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Append
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Build Windows desktop viewer (.exe and .msi)
+        run: pnpm --filter ./apps/viewer-desktop tauri build
+      - name: Upload Windows installers to GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = $env:RELEASE_TAG
+          $nsis = Get-Item "apps/viewer-desktop/src-tauri/target/release/bundle/nsis/*.exe"
+          $msi = Get-Item "apps/viewer-desktop/src-tauri/target/release/bundle/msi/*.msi"
+          $portable = Get-Item "apps/viewer-desktop/src-tauri/target/release/oim-viewer.exe"
+          gh release view "$tag" *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create "$tag" $nsis.FullName $msi.FullName $portable.FullName --title "OIM $tag" --generate-notes
+          } else {
+            gh release upload "$tag" $nsis.FullName $msi.FullName $portable.FullName --clobber
+          }

@@ -10,7 +10,15 @@
 import { pathToFileURL } from "node:url";
 import { pnpm } from "./pnpm.mjs";
 
-const ALLOWED = new Set(["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC"]);
+const ALLOWED = new Set([
+  "MIT",
+  "Apache-2.0",
+  "Apache-2.0 OR MIT",
+  "MIT OR Apache-2.0",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+]);
 
 /** `report` is the output of `pnpm licenses list --prod --json`. */
 export function disallowed(report) {

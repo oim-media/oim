@@ -5,10 +5,11 @@
  */
 
 /**
- * <ovm-player> — Web Component for OVM video playback
+ * <ovm-player> — Experimental / Reserved Web Component for OVM video playback
+ * (Pending canonical specification)
  *
- * Framework-agnostic. Uses HTTP Range requests to extract metadata
- * from trailing bytes, delegates video buffering to native <video>.
+ * Framework-agnostic placeholder reader. Uses HTTP Range requests to extract
+ * metadata from trailing bytes, delegates video buffering to native <video>.
  *
  * Attributes:
  *   src      — URL of the .ovm file
@@ -22,6 +23,7 @@
   'use strict';
 
   var METADATA_TAIL_BYTES = 65536;
+  var MAX_DECOMPRESSED_BYTES = 10 * 1024 * 1024;
   var STYLES = [
     ':host { display:block; position:relative; width:100%; aspect-ratio:16/9;',
     'background:#000; border-radius:8px; overflow:hidden; contain:layout style paint; }',
@@ -39,11 +41,31 @@
   async function decompressBytes(bytes, format) {
     var ds = new DecompressionStream(format);
     var writer = ds.writable.getWriter();
-    writer.write(bytes);
-    writer.close();
-    var response = new Response(ds.readable);
-    var decompressedBuffer = await response.arrayBuffer();
-    return new TextDecoder().decode(decompressedBuffer);
+    writer.write(bytes).catch(function () {});
+    writer.close().catch(function () {});
+
+    var reader = ds.readable.getReader();
+    var chunks = [];
+    var total = 0;
+
+    while (true) {
+      var step = await reader.read();
+      if (step.done) break;
+      total += step.value.byteLength;
+      if (total > MAX_DECOMPRESSED_BYTES) {
+        await reader.cancel('OVM metadata exceeds maximum decompressed size');
+        throw new Error('OVM metadata exceeds maximum decompressed size (10 MB)');
+      }
+      chunks.push(step.value);
+    }
+
+    var out = new Uint8Array(total);
+    var offset = 0;
+    for (var i = 0; i < chunks.length; i++) {
+      out.set(chunks[i], offset);
+      offset += chunks[i].byteLength;
+    }
+    return new TextDecoder().decode(out);
   }
 
   async function decodeAndDecompressJSON(base64Str) {

@@ -115,8 +115,9 @@
     }
   }
 
-  var OvmPlayer = (function () {
-    function OvmPlayer() {
+  var OvmPlayer = class extends HTMLElement {
+    constructor() {
+      super();
       var self = this;
       self._metadata = null;
       self._currentTime = 0;
@@ -140,11 +141,8 @@
         self._currentTime = self._video.currentTime;
         self._renderSlots();
       };
-      return self;
     }
-
-    return OvmPlayer;
-  })();
+  };
 
   OvmPlayer.observedAttributes = ['src', 'lang'];
 
@@ -418,7 +416,7 @@
     return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   };
 
-  if (!customElements.get('ovm-player')) {
+  if (typeof customElements !== 'undefined' && !customElements.get('ovm-player')) {
     customElements.define('ovm-player', OvmPlayer);
   }
 })();

@@ -35,15 +35,15 @@ import { describe, it, expect } from "vitest";
 import { readdirSync, statSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-const RAIZ = join(__dirname, "..");
-const SRC = join(RAIZ, "src");
-const DIST = join(RAIZ, "dist");
+const ROOT = join(__dirname, "..");
+const SRC = join(ROOT, "src");
+const DIST = join(ROOT, "dist");
 
 /** Relative paths of everything inside, including subdirectories. */
-function listing(dir: string, prefijo = ""): string[] {
+function listing(dir: string, prefix = ""): string[] {
   const out: string[] = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const rel = prefijo ? `${prefijo}/${entry.name}` : entry.name;
+    const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
     if (entry.isDirectory()) out.push(...listing(join(dir, entry.name), rel));
     else out.push(rel);
   }
@@ -72,10 +72,10 @@ function newestMtime(dir: string): number {
  * Files that are not `.ts` (such as `__baseline_snapshots__.json`, which a test reads)
  * are not compiled, so they do not appear in `dist` and do not count.
  */
-function modulesOf(dir: string, prefijo = ""): string[] {
+function modulesOf(dir: string, prefix = ""): string[] {
   const out: string[] = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const rel = prefijo ? `${prefijo}/${entry.name}` : entry.name;
+    const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
     if (entry.isDirectory()) out.push(...modulesOf(join(dir, entry.name), rel));
     else if (entry.name.endsWith(".ts") && !entry.name.endsWith(".test.ts")) {
       out.push(rel.replace(/\.ts$/, ""));
@@ -87,7 +87,7 @@ function modulesOf(dir: string, prefijo = ""): string[] {
 const MODULES = modulesOf(SRC);
 
 describe("the packaged artifact", () => {
-  it("existe", () => {
+  it("exists", () => {
     expect(existsSync(DIST), "dist/ is missing. Run `pnpm --filter @oim-media/core build`").toBe(true);
   });
 
@@ -123,7 +123,7 @@ describe("the packaged artifact", () => {
 
   /**
    * Without this, all of the above can pass green on last week's build while `src` already
-   * says something else. It is the same failure that `dist-al-dia.test.js` watches for in the
+   * says something else. It is the same failure that `dist-up-to-date.test.js` watches for in the
    * player.
    */
   it("is not older than src", () => {

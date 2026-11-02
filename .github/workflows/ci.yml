@@ -8,7 +8,7 @@ on:
 permissions:
   contents: read
 jobs:
-  pruebas:
+  test:
     runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 15
     steps:

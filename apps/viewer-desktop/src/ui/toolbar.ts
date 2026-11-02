@@ -462,9 +462,9 @@ export class FloatingToolbar {
             font-weight: 700;
             padding: 2px 7px;
             border-radius: 9999px;
-            background: rgba(245, 158, 11, 0.12);
-            color: #fbbf24;
-            border: 1px solid rgba(245, 158, 11, 0.3);
+            background: rgba(255, 255, 255, 0.08);
+            color: #d4d4d8;
+            border: 1px solid rgba(255, 255, 255, 0.12);
             white-space: nowrap;
             flex-shrink: 0;
           ">
@@ -529,9 +529,9 @@ export class FloatingToolbar {
           cursor: pointer;
           position: relative;
         ">
-          <span style="color: #f59e0b; display: flex; align-items: center;">${iconSparkles}</span>
+          <span style="color: #d4d4d8; display: flex; align-items: center;">${iconSparkles}</span>
           <span>${this.t("Biblioteca", "Library")}</span>
-          ${this.hasLibraryUpdates ? `<span style="width: 6px; height: 6px; border-radius: 9999px; background: #22c55e; position: absolute; top: 3px; right: 3px; box-shadow: 0 0 6px #22c55e;"></span>` : ""}
+          ${this.hasLibraryUpdates ? `<span style="width: 6px; height: 6px; border-radius: 9999px; background: #22c55e; position: absolute; top: 3px; right: 3px; "></span>` : ""}
         </button>
 
         <button id="top-btn-fullscreen" type="button" title="${this.t("Pantalla completa (F11)", "Fullscreen (F11)")}" style="

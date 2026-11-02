@@ -60,7 +60,6 @@ export class LibraryLruCache {
     const entry = this.memoryEntries.get(url);
     if (!entry) return null;
     entry.lastAccessed = Date.now();
-    // Re-insert to keep Map iteration order as LRU
     this.memoryEntries.delete(url);
     this.memoryEntries.set(url, entry);
     return entry.data;
@@ -74,10 +73,8 @@ export class LibraryLruCache {
     }
 
     const size = data.byteLength;
-    // If a single asset exceeds maxBytes, don't store it in cache
     if (size > this.maxBytes) return;
 
-    // Evict oldest entries until we have enough space
     while (this.totalBytes + size > this.maxBytes && this.memoryEntries.size > 0) {
       const oldestKey = this.memoryEntries.keys().next().value;
       if (!oldestKey) break;
@@ -166,7 +163,7 @@ export class LibraryClient {
 
   /**
    * Loads the raw .oim.png bytes into memory without any local file write or export.
-   * Uses bounded LRU caching to minimize bandwidth and memory pressure.
+   * In desktop Tauri, invokes the native command `read_remote_oim_file` to completely bypass webview CORS restrictions.
    */
   public async fetchOimBytes(mediaUrl: string): Promise<Uint8Array> {
     const cached = this.cache.get(mediaUrl);
@@ -174,15 +171,24 @@ export class LibraryClient {
       return cached;
     }
 
-    const res = await fetch(mediaUrl, { method: "GET" });
-    if (!res.ok) {
-      throw new Error(`Failed to load artwork from library: ${res.status}`);
+    // Try Tauri native command first (bypasses browser CORS completely)
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const rawBytes = await invoke<number[] | Uint8Array>("read_remote_oim_file", { url: mediaUrl });
+      const bytes = rawBytes instanceof Uint8Array ? rawBytes : new Uint8Array(rawBytes);
+      this.cache.set(mediaUrl, bytes);
+      return bytes;
+    } catch {
+      // Fallback for browser tests or web environment
+      const res = await fetch(mediaUrl, { method: "GET" });
+      if (!res.ok) {
+        throw new Error(`Failed to load artwork from library: ${res.status}`);
+      }
+      const buffer = await res.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      this.cache.set(mediaUrl, bytes);
+      return bytes;
     }
-
-    const buffer = await res.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
-    this.cache.set(mediaUrl, bytes);
-    return bytes;
   }
 
   /**

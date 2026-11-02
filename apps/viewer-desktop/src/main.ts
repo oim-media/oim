@@ -5,6 +5,8 @@
  */
 
 import { detectUiLang, renderDropzone } from "./ui/dropzone.js";
+import { LibraryModal } from "./ui/libraryModal.js";
+import { LibraryClient } from "./library/libraryClient.js";
 import { FloatingToolbar } from "./ui/toolbar.js";
 import {
   buildSpecsSummary,
@@ -48,6 +50,36 @@ playerContainer.id = "player-container";
 playerContainer.style.cssText =
   "position: absolute; inset: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;";
 playerFrame.appendChild(playerContainer);
+
+
+let libraryModal: LibraryModal | null = null;
+function openLibraryModal(): void {
+  if (!libraryModal) {
+    libraryModal = new LibraryModal(
+      app,
+      {
+        onSelectItem: (item, blob) => {
+          const title = (uiLang === "en" && item.title_en ? item.title_en : item.title) || item.id;
+          void loadBlob(blob, title, { isLibraryItem: true });
+        },
+      },
+      uiLang
+    );
+  }
+  void libraryModal.open();
+}
+
+async function checkLibraryUpdates(): Promise<void> {
+  try {
+    const client = new LibraryClient();
+    const result = await client.checkForUpdates();
+    if (result.hasNew) {
+      toolbar?.setHasLibraryUpdates(true);
+    }
+  } catch (err) {
+    console.warn("[ViewerDesktop] Failed to check library updates:", err);
+  }
+}
 
 let toolbar: FloatingToolbar | null = null;
 let currentStageSize: StageSize | null = null;
@@ -128,7 +160,7 @@ function ensureToolbar(): FloatingToolbar {
   return toolbar;
 }
 
-async function loadBlob(blob: Blob, fileName: string): Promise<void> {
+async function loadBlob(blob: Blob, fileName: string, opts?: { isLibraryItem?: boolean }): Promise<void> {
   if (currentPlayer) {
     currentPlayer.destroy();
     currentPlayer = null;
@@ -157,6 +189,7 @@ async function loadBlob(blob: Blob, fileName: string): Promise<void> {
       const tb = ensureToolbar();
       tb.setChromeVisible(true);
       tb.setSecurityStatus(meta ? security : "no_metadata");
+      tb.setLibraryItem(opts?.isLibraryItem ?? false);
 
       const specs = buildSpecsSummary(meta, fileName, blob.size, resolvedStage);
       const langs =
@@ -403,5 +436,6 @@ async function initTauriBridge(): Promise<void> {
   }
 }
 
-renderDropzone(playerContainer, () => void openFileDialog(), { uiLang });
+renderDropzone(playerContainer, () => void openFileDialog(), { uiLang, onOpenLibrary: openLibraryModal });
 void initTauriBridge();
+void checkLibraryUpdates();

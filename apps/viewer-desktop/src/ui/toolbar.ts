@@ -24,10 +24,12 @@ import {
   iconShieldCheck,
   iconShieldWarning,
   iconSliders,
+  iconSparkles,
   iconUnlock,
 } from "./icons.js";
 import type { UiLang } from "./dropzone.js";
 import { detectUiLang } from "./dropzone.js";
+import { formatCompactTitle } from "../library/libraryClient.js";
 import type {
   OimSpecsSummary,
   SuggestedPalette,
@@ -44,6 +46,7 @@ export interface ToolbarHandlers {
   onSelectPalette: (paletteName: string | null) => void;
   onSelectPaletteOption?: (palette: SuggestedPalette) => void;
   onOpenFile: () => void;
+  onOpenLibrary?: () => void;
   onInspectorVisibilityChange?: (open: boolean) => void;
 }
 
@@ -71,6 +74,8 @@ export class FloatingToolbar {
   private specs: OimSpecsSummary | null = null;
   private openMenu: "lang" | "palette" | null = null;
   private uiLang: UiLang;
+  private isLibraryItem = false;
+  private hasLibraryUpdates = false;
 
   constructor(container: HTMLElement, handlers: ToolbarHandlers, uiLang?: UiLang, inspectorHost?: HTMLElement) {
     this.handlers = handlers;
@@ -198,6 +203,16 @@ export class FloatingToolbar {
       this.topBarEl.style.pointerEvents = "auto";
     }
     this.show();
+    this.render();
+  }
+
+  public setLibraryItem(isLibrary: boolean): void {
+    this.isLibraryItem = isLibrary;
+    this.render();
+  }
+
+  public setHasLibraryUpdates(hasUpdates: boolean): void {
+    this.hasLibraryUpdates = hasUpdates;
     this.render();
   }
 
@@ -413,6 +428,7 @@ export class FloatingToolbar {
     const sec = this.getSecurityBadgeConfig();
     const s = this.specs;
     const fileName = s?.fileName ?? "OIM Viewer";
+    const compactTitle = formatCompactTitle(fileName, 18);
 
     this.topBarEl.innerHTML = `
       <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
@@ -432,8 +448,32 @@ export class FloatingToolbar {
           text-overflow: ellipsis;
           white-space: nowrap;
           min-width: 0;
-          max-width: 340px;
-        " title="${fileName}">${fileName}</span>
+          max-width: 140px;
+        " title="${fileName}">${compactTitle}</span>
+
+        ${
+          this.isLibraryItem
+            ? `
+          <span style="
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 9999px;
+            background: rgba(245, 158, 11, 0.12);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            white-space: nowrap;
+            flex-shrink: 0;
+          ">
+            <span style="display: flex; align-items: center;">${iconSparkles}</span>
+            <span>${this.t("Biblioteca", "Library")}</span>
+          </span>
+        `
+            : ""
+        }
 
         <!-- Compact Signature Badge (icon-only by default, click to show/hide text) -->
         <button id="security-badge" type="button" title="${sec.text} — ${this.t("Clic para mostrar/ocultar estado", "Click to show/hide status")}" style="
@@ -474,6 +514,25 @@ export class FloatingToolbar {
         `
             : ""
         }
+
+        <button id="top-btn-library" type="button" title="${this.t("Explorar biblioteca pública de obras OIM", "Explore OIM public library")}" style="
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 4px 9px;
+          border-radius: 7px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.09);
+          color: #e4e4e7;
+          font-size: 11px;
+          font-weight: 500;
+          cursor: pointer;
+          position: relative;
+        ">
+          <span style="color: #f59e0b; display: flex; align-items: center;">${iconSparkles}</span>
+          <span>${this.t("Biblioteca", "Library")}</span>
+          ${this.hasLibraryUpdates ? `<span style="width: 6px; height: 6px; border-radius: 9999px; background: #22c55e; position: absolute; top: 3px; right: 3px; box-shadow: 0 0 6px #22c55e;"></span>` : ""}
+        </button>
 
         <button id="top-btn-fullscreen" type="button" title="${this.t("Pantalla completa (F11)", "Fullscreen (F11)")}" style="
           display: inline-flex;
@@ -532,6 +591,9 @@ export class FloatingToolbar {
       e.stopPropagation();
       this.isSecurityExpanded = !this.isSecurityExpanded;
       this.renderTopBar();
+    });
+    this.topBarEl.querySelector("#top-btn-library")?.addEventListener("click", () => {
+      this.handlers.onOpenLibrary?.();
     });
     this.topBarEl.querySelector("#top-btn-fullscreen")?.addEventListener("click", () => {
       this.handlers.onToggleFullscreen();
@@ -810,6 +872,16 @@ export class FloatingToolbar {
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 9px; font-size: 11px;">
+          ${
+            this.isLibraryItem
+              ? `
+            <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px;">
+              <span style="color: #71717a; flex-shrink: 0;">${this.t("Origen", "Source")}</span>
+              <span style="color: #4ade80; font-weight: 600;">${this.t("Biblioteca Pública OIM", "OIM Public Library")}</span>
+            </div>
+          `
+              : ""
+          }
           <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px;">
             <span style="color: #71717a; flex-shrink: 0;">${this.t("Archivo", "File")}</span>
             <span style="color: #f4f4f5; font-family: ui-monospace, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right;" title="${s.fileName}">

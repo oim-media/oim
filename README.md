@@ -11,7 +11,7 @@ and interactions on top of it.
 |---|---|
 | [`@oim-media/core`](packages/core/README.md) | Contract schema, binary reader, canonical form and the render rules shared by every player. |
 | [`@oim-media/player-oim`](packages/player-oim/README.md) | `<oim-player>` web component for `.oim` images. |
-| [`@oim-media/player-ovm`](packages/player-ovm/README.md) | Minimal web player for `.ovm` interactive video (text overlays, no verification yet). |
+| [`@oim-media/player-ovm`](packages/player-ovm/README.md) | Reserved placeholder for `.ovm` interactive video (pending specification). |
 | [`@oim-media/spec`](packages/spec/README.md) | Language-neutral contract: JSON Schema, binary and canonical specifications, conformance vectors and the public player keys. |
 
 ## Install

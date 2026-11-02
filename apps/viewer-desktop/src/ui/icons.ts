@@ -34,23 +34,23 @@ export const iconOimMarcaSimple = `
 </svg>`;
 
 export const iconFolder = `
-<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
   <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2a2 2 0 0 0-1.66-.9H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z"/>
 </svg>`;
 
 export const iconPlay = `
-<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
   <polygon points="6 3 20 12 6 21 6 3"/>
 </svg>`;
 
 export const iconPause = `
-<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
   <rect x="6" y="4" width="4" height="16" rx="1"/>
   <rect x="14" y="4" width="4" height="16" rx="1"/>
 </svg>`;
 
 export const iconMaximize = `
-<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
   <path d="M8 3H5a2 2 0 0 0-2 2v3"/>
   <path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
   <path d="M3 16v3a2 2 0 0 0 2 2h3"/>
@@ -58,7 +58,7 @@ export const iconMaximize = `
 </svg>`;
 
 export const iconMinimize = `
-<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
   <path d="M4 14h6m0 0v6m0-6-7 7"/>
   <path d="M20 10h-6m0 0V4m0 6 7-7"/>
   <path d="M14 14h6m-6 0v6m0-6 7 7"/>
@@ -66,14 +66,14 @@ export const iconMinimize = `
 </svg>`;
 
 export const iconGlobe = `
-<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
   <circle cx="12" cy="12" r="10"/>
   <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
   <path d="M2 12h20"/>
 </svg>`;
 
 export const iconPalette = `
-<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
   <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
   <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
   <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
@@ -82,14 +82,47 @@ export const iconPalette = `
 </svg>`;
 
 export const iconInfo = `
-<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
   <circle cx="12" cy="12" r="10"/>
   <path d="M12 16v-4"/>
   <path d="M12 8h.01"/>
 </svg>`;
 
+export const iconSliders = `
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+  <line x1="4" x2="4" y1="21" y2="14"/>
+  <line x1="4" x2="4" y1="10" y2="3"/>
+  <line x1="12" x2="12" y1="21" y2="12"/>
+  <line x1="12" x2="12" y1="8" y2="3"/>
+  <line x1="20" x2="20" y1="21" y2="16"/>
+  <line x1="20" x2="20" y1="12" y2="3"/>
+  <line x1="2" x2="6" y1="14" y2="14"/>
+  <line x1="10" x2="14" y1="8" y2="8"/>
+  <line x1="18" x2="22" y1="16" y2="16"/>
+</svg>`;
+
+export const iconEye = `
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+  <circle cx="12" cy="12" r="3"/>
+</svg>`;
+
+export const iconEyeOff = `
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+  <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+  <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+  <line x1="2" x2="22" y1="2" y2="22"/>
+</svg>`;
+
+export const iconClose = `
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M18 6 6 18"/>
+  <path d="m6 6 12 12"/>
+</svg>`;
+
 export const iconRefresh = `
-<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
   <path d="M21 3v5h-5"/>
   <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
@@ -102,39 +135,39 @@ export const iconChevronDown = `
 </svg>`;
 
 export const iconCheck = `
-<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <polyline points="20 6 9 17 4 12"/>
 </svg>`;
 
 export const iconShieldCheck = `
-<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
   <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
   <path d="m9 12 2 2 4-4"/>
 </svg>`;
 
 export const iconShieldWarning = `
-<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
   <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
   <path d="M12 8v4"/>
   <path d="M12 16h.01"/>
 </svg>`;
 
 export const iconShieldAlert = `
-<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
   <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
   <path d="m14 10-4 4"/>
   <path d="m10 10 4 4"/>
 </svg>`;
 
 export const iconLayers = `
-<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
   <polygon points="12 2 2 7 12 12 22 7 12 2"/>
   <polyline points="2 17 12 22 22 17"/>
   <polyline points="2 12 12 17 22 12"/>
 </svg>`;
 
 export const iconLayersOff = `
-<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
   <path d="M2 17 12 22 22 17"/>
   <path d="m2 12 5-2.5"/>
   <path d="m17 14.5 5-2.5"/>

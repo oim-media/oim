@@ -21,34 +21,60 @@ const t = (es: string, en: string) => (uiLang === "es" ? es : en);
 let currentPlayer: PlayerInstance | null = null;
 let isPlaying = true;
 let isLayersVisible = true;
+let isLottieEnabled = true;
 let isFullscreen = false;
 let isAutoRotateLang = false;
+
+const workspaceRow = document.createElement("div");
+workspaceRow.id = "viewer-workspace";
+workspaceRow.style.cssText =
+  "flex: 1; min-width: 0; min-height: 0; width: 100%; height: 100%; position: relative; display: flex; overflow: hidden;";
+app.appendChild(workspaceRow);
 
 const stageWrapper = document.createElement("div");
 stageWrapper.id = "stage-wrapper";
 stageWrapper.style.cssText =
-  "width: 100%; height: 100%; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; container-type: size; padding: 16px;";
-app.appendChild(stageWrapper);
+  "flex: 1; min-width: 0; min-height: 0; width: 100%; height: 100%; position: relative; display: flex; align-items: center; justify-content: center; container-type: size; padding: 20px;";
+workspaceRow.appendChild(stageWrapper);
+
+const playerFrame = document.createElement("div");
+playerFrame.id = "player-frame";
+playerFrame.style.cssText =
+  "width: 100%; height: 100%; position: relative; display: flex; align-items: center; justify-content: center;";
+stageWrapper.appendChild(playerFrame);
 
 const playerContainer = document.createElement("div");
 playerContainer.id = "player-container";
 playerContainer.style.cssText =
-  "width: 100%; height: 100%; position: relative; display: flex; align-items: center; justify-content: center;";
-stageWrapper.appendChild(playerContainer);
+  "position: absolute; inset: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;";
+playerFrame.appendChild(playerContainer);
 
 let toolbar: FloatingToolbar | null = null;
 
+/**
+ * Applies exact aspect-ratio bounding on `playerFrame` while keeping `playerContainer`
+ * at `position: absolute; inset: 0; width: 100%; height: 100%`.
+ * This guarantees `<oim-player>` always reads a definite parent `offsetWidth` and `offsetHeight`
+ * (preventing 1080x1080 cropping and avoiding any `ResizeObserver` feedback loop).
+ */
 function applyStageAspectRatio(size: StageSize | null): void {
   if (!size) {
-    playerContainer.style.width = "100%";
-    playerContainer.style.height = "100%";
-    playerContainer.style.aspectRatio = "";
+    playerFrame.style.width = "100%";
+    playerFrame.style.height = "100%";
+    playerFrame.style.aspectRatio = "";
+    playerFrame.style.borderRadius = "0";
+    playerFrame.style.boxShadow = "none";
+    playerFrame.style.overflow = "visible";
     return;
   }
   const ratio = Number((size.width / size.height).toFixed(4));
-  playerContainer.style.aspectRatio = `${size.width} / ${size.height}`;
-  playerContainer.style.width = `min(calc(100cqw - 24px), calc((100cqh - 24px) * ${ratio}))`;
-  playerContainer.style.height = "auto";
+  playerFrame.style.aspectRatio = `${size.width} / ${size.height}`;
+  playerFrame.style.width = `min(calc(100cqw - 24px), calc((100cqh - 24px) * ${ratio}))`;
+  playerFrame.style.height = "auto";
+  playerFrame.style.borderRadius = "8px";
+  playerFrame.style.overflow = "hidden";
+  playerFrame.style.boxShadow =
+    "0 24px 60px -12px rgba(0, 0, 0, 0.72), 0 0 0 1px rgba(255, 255, 255, 0.08)";
 }
 
 function ensureToolbar(): FloatingToolbar {
@@ -58,7 +84,10 @@ function ensureToolbar(): FloatingToolbar {
       {
         onTogglePlay: togglePlay,
         onToggleLayers: toggleLayers,
-        onToggleFullscreen: toggleFullscreen,
+        onToggleLottie: toggleLottie,
+        onToggleFullscreen: () => {
+          void toggleFullscreen();
+        },
         onSelectLang: (lang) => {
           currentPlayer?.setLang(lang);
         },
@@ -71,11 +100,22 @@ function ensureToolbar(): FloatingToolbar {
         onSelectPalette: (paletteName) => {
           currentPlayer?.setPalette(paletteName);
         },
+        onSelectPaletteOption: (palette) => {
+          if (!currentPlayer) return;
+          const authorName = palette.id.startsWith("author:")
+            ? palette.id.slice("author:".length)
+            : null;
+          currentPlayer.applyPaletteColors(
+            palette.id === "original" ? null : palette.colors,
+            authorName
+          );
+        },
         onOpenFile: () => {
           void openFileDialog();
         },
       },
-      uiLang
+      uiLang,
+      workspaceRow
     );
   }
   return toolbar;
@@ -88,26 +128,45 @@ async function loadBlob(blob: Blob, fileName: string): Promise<void> {
   }
   isPlaying = true;
   isLayersVisible = true;
+  isLottieEnabled = true;
   isAutoRotateLang = false;
 
-  const headerBytes = new Uint8Array(await blob.slice(0, 24).arrayBuffer().catch(() => new ArrayBuffer(0)));
+  const headerBytes = new Uint8Array(
+    await blob.slice(0, 24).arrayBuffer().catch(() => new ArrayBuffer(0))
+  );
   const stageSize = pngSize(headerBytes);
   applyStageAspectRatio(stageSize);
 
   currentPlayer = mountOimPlayer(playerContainer, blob, {
     onLoaded: (meta, security, instance) => {
+      // If metadata carries explicit canvas dimensions and PNG header did not, apply them
+      const canvas = meta?.canvas;
+      const metaWidth = Number(meta?.width || canvas?.natural_width || stageSize?.width || 0);
+      const metaHeight = Number(meta?.height || canvas?.natural_height || stageSize?.height || 0);
+      const resolvedStage =
+        metaWidth > 0 && metaHeight > 0 ? { width: metaWidth, height: metaHeight } : stageSize;
+      applyStageAspectRatio(resolvedStage);
+
       const tb = ensureToolbar();
+      tb.setChromeVisible(true);
       tb.setSecurityStatus(meta ? security : "no_metadata");
 
-      const langs = instance.getLanguages();
+      const specs = buildSpecsSummary(meta, fileName, blob.size, resolvedStage);
+      const langs =
+        instance.getLanguages().length > 0
+          ? instance.getLanguages()
+          : specs.capabilities.languages;
       const activeLang = instance.getCurrentLang();
       tb.setLanguages(langs, activeLang);
 
-      const specs = buildSpecsSummary(meta, fileName, blob.size, stageSize);
       tb.setPalettes(specs.palettes, specs.defaultPalette);
+      tb.setActivePaletteId(
+        specs.defaultPalette ? `author:${specs.defaultPalette}` : "original"
+      );
       tb.setSpecs(specs);
       tb.setPlaying(isPlaying);
       tb.setLayersVisible(isLayersVisible);
+      tb.setAllowLottie(isLottieEnabled);
       tb.setAutoRotateLang(isAutoRotateLang);
       tb.show();
     },
@@ -123,6 +182,8 @@ async function loadBlob(blob: Blob, fileName: string): Promise<void> {
       }
       applyStageAspectRatio(null);
       const tb = ensureToolbar();
+      tb.setSpecs(null);
+      tb.setChromeVisible(true);
       tb.setSecurityStatus(security);
       tb.show();
 
@@ -170,6 +231,7 @@ async function loadFromNativePath(path: string): Promise<void> {
 function togglePlay(): void {
   if (!currentPlayer) return;
   isPlaying = !isPlaying;
+  currentPlayer.setDisableAnimations(!isPlaying);
   if (isPlaying) {
     currentPlayer.play();
   } else {
@@ -185,15 +247,47 @@ function toggleLayers(): void {
   toolbar?.setLayersVisible(isLayersVisible);
 }
 
-async function toggleFullscreen(): Promise<void> {
-  if (!document.fullscreenElement) {
+function toggleLottie(): void {
+  if (!currentPlayer) return;
+  isLottieEnabled = !isLottieEnabled;
+  currentPlayer.setAllowLottie(isLottieEnabled);
+  toolbar?.setAllowLottie(isLottieEnabled);
+}
+
+async function setFullscreenState(targetFullscreen: boolean): Promise<void> {
+  try {
+    const { getCurrentWindow } = await import("@tauri-apps/api/window");
+    const win = getCurrentWindow();
+    await win.setFullscreen(targetFullscreen);
+    isFullscreen = targetFullscreen;
+    toolbar?.setFullscreen(isFullscreen);
+    return;
+  } catch {
+    // Fallback for standard web browser outside Tauri
+  }
+
+  if (targetFullscreen && !document.fullscreenElement) {
     await document.documentElement.requestFullscreen().catch(() => {});
-    isFullscreen = true;
-  } else {
+    isFullscreen = Boolean(document.fullscreenElement);
+  } else if (!targetFullscreen && document.fullscreenElement) {
     await document.exitFullscreen().catch(() => {});
     isFullscreen = false;
+  } else {
+    isFullscreen = targetFullscreen;
   }
   toolbar?.setFullscreen(isFullscreen);
+}
+
+async function toggleFullscreen(): Promise<void> {
+  try {
+    const { getCurrentWindow } = await import("@tauri-apps/api/window");
+    const win = getCurrentWindow();
+    const current = await win.isFullscreen();
+    await setFullscreenState(!current);
+    return;
+  } catch {
+    await setFullscreenState(!isFullscreen);
+  }
 }
 
 async function openFileDialog(): Promise<void> {
@@ -235,10 +329,9 @@ window.addEventListener("keydown", (e) => {
   } else if (e.code === "KeyO" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     void openFileDialog();
-  } else if (e.key === "Escape" && document.fullscreenElement) {
-    document.exitFullscreen().catch(() => {});
-    isFullscreen = false;
-    toolbar?.setFullscreen(false);
+  } else if (e.key === "Escape" && isFullscreen) {
+    e.preventDefault();
+    void setFullscreenState(false);
   }
 });
 

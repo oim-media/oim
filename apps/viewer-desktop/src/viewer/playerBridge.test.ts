@@ -8,7 +8,15 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
-import { buildSpecsSummary, extractPaletteNames, formatFileSize, pngSize } from "./playerBridge.js";
+import {
+  buildPalettePreview,
+  buildSpecsSummary,
+  collectColorRoles,
+  detectOimCapabilities,
+  extractPaletteNames,
+  formatFileSize,
+  pngSize,
+} from "./playerBridge.js";
 import { FloatingToolbar } from "../ui/toolbar.js";
 import { renderDropzone } from "../ui/dropzone.js";
 
@@ -34,6 +42,69 @@ describe("viewer-desktop playerBridge & UI", () => {
       },
     });
     expect(names).toEqual(["dark", "light"]);
+  });
+
+  it("collects dynamic color roles and builds visual palette preview with HSL variations", () => {
+    const meta = {
+      palettes: {
+        dark: { primary: "#0f172a", surface: "#1e293b" },
+      },
+      slots: [
+        {
+          id: "s1",
+          type: "geo",
+          style: {
+            fillColorRole: "primary",
+            fillColor: "#2563eb",
+            strokeColorRole: "outline",
+            strokeColor: "#e2e8f0",
+          },
+        },
+      ],
+    };
+
+    const roles = collectColorRoles(meta);
+    expect(roles.map((r) => r.role)).toEqual(["primary", "outline", "surface"]);
+
+    const preview = buildPalettePreview(meta);
+    expect(preview.available).toBe(true);
+    expect(preview.palettes.map((p) => p.id)).toEqual([
+      "original",
+      "author:dark",
+      "hue-60",
+      "hue-120",
+      "hue-180",
+      "hue-240",
+      "mono",
+    ]);
+  });
+
+  it("detects OIM capabilities accurately so controls only appear when supported", () => {
+    const staticSingleLang = detectOimCapabilities({
+      lang: ["es"],
+      slots: [{ id: "1", type: "text", content: { es: "Hola" }, style: {} }],
+    });
+    expect(staticSingleLang.hasLanguages).toBe(false);
+    expect(staticSingleLang.hasAnimations).toBe(false);
+    expect(staticSingleLang.hasLottie).toBe(false);
+    expect(staticSingleLang.hasDynamicColors).toBe(false);
+
+    const richMultiLang = detectOimCapabilities({
+      lang: ["es", "en"],
+      slots: [
+        {
+          id: "1",
+          type: "text",
+          content: { es: "Hola", en: "Hello" },
+          style: { textAnimationType: "typewriter", fillColorRole: "primary", fillColor: "#2563eb" },
+        },
+        { id: "2", type: "lottie", style: {} },
+      ],
+    });
+    expect(richMultiLang.hasLanguages).toBe(true);
+    expect(richMultiLang.hasAnimations).toBe(true);
+    expect(richMultiLang.hasLottie).toBe(true);
+    expect(richMultiLang.hasDynamicColors).toBe(true);
   });
 
   it("builds technical specs summary using @oim-media/core permissionOf", () => {
@@ -66,6 +137,8 @@ describe("viewer-desktop playerBridge & UI", () => {
     expect(specs.reeditPolicy).toBe("sealed");
     expect(specs.palettes).toEqual(["dark", "light"]);
     expect(specs.defaultPalette).toBe("dark");
+    expect(specs.capabilities.hasLottie).toBe(true);
+    expect(specs.palettePreview.available).toBe(true);
   });
 
   it("renders official OIM brand mark (oim-marca.svg >= 32px) and error state in dropzone", () => {
@@ -82,9 +155,10 @@ describe("viewer-desktop playerBridge & UI", () => {
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
-  it("renders FloatingToolbar with simplified OIM mark (<= 32px), all security states, palettes, and specs", () => {
+  it("renders clean bottom HUD (no logo, no signature text), compact top-bar signature toggle, and contextual inspector", () => {
     const container = document.createElement("div");
     const onSelectPalette = vi.fn();
+    const onSelectPaletteOption = vi.fn();
     const onToggleAutoRotateLang = vi.fn();
     const toolbar = new FloatingToolbar(
       container,
@@ -95,45 +169,83 @@ describe("viewer-desktop playerBridge & UI", () => {
         onSelectLang: vi.fn(),
         onToggleAutoRotateLang,
         onSelectPalette,
+        onSelectPaletteOption,
         onOpenFile: vi.fn(),
       },
       "en"
     );
 
-    // Simplified OIM mark (viewBox="0 0 64 64")
-    expect(container.querySelector('svg[viewBox="0 0 64 64"]')).not.toBeNull();
+    const bottomHud = container.querySelector("#floating-toolbar")!;
+    // Bottom bar must NOT contain OIM logo or signature badge
+    expect(bottomHud.querySelector('svg[viewBox="0 0 64 64"]')).toBeNull();
+    expect(bottomHud.querySelector("#security-badge")).toBeNull();
 
-    // Security statuses
+    // Compact signature badge lives in the top bar and starts collapsed (icon-only)
+    const topBar = container.querySelector("#viewer-top-bar")!;
     toolbar.setSecurityStatus("verified");
-    expect(container.querySelector("#security-badge")?.textContent).toContain("Signed with OIM");
+    const badge = topBar.querySelector("#security-badge") as HTMLButtonElement;
+    expect(badge).not.toBeNull();
+    expect(badge.textContent).toContain("Signed with OIM");
+    const badgeLabel = badge.querySelector(".security-badge-label") as HTMLElement;
+    expect(badgeLabel.style.display).toBe("none");
+
+    // Clicking the compact badge expands the signature text; clicking again hides it
+    badge.click();
+    expect(
+      (topBar.querySelector("#security-badge .security-badge-label") as HTMLElement).style.display
+    ).toBe("inline");
+    (topBar.querySelector("#security-badge") as HTMLButtonElement).click();
+    expect(
+      (topBar.querySelector("#security-badge .security-badge-label") as HTMLElement).style.display
+    ).toBe("none");
 
     toolbar.setSecurityStatus("expired_key");
-    expect(container.querySelector("#security-badge")?.textContent).toContain("Expired key");
+    expect(topBar.querySelector("#security-badge")?.textContent).toContain("Expired key");
 
     toolbar.setSecurityStatus("image_mismatch");
-    expect(container.querySelector("#security-badge")?.textContent).toContain("Image altered");
+    expect(topBar.querySelector("#security-badge")?.textContent).toContain("Image altered");
 
-    // Palettes & Specs
+    // Contextual controls in Inspector & Bottom HUD
+    const specs = buildSpecsSummary(
+      {
+        oim: "1.26.1",
+        lang: ["es", "en"],
+        reedit: "public",
+        palettes: {
+          dark: { primary: "#111111" },
+          light: { primary: "#ffffff" },
+        },
+        defaultPalette: "dark",
+        slots: [
+          {
+            id: "1",
+            type: "text",
+            content: { es: "Hola", en: "Hello" },
+            style: { fillColorRole: "primary", fillColor: "#2563eb" },
+          },
+        ],
+      },
+      "sistema_de_tokens_dinamicos_temas_dynamic_color_roles_01_-_ui_dashboard_tema_claro.oim.png",
+      24166,
+      { width: 1080, height: 1080 }
+    );
+
     toolbar.setLanguages(["es", "en"], "en");
-    toolbar.setPalettes(["dark", "light"], "dark");
-    toolbar.setSpecs({
-      fileName: "demo.oim.png",
-      fileSizeFormatted: "120.0 KB",
-      dimensionsLabel: "1080 × 1080 px",
-      schemaVersion: "1.26.1",
-      slotsCount: 2,
-      slotTypes: { text: 2 },
-      reeditPolicy: "public",
-      palettes: ["dark", "light"],
-      defaultPalette: "dark",
-    });
+    toolbar.setPalettes(specs.palettes, specs.defaultPalette);
+    toolbar.setSpecs(specs);
 
-    const paletteOpts = container.querySelectorAll(".palette-opt");
-    expect(paletteOpts.length).toBe(3); // Auto + dark + light
-    (paletteOpts[2] as HTMLButtonElement).click();
-    expect(onSelectPalette).toHaveBeenCalledWith("light");
+    // Lottie toggle should NOT be rendered since slots have no lottie
+    const inspector = container.querySelector("#inspector-drawer")!;
+    expect(inspector.querySelector("#insp-btn-lottie")).toBeNull();
+    // Language switcher and Dynamic Theme swatch cards SHOULD be rendered
+    expect(inspector.querySelectorAll(".insp-lang-opt").length).toBe(2);
+    const paletteCards = inspector.querySelectorAll(".insp-palette-card");
+    expect(paletteCards.length).toBeGreaterThanOrEqual(3);
 
-    (container.querySelector("#btn-auto-rotate") as HTMLButtonElement).click();
+    (paletteCards[2] as HTMLButtonElement).click();
+    expect(onSelectPaletteOption).toHaveBeenCalledTimes(1);
+
+    (bottomHud.querySelector("#btn-auto-rotate") as HTMLButtonElement).click();
     expect(onToggleAutoRotateLang).toHaveBeenCalledTimes(1);
   });
 });

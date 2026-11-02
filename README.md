@@ -5,14 +5,15 @@ carries signed, layered and animated content in a metadata chunk. It still opens
 as an ordinary image anywhere; OIM-aware players compose the layers, animations
 and interactions on top of it.
 
-## Packages
+## Packages & Applications
 
-| Package | What it is |
+| Package / App | What it is |
 |---|---|
 | [`@oim-media/core`](packages/core/README.md) | Contract schema, binary reader, canonical form and the render rules shared by every player. |
 | [`@oim-media/player-oim`](packages/player-oim/README.md) | `<oim-player>` web component for `.oim` images. |
 | [`@oim-media/player-ovm`](packages/player-ovm/README.md) | Reserved placeholder for `.ovm` interactive video (pending specification). |
 | [`@oim-media/spec`](packages/spec/README.md) | Language-neutral contract: JSON Schema, binary and canonical specifications, conformance vectors and the public player keys. |
+| [`@oim-media/viewer-desktop`](apps/viewer-desktop/README.md) | Native desktop viewer (Windows, macOS, Linux) built with Tauri v2, `@oim-media/player-oim`, and `@oim-media/core`. |
 
 ## Install
 
@@ -41,9 +42,9 @@ This is a pnpm workspace; use pnpm only.
 
 ```bash
 pnpm install
-pnpm build         # core, player-oim and player-ovm
-pnpm test          # unit tests of core and player-oim
-pnpm typecheck     # the typecheck scripts of core and player-oim
+pnpm build         # core, player-oim, player-ovm and viewer-desktop
+pnpm test          # unit tests of core, player-oim and viewer-desktop
+pnpm typecheck     # the typecheck scripts of core, player-oim and viewer-desktop
 pnpm conformance   # the conformance vectors in packages/spec/vectors
 pnpm test:tools    # the release and packaging scripts in tools/
 pnpm check:licenses

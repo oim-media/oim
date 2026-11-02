@@ -1,12 +1,12 @@
 {
   "name": "oim",
   "private": true,
-  "description": "OIM — open format for interactive images: contract, core library and web players.",
+  "description": "OIM — open format for interactive images: contract, core library, web players, and desktop viewer.",
   "license": "Apache-2.0",
   "packageManager": "pnpm@11.0.8",
   "scripts": {
-    "build": "pnpm -r --filter ./packages/core --filter ./packages/player-oim --filter ./packages/player-ovm build",
-    "test": "pnpm -r --filter ./packages/core --filter ./packages/player-oim test",
+    "build": "pnpm -r --filter ./packages/core --filter ./packages/player-oim --filter ./packages/player-ovm --filter ./apps/viewer-desktop build",
+    "test": "pnpm -r --filter ./packages/core --filter ./packages/player-oim --filter ./apps/viewer-desktop test",
     "typecheck": "pnpm -r typecheck",
     "conformance": "pnpm --filter @oim-media/core exec vitest run conformance",
     "check:licenses": "node tools/licenses.mjs",

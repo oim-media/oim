@@ -162,11 +162,8 @@ export function mountOimPlayer(
     throw new Error("Could not mount <oim-player> into container");
   }
 
-  playerEl.setAttribute("mode", "full");
-  playerEl.setAttribute("fit", "contain");
-  playerEl.setAttribute("align", "center");
-  playerEl.setAttribute("allow-zoom", "true");
-  playerEl.setAttribute("allow-lottie", "true");
+  playerEl.style.width = "100%";
+  playerEl.style.height = "100%";
 
   const instance: PlayerInstance = {
     element: playerEl,

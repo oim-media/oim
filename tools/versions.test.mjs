@@ -28,6 +28,9 @@ describe("package versions follow the contract", () => {
       true,
     ]);
     expect(tauriConf.version).toBe(contract);
+    // Tauri v2's asset handler injects a style-src nonce when `csp` is non-null,
+    // which makes WebView2 ignore `'unsafe-inline'` and block `<oim-player>` styles.
+    expect(tauriConf.app?.security?.csp).toBeNull();
     expect(cargoVersion).toBe(contract);
   });
 

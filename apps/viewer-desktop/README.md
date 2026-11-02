@@ -2,15 +2,19 @@
 
 Native desktop viewer (Windows, macOS, Linux) for **Object Interactive Media (`.oim` / `.oim.png`)** built with **Tauri v2**, `@oim-media/player-oim`, and `@oim-media/core`.
 
+## Download (Prebuilt Installers)
+
+End users do not need to compile from source. Prebuilt Windows installers (`OIM Viewer_<version>_x64-setup.exe`, `OIM Viewer_<version>_x64_en-US.msi`, and portable `oim-viewer.exe`) are automatically built by CI and attached to every [GitHub Release](https://github.com/oim-media/oim/releases).
+
 ---
 
 ## Features
 
 - **Zero-duplication architecture**: Mounts `<oim-player>` directly from `@oim-media/player-oim` and reads metadata/permissions through `@oim-media/core` (`permissionOf`, `isValidDynamicColorRole`, `isSafeCssColor`).
-- **Cryptographic Signature Verification**: Displays all 9 `OimSecurityStatus` states (`verified`, `verified_authorless`, `image_unsealed`, `expired_key`, `invalid_signature`, `image_mismatch`, `corrupt`, `no_metadata`, `unsigned`) and blocks tampered files (`OIM_ALTERED`).
-- **Multilingual & Auto-Rotate**: Reads `player.languages` directly from `<oim-player>` with instant language switching and 3-second auto-rotation (`auto-rotate-lang`).
-- **Named Color Palettes (`1.20.0+`)**: Switches author-defined palettes (`metadata.palettes` / `defaultPalette`) via the native `palette` attribute on `<oim-player>`.
-- **Technical Specs Inspector (`I`)**: Displays file name, size, PNG `IHDR` dimensions, OIM schema version, interactive layer count/breakdown, and `reedit` policy (`public`, `author_only`, `sealed`).
+- **Cryptographic Signature Verification**: Displays ECDSA P-256 verification status (`Verified`, `Key expired`, `Unsigned`), signing key ID (`kid`), and re-edit permission (`reeditable` / `locked`).
+- **Multilingual & Multi-page**: Reads `languages` and `pages` directly from `<oim-player>` with instant language and page switching.
+- **Named Color Palettes (`1.20.0+`) & Dynamic Colors**: Switches author-defined palettes (`metadata.palettes` / `defaultPalette`) and dynamic color roles (`primary`, `secondary`, `accent`, `background`, `text`) live.
+- **Technical Specs Inspector (`Info`)**: Displays signature state, contract version, aspect ratio, page count, languages, palettes, and re-edit permission.
 - **Native OS Integration**: Supports Windows/macOS/Linux file associations (`.oim`, `.png`), single-instance file forwarding, native OS drag-and-drop (`tauri://drag-drop`), and strict WebView CSP.
 
 ---
@@ -20,25 +24,28 @@ Native desktop viewer (Windows, macOS, Linux) for **Object Interactive Media (`.
 | Shortcut | Action |
 |---|---|
 | `Ctrl+O` / `Cmd+O` | Open `.oim` / `.oim.png` file |
-| `Space` | Play / Pause animations |
-| `L` | Toggle interactive layers (`show-slots`) |
-| `I` | Toggle Technical Specs popover |
-| `F11` / `Esc` | Toggle Fullscreen |
+| `PageUp` / `PageDown` | Previous / Next page |
+| `Ctrl+Shift+T` | Toggle canvas background (`dark` / `light` / `checker`) |
+| `F11` | Toggle Fullscreen |
+| `Esc` | Close open popover or exit Fullscreen |
 
 ---
 
-## Development & Build
+## Development & Build (Contributors)
 
 ```bash
-# Run web preview / frontend tests
-pnpm --filter @oim-media/viewer-desktop test
-pnpm --filter @oim-media/viewer-desktop build
+# Run unit tests and frontend build
+pnpm --filter ./apps/viewer-desktop test
+pnpm --filter ./apps/viewer-desktop build
+
+# Run Rust IPC unit tests
+cargo test --manifest-path apps/viewer-desktop/src-tauri/Cargo.toml
 
 # Launch native Tauri desktop window (requires Rust toolchain)
-pnpm --filter @oim-media/viewer-desktop tauri dev
+pnpm --filter ./apps/viewer-desktop tauri dev
 
 # Build native installers (.msi / .exe / .dmg / .AppImage)
-pnpm --filter @oim-media/viewer-desktop tauri build
+pnpm --filter ./apps/viewer-desktop tauri build
 ```
 
 ## License

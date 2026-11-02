@@ -67,3 +67,36 @@ fn main() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn accepts_only_oim_and_png_extensions() {
+        assert!(is_allowed_oim_path("poster.oim.png"));
+        assert!(is_allowed_oim_path("poster.OIM"));
+        assert!(is_allowed_oim_path("C:\\Users\\demo\\card.PNG"));
+        assert!(!is_allowed_oim_path("secret.txt"));
+        assert!(!is_allowed_oim_path("no-extension"));
+    }
+
+    #[test]
+    fn read_oim_file_rejects_disallowed_extension_and_missing_files() {
+        let err = read_oim_file("notes.txt".into()).unwrap_err();
+        assert!(err.contains("Unsupported file extension"));
+
+        let missing = read_oim_file("nonexistent-test-vector.oim.png".into()).unwrap_err();
+        assert!(missing.contains("Cannot read file metadata"));
+    }
+
+    #[test]
+    fn read_oim_file_reads_valid_png_asset() {
+        let icon_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("icons")
+            .join("32x32.png");
+        let bytes = read_oim_file(icon_path.to_string_lossy().into_owned())
+            .expect("should read valid .png file");
+        assert!(bytes.starts_with(b"\x89PNG\r\n\x1a\n"));
+    }
+}

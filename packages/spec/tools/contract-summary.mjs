@@ -176,12 +176,12 @@ function build() {
 
 function report(summary) {
   const { contract, vectors, drift } = summary;
-  console.log(`\nContrato  ${contract.id}`);
+  console.log(`\nContract  ${contract.id}`);
   console.log(`          ${contract.rootKeyCount} keys at the root · required: ${contract.required.join(", ") || "none"}`);
   console.log(`          accepts undeclared keys: ${contract.acceptsUndeclaredKeys ? "yes" : "no"}`);
-  console.log(`          ${contract.definitions.length} sub-definiciones: ${contract.definitions.join(", ")}\n`);
+  console.log(`          ${contract.definitions.length} sub-definitions: ${contract.definitions.join(", ")}\n`);
 
-  console.log("Vectores");
+  console.log("Vectors");
   for (const v of vectors) {
     const marks = [v.signed ? "signed" : "UNSIGNED", v.sealed ? "sealed" : "UNSEALED"].join(" · ");
     console.log(
@@ -192,7 +192,7 @@ function report(summary) {
     );
   }
 
-  console.log("\nDeriva");
+  console.log("\nDrift");
   if (drift.undeclared.length === 0) {
     console.log("  · the vectors carry no key outside the contract");
   } else {
@@ -216,7 +216,7 @@ if (process.argv.includes("--json")) {
 } else if (process.argv.includes("--write")) {
   const out = join(specRoot, "contract-summary.json");
   writeFileSync(out, JSON.stringify(summary, null, 2) + "\n", "utf-8");
-  console.log(`Escrito: ${out}`);
+  console.log(`Written: ${out}`);
 } else {
   report(summary);
 }

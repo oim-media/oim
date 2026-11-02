@@ -9,11 +9,11 @@ this says what **result** comes out of a specific one.
 <name>.expected.json  what a conforming reader must extract from it
 ```
 
-## The Matrix of 20 Normative Vectors
+## The Normative Vectors
 
 A reduced suite cannot tell apart an implementation that **reads the format**
-from one that **gets a simple case right by chance**. This matrix of 20 vectors
-exhaustively covers every dimension of the format:
+from one that **gets a simple case right by chance**. These 33 vectors cover the
+initial 20-vector matrix plus every capability added since contract 1.10.0:
 
 | # | Vector | What it covers |
 |---|---|---|
@@ -37,7 +37,19 @@ exhaustively covers every dimension of the format:
 | 18 | `transparent-background` | Strictly transparent background (`fillColor: "transparent"`) under the normative colour rule |
 | 19 | `layer-ordering-zindex` | Strict stacking sequence with slots overlapping at identical coordinates |
 | 20 | `full-monty-composite` | Comprehensive master document combining multilingual content, active/hover interactivity, groups, parallax and shadows |
-| 21 | `reedit-english` | Unsigned (`"signed": false`). The permission to re-edit the work in English: `reedit: "public"` (contract 1.23.0). Checks the key, not authorship |
+| 21 | `legacy-text-chunk` | The same document as `basic-text` in the legacy container: a `tEXt` chunk with base64 of raw deflate |
+| 22 | `layer-blur` | Layer blur (`layerBlur`) on the style of a text and of a shape |
+| 23 | `layer-grain` | Per-layer grain (contract 1.10.0): `grain`, `grainIntensity`, `grainSize` and `grainBlend` |
+| 24 | `flip` | Layer flip (contract 1.14.0): `flipX` and `flipY` on rotated shapes |
+| 25 | `crop` | Image crop (contract 1.15.0): `imageCrop` framing an image at x 20 %, y 70 % and zoom 2 |
+| 26 | `accessibility` | Accessibility (contract 1.16.0): document `description`, per-language `alt` and `decorative` |
+| 27 | `image-fill` | Image fill (contract 1.17.0): shapes filled with an embedded photo and `fillImageCrop` |
+| 28 | `media-filters` | Media filters (contract 1.18.0): `filterPreset` on a photo and on a circular frame with blur and stroke |
+| 29 | `frame-shapes` | Frame shapes (contract 1.19.0): a cloud, a custom SVG path (`svgViewBox`) and a star with a flipped photo |
+| 30 | `palettes` | Named palettes (contract 1.20.0): `dark` and `light`, `defaultPalette: "dark"`, and colour roles |
+| 31 | `pattern-color-roles` | Colour roles in patterns and shadows (contract 1.21.0) |
+| 32 | `reveal-and-play` | Per-layer reveal and the `play` action (contract 1.22.0) |
+| 33 | `reedit-english` | Re-edit permission in English (contract 1.23.0): `reedit: "public"`, signed by the production service |
 
 ## How to use it from another language
 
@@ -54,10 +66,8 @@ without a look, which is a vector that no longer checks anything.
 
 ## The signature
 
-The 20 vectors are signed with the public key published in `packages/spec/keys.json`.
-`reedit-english` is not: the signing service could not produce it, so its
-`expected.json` says `"signed": false` and the test does not require a signature
-from it. It checks the English key and the result, never who the author is. The signature covers the canonical serialisation
+All 33 vectors are signed with the public key published in `packages/spec/keys.json`.
+The signature covers the canonical serialisation
 of the metadata and the cryptographic hash of the pixels (`image_hash` over the `IDAT` chunks).
 A reader that verifies must rebuild that canonical form following the seven rules
 specified in the `README.md` at the root of `packages/spec`; one that only reads the format

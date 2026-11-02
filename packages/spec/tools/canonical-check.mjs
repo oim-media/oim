@@ -149,8 +149,8 @@ for (const { rule, input, expected } of KNOWN_ANSWERS) {
   if (got !== expected) {
     knownAnswerFailures++;
     console.log(`  ${rule}
-      esperado ${expected}
-      obtenido ${got}`);
+      expected ${expected}
+      got      ${got}`);
   }
 }
 console.log(

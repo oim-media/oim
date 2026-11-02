@@ -16,11 +16,14 @@ interface OimPlayerOptions {
   showLanguageSelector?: boolean;
   showSlots?: boolean;
   allowLottie?: boolean;
+  allowDynamicColors?: boolean;
   disableAnimations?: boolean;
+  disableActions?: boolean;
   /** @deprecated No effect; removed in 2.0.0. */
   dropdownBlur?: boolean;
   fit?: 'contain' | 'cover';
   align?: 'center' | 'top' | 'bottom';
+  placeholder?: string;
 }
 
 function detectMediaType(src: Blob | string, firstBytes: Uint8Array | null): 'image' | 'video' {

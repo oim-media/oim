@@ -8,3 +8,5 @@ library oim_flutter;
 
 export 'src/binary/oim_extractor.dart';
 export 'src/binary/zlib_decompressor.dart';
+export 'src/ui/oim_player.dart';
+export 'src/ui/color_util.dart';

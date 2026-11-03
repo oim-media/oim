@@ -1,4 +1,4 @@
-package media.oim.oim_viewer_flutter
+package media.oim.viewer.flutter
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -16,6 +16,8 @@ import 'effects.dart';
 import 'geo_shapes.dart';
 import 'groups.dart';
 import 'image_fill.dart';
+import 'infinite_parallax.dart';
+import 'lottie_slot.dart';
 
 /// Interactive native Flutter widget to render OIM files.
 class OimPlayer extends StatefulWidget {
@@ -25,6 +27,8 @@ class OimPlayer extends StatefulWidget {
   final bool? prefersDark;
   final bool isInteractive;
   final bool showBaseImage;
+  final bool allowLottie;
+  final bool disableAnimations;
   final Widget Function(BuildContext, Object)? errorBuilder;
 
   const OimPlayer({
@@ -35,6 +39,8 @@ class OimPlayer extends StatefulWidget {
     this.prefersDark,
     this.isInteractive = true,
     this.showBaseImage = true,
+    this.allowLottie = true,
+    this.disableAnimations = false,
     this.errorBuilder,
   });
 
@@ -99,64 +105,99 @@ class _OimPlayerState extends State<OimPlayer> {
     final naturalHeight = (canvas?['natural_height'] as num?)?.toDouble() ?? 600.0;
     final aspectRatio = naturalWidth / naturalHeight;
 
-    return AspectRatio(
-      aspectRatio: aspectRatio,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final w = constraints.maxWidth;
-          final h = constraints.maxHeight;
+    final declaredLanguages = (res.metadata['languages'] as List<dynamic>?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        ['es'];
+    final currentLang = widget.language ??
+        (declaredLanguages.isNotEmpty ? declaredLanguages.first : 'es');
 
-          return ClipRect(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // 1. Base Image
-                if (widget.showBaseImage)
-                  Image.memory(
-                    res.imageBytes,
-                    width: w,
-                    height: h,
-                    fit: BoxFit.fill,
+    // Dynamic color resolution
+    final activePalette = resolvePalette(
+      res.metadata,
+      requested: widget.palette,
+      prefersDark: widget.prefersDark ?? (Theme.of(context).brightness == Brightness.dark),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        double containerWidth;
+        double containerHeight;
+
+        if (constraints.maxWidth.isFinite && constraints.maxHeight.isFinite) {
+          final boxRatio = constraints.maxWidth / constraints.maxHeight;
+          if (boxRatio > aspectRatio) {
+            containerHeight = constraints.maxHeight;
+            containerWidth = containerHeight * aspectRatio;
+          } else {
+            containerWidth = constraints.maxWidth;
+            containerHeight = containerWidth / aspectRatio;
+          }
+        } else if (constraints.maxWidth.isFinite) {
+          containerWidth = constraints.maxWidth;
+          containerHeight = containerWidth / aspectRatio;
+        } else if (constraints.maxHeight.isFinite) {
+          containerHeight = constraints.maxHeight;
+          containerWidth = containerHeight * aspectRatio;
+        } else {
+          containerWidth = naturalWidth;
+          containerHeight = naturalHeight;
+        }
+
+        return Center(
+          child: SizedBox(
+            width: containerWidth,
+            height: containerHeight,
+            child: ClipRect(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (widget.showBaseImage && res.imageBytes.isNotEmpty)
+                    Positioned.fill(
+                      child: Image.memory(
+                        res.imageBytes,
+                        fit: BoxFit.fill,
+                        gaplessPlayback: true,
+                      ),
+                    ),
+                  ..._buildSlots(
+                    res.metadata,
+                    currentLang,
+                    activePalette,
+                    containerWidth,
+                    containerHeight,
                   ),
-
-                // 2. Interactive Layer Slots
-                if (widget.isInteractive)
-                  ..._buildCanvasSlots(res.metadata, w, h),
-              ],
+                ],
+              ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
-  List<Widget> _buildCanvasSlots(
+  List<Widget> _buildSlots(
     Map<String, dynamic> metadata,
+    String currentLang,
+    OimPalette? activePalette,
     double containerWidth,
     double containerHeight,
   ) {
-    final rawSlots = metadata['slots'] as List<dynamic>? ?? [];
-    final currentLang = widget.language ??
-        (metadata['languages'] as List<dynamic>?)?.firstOrNull?.toString() ??
-        'es';
+    final rawSlots = metadata['slots'] as List<dynamic>?;
+    if (rawSlots == null) return const [];
 
-    final activePalette = resolvePalette(
-      metadata,
-      requested: widget.palette,
-      prefersDark: widget.prefersDark,
-    );
-
-    final groupChildrenMap = childrenByGroup(rawSlots);
     final byId = <String, Map<String, dynamic>>{};
-    for (final s in rawSlots) {
-      if (s is Map<String, dynamic> && s['id'] != null) {
-        byId[s['id'].toString()] = s;
+    for (final raw in rawSlots) {
+      if (raw is Map<String, dynamic>) {
+        final id = raw['id']?.toString() ?? '';
+        if (id.isNotEmpty) byId[id] = raw;
       }
     }
 
+    final groupChildrenMap = childrenByGroup(rawSlots);
     final childSlotIds = <String>{};
-    for (final cList in groupChildrenMap.values) {
-      childSlotIds.addAll(cList);
+    for (final children in groupChildrenMap.values) {
+      childSlotIds.addAll(children);
     }
 
     final widgets = <Widget>[];
@@ -193,8 +234,9 @@ class _OimPlayerState extends State<OimPlayer> {
     String currentLang,
     OimPalette? activePalette,
     double containerWidth,
-    double containerHeight,
-  ) {
+    double containerHeight, {
+    Map<String, dynamic>? parentSceneLoop,
+  }) {
     final type = raw['type']?.toString();
     final pos = raw['position'] as List<dynamic>?;
     final style = (raw['style'] as Map<String, dynamic>?) ?? {};
@@ -203,9 +245,11 @@ class _OimPlayerState extends State<OimPlayer> {
     if (type == 'group') {
       final childrenIds = groupChildrenMap[slotId];
       if (childrenIds == null || childrenIds.isEmpty) {
-        // Group without children produces no element
         return null;
       }
+
+      final groupSceneLoop = (style['sceneLoop'] as Map<String, dynamic>?);
+      final effectiveGroupLoop = groupSceneLoop ?? parentSceneLoop;
 
       final childrenWidgets = <Widget>[];
       for (final cid in childrenIds) {
@@ -219,6 +263,7 @@ class _OimPlayerState extends State<OimPlayer> {
             activePalette,
             containerWidth,
             containerHeight,
+            parentSceneLoop: effectiveGroupLoop,
           );
           if (cw != null) childrenWidgets.add(cw);
         }
@@ -238,6 +283,30 @@ class _OimPlayerState extends State<OimPlayer> {
 
       final blend = blendModeOf(style['blendMode']);
       if (blend != null) groupWrapper = _BlendMask(mode: blend, child: groupWrapper);
+
+      // Check if group itself has infinite motion / parallax
+      final parallaxCfg = parseInfiniteParallax(raw, style);
+      if (parallaxCfg != null) {
+        final plan = computeInfiniteLayerPlan(parallaxCfg, containerWidth, containerWidth);
+        if (plan.duplicate) {
+          groupWrapper = InfiniteParallaxTrack(
+            plan: plan,
+            pieceWidth: containerWidth,
+            pieceHeight: containerHeight,
+            disableAnimations: widget.disableAnimations,
+            child: groupWrapper,
+          );
+        }
+      }
+
+      final isParallaxGrp = style['sceneLoop'] != null ||
+          style['isParallaxGroup'] == true ||
+          raw['isParallaxGroup'] == true ||
+          raw['name']?.toString().toLowerCase().contains('parallax') == true;
+
+      if (isParallaxGrp) {
+        groupWrapper = ClipRect(child: groupWrapper);
+      }
 
       return Positioned.fill(child: groupWrapper);
     }
@@ -261,6 +330,14 @@ class _OimPlayerState extends State<OimPlayer> {
       slotWidget = _buildGeoSlot(style, activePalette, slotWidth ?? 100, slotHeight ?? 100, containerWidth, containerHeight);
     } else if (type == 'image') {
       slotWidget = _buildImageSlot(raw, style, containerWidth, containerHeight);
+    } else if (type == 'lottie') {
+      slotWidget = LottieSlot(
+        slot: raw,
+        style: style,
+        language: currentLang,
+        allowLottie: widget.allowLottie,
+        disableAnimations: widget.disableAnimations,
+      );
     } else {
       slotWidget = const SizedBox.shrink();
     }
@@ -273,6 +350,27 @@ class _OimPlayerState extends State<OimPlayer> {
 
     final blend = blendModeOf(style['blendMode']);
     if (blend != null) slotWidget = _BlendMask(mode: blend, child: slotWidget);
+
+    // Infinite parallax check
+    final parallaxCfg = parseInfiniteParallax(
+      raw,
+      style,
+      parentSceneLoop: parentSceneLoop,
+    );
+    if (parallaxCfg != null) {
+      final pieceW = slotWidth ?? containerWidth;
+      final pieceH = slotHeight ?? containerHeight;
+      final plan = computeInfiniteLayerPlan(parallaxCfg, pieceW, containerWidth);
+      if (plan.duplicate) {
+        slotWidget = InfiniteParallaxTrack(
+          plan: plan,
+          pieceWidth: pieceW,
+          pieceHeight: pieceH,
+          disableAnimations: widget.disableAnimations,
+          child: slotWidget,
+        );
+      }
+    }
 
     return Positioned(
       left: left,
@@ -347,15 +445,7 @@ class _OimPlayerState extends State<OimPlayer> {
         fontStyle: fontStyle,
         letterSpacing: letterSpacing,
         height: lineHeight,
-        shadows: shadowOf(style) == null
-            ? null
-            : [
-                Shadow(
-                  color: shadowOf(style)!.color,
-                  offset: shadowOf(style)!.offset,
-                  blurRadius: shadowOf(style)!.blurRadius,
-                )
-              ],
+        shadows: shadowOf(style) == null ? null : [shadowOf(style)!],
       ),
     );
   }
@@ -368,85 +458,18 @@ class _OimPlayerState extends State<OimPlayer> {
     double containerWidth,
     double containerHeight,
   ) {
-    final isImageFill = style['fillType'] == 'image';
-    final drawing = shapeDrawing(style['geoShape']);
-    final svgPath = style['svgPath']?.toString();
+    final fillColor = resolveColor(style['fillColorRole'], style['fillColor'], activePalette) ??
+        Colors.transparent;
+    final borderColor = resolveColor(style['borderColorRole'], style['borderColor'], activePalette);
+    final borderWidth = resolveCssUnit(style['borderWidth'], containerWidth, containerHeight) ?? 0.0;
     final borderRadius = parseBorderRadius(style['borderRadius'], containerWidth, containerHeight);
-    final borderWidth = resolveCssUnit(style['borderWidth'] ?? style['strokeWidth'], containerWidth, containerHeight) ?? 0.0;
-    final borderColor = resolveColor(
-      style['borderColorRole'] ?? style['strokeColorRole'],
-      style['borderColor'] ?? style['strokeColor'],
-      activePalette,
-    );
 
-    final strokeStyle = (style['strokeStyle'] ?? style['borderStyle'])?.toString();
-    final isDashed = strokeStyle == 'dashed';
-    final isDotted = strokeStyle == 'dotted';
-
-    if (isImageFill) {
-      final fillImageUri = style['fillImage']?.toString();
-      final crop = style['fillImageCrop'] as Map<String, dynamic>?;
-      final flipX = style['fillImageFlipX'] == true;
-      final flipY = style['fillImageFlipY'] == true;
-
-      Widget photo = OimImageFillWidget(
-        imageUrl: fillImageUri,
-        crop: crop,
-        flipX: flipX,
-        flipY: flipY,
-        drawing: drawing,
-        svgPath: svgPath,
-        borderRadius: borderRadius,
-      );
-
-      if (borderWidth > 0 && borderColor != null) {
-        if (drawing != null || (svgPath != null && svgPath.isNotEmpty)) {
-          photo = Stack(
-            fit: StackFit.expand,
-            children: [
-              photo,
-              CustomPaint(
-                painter: GeoShapePainter(
-                  drawing: drawing,
-                  svgPath: svgPath,
-                  borderColor: borderColor,
-                  borderWidth: borderWidth,
-                  isDashed: isDashed,
-                  isDotted: isDotted,
-                ),
-              ),
-            ],
-          );
-        } else {
-          photo = Container(
-            foregroundDecoration: (isDashed || isDotted)
-                ? _DashedBorder(color: borderColor, width: borderWidth, radius: borderRadius, dotted: isDotted)
-                : null,
-            decoration: BoxDecoration(
-              borderRadius: borderRadius,
-              border: !isDashed && !isDotted
-                  ? Border.all(color: borderColor, width: borderWidth)
-                  : null,
-            ),
-            child: photo,
-          );
-        }
-      }
-
-      if (shadowOf(style) != null) {
-        photo = DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: borderRadius,
-            boxShadow: [shadowOf(style)!],
-          ),
-          child: photo,
-        );
-      }
-
-      return photo;
-    }
-
-    final fillColor = resolveColor(style['fillColorRole'], style['fillColor'], activePalette) ?? Colors.transparent;
+    final shapeName = style['drawing']?.toString() ?? style['geoDrawing']?.toString() ?? style['shape']?.toString();
+    final ShapeDrawing? drawing = shapeName != null ? geoShapes[shapeName] : null;
+    final svgPath = style['svgPath']?.toString() ?? style['path']?.toString();
+    final borderStyle = style['borderStyle']?.toString();
+    final isDashed = borderStyle == 'dashed';
+    final isDotted = borderStyle == 'dotted';
 
     if (drawing != null || (svgPath != null && svgPath.isNotEmpty)) {
       Widget geo = CustomPaint(

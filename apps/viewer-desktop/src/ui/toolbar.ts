@@ -125,9 +125,10 @@ export class FloatingToolbar {
     `;
     (inspectorHost ?? container).appendChild(this.inspectorEl);
 
-    // 3. Minimal Bottom Floating Glass HUD Pill
+    // 3. Bottom HUD Pill: Disabled per request ("la otra barra es suficiente")
     this.element = document.createElement("div");
     this.element.id = "floating-toolbar";
+    this.element.style.display = "none";
     this.element.style.cssText = `
       position: absolute;
       bottom: 20px;
@@ -150,7 +151,7 @@ export class FloatingToolbar {
       opacity: 1;
       user-select: none;
     `;
-    container.appendChild(this.element);
+    container.appendChild(this.element); // Kept in DOM with display: none per user request
 
     document.addEventListener("click", (e) => {
       if (!this.element.contains(e.target as Node) && this.openMenu !== null) {
@@ -261,7 +262,7 @@ export class FloatingToolbar {
 
   public setChromeVisible(visible: boolean): void {
     this.topBarEl.style.display = visible ? "flex" : "none";
-    this.element.style.display = visible ? "flex" : "none";
+    this.element.style.display = "none";
     this.inspectorEl.style.display = visible && this.isInspectorOpen ? "flex" : "none";
   }
 
@@ -275,10 +276,7 @@ export class FloatingToolbar {
   public show(): void {
     if (!this.isHudVisible) {
       this.isHudVisible = true;
-      this.element.style.visibility = "visible";
-      this.element.style.opacity = "1";
-      this.element.style.pointerEvents = "auto";
-      this.element.style.transform = "translateX(-50%) translateY(0)";
+      this.element.style.display = "none";
       if (this.isFullscreen) {
         this.topBarEl.style.visibility = "visible";
         this.topBarEl.style.opacity = "1";
@@ -291,9 +289,7 @@ export class FloatingToolbar {
   private hide(): void {
     if (this.openMenu !== null) return;
     this.isHudVisible = false;
-    this.element.style.opacity = "0";
-    this.element.style.pointerEvents = "none";
-    this.element.style.transform = "translateX(-50%) translateY(8px)";
+    this.element.style.display = "none";
     if (this.isFullscreen) {
       this.topBarEl.style.opacity = "0";
       this.topBarEl.style.pointerEvents = "none";
@@ -1287,5 +1283,6 @@ export class FloatingToolbar {
     this.renderTopBar();
     this.renderInspectorDrawer();
     this.renderBottomHud();
+    this.element.style.display = "none";
   }
 }

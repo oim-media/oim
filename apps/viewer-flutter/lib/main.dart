@@ -7,6 +7,23 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:oim_flutter/oim_flutter.dart';
 
+// Design tokens mirrored from apps/viewer-desktop (Tauri) so both viewers look the same.
+const _bg = Color(0xFF09090B);
+const _bgCenter = Color(0xFF131317);
+const _topBarBg = Color(0xE00E0E12);
+const _drawerBg = Color(0xEB101014);
+const _border = Color(0x14FFFFFF);
+const _text = Color(0xFFF4F4F5);
+const _textSoft = Color(0xFFE4E4E7);
+const _textSecondary = Color(0xFFA1A1AA);
+const _textMuted = Color(0xFF71717A);
+const _chipBg = Color(0x0DFFFFFF);
+const _chipBorder = Color(0x17FFFFFF);
+const _signed = Color(0xFF38BDF8);
+const _unsigned = Color(0xFFA1A1AA);
+const _ok = Color(0xFF22C55E);
+const _mono = TextStyle(fontFamily: 'Consolas', fontFamilyFallback: ['Menlo', 'monospace']);
+
 void main() {
   runApp(const OimViewerApp());
 }
@@ -17,18 +34,11 @@ class OimViewerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'OIM Viewer Flutter',
+      title: 'OIM Viewer',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF0D0F12),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF14171C),
-          elevation: 0,
-        ),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFF59E0B),
-          surface: Color(0xFF14171C),
-        ),
+        scaffoldBackgroundColor: _bg,
+        colorScheme: const ColorScheme.dark(primary: Colors.white, surface: _bg),
       ),
       home: const OimViewerScreen(),
     );
@@ -43,251 +53,521 @@ class OimViewerScreen extends StatefulWidget {
 }
 
 class _OimViewerScreenState extends State<OimViewerScreen> {
-  Uint8List? _oimBytes;
-  String _currentTitle = 'Ningún archivo cargado';
-  String _selectedLanguage = 'es';
-  bool _isInteractive = true;
-  Map<String, dynamic>? _metadata;
-  String? _statusMessage;
+  Uint8List? _bytes;
+  OimExtractionResult? _result;
+  String _fileName = 'OIM Viewer';
+  String _language = '';
+  bool _showLayers = true;
+  bool _inspectorOpen = true;
+  String? _error;
 
-  final List<String> _sampleVectors = [
-    'basic-text.oim.png',
-    'typography-styling.oim.png',
-    'multilang-cjk-rtl.oim.png',
-    'interactive.oim.png',
-    'filter-effects.oim.png',
-    'accessibility.oim.png',
-  ];
+  Map<String, dynamic>? get _meta => _result?.metadata;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadDefaultVector();
-  }
-
-  void _loadDefaultVector() {
-    // Attempt to load from relative spec/vectors path in desktop environment
-    try {
-      const samplePath = '../../packages/spec/vectors/typography-styling.oim.png';
-      final file = File(samplePath);
-      if (file.existsSync()) {
-        final bytes = file.readAsBytesSync();
-        _setOimBytes(bytes, 'typography-styling.oim.png');
-      }
-    } catch (_) {
-      // Ignored if running in an environment without direct filesystem relative access
+  List<String> get _languages {
+    final meta = _meta;
+    if (meta == null) return const [];
+    final declared = meta['languages'];
+    final found = <String>[];
+    if (declared is List) {
+      found.addAll(declared.map((e) => e.toString()));
     }
-  }
-
-  void _setOimBytes(Uint8List bytes, String title) {
-    try {
-      final result = extractOIM(bytes);
-      setState(() {
-        _oimBytes = bytes;
-        _currentTitle = title;
-        _metadata = result.metadata;
-        final langs = (result.metadata['languages'] as List<dynamic>?)?.map((e) => e.toString()).toList();
-        if (langs != null && langs.isNotEmpty && !langs.contains(_selectedLanguage)) {
-          _selectedLanguage = langs.first;
+    if (found.isEmpty) {
+      for (final slot in (meta['slots'] as List? ?? const [])) {
+        final content = slot is Map ? slot['content'] : null;
+        if (content is Map) {
+          for (final k in content.keys) {
+            final key = k.toString();
+            if (key != '*' && !found.contains(key)) found.add(key);
+          }
         }
-        _statusMessage = null;
-      });
-    } catch (e) {
-      setState(() {
-        _statusMessage = 'Error al leer el archivo OIM: $e';
-      });
+      }
     }
+    return found;
   }
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.platform.pickFiles(
+    final picked = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['png', 'oim'],
       withData: true,
     );
-
-    if (result != null && result.files.isNotEmpty) {
-      final file = result.files.first;
-      Uint8List? bytes = file.bytes;
-      if (bytes == null && file.path != null) {
-        bytes = File(file.path!).readAsBytesSync();
-      }
-      if (bytes != null) {
-        _setOimBytes(bytes, file.name);
-      }
+    if (picked == null || picked.files.isEmpty) return;
+    final file = picked.files.first;
+    Uint8List? bytes = file.bytes;
+    if (bytes == null && file.path != null) {
+      bytes = await File(file.path!).readAsBytes();
     }
+    if (bytes == null) return;
+    _load(bytes, file.name);
   }
 
-  void _loadSampleVector(String filename) {
+  void _load(Uint8List bytes, String name) {
     try {
-      final path = '../../packages/spec/vectors/$filename';
-      final file = File(path);
-      if (file.existsSync()) {
-        final bytes = file.readAsBytesSync();
-        _setOimBytes(bytes, filename);
-      } else {
-        setState(() {
-          _statusMessage = 'Vector no encontrado en la ruta: $path';
-        });
-      }
-    } catch (e) {
+      final result = extractOIM(bytes);
+      final langs = (result.metadata['languages'] as List?)?.map((e) => e.toString()).toList() ?? const <String>[];
       setState(() {
-        _statusMessage = 'Error al cargar el vector: $e';
+        _bytes = bytes;
+        _result = result;
+        _fileName = name;
+        _language = langs.isNotEmpty ? langs.first : '';
+        _error = null;
       });
+    } catch (e) {
+      setState(() => _error = 'No se pudo leer el archivo OIM: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final availableLanguages = <String>{'es', 'en'};
-    if (_metadata != null && _metadata!['languages'] is List) {
-      for (final l in _metadata!['languages'] as List) {
-        availableLanguages.add(l.toString());
-      }
-    }
-
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(center: Alignment(0, -0.1), radius: 0.9, colors: [_bgCenter, _bg]),
+        ),
+        child: Column(
           children: [
-            const Icon(Icons.layers_outlined, color: Color(0xFFF59E0B), size: 22),
-            const SizedBox(width: 8),
+            _TopBar(
+              fileName: _fileName,
+              sizeLabel: _bytes == null ? null : _formatSize(_bytes!.length),
+              signed: _meta?['signature'] != null && '${_meta?['signature']}'.isNotEmpty,
+              hasFile: _bytes != null,
+              inspectorOpen: _inspectorOpen,
+              onOpen: _pickFile,
+              onToggleInspector: () => setState(() => _inspectorOpen = !_inspectorOpen),
+            ),
+            if (_error != null)
+              Container(
+                width: double.infinity,
+                color: const Color(0x33EF4444),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                child: Text(_error!, style: const TextStyle(color: Color(0xFFFCA5A5), fontSize: 12)),
+              ),
             Expanded(
-              child: Text(
-                _currentTitle,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                overflow: TextOverflow.ellipsis,
+              child: LayoutBuilder(
+                builder: (context, c) {
+                  final wide = c.maxWidth >= 720;
+                  final drawerVisible = _inspectorOpen && _result != null;
+                  final stage = _bytes == null
+                      ? _EmptyState(onOpen: _pickFile)
+                      : Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Center(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: OimPlayer(
+                                bytes: _bytes!,
+                                language: _language.isEmpty ? null : _language,
+                                isInteractive: _showLayers,
+                              ),
+                            ),
+                          ),
+                        );
+                  final drawer = drawerVisible
+                      ? _InspectorDrawer(
+                          fileName: _fileName,
+                          sizeLabel: _formatSize(_bytes!.length),
+                          meta: _meta!,
+                          languages: _languages,
+                          language: _language,
+                          showLayers: _showLayers,
+                          onToggleLayers: () => setState(() => _showLayers = !_showLayers),
+                          onSelectLanguage: (l) => setState(() => _language = l),
+                        )
+                      : null;
+                  if (drawer == null) return stage;
+                  if (wide) {
+                    return Row(children: [Expanded(child: stage), drawer]);
+                  }
+                  return Stack(children: [stage, Positioned(top: 0, bottom: 0, right: 0, child: drawer)]);
+                },
               ),
             ),
           ],
         ),
-        actions: [
-          // Language selector
-          if (_oimBytes != null) ...[
-            DropdownButton<String>(
-              value: availableLanguages.contains(_selectedLanguage) ? _selectedLanguage : availableLanguages.first,
-              dropdownColor: const Color(0xFF1E222A),
-              underline: const SizedBox(),
-              items: availableLanguages.map((lang) {
-                return DropdownMenuItem(
-                  value: lang,
-                  child: Text(
-                    lang.toUpperCase(),
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
-                );
-              }).toList(),
-              onChanged: (val) {
-                if (val != null) {
-                  setState(() => _selectedLanguage = val);
-                }
-              },
-            ),
-            const SizedBox(width: 8),
+      ),
+    );
+  }
+}
 
-            // Toggle interactive layers
-            IconButton(
-              tooltip: _isInteractive ? 'Ocultar capa interactiva' : 'Mostrar capa interactiva',
-              icon: Icon(
-                _isInteractive ? Icons.visibility : Icons.visibility_off,
-                color: _isInteractive ? const Color(0xFFF59E0B) : Colors.grey,
-              ),
-              onPressed: () {
-                setState(() => _isInteractive = !_isInteractive);
-              },
-            ),
-          ],
+String _formatSize(int bytes) {
+  if (bytes < 1024) return '$bytes B';
+  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+  return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+}
 
-          // Pick sample vector dropdown menu
-          PopupMenuButton<String>(
-            tooltip: 'Probar vectores canónicos',
-            icon: const Icon(Icons.palette_outlined),
-            onSelected: _loadSampleVector,
-            itemBuilder: (context) {
-              return _sampleVectors.map((v) {
-                return PopupMenuItem(
-                  value: v,
-                  child: Text(v, style: const TextStyle(fontSize: 13)),
-                );
-              }).toList();
-            },
+String _compactTitle(String name, int max) {
+  final base = name.replaceAll(RegExp(r'\.oim(\.png)?$|\.png$', caseSensitive: false), '');
+  return base.length <= max ? base : '${base.substring(0, max)}...';
+}
+
+class _TopBar extends StatelessWidget {
+  const _TopBar({
+    required this.fileName,
+    required this.sizeLabel,
+    required this.signed,
+    required this.hasFile,
+    required this.inspectorOpen,
+    required this.onOpen,
+    required this.onToggleInspector,
+  });
+
+  final String fileName;
+  final String? sizeLabel;
+  final bool signed;
+  final bool hasFile;
+  final bool inspectorOpen;
+  final VoidCallback onOpen;
+  final VoidCallback onToggleInspector;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = !hasFile ? _unsigned : (signed ? _signed : _unsigned);
+    return Container(
+      height: 42,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: const BoxDecoration(
+        color: _topBarBg,
+        border: Border(bottom: BorderSide(color: _border)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.6), blurRadius: 8)],
+            ),
           ),
-
-          // File open button
-          Padding(
-            padding: const EdgeInsets.only(right: 12, left: 4),
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF59E0B),
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Text(
+              hasFile ? _compactTitle(fileName, 18) : 'OIM Viewer',
+              overflow: TextOverflow.ellipsis,
+              style: _mono.copyWith(fontSize: 12, color: _textSoft),
+            ),
+          ),
+          const Spacer(),
+          if (sizeLabel != null) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              decoration: BoxDecoration(
+                color: _chipBg,
+                border: Border.all(color: _border),
+                borderRadius: BorderRadius.circular(6),
               ),
-              icon: const Icon(Icons.file_open, size: 16),
-              label: const Text('Abrir .oim', style: TextStyle(fontWeight: FontWeight.bold)),
-              onPressed: _pickFile,
+              child: Text(sizeLabel!, style: _mono.copyWith(fontSize: 10, color: _textSecondary)),
+            ),
+            const SizedBox(width: 6),
+          ],
+          _BarButton(icon: Icons.folder_open_outlined, label: 'Cargar otro', onTap: onOpen),
+          if (hasFile) ...[
+            const SizedBox(width: 6),
+            _BarButton(icon: Icons.tune, label: 'Ajustes', active: inspectorOpen, onTap: onToggleInspector),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _BarButton extends StatelessWidget {
+  const _BarButton({required this.icon, required this.label, required this.onTap, this.active = false});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = active ? _bg : _textSoft;
+    return InkWell(
+      borderRadius: BorderRadius.circular(7),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+        decoration: BoxDecoration(
+          color: active ? Colors.white : _chipBg,
+          border: Border.all(color: active ? Colors.white : _chipBorder),
+          borderRadius: BorderRadius.circular(7),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 13, color: fg),
+            const SizedBox(width: 5),
+            Text(label, style: TextStyle(fontSize: 11, color: fg, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.onOpen});
+
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('Abre un archivo .oim.png', style: TextStyle(fontSize: 16, color: _text, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 6),
+          const Text('Se lee y se dibuja de forma nativa, sin navegador.', style: TextStyle(fontSize: 12, color: _textMuted)),
+          const SizedBox(height: 18),
+          InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: onOpen,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+              child: const Text('Cargar archivo', style: TextStyle(color: _bg, fontSize: 12, fontWeight: FontWeight.w700)),
             ),
           ),
         ],
       ),
-      body: Column(
+    );
+  }
+}
+
+class _InspectorDrawer extends StatelessWidget {
+  const _InspectorDrawer({
+    required this.fileName,
+    required this.sizeLabel,
+    required this.meta,
+    required this.languages,
+    required this.language,
+    required this.showLayers,
+    required this.onToggleLayers,
+    required this.onSelectLanguage,
+  });
+
+  final String fileName;
+  final String sizeLabel;
+  final Map<String, dynamic> meta;
+  final List<String> languages;
+  final String language;
+  final bool showLayers;
+  final VoidCallback onToggleLayers;
+  final ValueChanged<String> onSelectLanguage;
+
+  @override
+  Widget build(BuildContext context) {
+    final slots = (meta['slots'] as List? ?? const []);
+    final canvas = meta['canvas'] as Map?;
+    final w = canvas?['natural_width'];
+    final h = canvas?['natural_height'];
+    final dims = (w != null && h != null) ? '$w × $h px' : 'Responsive';
+    final signed = meta['signature'] != null && '${meta['signature']}'.isNotEmpty;
+    final reedit = '${meta['reedit'] ?? ''}';
+    final reeditLabel = reedit == 'public'
+        ? 'Público (editable)'
+        : reedit == 'sealed'
+            ? 'Sellado (inmutable)'
+            : 'Solo autor';
+    final counts = <String, int>{};
+    for (final s in slots) {
+      final t = (s is Map ? s['type'] : null)?.toString() ?? 'other';
+      counts[t] = (counts[t] ?? 0) + 1;
+    }
+
+    return Container(
+      width: 290,
+      decoration: const BoxDecoration(
+        color: _drawerBg,
+        border: Border(left: BorderSide(color: _border)),
+      ),
+      child: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
         children: [
-          if (_statusMessage != null)
-            Container(
-              width: double.infinity,
-              color: Colors.red.shade900,
-              padding: const EdgeInsets.all(8),
-              child: Text(
-                _statusMessage!,
-                style: const TextStyle(color: Colors.white, fontSize: 13),
-                textAlign: TextAlign.center,
+          _SectionHeader(title: 'AJUSTES', trailing: '${slots.length} slots'),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Capa interactiva', style: TextStyle(fontSize: 12, color: _text, fontWeight: FontWeight.w500)),
+                    Text(showLayers ? 'Superposición activa' : 'Base PNG plana',
+                        style: const TextStyle(fontSize: 10, color: _textMuted)),
+                  ],
+                ),
               ),
-            ),
-          Expanded(
-            child: Center(
-              child: _oimBytes != null
-                  ? Container(
-                      margin: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black54,
-                            blurRadius: 30,
-                            spreadRadius: 5,
-                          ),
-                        ],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: OimPlayer(
-                        bytes: _oimBytes!,
-                        language: _selectedLanguage,
-                        isInteractive: _isInteractive,
-                      ),
-                    )
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.image_outlined, size: 64, color: Colors.grey),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Selecciona o abre un archivo .oim para comenzar',
-                          style: TextStyle(color: Colors.grey, fontSize: 16),
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFF59E0B),
-                            foregroundColor: Colors.black,
-                          ),
-                          icon: const Icon(Icons.file_open),
-                          label: const Text('Explorar archivos'),
-                          onPressed: _pickFile,
-                        ),
-                      ],
-                    ),
-            ),
+              _Toggle(
+                icon: showLayers ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                label: showLayers ? 'Visible' : 'Oculta',
+                active: showLayers,
+                onTap: onToggleLayers,
+              ),
+            ],
           ),
+          if (languages.length > 1) ...[
+            const SizedBox(height: 12),
+            const Text('Idioma', style: TextStyle(fontSize: 12, color: _text, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: [
+                for (final l in languages)
+                  _LangChip(label: l.toUpperCase(), active: l.toLowerCase() == language.toLowerCase(), onTap: () => onSelectLanguage(l)),
+              ],
+            ),
+          ],
+          const SizedBox(height: 16),
+          const Divider(height: 1, color: _border),
+          const SizedBox(height: 16),
+          _SectionHeader(title: 'FICHA TÉCNICA', trailing: 'v${meta['oim'] ?? meta['version'] ?? '1.0'}'),
+          const SizedBox(height: 12),
+          _SpecRow(label: 'Archivo', value: fileName, mono: true),
+          _SpecRow(label: 'Peso', value: sizeLabel, mono: true),
+          _SpecRow(label: 'Resolución', value: dims),
+          _SpecRow(label: 'Esquema OIM', value: 'v${meta['oim'] ?? meta['version'] ?? '1.0'}', mono: true),
+          _SpecRow(label: 'Reedición', value: reeditLabel, valueColor: reedit == 'public' ? _ok : null),
+          _SpecRow(
+            label: 'Firma',
+            value: signed ? 'Firma presente · sin verificar' : 'Sin firma',
+            valueColor: signed ? _signed : _unsigned,
+          ),
+          if (counts.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            const Text('Desglose de capas', style: TextStyle(fontSize: 10, color: _textMuted)),
+            const SizedBox(height: 5),
+            Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: [
+                for (final e in counts.entries)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(color: _chipBg, borderRadius: BorderRadius.circular(4)),
+                    child: Text.rich(
+                      TextSpan(
+                        style: _mono.copyWith(fontSize: 10, color: const Color(0xFFD4D4D8)),
+                        children: [
+                          TextSpan(text: '${e.key.toUpperCase()} '),
+                          TextSpan(text: '${e.value}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, required this.trailing});
+
+  final String title;
+  final String trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.only(bottom: 8),
+      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: _border))),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title, style: const TextStyle(fontSize: 11, color: _textSecondary, fontWeight: FontWeight.w700, letterSpacing: 0.66)),
+          Text(trailing, style: _mono.copyWith(fontSize: 10, color: _textMuted)),
+        ],
+      ),
+    );
+  }
+}
+
+class _Toggle extends StatelessWidget {
+  const _Toggle({required this.icon, required this.label, required this.active, required this.onTap});
+
+  final IconData icon;
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = active ? _bg : _textSecondary;
+    return InkWell(
+      borderRadius: BorderRadius.circular(6),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+        decoration: BoxDecoration(
+          color: active ? Colors.white : Colors.transparent,
+          border: Border.all(color: active ? Colors.white : const Color(0x1FFFFFFF)),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 13, color: fg),
+            const SizedBox(width: 5),
+            Text(label, style: TextStyle(fontSize: 11, color: fg, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LangChip extends StatelessWidget {
+  const _LangChip({required this.label, required this.active, required this.onTap});
+
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(5),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+        decoration: BoxDecoration(
+          color: active ? Colors.white : Colors.transparent,
+          border: Border.all(color: active ? Colors.white : _chipBorder),
+          borderRadius: BorderRadius.circular(5),
+        ),
+        child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: active ? _bg : const Color(0xFFD4D4D8))),
+      ),
+    );
+  }
+}
+
+class _SpecRow extends StatelessWidget {
+  const _SpecRow({required this.label, required this.value, this.mono = false, this.valueColor});
+
+  final String label;
+  final String value;
+  final bool mono;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = (mono ? _mono : const TextStyle()).copyWith(fontSize: 11, color: valueColor ?? _text);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 9),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 11, color: _textMuted)),
+          const SizedBox(width: 10),
+          Expanded(child: Text(value, textAlign: TextAlign.right, overflow: TextOverflow.ellipsis, style: style)),
         ],
       ),
     );

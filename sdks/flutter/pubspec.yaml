@@ -1,0 +1,19 @@
+name: oim_flutter
+description: Official native Flutter and Dart player for Object Interactive Media (OIM).
+version: 1.26.1
+publish_to: 'none'
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.10.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  crypto: ^3.0.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  test: ^1.24.0
+  flutter_lints: ^3.0.0

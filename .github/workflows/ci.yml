@@ -26,3 +26,25 @@ jobs:
       - run: pnpm test:tools
       - run: pnpm check:licenses
       - run: node tools/pack-contents.mjs
+
+  flutter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+      - name: Test Flutter SDK & Conformance
+        run: |
+          cd sdks/flutter
+          flutter pub get
+          flutter analyze
+          flutter test
+      - name: Test Viewer Flutter App
+        run: |
+          cd apps/viewer-flutter
+          flutter pub get
+          flutter analyze
+          flutter test

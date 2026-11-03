@@ -10,12 +10,33 @@ import {
   type ShowcaseItem,
   LibraryClient,
   globalLibraryCache,
-  formatCompactTitle,
 } from "../library/libraryClient.js";
 
 export interface LibraryModalHandlers {
   onSelectItem: (item: ShowcaseItem, blob: Blob) => void;
   onClose?: () => void;
+}
+
+const ANCHO_DE_COLUMNA = 270;
+const MAX_COLUMNS = 6;
+
+function repartirEnColumnas(items: ShowcaseItem[], numCols: number): ShowcaseItem[][] {
+  const columns: ShowcaseItem[][] = Array.from({ length: numCols }, () => []);
+  const heights = new Array(numCols).fill(0);
+
+  for (const item of items) {
+    const parts = (item.aspect_ratio || "1/1").split("/").map(Number);
+    const w = parts[0] || 1;
+    const h = parts[1] || 1;
+    const proportion = h / w;
+    let shortest = 0;
+    for (let i = 1; i < numCols; i++) {
+      if (heights[i] < heights[shortest]) shortest = i;
+    }
+    columns[shortest].push(item);
+    heights[shortest] += proportion;
+  }
+  return columns;
 }
 
 export class LibraryModal {
@@ -30,17 +51,14 @@ export class LibraryModal {
   private searchQuery = "";
   private isLoading = true;
   private activeLoadingId: string | null = null;
-  private lastSeenDate: string | null = null;
+  private resizeObserver: ResizeObserver | null = null;
+  private currentColumns = 4;
 
   constructor(container: HTMLElement, handlers: LibraryModalHandlers, uiLang: UiLang = "es") {
     this.container = container;
     this.handlers = handlers;
     this.uiLang = uiLang;
     this.client = new LibraryClient(globalLibraryCache);
-
-    if (typeof localStorage !== "undefined") {
-      this.lastSeenDate = localStorage.getItem("oim_viewer_library_last_seen");
-    }
   }
 
   private t(es: string, en: string): string {
@@ -55,6 +73,8 @@ export class LibraryModal {
 
   public close(): void {
     if (!this.overlayEl) return;
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
     this.overlayEl.style.opacity = "0";
     const panel = this.overlayEl.querySelector("#library-dialog") as HTMLElement | null;
     if (panel) {
@@ -123,7 +143,7 @@ export class LibraryModal {
     this.overlayEl.style.cssText = `
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.76);
+      background: rgba(0, 0, 0, 0.78);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       z-index: 200;
@@ -138,14 +158,14 @@ export class LibraryModal {
 
     this.overlayEl.innerHTML = `
       <div id="library-dialog" role="dialog" aria-modal="true" style="
-        width: 92vw;
-        max-width: 960px;
-        height: 84vh;
-        max-height: 740px;
+        width: 94vw;
+        max-width: 1400px;
+        height: 88vh;
+        max-height: 900px;
         background: #0f1013;
         border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 14px;
-        box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.85);
+        border-radius: 12px;
+        box-shadow: 0 28px 72px -12px rgba(0, 0, 0, 0.9);
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -153,6 +173,17 @@ export class LibraryModal {
         transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         color: #f4f4f5;
       ">
+        <style>
+          @keyframes lib-spin { 100% { transform: rotate(360deg); } }
+          .library-card:hover {
+            border-color: rgba(255, 255, 255, 0.24) !important;
+            box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.7);
+          }
+          .library-card:hover .card-overlay {
+            opacity: 1 !important;
+          }
+        </style>
+
         <!-- Quiet Header -->
         <header style="
           padding: 14px 20px;
@@ -165,7 +196,7 @@ export class LibraryModal {
         ">
           <div style="display: flex; align-items: baseline; gap: 8px;">
             <h2 style="font-size: 14px; font-weight: 600; color: #f4f4f5; letter-spacing: -0.01em; margin: 0;">
-              ${this.t("Biblioteca Pública", "Public Library")}
+              ${this.t("Biblioteca", "Library")}
             </h2>
             <span id="library-item-count" style="
               font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -176,13 +207,13 @@ export class LibraryModal {
             </span>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <!-- Live Search -->
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <!-- Minimal Search -->
             <div style="
               position: relative;
               display: flex;
               align-items: center;
-              width: 200px;
+              width: 220px;
             ">
               <span style="
                 position: absolute;
@@ -224,13 +255,13 @@ export class LibraryModal {
           </div>
         </header>
 
-        <!-- Segmented Filter Bar -->
+        <!-- Minimal Category Tabs Bar -->
         <div style="
-          padding: 10px 20px;
+          padding: 8px 20px;
           border-bottom: 1px solid rgba(255, 255, 255, 0.05);
           display: flex;
           align-items: center;
-          gap: 4px;
+          gap: 6px;
           overflow-x: auto;
           flex-shrink: 0;
         ">
@@ -286,6 +317,25 @@ export class LibraryModal {
     }
 
     this.wireCategoryClicks();
+    this.setupResizeObserver();
+  }
+
+  private setupResizeObserver(): void {
+    const bodyEl = this.overlayEl?.querySelector("#library-dialog-body") as HTMLElement | null;
+    if (!bodyEl) return;
+
+    this.resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const width = entry.contentRect.width;
+        if (width <= 0) continue;
+        const newCols = Math.min(MAX_COLUMNS, Math.max(2, Math.floor(width / ANCHO_DE_COLUMNA)));
+        if (newCols !== this.currentColumns) {
+          this.currentColumns = newCols;
+          this.renderBody();
+        }
+      }
+    });
+    this.resizeObserver.observe(bodyEl);
   }
 
   private renderCategoryChips(): string {
@@ -302,14 +352,14 @@ export class LibraryModal {
         const active = this.selectedCategory === cat.id;
         return `
           <button type="button" data-cat="${cat.id}" style="
-            padding: 4px 10px;
-            border-radius: 9999px;
+            padding: 5px 12px;
+            border-radius: 6px;
             font-size: 11px;
             font-weight: ${active ? "600" : "500"};
             cursor: pointer;
-            border: 1px solid ${active ? "#ffffff" : "transparent"};
-            background: ${active ? "#ffffff" : "transparent"};
-            color: ${active ? "#09090b" : "#a1a1aa"};
+            border: 1px solid ${active ? "rgba(255, 255, 255, 0.16)" : "transparent"};
+            background: ${active ? "rgba(255, 255, 255, 0.08)" : "transparent"};
+            color: ${active ? "#ffffff" : "#8e8e93"};
             transition: all 0.12s ease;
             white-space: nowrap;
           ">
@@ -344,15 +394,14 @@ export class LibraryModal {
       bodyEl.innerHTML = `
         <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #71717a;">
           <div style="
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             border: 2px solid rgba(255, 255, 255, 0.12);
             border-top-color: #ffffff;
             border-radius: 50%;
-            animation: spin 0.7s linear infinite;
+            animation: lib-spin 0.7s linear infinite;
           "></div>
           <span style="font-size: 11px;">${this.t("Cargando obras...", "Loading artworks...")}</span>
-          <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
         </div>
       `;
       return;
@@ -396,164 +445,145 @@ export class LibraryModal {
       return;
     }
 
+    const columns = repartirEnColumnas(this.filteredItems, this.currentColumns);
+
     bodyEl.innerHTML = `
-      <div id="library-cards-grid" style="
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-        gap: 14px;
+      <div id="library-masonry-grid" style="
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
         width: 100%;
       ">
-        ${this.filteredItems
-          .map((item) => {
-            const title = (this.uiLang === "en" && item.title_en ? item.title_en : item.title) || item.id;
-            const compact = formatCompactTitle(title, 24);
-            const isNew =
-              this.lastSeenDate && new Date(item.created_at).getTime() > new Date(this.lastSeenDate).getTime();
-            const author = item.author?.username || "Xue Studios";
-            const isLoadingThis = this.activeLoadingId === item.id;
+        ${columns
+          .map(
+            (col) => `
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px;">
+            ${col
+              .map((item) => {
+                const isLoadingThis = this.activeLoadingId === item.id;
+                const ratio = item.aspect_ratio || "1/1";
 
-            return `
-              <div class="library-card" data-id="${item.id}" role="button" tabindex="0" style="
-                background: #141519;
-                border: 1px solid rgba(255, 255, 255, 0.06);
-                border-radius: 10px;
-                overflow: hidden;
-                cursor: pointer;
-                display: flex;
-                flex-direction: column;
-                position: relative;
-                transition: border-color 0.15s ease;
-              ">
-                <!-- Preview Canvas -->
-                <div style="
-                  width: 100%;
-                  aspect-ratio: 16 / 10;
-                  background: #0b0c0e;
-                  position: relative;
-                  overflow: hidden;
-                ">
-                  <img src="${item.thumbnail_url || item.media_url}" alt="${title}" loading="lazy" style="
+                return `
+                  <div class="library-card" data-id="${item.id}" role="button" tabindex="0" style="
+                    position: relative;
                     width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                    display: block;
-                  " />
-
-                  ${
-                    isNew
-                      ? `<span style="
-                          position: absolute;
-                          top: 8px;
-                          left: 8px;
-                          background: rgba(34, 197, 94, 0.9);
-                          color: #0b0c0e;
-                          font-size: 9px;
-                          font-weight: 700;
-                          padding: 1px 5px;
-                          border-radius: 3px;
-                          letter-spacing: 0.03em;
-                        ">${this.t("NUEVO", "NEW")}</span>`
-                      : ""
-                  }
-
-                  <span style="
-                    position: absolute;
-                    bottom: 6px;
-                    right: 6px;
-                    background: rgba(0, 0, 0, 0.72);
-                    backdrop-filter: blur(4px);
-                    color: #a1a1aa;
-                    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-                    font-size: 9px;
-                    padding: 2px 5px;
-                    border-radius: 4px;
-                  ">
-                    ${item.aspect_ratio || "1:1"}
-                  </span>
-
-                  <!-- Loading Overlay -->
-                  <div class="card-loading-mask" style="
-                    position: absolute;
-                    inset: 0;
-                    background: rgba(14, 15, 18, 0.88);
-                    display: ${isLoadingThis ? "flex" : "none"};
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 8px;
-                    color: #f4f4f5;
-                  ">
-                    <div style="
-                      width: 18px;
-                      height: 18px;
-                      border: 2px solid rgba(255, 255, 255, 0.15);
-                      border-top-color: #ffffff;
-                      border-radius: 50%;
-                      animation: spin 0.7s linear infinite;
-                    "></div>
-                    <span style="font-size: 11px; font-weight: 500;">
-                      ${this.t("Cargando obra...", "Loading artwork...")}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Clean Meta Footer -->
-                <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 3px;">
-                  <span style="
-                    font-size: 12px;
-                    font-weight: 500;
-                    color: #f4f4f5;
+                    aspect-ratio: ${ratio};
+                    background: #141519;
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 6px;
                     overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                  " title="${title}">${compact}</span>
+                    cursor: pointer;
+                    display: block;
+                    contain: paint;
+                    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+                  ">
+                    <img
+                      src="${item.thumbnail_url || item.media_url}"
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      draggable="false"
+                      style="
+                        width: 100%;
+                        height: 100%;
+                        object-fit: cover;
+                        display: block;
+                        pointer-events: none;
+                      "
+                    />
 
-                  <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #71717a;">
-                    <span>@${author}</span>
-                    <span>${item.category || "OIM"}</span>
+                    <!-- Pure visual card, no text footer below. Clean hover overlay -->
+                    <div class="card-overlay" style="
+                      position: absolute;
+                      inset: 0;
+                      background: rgba(0, 0, 0, 0.38);
+                      opacity: 0;
+                      transition: opacity 0.16s ease;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      pointer-events: none;
+                    ">
+                      <span style="
+                        font-size: 11px;
+                        font-weight: 600;
+                        padding: 6px 14px;
+                        border-radius: 6px;
+                        background: #ffffff;
+                        color: #09090b;
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+                        letter-spacing: -0.01em;
+                      ">${this.t("Abrir", "Open")}</span>
+                    </div>
+
+                    ${
+                      isLoadingThis
+                        ? `
+                      <div style="
+                        position: absolute;
+                        inset: 0;
+                        background: rgba(0, 0, 0, 0.65);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        z-index: 10;
+                      ">
+                        <div style="
+                          width: 20px;
+                          height: 20px;
+                          border: 2px solid rgba(255, 255, 255, 0.2);
+                          border-top-color: #ffffff;
+                          border-radius: 50%;
+                          animation: lib-spin 0.6s linear infinite;
+                        "></div>
+                      </div>
+                    `
+                        : ""
+                    }
                   </div>
-                </div>
-              </div>
-            `;
-          })
+                `;
+              })
+              .join("")}
+          </div>
+        `
+          )
           .join("")}
       </div>
     `;
 
-    bodyEl.querySelectorAll(".library-card").forEach((card) => {
-      const cardEl = card as HTMLElement;
-      cardEl.addEventListener("mouseenter", () => {
-        if (!this.activeLoadingId) {
-          cardEl.style.borderColor = "rgba(255, 255, 255, 0.2)";
-        }
-      });
-      cardEl.addEventListener("mouseleave", () => {
-        if (!this.activeLoadingId) {
-          cardEl.style.borderColor = "rgba(255, 255, 255, 0.06)";
-        }
-      });
+    this.wireCardClicks();
+  }
 
-      cardEl.addEventListener("click", async () => {
-        const id = cardEl.getAttribute("data-id");
+  private wireCardClicks(): void {
+    const cards = this.overlayEl?.querySelectorAll(".library-card");
+    cards?.forEach((card) => {
+      const clickHandler = async () => {
+        const id = card.getAttribute("data-id");
+        if (!id || this.activeLoadingId) return;
+
         const item = this.filteredItems.find((i) => i.id === id);
-        if (!item || this.activeLoadingId) return;
+        if (!item) return;
 
         this.activeLoadingId = id;
-        const mask = cardEl.querySelector(".card-loading-mask") as HTMLElement | null;
-        if (mask) mask.style.display = "flex";
+        this.renderBody();
 
         try {
           const bytes = await this.client.fetchOimBytes(item.media_url);
-          const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
-          const cleanBuffer = u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength) as ArrayBuffer;
-          const blob = new Blob([cleanBuffer], { type: "image/png" });
-
+          const blob = new Blob([bytes as unknown as BlobPart], { type: "image/png" });
           this.close();
           this.handlers.onSelectItem(item, blob);
         } catch (err) {
-          console.error("[LibraryModal] Failed to load selected item:", err);
-          if (mask) mask.style.display = "none";
+          console.error("[LibraryModal] Failed to load media:", err);
+          alert(this.t("No se pudo cargar la obra seleccionada.", "Could not load selected artwork."));
+        } finally {
           this.activeLoadingId = null;
+        }
+      };
+
+      card.addEventListener("click", () => void clickHandler());
+      card.addEventListener("keydown", (e: Event) => {
+        if ((e as KeyboardEvent).key === "Enter") {
+          void clickHandler();
         }
       });
     });

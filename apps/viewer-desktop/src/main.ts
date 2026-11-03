@@ -74,6 +74,7 @@ async function checkLibraryUpdates(): Promise<void> {
     const client = new LibraryClient();
     const result = await client.checkForUpdates();
     if (result.hasNew) {
+      hasPendingLibraryUpdates = true;
       toolbar?.setHasLibraryUpdates(true);
     }
   } catch (err) {
@@ -82,6 +83,7 @@ async function checkLibraryUpdates(): Promise<void> {
 }
 
 let toolbar: FloatingToolbar | null = null;
+let hasPendingLibraryUpdates = false;
 let currentStageSize: StageSize | null = null;
 
 /**
@@ -152,10 +154,16 @@ function ensureToolbar(): FloatingToolbar {
         onOpenFile: () => {
           void openFileDialog();
         },
+        onOpenLibrary: () => {
+          openLibraryModal();
+        },
       },
       uiLang,
       workspaceRow
     );
+  }
+  if (hasPendingLibraryUpdates) {
+    toolbar.setHasLibraryUpdates(true);
   }
   return toolbar;
 }
@@ -208,6 +216,8 @@ async function loadBlob(blob: Blob, fileName: string, opts?: { isLibraryItem?: b
       tb.setLayersVisible(isLayersVisible);
       tb.setAllowLottie(isLottieEnabled);
       tb.setAutoRotateLang(isAutoRotateLang);
+      instance.setDisableAnimations(false);
+      instance.play();
       tb.show();
     },
     onLangChange: (lang) => {

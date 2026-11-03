@@ -16,6 +16,26 @@ import {
   type StageSize,
 } from "./viewer/playerBridge.js";
 
+// Intercept fetch for remote assets to bypass webview CORS in Tauri
+const originalFetch = window.fetch;
+window.fetch = async function (input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+  if (typeof url === "string" && (url.includes("assets.oim.media") || url.includes("supabase.co/storage"))) {
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const rawBytes = await invoke<number[] | Uint8Array>("read_remote_oim_file", { url });
+      const bytes = rawBytes instanceof Uint8Array ? rawBytes : new Uint8Array(rawBytes);
+      return new Response(bytes as unknown as BodyInit, {
+        status: 200,
+        headers: { "Content-Type": "image/png" },
+      });
+    } catch {
+      // Fallback
+    }
+  }
+  return originalFetch.call(this, input, init);
+};
+
 const app = document.getElementById("app") as HTMLElement;
 const uiLang = detectUiLang();
 const t = (es: string, en: string) => (uiLang === "es" ? es : en);

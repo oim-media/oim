@@ -1,3 +1,4 @@
+import "@oim-media/player-oim";
 /**
  * @license
  * Copyright (c) 2026 Xue Studios LLC
@@ -477,20 +478,18 @@ export class LibraryModal {
                     contain: paint;
                     transition: border-color 0.15s ease, box-shadow 0.15s ease;
                   ">
-                    <img
-                      src="${item.thumbnail_url || item.media_url}"
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      draggable="false"
-                      style="
-                        width: 100%;
-                        height: 100%;
-                        object-fit: cover;
-                        display: block;
-                        pointer-events: none;
-                      "
-                    />
+                    <!-- Native <oim-player> in lazy loading mode, without static preview -->
+                    <oim-player
+                      src="${item.media_url}"
+                      fit="cover"
+                      align="center"
+                      mode="image"
+                      show-controls="false"
+                      activate-on="hover"
+                      disable-animations="false"
+                      allow-lottie="true"
+                      style="position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none;"
+                    ></oim-player>
 
                     <!-- Pure visual card, no text footer below. Clean hover overlay -->
                     <div class="card-overlay" style="
@@ -580,6 +579,18 @@ export class LibraryModal {
         }
       };
 
+      card.addEventListener("mouseenter", () => {
+        const player = card.querySelector("oim-player") as (HTMLElement & { play?: () => void }) | null;
+        if (player && typeof player.play === "function") {
+          player.play();
+        }
+      });
+      card.addEventListener("mouseleave", () => {
+        const player = card.querySelector("oim-player") as (HTMLElement & { pause?: () => void }) | null;
+        if (player && typeof player.pause === "function") {
+          player.pause();
+        }
+      });
       card.addEventListener("click", () => void clickHandler());
       card.addEventListener("keydown", (e: Event) => {
         if ((e as KeyboardEvent).key === "Enter") {

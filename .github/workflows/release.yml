@@ -137,3 +137,58 @@ jobs:
           dest="OIM.Viewer_${clean_tag}_Flutter_Android.apk"
           cp "$apk" "$dest"
           gh release upload "$tag" "$dest" --clobber
+
+  desktop-windows-flutter:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+      - name: Build Flutter Windows app and upload to Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = if ("${{ github.event.inputs.tag }}" -ne "") { "${{ github.event.inputs.tag }}" } else { "${{ github.ref_name }}" }
+          $cleanTag = $tag -replace '^v',''
+          Set-Location apps/viewer-flutter
+          flutter pub get
+          flutter build windows --release
+          $dest = "OIM.Viewer_${cleanTag}_Flutter_Windows.zip"
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath $dest -Force
+          gh release upload "$tag" $dest --clobber
+
+  mobile-ios:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+      - name: Build unsigned iOS app with Flutter
+        run: |
+          cd apps/viewer-flutter
+          flutter pub get
+          flutter build ios --release --no-codesign
+      - name: Package unsigned IPA and upload to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          clean_tag="${tag#v}"
+          cd apps/viewer-flutter/build/ios/iphoneos
+          mkdir Payload
+          cp -R Runner.app Payload/
+          dest="$GITHUB_WORKSPACE/OIM.Viewer_${clean_tag}_Flutter_iOS_unsigned.ipa"
+          zip -qry "$dest" Payload
+          cd "$GITHUB_WORKSPACE"
+          gh release upload "$tag" "$dest" --clobber

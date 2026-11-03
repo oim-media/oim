@@ -41,7 +41,7 @@ jobs:
           cd sdks/flutter
           flutter pub get
           flutter analyze
-          dart test
+          flutter test
       - name: Test Viewer Flutter App
         run: |
           cd apps/viewer-flutter

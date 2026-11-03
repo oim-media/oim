@@ -449,6 +449,8 @@ export function mountOimPlayer(
     align: "center",
     allowLottie: true,
     allowDynamicColors: true,
+    disableAnimations: false,
+    disableActions: false,
   });
 
   if (!playerEl) {
@@ -458,10 +460,19 @@ export function mountOimPlayer(
   playerEl.style.width = "100%";
   playerEl.style.height = "100%";
   playerEl.style.display = "block";
+  playerEl.setAttribute("mode", "full");
+  playerEl.setAttribute("disable-animations", "false");
+  playerEl.setAttribute("disable-actions", "false");
 
   const instance: PlayerInstance = {
     element: playerEl,
-    play: () => playerEl.play(),
+    play: () => {
+      playerEl.play();
+      const eng = (playerEl as any)._engine;
+      if (eng && typeof eng.play === "function") {
+        eng.play();
+      }
+    },
     pause: () => playerEl.pause(),
     setLang: (lang: string) => playerEl.setLang(lang),
     getCurrentLang: () => playerEl.currentLang || "es",
@@ -504,10 +515,13 @@ export function mountOimPlayer(
       playerEl.setAttribute("allow-lottie", enabled ? "true" : "false");
     },
     setDisableAnimations: (disabled: boolean) => {
-      if (disabled) {
-        playerEl.setAttribute("disable-animations", "true");
-      } else {
-        playerEl.removeAttribute("disable-animations");
+      playerEl.setAttribute("disable-animations", disabled ? "true" : "false");
+      const eng = (playerEl as any)._engine;
+      if (eng) {
+        eng.disableAnimations = disabled;
+        if (typeof eng.renderSlots === "function") {
+          eng.renderSlots();
+        }
       }
     },
     toggleSlots: (show: boolean) => {

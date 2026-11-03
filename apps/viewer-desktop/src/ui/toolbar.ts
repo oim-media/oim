@@ -24,7 +24,6 @@ import {
   iconShieldCheck,
   iconShieldWarning,
   iconSliders,
-  iconSparkles,
   iconUnlock,
 } from "./icons.js";
 import type { UiLang } from "./dropzone.js";
@@ -451,29 +450,7 @@ export class FloatingToolbar {
           max-width: 140px;
         " title="${fileName}">${compactTitle}</span>
 
-        ${
-          this.isLibraryItem
-            ? `
-          <span style="
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 7px;
-            border-radius: 9999px;
-            background: rgba(255, 255, 255, 0.08);
-            color: #d4d4d8;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            white-space: nowrap;
-            flex-shrink: 0;
-          ">
-            <span style="display: flex; align-items: center;">${iconSparkles}</span>
-            <span>${this.t("Biblioteca", "Library")}</span>
-          </span>
-        `
-            : ""
-        }
+
 
         <!-- Compact Signature Badge (icon-only by default, click to show/hide text) -->
         <button id="security-badge" type="button" title="${sec.text} — ${this.t("Clic para mostrar/ocultar estado", "Click to show/hide status")}" style="
@@ -529,7 +506,6 @@ export class FloatingToolbar {
           cursor: pointer;
           position: relative;
         ">
-          <span style="color: #d4d4d8; display: flex; align-items: center;">${iconSparkles}</span>
           <span>${this.t("Biblioteca", "Library")}</span>
           ${this.hasLibraryUpdates ? `<span style="width: 6px; height: 6px; border-radius: 9999px; background: #22c55e; position: absolute; top: 3px; right: 3px; "></span>` : ""}
         </button>

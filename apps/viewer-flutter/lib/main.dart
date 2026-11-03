@@ -55,6 +55,7 @@ class OimViewerScreen extends StatefulWidget {
 class _OimViewerScreenState extends State<OimViewerScreen> {
   Uint8List? _bytes;
   OimExtractionResult? _result;
+  OimSecurityStatus? _status;
   String _fileName = 'OIM Viewer';
   String _language = '';
   bool _showLayers = true;
@@ -104,10 +105,17 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
   void _load(Uint8List bytes, String name) {
     try {
       final result = extractOIM(bytes);
+      final status = verifyOim(result);
+      if (isRefused(status)) {
+        // An altered file is not shown: neither its image nor its layers.
+        setState(() => _error = 'Archivo alterado (${_badgeFor(status).text}): no se muestra.');
+        return;
+      }
       final langs = (result.metadata['languages'] as List?)?.map((e) => e.toString()).toList() ?? const <String>[];
       setState(() {
         _bytes = bytes;
         _result = result;
+        _status = status;
         _fileName = name;
         _language = langs.isNotEmpty ? langs.first : '';
         _error = null;
@@ -129,7 +137,7 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
             _TopBar(
               fileName: _fileName,
               sizeLabel: _bytes == null ? null : _formatSize(_bytes!.length),
-              signed: _meta?['signature'] != null && '${_meta?['signature']}'.isNotEmpty,
+              status: _status,
               hasFile: _bytes != null,
               inspectorOpen: _inspectorOpen,
               onOpen: _pickFile,
@@ -167,6 +175,7 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
                           fileName: _fileName,
                           sizeLabel: _formatSize(_bytes!.length),
                           meta: _meta!,
+                          status: _status!,
                           languages: _languages,
                           language: _language,
                           showLayers: _showLayers,
@@ -189,6 +198,35 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
   }
 }
 
+class _Badge {
+  const _Badge(this.text, this.color);
+  final String text;
+  final Color color;
+}
+
+/// Same labels and colors as getSecurityBadgeConfig in the Tauri viewer.
+_Badge _badgeFor(OimSecurityStatus? s) {
+  switch (s) {
+    case OimSecurityStatus.verified:
+      return const _Badge('Firmado con OIM', _ok);
+    case OimSecurityStatus.verifiedAuthorless:
+      return const _Badge('Firmado · sin autoría', _signed);
+    case OimSecurityStatus.imageUnsealed:
+      return const _Badge('Firmado · sin sello', Color(0xFFCBD5E1));
+    case OimSecurityStatus.expiredKey:
+      return const _Badge('Clave expirada', Color(0xFFF59E0B));
+    case OimSecurityStatus.unknownKey:
+      return const _Badge('Clave desconocida', Color(0xFFF59E0B));
+    case OimSecurityStatus.imageMismatch:
+      return const _Badge('Imagen alterada', Color(0xFFEF4444));
+    case OimSecurityStatus.invalidSignature:
+      return const _Badge('Firma inválida', Color(0xFFEF4444));
+    case OimSecurityStatus.unsigned:
+    case null:
+      return const _Badge('Sin firma', _unsigned);
+  }
+}
+
 String _formatSize(int bytes) {
   if (bytes < 1024) return '$bytes B';
   if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
@@ -204,7 +242,7 @@ class _TopBar extends StatelessWidget {
   const _TopBar({
     required this.fileName,
     required this.sizeLabel,
-    required this.signed,
+    required this.status,
     required this.hasFile,
     required this.inspectorOpen,
     required this.onOpen,
@@ -213,7 +251,7 @@ class _TopBar extends StatelessWidget {
 
   final String fileName;
   final String? sizeLabel;
-  final bool signed;
+  final OimSecurityStatus? status;
   final bool hasFile;
   final bool inspectorOpen;
   final VoidCallback onOpen;
@@ -221,7 +259,8 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = !hasFile ? _unsigned : (signed ? _signed : _unsigned);
+    final badge = _badgeFor(status);
+    final color = !hasFile ? _unsigned : badge.color;
     return Container(
       height: 42,
       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -341,6 +380,7 @@ class _InspectorDrawer extends StatelessWidget {
     required this.fileName,
     required this.sizeLabel,
     required this.meta,
+    required this.status,
     required this.languages,
     required this.language,
     required this.showLayers,
@@ -351,6 +391,7 @@ class _InspectorDrawer extends StatelessWidget {
   final String fileName;
   final String sizeLabel;
   final Map<String, dynamic> meta;
+  final OimSecurityStatus status;
   final List<String> languages;
   final String language;
   final bool showLayers;
@@ -364,7 +405,7 @@ class _InspectorDrawer extends StatelessWidget {
     final w = canvas?['natural_width'];
     final h = canvas?['natural_height'];
     final dims = (w != null && h != null) ? '$w × $h px' : 'Responsive';
-    final signed = meta['signature'] != null && '${meta['signature']}'.isNotEmpty;
+    final badge = _badgeFor(status);
     final reedit = '${meta['reedit'] ?? ''}';
     final reeditLabel = reedit == 'public'
         ? 'Público (editable)'
@@ -433,8 +474,8 @@ class _InspectorDrawer extends StatelessWidget {
           _SpecRow(label: 'Reedición', value: reeditLabel, valueColor: reedit == 'public' ? _ok : null),
           _SpecRow(
             label: 'Firma',
-            value: signed ? 'Firma presente · sin verificar' : 'Sin firma',
-            valueColor: signed ? _signed : _unsigned,
+            value: badge.text,
+            valueColor: badge.color,
           ),
           if (counts.isNotEmpty) ...[
             const SizedBox(height: 4),

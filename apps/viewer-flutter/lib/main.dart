@@ -60,6 +60,8 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
   String _language = '';
   String? _palette;
   bool _showLayers = true;
+  bool _allowLottie = true;
+  bool _playMotion = true;
   bool _inspectorOpen = true;
   String? _error;
 
@@ -186,6 +188,8 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
                                 language: _language.isEmpty ? null : _language,
                                 palette: _palette,
                                 isInteractive: _showLayers,
+                                allowLottie: _allowLottie,
+                                disableAnimations: !_playMotion,
                               ),
                             ),
                           ),
@@ -201,7 +205,11 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
                           palettes: _palettes,
                           palette: _palette,
                           showLayers: _showLayers,
+                          allowLottie: _allowLottie,
+                          playMotion: _playMotion,
                           onToggleLayers: () => setState(() => _showLayers = !_showLayers),
+                          onToggleLottie: () => setState(() => _allowLottie = !_allowLottie),
+                          onToggleMotion: () => setState(() => _playMotion = !_playMotion),
                           onSelectLanguage: (l) => setState(() => _language = l),
                           onSelectPalette: (p) => setState(() => _palette = p),
                         )
@@ -472,7 +480,11 @@ class _InspectorDrawer extends StatelessWidget {
     required this.palettes,
     required this.palette,
     required this.showLayers,
+    required this.allowLottie,
+    required this.playMotion,
     required this.onToggleLayers,
+    required this.onToggleLottie,
+    required this.onToggleMotion,
     required this.onSelectLanguage,
     required this.onSelectPalette,
   });
@@ -486,7 +498,11 @@ class _InspectorDrawer extends StatelessWidget {
   final List<String> palettes;
   final String? palette;
   final bool showLayers;
+  final bool allowLottie;
+  final bool playMotion;
   final VoidCallback onToggleLayers;
+  final VoidCallback onToggleLottie;
+  final VoidCallback onToggleMotion;
   final ValueChanged<String> onSelectLanguage;
   final ValueChanged<String?> onSelectPalette;
 
@@ -541,6 +557,57 @@ class _InspectorDrawer extends StatelessWidget {
               ),
             ],
           ),
+          if (counts.containsKey('lottie')) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Animación Lottie', style: TextStyle(fontSize: 12, color: _text, fontWeight: FontWeight.w500)),
+                      Text(allowLottie ? 'Reproduciendo' : 'Desactivado',
+                          style: const TextStyle(fontSize: 10, color: _textMuted)),
+                    ],
+                  ),
+                ),
+                _Toggle(
+                  icon: allowLottie ? Icons.play_circle_outline : Icons.pause_circle_outline,
+                  label: allowLottie ? 'Activo' : 'Pausado',
+                  active: allowLottie,
+                  onTap: onToggleLottie,
+                ),
+              ],
+            ),
+          ],
+          if (slots.any((s) {
+            if (s is! Map) return false;
+            final st = s['style'] as Map?;
+            final p = s['parallax'] ?? st?['parallax'];
+            return (p is Map && p['enabled'] == true) || st?['sceneLoop'] != null;
+          })) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Movimiento continuo', style: TextStyle(fontSize: 12, color: _text, fontWeight: FontWeight.w500)),
+                      Text(playMotion ? 'Bucle en vivo' : 'Pausado',
+                          style: const TextStyle(fontSize: 10, color: _textMuted)),
+                    ],
+                  ),
+                ),
+                _Toggle(
+                  icon: playMotion ? Icons.animation : Icons.motion_photos_off,
+                  label: playMotion ? 'Activo' : 'Pausado',
+                  active: playMotion,
+                  onTap: onToggleMotion,
+                ),
+              ],
+            ),
+          ],
           if (languages.length > 1) ...[
             const SizedBox(height: 12),
             const Text('Idioma', style: TextStyle(fontSize: 12, color: _text, fontWeight: FontWeight.w500)),

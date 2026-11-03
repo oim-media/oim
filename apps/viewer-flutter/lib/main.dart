@@ -58,11 +58,22 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
   OimSecurityStatus? _status;
   String _fileName = 'OIM Viewer';
   String _language = '';
+  String? _palette;
   bool _showLayers = true;
   bool _inspectorOpen = true;
   String? _error;
 
   Map<String, dynamic>? get _meta => _result?.metadata;
+
+  List<String> get _palettes {
+    final meta = _meta;
+    if (meta == null) return const [];
+    final raw = meta['palettes'];
+    if (raw is Map) {
+      return raw.keys.map((k) => k.toString()).toList();
+    }
+    return const [];
+  }
 
   List<String> get _languages {
     final meta = _meta;
@@ -112,12 +123,17 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
         return;
       }
       final langs = (result.metadata['languages'] as List?)?.map((e) => e.toString()).toList() ?? const <String>[];
+      final pals = (result.metadata['palettes'] as Map?)?.keys.map((e) => e.toString()).toList() ?? const <String>[];
+      final defaultPal = result.metadata['defaultPalette']?.toString();
       setState(() {
         _bytes = bytes;
         _result = result;
         _status = status;
         _fileName = name;
         _language = langs.isNotEmpty ? langs.first : '';
+        _palette = (defaultPal != null && pals.contains(defaultPal))
+            ? defaultPal
+            : (pals.isNotEmpty ? pals.first : null);
         _error = null;
       });
     } catch (e) {
@@ -140,6 +156,9 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
               status: _status,
               hasFile: _bytes != null,
               inspectorOpen: _inspectorOpen,
+              palettes: _palettes,
+              selectedPalette: _palette,
+              onSelectPalette: (p) => setState(() => _palette = p),
               onOpen: _pickFile,
               onToggleInspector: () => setState(() => _inspectorOpen = !_inspectorOpen),
             ),
@@ -165,6 +184,7 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
                               child: OimPlayer(
                                 bytes: _bytes!,
                                 language: _language.isEmpty ? null : _language,
+                                palette: _palette,
                                 isInteractive: _showLayers,
                               ),
                             ),
@@ -178,9 +198,12 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
                           status: _status!,
                           languages: _languages,
                           language: _language,
+                          palettes: _palettes,
+                          palette: _palette,
                           showLayers: _showLayers,
                           onToggleLayers: () => setState(() => _showLayers = !_showLayers),
                           onSelectLanguage: (l) => setState(() => _language = l),
+                          onSelectPalette: (p) => setState(() => _palette = p),
                         )
                       : null;
                   if (drawer == null) return stage;
@@ -245,6 +268,9 @@ class _TopBar extends StatelessWidget {
     required this.status,
     required this.hasFile,
     required this.inspectorOpen,
+    required this.palettes,
+    required this.selectedPalette,
+    required this.onSelectPalette,
     required this.onOpen,
     required this.onToggleInspector,
   });
@@ -254,6 +280,9 @@ class _TopBar extends StatelessWidget {
   final OimSecurityStatus? status;
   final bool hasFile;
   final bool inspectorOpen;
+  final List<String> palettes;
+  final String? selectedPalette;
+  final ValueChanged<String?> onSelectPalette;
   final VoidCallback onOpen;
   final VoidCallback onToggleInspector;
 
@@ -297,6 +326,63 @@ class _TopBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(sizeLabel!, style: _mono.copyWith(fontSize: 10, color: _textSecondary)),
+            ),
+            const SizedBox(width: 6),
+          ],
+          if (palettes.isNotEmpty) ...[
+            PopupMenuButton<String>(
+              tooltip: 'Cambiar tema de color',
+              color: _drawerBg,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+                side: const BorderSide(color: _border),
+              ),
+              onSelected: onSelectPalette,
+              itemBuilder: (context) => [
+                for (final p in palettes)
+                  PopupMenuItem<String>(
+                    value: p,
+                    height: 32,
+                    child: Row(
+                      children: [
+                        if (p.toLowerCase() == (selectedPalette ?? '').toLowerCase())
+                          const Icon(Icons.check, size: 14, color: Colors.white)
+                        else
+                          const SizedBox(width: 14),
+                        const SizedBox(width: 8),
+                        Text(
+                          p.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: p.toLowerCase() == (selectedPalette ?? '').toLowerCase()
+                                ? FontWeight.w700
+                                : FontWeight.normal,
+                            color: _text,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                decoration: BoxDecoration(
+                  color: _chipBg,
+                  border: Border.all(color: _chipBorder),
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.palette_outlined, size: 13, color: _textSoft),
+                    const SizedBox(width: 4),
+                    Text(
+                      selectedPalette?.toUpperCase() ?? 'TEMA',
+                      style: const TextStyle(fontSize: 11, color: _textSoft, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(width: 6),
           ],
@@ -383,9 +469,12 @@ class _InspectorDrawer extends StatelessWidget {
     required this.status,
     required this.languages,
     required this.language,
+    required this.palettes,
+    required this.palette,
     required this.showLayers,
     required this.onToggleLayers,
     required this.onSelectLanguage,
+    required this.onSelectPalette,
   });
 
   final String fileName;
@@ -394,9 +483,12 @@ class _InspectorDrawer extends StatelessWidget {
   final OimSecurityStatus status;
   final List<String> languages;
   final String language;
+  final List<String> palettes;
+  final String? palette;
   final bool showLayers;
   final VoidCallback onToggleLayers;
   final ValueChanged<String> onSelectLanguage;
+  final ValueChanged<String?> onSelectPalette;
 
   @override
   Widget build(BuildContext context) {
@@ -459,6 +551,23 @@ class _InspectorDrawer extends StatelessWidget {
               children: [
                 for (final l in languages)
                   _LangChip(label: l.toUpperCase(), active: l.toLowerCase() == language.toLowerCase(), onTap: () => onSelectLanguage(l)),
+              ],
+            ),
+          ],
+          if (palettes.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Text('Tema de color / Paleta', style: TextStyle(fontSize: 12, color: _text, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: [
+                for (final p in palettes)
+                  _LangChip(
+                    label: p.toUpperCase(),
+                    active: p.toLowerCase() == (palette ?? '').toLowerCase(),
+                    onTap: () => onSelectPalette(p),
+                  ),
               ],
             ),
           ],

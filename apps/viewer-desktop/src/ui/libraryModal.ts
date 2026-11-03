@@ -176,6 +176,15 @@ export class LibraryModal {
       ">
         <style>
           @keyframes lib-spin { 100% { transform: rotate(360deg); } }
+          @keyframes lib-shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+          }
+          .skeleton-box {
+            background: linear-gradient(90deg, #18191e 25%, #24262c 50%, #18191e 75%);
+            background-size: 200% 100%;
+            animation: lib-shimmer 1.8s ease-in-out infinite;
+          }
           .library-card:hover {
             border-color: rgba(255, 255, 255, 0.24) !important;
             box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.7);
@@ -478,18 +487,38 @@ export class LibraryModal {
                     contain: paint;
                     transition: border-color 0.15s ease, box-shadow 0.15s ease;
                   ">
-                    <!-- Native <oim-player> in lazy loading mode, without static preview -->
-                    <oim-player
-                      src="${item.media_url}"
-                      fit="cover"
-                      align="center"
-                      mode="image"
-                      show-controls="false"
-                      activate-on="hover"
-                      disable-animations="false"
-                      allow-lottie="true"
-                      style="position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none;"
-                    ></oim-player>
+                    <!-- Skeleton shimmer placeholder while loading -->
+                    <div class="skeleton-placeholder skeleton-box" style="
+                      position: absolute;
+                      inset: 0;
+                      width: 100%;
+                      height: 100%;
+                      z-index: 1;
+                      transition: opacity 0.25s ease;
+                    "></div>
+
+                    <!-- Optimized flattened thumbnail with natural aspect ratio -->
+                    <img
+                      src="${item.thumbnail_url || item.media_url}"
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      draggable="false"
+                      onload="this.style.opacity = '1'; const s = this.previousElementSibling; if (s) s.style.opacity = '0';"
+                      onerror="if (this.src !== '${item.media_url}') { this.src = '${item.media_url}'; } else { const s = this.previousElementSibling; if (s) s.style.opacity = '0'; }"
+                      style="
+                        position: absolute;
+                        inset: 0;
+                        width: 100%;
+                        height: 100%;
+                        object-fit: cover;
+                        display: block;
+                        opacity: 0;
+                        transition: opacity 0.25s ease;
+                        z-index: 2;
+                        pointer-events: none;
+                      "
+                    />
 
                     <!-- Pure visual card, no text footer below. Clean hover overlay -->
                     <div class="card-overlay" style="

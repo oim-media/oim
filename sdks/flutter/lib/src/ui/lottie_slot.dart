@@ -44,8 +44,8 @@ class LottieSlot extends StatelessWidget {
       if (isLocalizedMap) {
         raw = content[language] ??
             content['*'] ??
-            content['es'] ??
             content['en'] ??
+            content['es'] ??
             (content.isNotEmpty ? content.values.first : null);
       } else {
         // Direct Lottie animation JSON map

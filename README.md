@@ -14,6 +14,8 @@ and interactions on top of it.
 | [`@oim-media/player-ovm`](packages/player-ovm/README.md) | Reserved placeholder for `.ovm` interactive video (pending specification). |
 | [`@oim-media/spec`](packages/spec/README.md) | Language-neutral contract: JSON Schema, binary and canonical specifications, conformance vectors and the public player keys. |
 | [`@oim-media/viewer-desktop`](apps/viewer-desktop/README.md) | Native desktop viewer (Windows, macOS, Linux) built with Tauri v2, `@oim-media/player-oim`, and `@oim-media/core`. |
+| [`oim_flutter`](sdks/flutter/README.md) | Native Dart/Flutter SDK: reads, verifies offline and renders `.oim` files with the `OimPlayer` widget. |
+| [`viewer-flutter`](apps/viewer-flutter/README.md) | Native viewer for Android, iOS and Windows built on `oim_flutter`. |
 
 ## Install
 
@@ -55,7 +57,7 @@ rendering. The vectors are described in [`packages/spec`](packages/spec/README.m
 To check a release before tagging, run `node tools/versions.mjs vX.Y.Z` and
 `node tools/pack-contents.mjs` after `pnpm build`.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
 
 ## Versioning
 

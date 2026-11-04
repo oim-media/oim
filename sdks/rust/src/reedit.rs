@@ -18,7 +18,7 @@ pub fn reedit_permission(metadata: &Value) -> ReeditPermission {
     if is_true("immutable_lock") || is_true("immutable") {
         return ReeditPermission::Sealed;
     }
-    let value = match metadata.get("reedit") {
+    let value = match metadata.get("reedit").filter(|v| !v.is_null()) {
         Some(v) => v.as_str(),
         None => metadata.get("reedicion").map(|l| match l.as_str() {
             Some("publico") => "public",

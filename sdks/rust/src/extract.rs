@@ -37,11 +37,16 @@ pub fn extract(png: &[u8]) -> Result<Extraction, OimError> {
     let mut rest = png
         .strip_prefix(PNG_SIGNATURE.as_slice())
         .ok_or(OimError::NotOim)?;
-    let mut payload: Option<Result<String, OimError>> = None;
+    // As in the core: a tEXt that inflates to JSON wins over any other OIM chunk;
+    // otherwise the last decodable one; a chunk that fails to decode is skipped.
+    let mut deflated_text: Option<String> = None;
+    let mut encoded: Option<String> = None;
+    let mut saw_oim = false;
     let mut idat = Sha256::new();
     let mut has_idat = false;
 
-    while !rest.is_empty() {
+    // The core reads past IEND too, so a chunk appended after it still counts.
+    while rest.len() >= 8 {
         let (kind, data, next) = next_chunk(rest)?;
         rest = next;
         match kind {
@@ -49,21 +54,38 @@ pub fn extract(png: &[u8]) -> Result<Extraction, OimError> {
                 idat.update(data);
                 has_idat = true;
             }
-            b"tEXt" | b"zTXt" | b"iTXt" => {
-                if let Some(text) = oim_text(kind, data) {
-                    payload = Some(text);
+            b"tEXt" | b"zTXt" | b"iTXt" => match oim_text(kind, data) {
+                Some(Ok(OimText::DeflatedJson(text))) => {
+                    saw_oim = true;
+                    deflated_text = Some(text);
                 }
-            }
-            b"IEND" => break,
+                Some(Ok(OimText::Encoded(text))) => {
+                    saw_oim = true;
+                    encoded = Some(text);
+                }
+                Some(Err(_)) => saw_oim = true,
+                None => {}
+            },
             _ => {}
         }
     }
 
-    let text = payload.ok_or(OimError::NotOim)??;
+    let text = match deflated_text.or(encoded) {
+        Some(text) => text,
+        None if saw_oim => return Err(corrupt("no OIM chunk could be decoded")),
+        None => return Err(OimError::NotOim),
+    };
     Ok(Extraction {
         metadata: parse_metadata(&text)?,
         image_hash: has_idat.then(|| hex(&idat.finalize())),
     })
+}
+
+enum OimText {
+    /// A tEXt whose bytes inflated to JSON (the backend's raw deflate).
+    DeflatedJson(String),
+    /// JSON, or base64 of it, still to be parsed.
+    Encoded(String),
 }
 
 /// (type, data, remaining bytes after the CRC).
@@ -80,7 +102,7 @@ fn next_chunk(bytes: &[u8]) -> Result<Chunk<'_>, OimError> {
 }
 
 /// The decoded text of a text chunk, or `None` when the chunk is not an OIM one.
-fn oim_text(kind: &[u8], data: &[u8]) -> Option<Result<String, OimError>> {
+fn oim_text(kind: &[u8], data: &[u8]) -> Option<Result<OimText, OimError>> {
     let nul = data.iter().position(|&b| b == 0)?;
     let (keyword, rest) = data.split_at(nul);
     if !KEYWORDS.contains(&keyword) {
@@ -89,14 +111,17 @@ fn oim_text(kind: &[u8], data: &[u8]) -> Option<Result<String, OimError>> {
     let body = rest.get(1..).unwrap_or_default();
     Some(match kind {
         b"zTXt" => match body.split_first() {
-            Some((0, compressed)) => inflate(compressed),
+            Some((0, compressed)) => inflate(compressed).map(OimText::Encoded),
             _ => Err(corrupt("unknown zTXt compression method")),
         },
-        b"iTXt" => itxt_text(body),
+        b"iTXt" => itxt_text(body).map(OimText::Encoded),
         // tEXt: raw deflate written by the backend, else base64 or plain JSON text.
         _ => match inflate(body) {
-            Ok(text) if text.trim_start().starts_with('{') => Ok(text),
-            _ => Ok(body.iter().map(|&b| b as char).collect()),
+            // The core drops a deflated tEXt whose JSON does not parse.
+            Ok(text) if text.trim_start().starts_with('{') => serde_json::from_str::<Value>(&text)
+                .map(|_| OimText::DeflatedJson(text))
+                .map_err(|e| corrupt(&e.to_string())),
+            _ => Ok(OimText::Encoded(body.iter().map(|&b| b as char).collect())),
         },
     })
 }

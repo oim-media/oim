@@ -394,3 +394,62 @@ fn crate_version_is_the_contract_version() {
         "export const CONTRACT_VERSION = \"{CONTRACT_VERSION}\";"
     )));
 }
+
+// --- review findings ---
+
+#[test]
+fn canonical_ties_round_up_in_magnitude_like_to_fixed() {
+    for (v, want) in [
+        (json!({"a": 0.0078125}), r#"{"a":0.007813}"#),
+        (json!({"a": -0.0078125}), r#"{"a":-0.007813}"#),
+        (json!({"a": 0.0390625}), r#"{"a":0.039063}"#),
+    ] {
+        assert_eq!(canonical_json(&v), want);
+    }
+}
+
+#[test]
+fn canonical_integers_beyond_2_53_print_like_javascript() {
+    let v: Value =
+        serde_json::from_str(r#"{"a":9007199254740993,"b":100000000000000000000000}"#).unwrap();
+    assert_eq!(canonical_json(&v), r#"{"a":9007199254740992,"b":1e+23}"#);
+}
+
+#[test]
+fn idat_after_iend_is_hashed_like_the_core() {
+    let mut cs = chunks(&vector("basic-text"));
+    cs.push((b"IDAT".to_vec(), vec![1, 2, 3]));
+    assert_eq!(status(&build(&cs)), SecurityStatus::ImageMismatch);
+}
+
+#[test]
+fn deflated_text_chunk_wins_over_a_later_ztxt() {
+    use std::io::Write;
+    let mut raw = flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::default());
+    raw.write_all(br#"{"title":"first"}"#).unwrap();
+    let text = [b"OIM_Data\0".as_slice(), &raw.finish().unwrap()].concat();
+    let png = build(&[
+        (b"tEXt".to_vec(), text),
+        ztxt(&json!({"title": "second"})),
+        (b"IEND".to_vec(), vec![]),
+    ]);
+    assert_eq!(extract(&png).unwrap().metadata["title"], "first");
+}
+
+#[test]
+fn a_later_broken_chunk_keeps_the_earlier_payload() {
+    let png = build(&[
+        ztxt(&json!({"title": "ok"})),
+        (b"zTXt".to_vec(), b"OIM_Data\0\0broken".to_vec()),
+        (b"IEND".to_vec(), vec![]),
+    ]);
+    assert_eq!(extract(&png).unwrap().metadata["title"], "ok");
+}
+
+#[test]
+fn null_reedit_falls_back_to_legacy_key() {
+    assert_eq!(
+        reedit_permission(&json!({"reedit": null, "reedicion": "publico"})),
+        ReeditPermission::Public
+    );
+}

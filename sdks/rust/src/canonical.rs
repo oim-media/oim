@@ -75,19 +75,48 @@ fn write_value(out: &mut String, v: &Value, normalize: bool) {
     }
 }
 
+/// Integers JavaScript holds exactly; beyond it a JSON integer becomes the nearest double.
+const MAX_SAFE_INTEGER: u64 = 1 << 53;
+
 /// JavaScript prints numbers with `Number.prototype.toString`; rule 3 rounds
 /// non-integers with `toFixed(6)` first.
 fn format_number(n: &Number, normalize: bool) -> String {
-    if n.is_i64() || n.is_u64() {
+    let exact_int = n.as_i64().map(i64::unsigned_abs).or(n.as_u64());
+    if exact_int.is_some_and(|i| i <= MAX_SAFE_INTEGER) {
         return n.to_string();
     }
     let Some(mut x) = n.as_f64() else {
         return "null".into();
     };
     if normalize && x.fract() != 0.0 {
-        x = format!("{x:.6}").parse().unwrap_or(x);
+        x = to_fixed_6(x);
     }
     ryu_js::Buffer::new().format(x).to_string()
+}
+
+/// `Number(x.toFixed(6))`. Rust's formatter breaks an exact tie to even; `toFixed`
+/// picks the larger magnitude, so an exact tie (`0.0078125`) is rounded up by hand.
+fn to_fixed_6(x: f64) -> f64 {
+    let magnitude = x.abs();
+    // A tie has at most 7 decimals; 40 exact digits show the zeros after it.
+    let exact = format!("{magnitude:.40}");
+    let decimals = exact.split_once('.').map_or("", |(_, d)| d);
+    let is_tie = decimals.get(6..7) == Some("5")
+        && decimals
+            .get(7..)
+            .is_some_and(|r| r.bytes().all(|b| b == b'0'));
+    let rounded: f64 = if is_tie {
+        let down: f64 = format!("{magnitude:.6}").parse().unwrap_or(magnitude);
+        let up = exact
+            .get(..exact.len() - 34)
+            .and_then(|s| s.parse::<f64>().ok())
+            .unwrap_or(down)
+            + 1e-6;
+        format!("{up:.6}").parse().unwrap_or(down)
+    } else {
+        format!("{magnitude:.6}").parse().unwrap_or(magnitude)
+    };
+    rounded.copysign(x)
 }
 
 /// `serde_json` escapes exactly like `JSON.stringify` for valid UTF-8.

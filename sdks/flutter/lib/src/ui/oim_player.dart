@@ -14,6 +14,7 @@ import 'color_util.dart';
 import 'dynamic_colors.dart';
 import 'effects.dart';
 import 'geo_shapes.dart';
+import 'localized_content.dart';
 import 'groups.dart';
 import 'image_fill.dart';
 import 'infinite_parallax.dart';
@@ -105,12 +106,7 @@ class _OimPlayerState extends State<OimPlayer> {
     final naturalHeight = (canvas?['natural_height'] as num?)?.toDouble() ?? 600.0;
     final aspectRatio = naturalWidth / naturalHeight;
 
-    final declaredLanguages = (res.metadata['languages'] as List<dynamic>?)
-            ?.map((e) => e.toString())
-            .toList() ??
-        ['es'];
-    final currentLang = widget.language ??
-        (declaredLanguages.isNotEmpty ? declaredLanguages.first : 'es');
+    final currentLang = widget.language ?? oimDefaultLanguage;
 
     // Dynamic color resolution
     final activePalette = resolvePalette(
@@ -389,18 +385,7 @@ class _OimPlayerState extends State<OimPlayer> {
     double containerWidth,
     double containerHeight,
   ) {
-    String text = '';
-    final content = slot['content'];
-    if (content is Map) {
-      text = content[language]?.toString() ??
-          content['*']?.toString() ??
-          content['es']?.toString() ??
-          content['en']?.toString() ??
-          content.values.firstOrNull?.toString() ??
-          '';
-    } else if (content != null) {
-      text = content.toString();
-    }
+    String text = resolveContent(slot['content'], language);
 
     if (style['textTransform'] == 'uppercase') {
       text = text.toUpperCase();

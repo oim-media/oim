@@ -1,0 +1,14 @@
+# Installs Flutter from the official repository. Replaces subosito/flutter-action,
+# which calls actions/cache by tag and so cannot run while the repo requires
+# every action to be pinned by SHA.
+name: setup-flutter
+description: Install the Flutter stable channel and put it on PATH
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        git clone --depth 1 --branch stable https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+        echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+    - shell: bash
+      run: flutter --version

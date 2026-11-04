@@ -25,8 +25,11 @@ export interface ShowcaseItem {
   category?: string;
   created_at: string;
   author?: ShowcaseAuthor;
-  author_id?: string;
 }
+
+// Only what the gallery shows: never author or moderation columns.
+const PUBLIC_COLUMNS =
+  "id,title,title_en,description,description_en,thumbnail_url,media_url,type,aspect_ratio,category,tags,features,created_at";
 
 const SUPABASE_URL = "https://eawltbnmonimtmtqslmk.supabase.co";
 const SUPABASE_ANON_KEY =
@@ -142,7 +145,7 @@ export class LibraryClient {
       return this.cachedShowcaseList;
     }
 
-    const url = `${SUPABASE_URL}/rest/v1/showcase_items?status=eq.approved&order=created_at.desc&select=*`;
+    const url = `${SUPABASE_URL}/rest/v1/showcase_items?status=eq.approved&order=created_at.desc&select=${PUBLIC_COLUMNS}`;
     const response = await fetch(url, {
       method: "GET",
       headers: {

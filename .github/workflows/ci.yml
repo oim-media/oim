@@ -29,6 +29,19 @@ jobs:
       - run: pnpm check:licenses
       - run: node tools/pack-contents.mjs
 
+  rust:
+    # GitHub's image ships rustup and cargo, so no toolchain action is needed.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Test Rust SDK & Conformance
+        run: |
+          cd sdks/rust
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+          cargo test
+
   flutter:
     runs-on: ubuntu-latest
     timeout-minutes: 15

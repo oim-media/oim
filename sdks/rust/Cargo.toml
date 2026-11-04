@@ -1,0 +1,21 @@
+[package]
+name = "oim"
+version = "1.26.1"
+edition = "2024"
+license = "Apache-2.0"
+description = "Read, verify and interpret .oim files"
+repository = "https://github.com/oim-media/oim"
+publish = false
+
+[dependencies]
+base64 = "0.22"
+flate2 = "1"
+p256 = { version = "0.13", features = ["ecdsa"] }
+ryu-js = "1"
+serde_json = { version = "1", features = ["preserve_order"] }
+sha2 = "0.10"
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+indexing_slicing = "deny"

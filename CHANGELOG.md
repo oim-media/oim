@@ -15,6 +15,9 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
   language and prefer `es`.
 - The desktop viewer requests only the public library columns.
 - CI: pull requests from forks never run on the self-hosted runner.
+- Rust crate (`sdks/rust`): reads `.oim` files, verifies the signature and the
+  image seal offline, and resolves layer text and re-edit permission. Passes
+  every conformance vector. Installed from git.
 
 ## 1.26.1 — 2026-11-01
 

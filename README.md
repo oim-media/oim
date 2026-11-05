@@ -62,7 +62,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and [CHANGELOG.md](CHANG
 
 ## Versioning
 
-The four packages are released together under one version, and a release tag
+The four packages, both viewers and the Rust and Flutter SDKs are released
+together under one version, and a release tag
 (`vX.Y.Z`) names it. That version must equal the format version, `CONTRACT_VERSION`
 in `packages/core/src/compatibility.ts`. See the [spec](packages/spec/README.md#versioning).
 

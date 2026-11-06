@@ -5,6 +5,13 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+- Flutter: interactive layers respond. `states.hover` scales, rotates and fades
+  the layer and runs its actions until the pointer leaves; `states.active`
+  actions (`show`, `hide`, `toggle`, `setText`, `play`) run on tap; the legacy
+  `interaction.toggle_elements` works too. Layers with `isVisible: false` start
+  hidden and appear with their `reveal` (fade, slides, scale). `play` runs a
+  `trigger: "action"` animation once. The rule is pinned by
+  `packages/spec/action-cases.json`, which the web player also passes.
 - Flutter: layers with `style.animation` now move. Structured keyframes, the
   `pulse`, `float`, `bounce` and `spin` loops and the `grow`, `shrink` and
   `lift` hover effects play as on the web; `trigger: "action"` rests on its

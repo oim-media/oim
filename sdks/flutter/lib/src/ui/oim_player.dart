@@ -22,6 +22,9 @@ import 'lottie_slot.dart';
 import 'motion.dart';
 import 'actions.dart';
 import 'interaction.dart';
+import 'css_gradient.dart';
+import 'grain.dart';
+import 'patterns.dart';
 
 /// Interactive native Flutter widget to render OIM files.
 class OimPlayer extends StatefulWidget {
@@ -63,6 +66,8 @@ class _OimPlayerState extends State<OimPlayer> {
   // Per hovered slot: what its hover actions changed, to put back on leaving.
   final _hoverBaseVisible = <String, Map<String, bool>>{};
   final _hoverBaseText = <String, Map<String, String?>>{};
+  // Design px to logical px, for pattern tiles (160 design px * scale).
+  double _unit = 1;
 
   @override
   void initState() {
@@ -198,6 +203,7 @@ class _OimPlayerState extends State<OimPlayer> {
           containerWidth = naturalWidth;
           containerHeight = naturalHeight;
         }
+        _unit = containerWidth / naturalWidth;
 
         return Center(
           child: SizedBox(
@@ -380,7 +386,17 @@ class _OimPlayerState extends State<OimPlayer> {
     Widget slotWidget;
 
     if (type == 'text') {
-      slotWidget = _buildTextSlot(raw, style, currentLang, activePalette, containerWidth, containerHeight);
+      slotWidget = _textFill(_buildTextSlot(raw, style, currentLang, activePalette, containerWidth, containerHeight),
+          style, activePalette, Size(slotWidth ?? containerWidth, slotHeight ?? containerHeight));
+    } else if (style['backgroundType'] == 'pattern' && hasPattern(style)) {
+      // The canvas background pattern (web `isBackgroundSlot`): a tile across the whole layer.
+      slotWidget = OimPatternFill(
+          style: style, palette: activePalette, unit: _unit, disableAnimations: widget.disableAnimations, background: true);
+    } else if (type == 'pattern') {
+      // A pattern layer: tiled and moved, cut to its `geoShape` (web `patternLayerCss`).
+      slotWidget = OimPatternFill(style: style, palette: activePalette, unit: _unit, disableAnimations: widget.disableAnimations);
+      final drawing = shapeDrawing(style['geoShape']);
+      if (drawing != null) slotWidget = ClipPath(clipper: GeoShapeClipper(drawing: drawing), child: slotWidget);
     } else if (type == 'geo' || type == 'shape') {
       slotWidget = _buildGeoSlot(style, activePalette, slotWidth ?? 100, slotHeight ?? 100, containerWidth, containerHeight);
     } else if (type == 'image') {
@@ -395,6 +411,10 @@ class _OimPlayerState extends State<OimPlayer> {
       );
     } else {
       slotWidget = const SizedBox.shrink();
+    }
+
+    if (style['grain'] == true && _grainTypes.contains(type)) {
+      slotWidget = _Grain(style: style, child: slotWidget);
     }
 
     slotWidget = _applyEffects(slotWidget, style);
@@ -549,8 +569,17 @@ class _OimPlayerState extends State<OimPlayer> {
     double containerWidth,
     double containerHeight,
   ) {
-    final fillColor = resolveColor(style['fillColorRole'], style['fillColor'], activePalette) ??
+    var fillColor = resolveColor(style['fillColorRole'], style['fillColor'], activePalette) ??
         Colors.transparent;
+    // Gradient and pattern fills replace the colour; without a valid one the colour stays (web `getFillCss`).
+    Widget? fillLayer;
+    if (style['fillType'] == 'gradient') {
+      final g = parseCssGradient(style['fillGradient'], Size(slotWidth, slotHeight));
+      if (g != null) fillLayer = DecoratedBox(decoration: BoxDecoration(gradient: g));
+    } else if (style['fillType'] == 'pattern' && style['fillPatternType'] != null) {
+      fillLayer = OimPatternFill(style: style, palette: activePalette, unit: _unit, disableAnimations: widget.disableAnimations);
+    }
+    if (fillLayer != null) fillColor = Colors.transparent;
     final borderColor = resolveColor(style['borderColorRole'], style['borderColor'], activePalette);
     final borderWidth = resolveCssUnit(style['borderWidth'], containerWidth, containerHeight) ?? 0.0;
     final borderRadius = parseBorderRadius(style['borderRadius'], containerWidth, containerHeight);
@@ -582,12 +611,16 @@ class _OimPlayerState extends State<OimPlayer> {
           child: geo,
         );
       }
-      return geo;
+      if (fillLayer == null) return geo;
+      return Stack(fit: StackFit.expand, children: [
+        ClipPath(clipper: GeoShapeClipper(drawing: drawing, svgPath: svgPath), child: fillLayer),
+        geo,
+      ]);
     }
 
     // Default rectangle
     final dashed = isDashed || isDotted;
-    return Container(
+    final rect = Container(
       foregroundDecoration: dashed && borderWidth > 0 && borderColor != null
           ? _DashedBorder(color: borderColor, width: borderWidth, radius: borderRadius, dotted: isDotted)
           : null,
@@ -600,6 +633,36 @@ class _OimPlayerState extends State<OimPlayer> {
             : null,
       ),
     );
+    if (fillLayer == null) return rect;
+    return Stack(fit: StackFit.expand, children: [
+      rect,
+      ClipRRect(borderRadius: borderRadius, child: fillLayer),
+      if (borderWidth > 0 && borderColor != null && !dashed)
+        DecoratedBox(
+          decoration: BoxDecoration(borderRadius: borderRadius, border: Border.all(color: borderColor, width: borderWidth)),
+        ),
+    ]);
+  }
+
+  /// A text's gradient or pattern fill paints its glyphs (web `background-clip: text`).
+  Widget _textFill(Widget text, Map<String, dynamic> style, OimPalette? palette, Size size) {
+    if (style['fillType'] == 'gradient') {
+      final g = parseCssGradient(style['fillGradient'], size);
+      if (g == null) return text;
+      return ShaderMask(blendMode: BlendMode.srcIn, shaderCallback: g.createShader, child: text);
+    }
+    if (style['fillType'] == 'pattern' && style['fillPatternType'] != null) {
+      final fill = OimPatternFill(style: style, palette: palette, unit: _unit, disableAnimations: widget.disableAnimations);
+      // The glyphs as a mask, the tile drawn only inside them, in one isolated layer.
+      return _BlendMask(
+        mode: BlendMode.srcOver,
+        child: Stack(fit: StackFit.passthrough, children: [
+          text,
+          Positioned.fill(child: _BlendMask(mode: BlendMode.srcIn, child: fill)),
+        ]),
+      );
+    }
+    return text;
   }
 
   Widget _buildImageSlot(
@@ -653,6 +716,114 @@ Widget _applyEffects(Widget child, Map<String, dynamic> style) {
 }
 
 /// Paints [child] into its own layer and composites it onto what is behind with [mode].
+/// The web's `GRAIN_LAYER_TYPES`: groups and Lottie take none.
+const _grainTypes = {'text', 'artistic-text', 'geo', 'shape', 'svg', 'draw', 'image', 'pattern'};
+
+/// Grain over a layer: the noise tile cut to the layer's own alpha, at the
+/// intensity's opacity, blended with the layer (web `buildLayerGrainFilter`).
+class _Grain extends StatefulWidget {
+  final Map<String, dynamic> style;
+  final Widget child;
+  const _Grain({required this.style, required this.child});
+
+  @override
+  State<_Grain> createState() => _GrainState();
+}
+
+class _GrainState extends State<_Grain> {
+  ui.Image? _tile;
+  double _ratio = 1;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(_Grain old) {
+    super.didUpdateWidget(old);
+    if (old.style['grainSize'] != widget.style['grainSize']) _load();
+  }
+
+  void _load() {
+    _ratio = MediaQuery.maybeDevicePixelRatioOf(context)?.clamp(1, 3).roundToDouble() ?? 1;
+    grainTile(widget.style['grainSize'] as num?, _ratio).then((img) {
+      if (mounted) setState(() => _tile = img);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tile = _tile;
+    if (tile == null) return widget.child;
+    final blend = switch (widget.style['grainBlend']) {
+      'soft-light' => BlendMode.softLight,
+      'multiply' => BlendMode.multiply,
+      _ => BlendMode.overlay,
+    };
+    final m = Matrix4.diagonal3Values(1 / _ratio, 1 / _ratio, 1);
+    return _GrainPaint(
+      shader: ImageShader(tile, TileMode.repeated, TileMode.repeated, m.storage),
+      blend: blend,
+      opacity: grainOpacity(widget.style['grainIntensity'] as num?),
+      child: widget.child,
+    );
+  }
+}
+
+class _GrainPaint extends SingleChildRenderObjectWidget {
+  final Shader shader;
+  final BlendMode blend;
+  final double opacity;
+  const _GrainPaint({required this.shader, required this.blend, required this.opacity, super.child});
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => _RenderGrain(shader, blend, opacity);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderGrain r) {
+    r
+      ..shader = shader
+      ..blend = blend
+      ..opacity = opacity
+      ..markNeedsPaint();
+  }
+}
+
+/// Paints the layer, then over it, in one layer blended with [blend], the
+/// layer again as a mask with the noise drawn `srcIn`: the noise only where
+/// there is ink, at [opacity]. All on one canvas, so the blend applies.
+class _RenderGrain extends RenderProxyBox {
+  Shader shader;
+  BlendMode blend;
+  double opacity;
+  _RenderGrain(this.shader, this.blend, this.opacity);
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    super.paint(context, offset);
+    final child = this.child;
+    // shortcut: a child on its own compositing layer cannot be used as a mask here; it keeps no grain.
+    if (child == null || child.needsCompositing) return;
+    final canvas = context.canvas;
+    final bounds = offset & size;
+    canvas.saveLayer(bounds, Paint()..blendMode = blend);
+    context.paintChild(child, offset);
+    canvas.save();
+    canvas.translate(offset.dx, offset.dy);
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()
+        ..shader = shader
+        ..blendMode = BlendMode.srcIn
+        ..color = Color.fromRGBO(0, 0, 0, opacity),
+    );
+    canvas.restore();
+    canvas.restore();
+  }
+}
+
 class _BlendMask extends SingleChildRenderObjectWidget {
   const _BlendMask({required this.mode, super.child});
 

@@ -16,7 +16,7 @@ export const ALLOWED = {
   core: [...BASE, /^dist\/.*\.(js|d\.ts|js\.map)$/],
   "player-oim": [...BASE, /^dist\/esm\/[\w.-]+\.js$/, /^dist\/oim-player\.js$/, /^dist\/vendor\/[\w.-]+\.js$/, /^dist\/THIRD_PARTY_NOTICES$/, /^src\/index\.d\.ts$/],
   "player-ovm": [...BASE, /^src\/[\w.-]+\.js$/],
-  spec: [...BASE, /^(BINARY_SPEC|CANONICAL_SPEC)\.md$/, /^(marks|keyframe|action)-cases\.json$/, /^keys\.json$/, /^schema\/[\w.-]+\.json$/, /^vectors\/.+/],
+  spec: [...BASE, /^(BINARY_SPEC|CANONICAL_SPEC)\.md$/, /^(marks|keyframe|action|pattern)-cases\.json$/, /^keys\.json$/, /^schema\/[\w.-]+\.json$/, /^vectors\/.+/],
 };
 
 /** Files that match none of the allowed patterns. */

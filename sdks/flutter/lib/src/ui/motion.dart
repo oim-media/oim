@@ -44,8 +44,16 @@ const _loopDefaults = {'pulse': 2.0, 'float': 3.0, 'bounce': 1.2, 'spin': 4.0};
 class OimMotion extends StatefulWidget {
   final Map<String, dynamic> animation;
   final bool disableAnimations;
+  /// Bumped by each `play` action aimed at the layer: the animation runs once from its start.
+  final int playCount;
   final Widget child;
-  const OimMotion({super.key, required this.animation, required this.disableAnimations, required this.child});
+  const OimMotion({
+    super.key,
+    required this.animation,
+    required this.disableAnimations,
+    this.playCount = 0,
+    required this.child,
+  });
 
   @override
   State<OimMotion> createState() => _OimMotionState();
@@ -73,7 +81,17 @@ class _OimMotionState extends State<OimMotion> with SingleTickerProviderStateMix
       _controller?.dispose();
       _controller = null;
       _setup();
+    } else if (old.playCount != widget.playCount) {
+      _play();
     }
+  }
+
+  /// A `play` action: the keyframes once from the start (web `_playTimeline`).
+  void _play() {
+    if (widget.disableAnimations || _frames.isEmpty || _duration <= 0) return;
+    _delayTimer?.cancel();
+    final c = _controller ??= AnimationController(vsync: this, duration: Duration(microseconds: (_duration * 1e6).round()));
+    c.forward(from: 0);
   }
 
   void _setup() {
@@ -87,7 +105,7 @@ class _OimMotionState extends State<OimMotion> with SingleTickerProviderStateMix
       _duration = (d == null || d == 0) ? 8 : d;
       if (_duration <= 0) return;
       _frames = kfs.cast<Map<String, dynamic>>();
-      // `trigger: "action"` rests on the first keyframe until a play action (phase 2).
+      // `trigger: "action"` rests on the first keyframe until a play action.
       if (anim['trigger'] == 'action') return;
     } else {
       final loop = anim['loop'];

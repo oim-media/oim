@@ -1,0 +1,13 @@
+[
+  { "name": "show", "actions": [{ "target": "a", "type": "show" }], "current": { "a": false }, "expected": { "visibility": { "a": true }, "texts": {} } },
+  { "name": "hide", "actions": [{ "target": "a", "type": "hide" }], "current": { "a": true }, "expected": { "visibility": { "a": false }, "texts": {} } },
+  { "name": "toggle a visible layer", "actions": [{ "target": "a", "type": "toggle" }], "current": { "a": true }, "expected": { "visibility": { "a": false }, "texts": {} } },
+  { "name": "toggle a hidden layer", "actions": [{ "target": "a", "type": "toggle" }], "current": { "a": false }, "expected": { "visibility": { "a": true }, "texts": {} } },
+  { "name": "toggle an unknown layer counts it as visible", "actions": [{ "target": "a", "type": "toggle" }], "current": {}, "expected": { "visibility": { "a": false }, "texts": {} } },
+  { "name": "setText with a value", "actions": [{ "target": "t", "type": "setText", "value": "Hola" }], "current": {}, "expected": { "visibility": {}, "texts": { "t": "Hola" } } },
+  { "name": "setText without a value clears", "actions": [{ "target": "t", "type": "setText" }], "current": {}, "expected": { "visibility": {}, "texts": { "t": "" } } },
+  { "name": "play changes no visibility", "actions": [{ "target": "i", "type": "play" }], "current": { "i": true }, "expected": { "visibility": {}, "texts": {} } },
+  { "name": "an empty target is skipped", "actions": [{ "target": "", "type": "hide" }], "current": {}, "expected": { "visibility": {}, "texts": {} } },
+  { "name": "chained toggle and hide", "actions": [{ "target": "panel", "type": "toggle" }, { "target": "alerta", "type": "hide" }], "current": { "panel": true, "alerta": true }, "expected": { "visibility": { "panel": false, "alerta": false }, "texts": {} } },
+  { "name": "the last action on a target wins", "actions": [{ "target": "a", "type": "hide" }, { "target": "a", "type": "show" }], "current": { "a": true }, "expected": { "visibility": { "a": true }, "texts": {} } }
+]

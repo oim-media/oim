@@ -20,6 +20,8 @@ import 'image_fill.dart';
 import 'infinite_parallax.dart';
 import 'lottie_slot.dart';
 import 'motion.dart';
+import 'actions.dart';
+import 'interaction.dart';
 
 /// Interactive native Flutter widget to render OIM files.
 class OimPlayer extends StatefulWidget {
@@ -54,6 +56,14 @@ class _OimPlayerState extends State<OimPlayer> {
   OimExtractionResult? _extractionResult;
   Object? _error;
 
+  // What the file's actions changed, keyed by slot id (web: the slot elements' inline state).
+  final _visible = <String, bool>{};
+  final _texts = <String, String>{};
+  final _plays = <String, int>{};
+  // Per hovered slot: what its hover actions changed, to put back on leaving.
+  final _hoverBaseVisible = <String, Map<String, bool>>{};
+  final _hoverBaseText = <String, Map<String, String?>>{};
+
   @override
   void initState() {
     super.initState();
@@ -72,6 +82,7 @@ class _OimPlayerState extends State<OimPlayer> {
     try {
       final res = extractOIM(widget.bytes);
       setState(() {
+        _resetInteraction(res.metadata);
         _extractionResult = res;
         _error = null;
       });
@@ -81,6 +92,53 @@ class _OimPlayerState extends State<OimPlayer> {
         _extractionResult = null;
       });
     }
+  }
+
+  void _resetInteraction(Map<String, dynamic> metadata) {
+    _visible.clear();
+    _texts.clear();
+    _plays.clear();
+    _hoverBaseVisible.clear();
+    _hoverBaseText.clear();
+    for (final raw in (metadata['slots'] as List<dynamic>?) ?? const []) {
+      if (raw is! Map) continue;
+      final style = raw['style'] is Map ? raw['style'] as Map : const {};
+      if (raw['isVisible'] == false || style['isVisible'] == false) _visible[raw['id'].toString()] = false;
+    }
+  }
+
+  /// Runs a slot's actions; with [hoverOf] it records what they change so [_revert] can undo it.
+  void _run(List actions, {String? hoverOf}) {
+    setState(() {
+      final current = <String, bool>{};
+      for (final a in actions) {
+        if (a is! Map) continue;
+        final t = a['target']?.toString() ?? '';
+        if (t.isEmpty) continue;
+        if (a['type'] == 'play') {
+          _plays[t] = (_plays[t] ?? 0) + 1;
+          continue;
+        }
+        current[t] = _visible[t] ?? true;
+        if (hoverOf != null) {
+          _hoverBaseVisible.putIfAbsent(hoverOf, () => {}).putIfAbsent(t, () => current[t]!);
+          if (a['type'] == 'setText') {
+            final base = _hoverBaseText.putIfAbsent(hoverOf, () => {});
+            if (!base.containsKey(t)) base[t] = _texts[t];
+          }
+        }
+      }
+      final res = resolveActions(actions, current);
+      _visible.addAll(res.visibility);
+      _texts.addAll(res.texts);
+    });
+  }
+
+  void _revert(String slotId) {
+    setState(() {
+      _visible.addAll(_hoverBaseVisible.remove(slotId) ?? const {});
+      (_hoverBaseText.remove(slotId) ?? const {}).forEach((t, v) => v == null ? _texts.remove(t) : _texts[t] = v);
+    });
   }
 
   @override
@@ -305,7 +363,7 @@ class _OimPlayerState extends State<OimPlayer> {
         groupWrapper = ClipRect(child: groupWrapper);
       }
 
-      return Positioned.fill(child: _withMotion(groupWrapper, style));
+      return Positioned.fill(child: _wrap(raw, style, groupWrapper, containerWidth));
     }
 
     if (pos == null || pos.length < 2) return null;
@@ -374,15 +432,55 @@ class _OimPlayerState extends State<OimPlayer> {
       top: top,
       width: slotWidth,
       height: slotHeight,
-      child: _withMotion(slotWidget, style),
+      child: _wrap(raw, style, slotWidget, containerWidth),
     );
   }
 
-  /// The layer's `style.animation`, on top of its own effects and opacity, as the web's loop wrapper.
-  Widget _withMotion(Widget child, Map<String, dynamic> style) {
+  /// Around a layer, outermost last: its `style.animation` (as the web's loop
+  /// wrapper), its states and actions, and its visibility with `reveal`.
+  Widget _wrap(Map<String, dynamic> raw, Map<String, dynamic> style, Widget child, double canvasWidth) {
+    final id = raw['id']?.toString() ?? '';
+    var w = child;
     final anim = style['animation'];
-    if (anim is! Map<String, dynamic>) return child;
-    return OimMotion(animation: anim, disableAnimations: widget.disableAnimations, child: child);
+    if (anim is Map<String, dynamic>) {
+      w = OimMotion(animation: anim, disableAnimations: widget.disableAnimations, playCount: _plays[id] ?? 0, child: w);
+    }
+    // `isInteractive: false` on the widget is the web's `disableActions`.
+    if (widget.isInteractive) {
+      final legacy = raw['interaction'];
+      if (legacy is Map && legacy['action_type'] == 'toggle_elements' && legacy['target'] is Map) {
+        final t = legacy['target'] as Map;
+        w = GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => setState(() {
+            for (final h in (t['hide_slots'] as List?) ?? const []) {
+              _visible[h.toString()] = false;
+            }
+            for (final s in (t['show_slots'] as List?) ?? const []) {
+              _visible[s.toString()] = true;
+            }
+          }),
+          child: MouseRegion(cursor: SystemMouseCursors.click, child: w),
+        );
+      }
+      final i = readInteraction(raw);
+      if (i.isInteractive && i.states != null) {
+        w = OimInteractive(
+          states: i.states!,
+          onHover: (a) => _run(a, hoverOf: id),
+          onLeave: () => _revert(id),
+          onTap: (a) => _run(a),
+          child: w,
+        );
+      }
+    }
+    return OimReveal(
+      visible: _visible[id] ?? true,
+      reveal: style['reveal'] is Map ? style['reveal'] as Map : null,
+      canvasWidth: canvasWidth,
+      disableAnimations: widget.disableAnimations,
+      child: w,
+    );
   }
 
   Widget _buildTextSlot(
@@ -393,7 +491,7 @@ class _OimPlayerState extends State<OimPlayer> {
     double containerWidth,
     double containerHeight,
   ) {
-    String text = resolveContent(slot['content'], language);
+    String text = _texts[slot['id']?.toString()] ?? resolveContent(slot['content'], language);
 
     if (style['textTransform'] == 'uppercase') {
       text = text.toUpperCase();

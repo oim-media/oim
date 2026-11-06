@@ -62,7 +62,20 @@ jobs:
             grep -qx "$v" <<< "$versions" || { echo "missing @oim-media/$p@$v"; exit 1; }
           done
 
+  # The binary jobs upload to the release; it exists before any of them ends
+  # (v1.27.0: Android, iOS and Windows-Flutter finished before Tauri created it).
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref_name }}
+        run: gh release view "$tag" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create "$tag" -R "$GITHUB_REPOSITORY" --title "OIM $tag" --generate-notes
+
   desktop-windows:
+    needs: release
     runs-on: windows-latest
     timeout-minutes: 30
     permissions:
@@ -108,6 +121,7 @@ jobs:
           }
 
   mobile-android:
+    needs: release
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
@@ -136,6 +150,7 @@ jobs:
           gh release upload "$tag" "$dest" --clobber
 
   desktop-windows-flutter:
+    needs: release
     runs-on: windows-latest
     timeout-minutes: 30
     permissions:
@@ -158,6 +173,7 @@ jobs:
           gh release upload "$tag" $dest --clobber
 
   mobile-ios:
+    needs: release
     runs-on: macos-latest
     timeout-minutes: 40
     permissions:

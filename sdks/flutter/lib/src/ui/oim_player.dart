@@ -25,6 +25,8 @@ import 'interaction.dart';
 import 'css_gradient.dart';
 import 'grain.dart';
 import 'patterns.dart';
+import 'text_animation.dart';
+import 'text_effects.dart';
 
 /// Interactive native Flutter widget to render OIM files.
 class OimPlayer extends StatefulWidget {
@@ -513,11 +515,8 @@ class _OimPlayerState extends State<OimPlayer> {
   ) {
     String text = _texts[slot['id']?.toString()] ?? resolveContent(slot['content'], language);
 
-    if (style['textTransform'] == 'uppercase') {
-      text = text.toUpperCase();
-    } else if (style['textTransform'] == 'lowercase') {
-      text = text.toLowerCase();
-    }
+    // CSS text-transform: applied to the painted text, after the mark tags are read.
+    String tx(String s) => switch (style['textTransform']) { 'uppercase' => s.toUpperCase(), 'lowercase' => s.toLowerCase(), _ => s };
 
     final fontSize = resolveCssUnit(style['fontSize'], containerWidth, containerHeight) ?? 16.0;
     final color = resolveColor(
@@ -547,18 +546,48 @@ class _OimPlayerState extends State<OimPlayer> {
     final letterSpacing = (style['letterSpacing'] as num?)?.toDouble();
     final lineHeight = (style['lineHeight'] as num?)?.toDouble();
 
-    return Text(
-      text,
-      style: TextStyle(
-        fontSize: fontSize,
-        color: color,
-        fontWeight: fontWeight,
-        fontStyle: fontStyle,
-        letterSpacing: letterSpacing,
-        height: lineHeight,
-        shadows: shadowOf(style) == null ? null : [shadowOf(style)!],
-      ),
+    final textStyle = TextStyle(
+      fontSize: fontSize,
+      color: color,
+      fontWeight: fontWeight,
+      fontStyle: fontStyle,
+      letterSpacing: letterSpacing,
+      height: lineHeight,
+      shadows: shadowOf(style) == null ? null : [shadowOf(style)!],
     );
+    final marks = style['marks'] is Map ? (style['marks'] as Map).cast<String, dynamic>() : const <String, dynamic>{};
+    final animType = style['textAnimationType'];
+    if (isTextAnimation(animType) && !widget.disableAnimations) {
+      num? n(String k) => style[k] is num ? style[k] as num : null;
+      return OimTextAnimation(
+        text: tx(plainText(text, marks.keys)),
+        style: textStyle,
+        type: animType as String,
+        speed: n('textAnimationSpeed')?.toDouble(),
+        delay: n('textAnimationDelay')?.toDouble(),
+        intensity: n('textAnimationIntensity')?.toDouble(),
+        cursor: style['typewriterCursor'] != false,
+        unit: _unit,
+      );
+    }
+    // Precalculated lines (`style.textRuns[lang]`): no layout of our own, each line where the exporter put it.
+    // The runs of the language whose content is the text shown (the fallback language too; none after an action changed it).
+    final content = slot['content'];
+    final runs = style['textRuns'] is Map && content is Map
+        ? (style['textRuns'] as Map).entries.where((e) => content[e.key]?.toString() == text).firstOrNull?.value
+        : null;
+    if (runs is Map && runs['lines'] is List && runs['fontSize'] is num) {
+      final lineStyle = textStyle.copyWith(fontSize: (runs['fontSize'] as num) * _unit, height: 1);
+      return Stack(clipBehavior: Clip.none, children: [
+        for (final l in (runs['lines'] as List).whereType<Map>())
+          Positioned(
+            left: 0,
+            top: ((l['yOffset'] as num?) ?? 0) * _unit,
+            child: Text(tx(plainText('${l['text'] ?? ''}', marks.keys)), style: lineStyle, softWrap: false),
+          ),
+      ]);
+    }
+    return markedText(text, marks, textStyle, activePalette, tx);
   }
 
   Widget _buildGeoSlot(

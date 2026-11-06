@@ -62,7 +62,9 @@ describe("embeddedFontProblem (1.27.0)", () => {
     expect(embeddedFontProblem("woff2", new Uint8Array([0x77, 0x4f, 0x46, 0x32, 0]))).toBeNull();
   });
   it("rejects a variable woff, a wrong magic, a short directory and an unknown format", () => {
-    for (const t of ["fvar", "gvar", "avar", "HVAR", "MVAR", "STAT"]) expect(embeddedFontProblem("woff", woff(t))).toBe("variable");
+    for (const t of ["fvar", "gvar", "avar", "HVAR", "MVAR"]) expect(embeddedFontProblem("woff", woff(t))).toBe("variable");
+    // STAT names styles for font menus; static fonts carry it, and HarfBuzz keeps it when instancing.
+    expect(embeddedFontProblem("woff", woff("STAT"))).toBeNull();
     expect(embeddedFontProblem("woff", new Uint8Array([0x77, 0x4f, 0x46, 0x32]))).toBe("magic");
     expect(embeddedFontProblem("woff", woff("glyf").subarray(0, 50))).toBe("magic");
     expect(embeddedFontProblem("ttf", woff("glyf"))).toBe("format");

@@ -39,7 +39,8 @@ export const EMBEDDED_FONT_FORMATS = ["woff", "woff2"] as const;
 const MAGIC: Record<string, string> = { woff: "wOFF", woff2: "wOF2" };
 
 /** Tables that make a font variable. A "woff" entry is a static instance (1.27.0). */
-const VARIATION_TABLES = new Set(["fvar", "gvar", "avar", "HVAR", "MVAR", "STAT"]);
+// Not STAT: static fonts carry it too, and HarfBuzz keeps it when instancing.
+const VARIATION_TABLES = new Set(["fvar", "gvar", "avar", "HVAR", "MVAR"]);
 
 /**
  * Why an entry's bytes break the contract, or null. Checks the magic of its

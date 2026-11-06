@@ -234,6 +234,8 @@ const SUPERFICIE = [
   "REVEAL_DEFAULT",
   "easingToCss",
   "revealFrames",
+  "sampleKeyframes",
+  "easeProgress",
   "revealTiming",
   "parallaxInfiniteSchema",
   "parallaxSchema",

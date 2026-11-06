@@ -914,6 +914,8 @@ export class ImageEngine {
   async _applyVerified(v: VerifiedFile): Promise<boolean> {
     const self = this;
     this.metadata = structuredClone(v.metadata);
+    // The palette is first applied before the file is read; only now are its palettes known.
+    this.applyPalette();
 
     // A PUBLIC file carries its own stamp. Showing it with the same green
     // badge as an authored file ("Signature verified") would promise too much:

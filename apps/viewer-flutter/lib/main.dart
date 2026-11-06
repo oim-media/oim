@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:oim_flutter/oim_flutter.dart';
+import 'viewer_format.dart';
 
 // Design tokens mirrored from apps/viewer-desktop (Tauri) so both viewers look the same.
 const _bg = Color(0xFF09090B);
@@ -24,7 +25,11 @@ const _unsigned = Color(0xFFA1A1AA);
 const _ok = Color(0xFF22C55E);
 const _mono = TextStyle(fontFamily: 'Consolas', fontFamilyFallback: ['Menlo', 'monospace']);
 
-void main() {
+/// A path given on the command line ("Open with" on Windows) is opened at start.
+String? _initialPath;
+
+void main(List<String> args) {
+  _initialPath = args.isEmpty ? null : args.first;
   runApp(const OimViewerApp());
 }
 
@@ -53,6 +58,17 @@ class OimViewerScreen extends StatefulWidget {
 }
 
 class _OimViewerScreenState extends State<OimViewerScreen> {
+  @override
+  void initState() {
+    super.initState();
+    final path = _initialPath;
+    if (path != null) {
+      File(path).readAsBytes().then((b) => _load(b, fileNameOf(path))).catchError((Object e) {
+        if (mounted) setState(() => _error = 'No se pudo abrir $path');
+      });
+    }
+  }
+
   Uint8List? _bytes;
   OimExtractionResult? _result;
   OimSecurityStatus? _status;
@@ -641,12 +657,12 @@ class _InspectorDrawer extends StatelessWidget {
           const SizedBox(height: 16),
           const Divider(height: 1, color: _border),
           const SizedBox(height: 16),
-          _SectionHeader(title: 'FICHA TÉCNICA', trailing: 'v${meta['oim'] ?? meta['version'] ?? '1.0'}'),
+          _SectionHeader(title: 'FICHA TÉCNICA', trailing: schemaVersionOf(meta)),
           const SizedBox(height: 12),
           _SpecRow(label: 'Archivo', value: fileName, mono: true),
           _SpecRow(label: 'Peso', value: sizeLabel, mono: true),
           _SpecRow(label: 'Resolución', value: dims),
-          _SpecRow(label: 'Esquema OIM', value: 'v${meta['oim'] ?? meta['version'] ?? '1.0'}', mono: true),
+          _SpecRow(label: 'Esquema OIM', value: schemaVersionOf(meta), mono: true),
           _SpecRow(label: 'Reedición', value: reeditLabel, valueColor: reedit == 'public' ? _ok : null),
           _SpecRow(
             label: 'Firma',

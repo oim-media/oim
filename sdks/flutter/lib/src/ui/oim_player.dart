@@ -24,6 +24,7 @@ import 'actions.dart';
 import 'interaction.dart';
 import 'css_gradient.dart';
 import 'grain.dart';
+import 'masks.dart';
 import 'patterns.dart';
 import 'text_animation.dart';
 import 'text_effects.dart';
@@ -272,6 +273,39 @@ class _OimPlayerState extends State<OimPlayer> {
       // If this slot is inside an existing group, the group mounts it.
       if (childSlotIds.contains(slotId)) continue;
 
+      if (raw['type'] == 'mask' && slotShownIn(raw, currentLang)) {
+        final style = (raw['style'] as Map<String, dynamic>?) ?? const <String, dynamic>{};
+        final box = _maskBox(raw, style, containerWidth, containerHeight);
+        final canvas = Size(containerWidth, containerHeight);
+        if (style['maskMode'] == 'cutout') {
+          if (widgets.isEmpty || _visible[slotId] == false) continue;
+          final feather = (style['maskFeather'] as num?)?.toDouble() ?? 0;
+          widgets
+            ..replaceRange(0, widgets.length, [
+              Positioned.fill(
+                child: cutoutMask(
+                  path: cutoutPath(style, box, canvas, _unit),
+                  canvas: canvas,
+                  feather: feather * _unit,
+                  child: Stack(fit: StackFit.expand, children: List.of(widgets)),
+                ),
+              ),
+            ]);
+        } else {
+          final painter = WindowMaskPainter(
+            windowPath(style, box, canvas, _unit),
+            maskSilhouettes(style, box, _unit),
+            resolveColor(style['maskBgColorRole'] ?? style['fillColorRole'], style['maskBgColor'] ?? '#38BDF8', activePalette) ??
+                const Color(0xFF38BDF8),
+            resolveColor(style['maskStrokeColorRole'] ?? style['strokeColorRole'], style['maskStrokeColor'] ?? '#FFFFFF', activePalette) ??
+                const Color(0xFFFFFFFF),
+            ((style['maskStrokeWidth'] as num?) ?? 0).toDouble() * _unit,
+          );
+          widgets.add(Positioned.fill(child: _wrap(raw, style, CustomPaint(painter: painter), containerWidth)));
+        }
+        continue;
+      }
+
       final slotWidget = _buildSlotEntry(
         raw,
         byId,
@@ -290,6 +324,15 @@ class _OimPlayerState extends State<OimPlayer> {
     return widgets;
   }
 
+  /// A mask's box in logical px: its position and size, as every layer's.
+  Rect _maskBox(Map<String, dynamic> raw, Map<String, dynamic> style, double cw, double ch) {
+    final pos = raw['position'] is List ? raw['position'] as List : const [0, 0];
+    double px(Object? v) => ((v is num ? v : num.tryParse('$v')) ?? 0).toDouble() * _unit;
+    final w = resolveCssUnit(style['width'], cw, ch) ?? (raw['width'] is num ? px(raw['width']) : px(raw['width_px']));
+    final h = resolveCssUnit(style['height'], cw, ch) ?? (raw['height'] is num ? px(raw['height']) : px(raw['height_px']));
+    return Rect.fromLTWH((pos[0] as num).toDouble() / 100 * cw, (pos[1] as num).toDouble() / 100 * ch, w, h);
+  }
+
   Widget? _buildSlotEntry(
     Map<String, dynamic> raw,
     Map<String, Map<String, dynamic>> byId,
@@ -300,6 +343,7 @@ class _OimPlayerState extends State<OimPlayer> {
     double containerHeight, {
     Map<String, dynamic>? parentSceneLoop,
   }) {
+    if (!slotShownIn(raw, currentLang)) return null;
     final type = raw['type']?.toString();
     final pos = raw['position'] as List<dynamic>?;
     final style = (raw['style'] as Map<String, dynamic>?) ?? {};
@@ -614,7 +658,7 @@ class _OimPlayerState extends State<OimPlayer> {
     final borderRadius = parseBorderRadius(style['borderRadius'], containerWidth, containerHeight);
 
     final shapeName = style['drawing']?.toString() ?? style['geoDrawing']?.toString() ?? style['shape']?.toString();
-    final ShapeDrawing? drawing = shapeName != null ? geoShapes[shapeName] : null;
+    final ShapeDrawing? drawing = shapeName != null ? geoShapes[shapeName] : shapeDrawing(style['geoShape']);
     final svgPath = style['svgPath']?.toString() ?? style['path']?.toString();
     final borderStyle = style['borderStyle']?.toString();
     final isDashed = borderStyle == 'dashed';

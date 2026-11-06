@@ -31,3 +31,19 @@ String resolveContent(Object? content, String lang) {
       byLang('default') ??
       (map.isEmpty ? '' : (map.values.first?.toString() ?? ''));
 }
+
+/// The languages of a file's texts, lower-case and sorted (the web player's `languages`).
+List<String> oimLanguages(Map<String, dynamic> metadata) {
+  final out = <String>{};
+  for (final s in (metadata['slots'] as List?) ?? const []) {
+    final c = s is Map ? s['content'] : null;
+    if (c is Map) out.addAll(c.keys.map((k) => k.toString().toLowerCase()).where((k) => k != '*'));
+  }
+  return out.toList()..sort();
+}
+
+/// A layer with `languages` (other than `["*"]`) shows only in those languages.
+bool slotShownIn(Map raw, String lang) {
+  final l = raw['languages'];
+  return l is! List || l.contains('*') || l.contains(lang);
+}

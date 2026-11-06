@@ -16,7 +16,7 @@ void main() {
   group('filterItems', () {
     final items = [
       _item('1', title: 'Hero Landing', cat: 'marketing'),
-      LibraryItem(id: '2', title: 'Carta', titleEn: 'Menu card', mediaUrl: 'u', category: 'arte'),
+      const LibraryItem(id: '2', title: 'Carta', titleEn: 'Menu card', mediaUrl: 'u', category: 'arte'),
     ];
     test('all + no query keeps everything', () => expect(filterItems(items, '', 'all').length, 2));
     test('matches title or English title, ignoring case', () {

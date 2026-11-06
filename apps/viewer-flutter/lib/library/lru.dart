@@ -1,13 +1,12 @@
 // Copyright (c) 2026 Xue Studios LLC
 // SPDX-License-Identifier: Apache-2.0
 
-import 'dart:collection';
 import 'dart:typed_data';
 
 /// Downloaded works kept in memory under a byte cap (50 MB in the Tauri viewer).
 class LruBytes {
   final int maxBytes;
-  final _entries = LinkedHashMap<String, Uint8List>();
+  final _entries = <String, Uint8List>{};
   int _total = 0;
 
   LruBytes(this.maxBytes);

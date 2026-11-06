@@ -6,7 +6,6 @@
 // performance gate in docs/superpowers/plans/2026-11-05-flutter-viewer-library.md.
 
 import 'dart:io';
-import 'dart:ui' show FrameTiming;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 

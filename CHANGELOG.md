@@ -5,6 +5,13 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+- Flutter: layers with `style.animation` now move. Structured keyframes, the
+  `pulse`, `float`, `bounce` and `spin` loops and the `grow`, `shrink` and
+  `lift` hover effects play as on the web; `trigger: "action"` rests on its
+  first keyframe until actions arrive. `glow` is not played yet.
+- Core: `sampleKeyframes` and `easeProgress` state what a keyframed layer looks
+  like at a given time. The cases are in `packages/spec/keyframe-cases.json`,
+  and the web and Flutter players both pass them.
 - Player: the `palette` attribute and the file's default palette now apply when the
   file loads; before, the palette was resolved before the file was read and no
   `--oim-palette-*` value was written until the attribute changed.

@@ -19,6 +19,7 @@ import 'groups.dart';
 import 'image_fill.dart';
 import 'infinite_parallax.dart';
 import 'lottie_slot.dart';
+import 'motion.dart';
 
 /// Interactive native Flutter widget to render OIM files.
 class OimPlayer extends StatefulWidget {
@@ -304,7 +305,7 @@ class _OimPlayerState extends State<OimPlayer> {
         groupWrapper = ClipRect(child: groupWrapper);
       }
 
-      return Positioned.fill(child: groupWrapper);
+      return Positioned.fill(child: _withMotion(groupWrapper, style));
     }
 
     if (pos == null || pos.length < 2) return null;
@@ -373,8 +374,15 @@ class _OimPlayerState extends State<OimPlayer> {
       top: top,
       width: slotWidth,
       height: slotHeight,
-      child: slotWidget,
+      child: _withMotion(slotWidget, style),
     );
+  }
+
+  /// The layer's `style.animation`, on top of its own effects and opacity, as the web's loop wrapper.
+  Widget _withMotion(Widget child, Map<String, dynamic> style) {
+    final anim = style['animation'];
+    if (anim is! Map<String, dynamic>) return child;
+    return OimMotion(animation: anim, disableAnimations: widget.disableAnimations, child: child);
   }
 
   Widget _buildTextSlot(

@@ -5,9 +5,16 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+- Flutter: embedded fonts. Each `"woff"` entry is unwrapped to an sfnt
+  (zlib per table) and registered with `FontLoader` under its `name`; text
+  uses the entry of its family and style closest to its weight. `"woff2"`
+  entries (files before 1.27.0) are skipped, as the contract allows: the
+  text paints in the family the platform has. Vector 34,
+  `embedded-font-woff`, checks the `fonts` declaration.
 - Contract 1.27.0: embedded fonts in WOFF. `fonts[].format` is `"woff"`
   (written from now on) or `"woff2"` (read forever). A `"woff"` entry is a
-  static instance: no `fvar`, `gvar`, `avar`, `HVAR`, `MVAR` or `STAT`, so
+  static instance: no `fvar`, `gvar`, `avar`, `HVAR` or `MVAR` (`STAT` may
+  stay: static fonts carry it, and HarfBuzz keeps it when instancing), so
   readers outside the browser paint the weight it declares. WOFF needs only
   zlib, which every language ships. `embeddedFontProblem(format, bytes)` in
   core checks the magic and the static rule; the web player loads both

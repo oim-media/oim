@@ -2004,6 +2004,7 @@ export class ImageEngine {
         isText: slotType === 'text',
         isParallaxGroup: !!(slot.isParallaxGroup || style.isParallaxGroup || slot.is_parallax_group),
         hasFilterOrShadow: !!(style.filter || style.boxShadow || style.textShadow),
+        hasKeyframes: Array.isArray(style.animation?.keyframes) && style.animation.keyframes.length >= 2,
       });
       // Resolve slot width and height based on design proportions
       const origW = self.metadata?.canvas_width || self.metadata?.canvasWidth || (self.metadata?.canvas ? self.metadata.canvas.natural_width : 800);

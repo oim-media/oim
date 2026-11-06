@@ -52,6 +52,8 @@ export interface WhoClips {
   isParallaxGroup: boolean;
   /** Shadow or filter are painted OUTSIDE the box; clipping them cuts them off. */
   hasFilterOrShadow: boolean;
+  /** Keyframes move a wrapper inside the slot; clipping would cut the layer as it travels. */
+  hasKeyframes?: boolean;
 }
 
 export function slotClipping(slot: WhoClips): Clipping {
@@ -59,5 +61,6 @@ export function slotClipping(slot: WhoClips): Clipping {
   if (slot.isParallaxGroup) return 'hidden';
   if (slot.isText) return 'visible';
   if (slot.hasFilterOrShadow) return 'visible';
+  if (slot.hasKeyframes) return 'visible';
   return 'hidden';
 }

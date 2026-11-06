@@ -17,7 +17,7 @@ import { describe, it, expect } from "vitest";
 import { slotClipping } from "./clipping";
 
 const slot = (p: Partial<Parameters<typeof slotClipping>[0]> = {}) => ({
-  isText: false, isParallaxGroup: false, hasFilterOrShadow: false, ...p,
+  isText: false, isParallaxGroup: false, hasFilterOrShadow: false, hasKeyframes: false, ...p,
 });
 
 describe("slotClipping", () => {
@@ -47,5 +47,15 @@ describe("slotClipping", () => {
 
   it("text with a shadow is not clipped twice", () => {
     expect(slotClipping(slot({ isText: true, hasFilterOrShadow: true }))).toBe("visible");
+  });
+
+  // offline_oim (6 Nov 2026): the keyframes move a wrapper INSIDE the slot, so a
+  // clipped slot hid the jumping dino and showed the cactus only near its home box.
+  it("an image moved by keyframes is not clipped by its own box", () => {
+    expect(slotClipping(slot({ hasKeyframes: true }))).toBe("visible");
+  });
+
+  it("a parallax group keeps clipping even with keyframes", () => {
+    expect(slotClipping(slot({ hasKeyframes: true, isParallaxGroup: true }))).toBe("hidden");
   });
 });

@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:oim_flutter/oim_flutter.dart';
 import 'package:flutter/services.dart';
 import 'library/library_client.dart';
+import 'library/library_bench.dart';
 import 'library/library_screen.dart';
 import 'viewer_format.dart';
 
@@ -30,9 +31,12 @@ const _mono = TextStyle(
 
 /// A path given on the command line ("Open with" on Windows) is opened at start.
 String? _initialPath;
+bool _bench = false;
 
 void main(List<String> args) {
-  _initialPath = args.isEmpty ? null : args.first;
+  _bench = args.contains('--library-bench');
+  final files = args.where((a) => !a.startsWith('--')).toList();
+  _initialPath = files.isEmpty ? null : files.first;
   runApp(const OimViewerApp());
 }
 
@@ -74,6 +78,7 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
         if (mounted) setState(() => _error = 'No se pudo abrir $path');
       });
     }
+    if (_bench) WidgetsBinding.instance.addPostFrameCallback((_) => _openLibrary(bench: LibraryBench()));
   }
 
   Uint8List? _bytes;
@@ -89,10 +94,11 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
   String? _error;
   final _library = LibraryClient();
 
-  void _openLibrary() {
+  void _openLibrary({LibraryBench? bench}) {
     Navigator.of(context).push(MaterialPageRoute<void>(
       builder: (_) => LibraryScreen(
         client: _library,
+        bench: bench,
         onOpen: (item, bytes) {
           Navigator.of(context).pop();
           _load(bytes, item.title);

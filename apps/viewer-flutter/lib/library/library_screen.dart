@@ -4,6 +4,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../ui/tokens.dart';
+import 'library_bench.dart';
 import 'library_card.dart';
 import 'library_client.dart';
 import 'library_layout.dart';
@@ -22,7 +23,9 @@ class LibraryScreen extends StatefulWidget {
 
   /// Off in widget tests, where the cards have no network.
   final bool loadCards;
-  const LibraryScreen({super.key, required this.client, required this.onOpen, this.loadCards = true});
+  /// Set by `--library-bench`: scroll the whole library and print frame times.
+  final LibraryBench? bench;
+  const LibraryScreen({super.key, required this.client, required this.onOpen, this.loadCards = true, this.bench});
 
   @override
   State<LibraryScreen> createState() => _LibraryScreenState();
@@ -34,11 +37,22 @@ class _LibraryScreenState extends State<LibraryScreen> {
   String _category = 'all';
   bool _loading = true;
   String? _error;
+  final _scroll = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _fetch();
+    widget.bench?.start();
+    _fetch().then((_) {
+      final bench = widget.bench;
+      if (bench != null && mounted) WidgetsBinding.instance.addPostFrameCallback((_) => bench.run(_scroll));
+    });
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
   }
 
   Future<void> _fetch({bool force = false}) async {
@@ -139,6 +153,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       const pad = 16.0, gap = 8.0;
       final rows = justifiedRows(shown, width: box.maxWidth - pad * 2, gap: gap);
       return ListView.builder(
+        controller: _scroll,
         padding: const EdgeInsets.fromLTRB(pad, 8, pad, pad),
         itemCount: rows.length,
         itemBuilder: (context, i) {

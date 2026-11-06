@@ -147,3 +147,12 @@ describe("la paleta por el elemento <oim-player> montado", () => {
     expect(mq.removeEventListener).toHaveBeenCalledWith("change", listener);
   });
 });
+
+describe("palette when the file loads", () => {
+  it("the verified file's palette reaches the viewer without a manual applyPalette", async () => {
+    simularOscuro(false);
+    const { motor, viewport } = engineWith(null, { palette: "light" });
+    await motor._applyVerified({ metadata: { palettes: PALETTES, slots: [] }, security: "verified" }).catch(() => {});
+    expect(viewport.style.getPropertyValue("--oim-palette-primary")).toBe("#fafafa");
+  });
+});

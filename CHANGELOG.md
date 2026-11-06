@@ -5,6 +5,9 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+- Player: the `palette` attribute and the file's default palette now apply when the
+  file loads; before, the palette was resolved before the file was read and no
+  `--oim-palette-*` value was written until the attribute changed.
 - Native Dart/Flutter SDK (`sdks/flutter`): reads `.oim` files, verifies the
   ECDSA signature and the image seal offline, and renders with `OimPlayer`.
   Passes every conformance vector.

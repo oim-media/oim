@@ -2,10 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:oim_flutter/oim_flutter.dart';
+import 'package:flutter/services.dart';
+import 'library/library_client.dart';
+import 'library/library_bench.dart';
+import 'library/library_screen.dart';
+import 'viewer_format.dart';
 
 // Design tokens mirrored from apps/viewer-desktop (Tauri) so both viewers look the same.
 const _bg = Color(0xFF09090B);
@@ -22,9 +26,17 @@ const _chipBorder = Color(0x17FFFFFF);
 const _signed = Color(0xFF38BDF8);
 const _unsigned = Color(0xFFA1A1AA);
 const _ok = Color(0xFF22C55E);
-const _mono = TextStyle(fontFamily: 'Consolas', fontFamilyFallback: ['Menlo', 'monospace']);
+const _mono = TextStyle(
+    fontFamily: 'Consolas', fontFamilyFallback: ['Menlo', 'monospace']);
 
-void main() {
+/// A path given on the command line ("Open with" on Windows) is opened at start.
+String? _initialPath;
+bool _bench = false;
+
+void main(List<String> args) {
+  _bench = args.contains('--library-bench');
+  final files = args.where((a) => !a.startsWith('--')).toList();
+  _initialPath = files.isEmpty ? null : files.first;
   runApp(const OimViewerApp());
 }
 
@@ -38,7 +50,8 @@ class OimViewerApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: _bg,
-        colorScheme: const ColorScheme.dark(primary: Colors.white, surface: _bg),
+        colorScheme:
+            const ColorScheme.dark(primary: Colors.white, surface: _bg),
       ),
       home: const OimViewerScreen(),
     );
@@ -53,6 +66,21 @@ class OimViewerScreen extends StatefulWidget {
 }
 
 class _OimViewerScreenState extends State<OimViewerScreen> {
+  @override
+  void initState() {
+    super.initState();
+    final path = _initialPath;
+    if (path != null) {
+      File(path)
+          .readAsBytes()
+          .then((b) => _load(b, fileNameOf(path)))
+          .catchError((Object e) {
+        if (mounted) setState(() => _error = 'No se pudo abrir $path');
+      });
+    }
+    if (_bench) WidgetsBinding.instance.addPostFrameCallback((_) => _openLibrary(bench: LibraryBench()));
+  }
+
   Uint8List? _bytes;
   OimExtractionResult? _result;
   OimSecurityStatus? _status;
@@ -64,6 +92,20 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
   bool _playMotion = true;
   bool _inspectorOpen = true;
   String? _error;
+  final _library = LibraryClient();
+
+  void _openLibrary({LibraryBench? bench}) {
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => LibraryScreen(
+        client: _library,
+        bench: bench,
+        onOpen: (item, bytes) {
+          Navigator.of(context).pop();
+          _load(bytes, item.title);
+        },
+      ),
+    ));
+  }
 
   Map<String, dynamic>? get _meta => _result?.metadata;
 
@@ -121,11 +163,19 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
       final status = verifyOim(result);
       if (isRefused(status)) {
         // An altered file is not shown: neither its image nor its layers.
-        setState(() => _error = 'Archivo alterado (${_badgeFor(status).text}): no se muestra.');
+        setState(() => _error =
+            'Archivo alterado (${_badgeFor(status).text}): no se muestra.');
         return;
       }
-      final langs = (result.metadata['languages'] as List?)?.map((e) => e.toString()).toList() ?? const <String>[];
-      final pals = (result.metadata['palettes'] as Map?)?.keys.map((e) => e.toString()).toList() ?? const <String>[];
+      final langs = (result.metadata['languages'] as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const <String>[];
+      final pals = (result.metadata['palettes'] as Map?)
+              ?.keys
+              .map((e) => e.toString())
+              .toList() ??
+          const <String>[];
       final defaultPal = result.metadata['defaultPalette']?.toString();
       setState(() {
         _bytes = bytes;
@@ -145,87 +195,126 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(center: Alignment(0, -0.1), radius: 0.9, colors: [_bgCenter, _bg]),
-        ),
-        child: Column(
-          children: [
-            _TopBar(
-              fileName: _fileName,
-              sizeLabel: _bytes == null ? null : _formatSize(_bytes!.length),
-              status: _status,
-              hasFile: _bytes != null,
-              inspectorOpen: _inspectorOpen,
-              palettes: _palettes,
-              selectedPalette: _palette,
-              onSelectPalette: (p) => setState(() => _palette = p),
-              onOpen: _pickFile,
-              onToggleInspector: () => setState(() => _inspectorOpen = !_inspectorOpen),
-            ),
-            if (_error != null)
-              Container(
-                width: double.infinity,
-                color: const Color(0x33EF4444),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                child: Text(_error!, style: const TextStyle(color: Color(0xFFFCA5A5), fontSize: 12)),
+    // Same keys as the Tauri viewer; F11 needs a window plugin and is left out.
+    return CallbackShortcuts(
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.space): () =>
+              setState(() => _playMotion = !_playMotion),
+          const SingleActivator(LogicalKeyboardKey.keyL): () =>
+              setState(() => _showLayers = !_showLayers),
+          const SingleActivator(LogicalKeyboardKey.keyI): () =>
+              setState(() => _inspectorOpen = !_inspectorOpen),
+          const SingleActivator(LogicalKeyboardKey.keyO, control: true):
+              _pickFile,
+          const SingleActivator(LogicalKeyboardKey.keyB, control: true):
+              _openLibrary,
+        },
+        child: Focus(
+            autofocus: true,
+            child: Scaffold(
+              body: Container(
+                decoration: const BoxDecoration(
+                  gradient: RadialGradient(
+                      center: Alignment(0, -0.1),
+                      radius: 0.9,
+                      colors: [_bgCenter, _bg]),
+                ),
+                child: Column(
+                  children: [
+                    _TopBar(
+                      fileName: _fileName,
+                      sizeLabel:
+                          _bytes == null ? null : _formatSize(_bytes!.length),
+                      status: _status,
+                      hasFile: _bytes != null,
+                      inspectorOpen: _inspectorOpen,
+                      palettes: _palettes,
+                      selectedPalette: _palette,
+                      onSelectPalette: (p) => setState(() => _palette = p),
+                      onOpen: _pickFile,
+                      onToggleInspector: () =>
+                          setState(() => _inspectorOpen = !_inspectorOpen),
+                      onLibrary: _openLibrary,
+                    ),
+                    if (_error != null)
+                      Container(
+                        width: double.infinity,
+                        color: const Color(0x33EF4444),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 6),
+                        child: Text(_error!,
+                            style: const TextStyle(
+                                color: Color(0xFFFCA5A5), fontSize: 12)),
+                      ),
+                    Expanded(
+                      child: LayoutBuilder(
+                        builder: (context, c) {
+                          final wide = c.maxWidth >= 720;
+                          final drawerVisible =
+                              _inspectorOpen && _result != null;
+                          final stage = _bytes == null
+                              ? _EmptyState(
+                                  onOpen: _pickFile, onLibrary: _openLibrary)
+                              : Padding(
+                                  padding: const EdgeInsets.all(20),
+                                  child: Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: OimPlayer(
+                                        bytes: _bytes!,
+                                        language: _language.isEmpty
+                                            ? null
+                                            : _language,
+                                        palette: _palette,
+                                        isInteractive: _showLayers,
+                                        allowLottie: _allowLottie,
+                                        disableAnimations: !_playMotion,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                          final drawer = drawerVisible
+                              ? _InspectorDrawer(
+                                  fileName: _fileName,
+                                  sizeLabel: _formatSize(_bytes!.length),
+                                  meta: _meta!,
+                                  status: _status!,
+                                  languages: _languages,
+                                  language: _language,
+                                  palettes: _palettes,
+                                  palette: _palette,
+                                  showLayers: _showLayers,
+                                  allowLottie: _allowLottie,
+                                  playMotion: _playMotion,
+                                  onToggleLayers: () => setState(
+                                      () => _showLayers = !_showLayers),
+                                  onToggleLottie: () => setState(
+                                      () => _allowLottie = !_allowLottie),
+                                  onToggleMotion: () => setState(
+                                      () => _playMotion = !_playMotion),
+                                  onSelectLanguage: (l) =>
+                                      setState(() => _language = l),
+                                  onSelectPalette: (p) =>
+                                      setState(() => _palette = p),
+                                )
+                              : null;
+                          if (drawer == null) return stage;
+                          if (wide) {
+                            return Row(
+                                children: [Expanded(child: stage), drawer]);
+                          }
+                          return Stack(children: [
+                            stage,
+                            Positioned(
+                                top: 0, bottom: 0, right: 0, child: drawer)
+                          ]);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, c) {
-                  final wide = c.maxWidth >= 720;
-                  final drawerVisible = _inspectorOpen && _result != null;
-                  final stage = _bytes == null
-                      ? _EmptyState(onOpen: _pickFile)
-                      : Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Center(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: OimPlayer(
-                                bytes: _bytes!,
-                                language: _language.isEmpty ? null : _language,
-                                palette: _palette,
-                                isInteractive: _showLayers,
-                                allowLottie: _allowLottie,
-                                disableAnimations: !_playMotion,
-                              ),
-                            ),
-                          ),
-                        );
-                  final drawer = drawerVisible
-                      ? _InspectorDrawer(
-                          fileName: _fileName,
-                          sizeLabel: _formatSize(_bytes!.length),
-                          meta: _meta!,
-                          status: _status!,
-                          languages: _languages,
-                          language: _language,
-                          palettes: _palettes,
-                          palette: _palette,
-                          showLayers: _showLayers,
-                          allowLottie: _allowLottie,
-                          playMotion: _playMotion,
-                          onToggleLayers: () => setState(() => _showLayers = !_showLayers),
-                          onToggleLottie: () => setState(() => _allowLottie = !_allowLottie),
-                          onToggleMotion: () => setState(() => _playMotion = !_playMotion),
-                          onSelectLanguage: (l) => setState(() => _language = l),
-                          onSelectPalette: (p) => setState(() => _palette = p),
-                        )
-                      : null;
-                  if (drawer == null) return stage;
-                  if (wide) {
-                    return Row(children: [Expanded(child: stage), drawer]);
-                  }
-                  return Stack(children: [stage, Positioned(top: 0, bottom: 0, right: 0, child: drawer)]);
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+            )));
   }
 }
 
@@ -265,7 +354,8 @@ String _formatSize(int bytes) {
 }
 
 String _compactTitle(String name, int max) {
-  final base = name.replaceAll(RegExp(r'\.oim(\.png)?$|\.png$', caseSensitive: false), '');
+  final base = name.replaceAll(
+      RegExp(r'\.oim(\.png)?$|\.png$', caseSensitive: false), '');
   return base.length <= max ? base : '${base.substring(0, max)}...';
 }
 
@@ -281,6 +371,7 @@ class _TopBar extends StatelessWidget {
     required this.onSelectPalette,
     required this.onOpen,
     required this.onToggleInspector,
+    required this.onLibrary,
   });
 
   final String fileName;
@@ -293,6 +384,7 @@ class _TopBar extends StatelessWidget {
   final ValueChanged<String?> onSelectPalette;
   final VoidCallback onOpen;
   final VoidCallback onToggleInspector;
+  final VoidCallback onLibrary;
 
   @override
   Widget build(BuildContext context) {
@@ -313,7 +405,9 @@ class _TopBar extends StatelessWidget {
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
-              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.6), blurRadius: 8)],
+              boxShadow: [
+                BoxShadow(color: color.withValues(alpha: 0.6), blurRadius: 8)
+              ],
             ),
           ),
           const SizedBox(width: 10),
@@ -333,7 +427,8 @@ class _TopBar extends StatelessWidget {
                 border: Border.all(color: _border),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: Text(sizeLabel!, style: _mono.copyWith(fontSize: 10, color: _textSecondary)),
+              child: Text(sizeLabel!,
+                  style: _mono.copyWith(fontSize: 10, color: _textSecondary)),
             ),
             const SizedBox(width: 6),
           ],
@@ -353,7 +448,8 @@ class _TopBar extends StatelessWidget {
                     height: 32,
                     child: Row(
                       children: [
-                        if (p.toLowerCase() == (selectedPalette ?? '').toLowerCase())
+                        if (p.toLowerCase() ==
+                            (selectedPalette ?? '').toLowerCase())
                           const Icon(Icons.check, size: 14, color: Colors.white)
                         else
                           const SizedBox(width: 14),
@@ -362,7 +458,8 @@ class _TopBar extends StatelessWidget {
                           p.toUpperCase(),
                           style: TextStyle(
                             fontSize: 11,
-                            fontWeight: p.toLowerCase() == (selectedPalette ?? '').toLowerCase()
+                            fontWeight: p.toLowerCase() ==
+                                    (selectedPalette ?? '').toLowerCase()
                                 ? FontWeight.w700
                                 : FontWeight.normal,
                             color: _text,
@@ -382,11 +479,15 @@ class _TopBar extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.palette_outlined, size: 13, color: _textSoft),
+                    const Icon(Icons.palette_outlined,
+                        size: 13, color: _textSoft),
                     const SizedBox(width: 4),
                     Text(
                       selectedPalette?.toUpperCase() ?? 'TEMA',
-                      style: const TextStyle(fontSize: 11, color: _textSoft, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                          fontSize: 11,
+                          color: _textSoft,
+                          fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
@@ -394,10 +495,22 @@ class _TopBar extends StatelessWidget {
             ),
             const SizedBox(width: 6),
           ],
-          _BarButton(icon: Icons.folder_open_outlined, label: 'Cargar otro', onTap: onOpen),
+          _BarButton(
+              icon: Icons.grid_view_outlined,
+              label: 'Biblioteca',
+              onTap: onLibrary),
+          const SizedBox(width: 6),
+          _BarButton(
+              icon: Icons.folder_open_outlined,
+              label: 'Cargar otro',
+              onTap: onOpen),
           if (hasFile) ...[
             const SizedBox(width: 6),
-            _BarButton(icon: Icons.tune, label: 'Ajustes', active: inspectorOpen, onTap: onToggleInspector),
+            _BarButton(
+                icon: Icons.tune,
+                label: 'Ajustes',
+                active: inspectorOpen,
+                onTap: onToggleInspector),
           ],
         ],
       ),
@@ -406,7 +519,11 @@ class _TopBar extends StatelessWidget {
 }
 
 class _BarButton extends StatelessWidget {
-  const _BarButton({required this.icon, required this.label, required this.onTap, this.active = false});
+  const _BarButton(
+      {required this.icon,
+      required this.label,
+      required this.onTap,
+      this.active = false});
 
   final IconData icon;
   final String label;
@@ -431,7 +548,11 @@ class _BarButton extends StatelessWidget {
           children: [
             Icon(icon, size: 13, color: fg),
             const SizedBox(width: 5),
-            Text(label, style: TextStyle(fontSize: 11, color: fg, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 11,
+                    color: fg,
+                    fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
           ],
         ),
       ),
@@ -440,9 +561,10 @@ class _BarButton extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.onOpen});
+  const _EmptyState({required this.onOpen, required this.onLibrary});
 
   final VoidCallback onOpen;
+  final VoidCallback onLibrary;
 
   @override
   Widget build(BuildContext context) {
@@ -450,19 +572,30 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('Abre un archivo .oim.png', style: TextStyle(fontSize: 16, color: _text, fontWeight: FontWeight.w600)),
+          const Text('Abre un archivo .oim.png',
+              style: TextStyle(
+                  fontSize: 16, color: _text, fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
-          const Text('Se lee y se dibuja de forma nativa, sin navegador.', style: TextStyle(fontSize: 12, color: _textMuted)),
+          const Text('Se lee y se dibuja de forma nativa, sin navegador.',
+              style: TextStyle(fontSize: 12, color: _textMuted)),
           const SizedBox(height: 18),
           InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: onOpen,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
-              child: const Text('Cargar archivo', style: TextStyle(color: _bg, fontSize: 12, fontWeight: FontWeight.w700)),
+              decoration: BoxDecoration(
+                  color: Colors.white, borderRadius: BorderRadius.circular(8)),
+              child: const Text('Cargar archivo',
+                  style: TextStyle(
+                      color: _bg, fontSize: 12, fontWeight: FontWeight.w700)),
             ),
           ),
+          const SizedBox(height: 10),
+          TextButton(
+              onPressed: onLibrary,
+              child: const Text('Explorar la biblioteca pública',
+                  style: TextStyle(color: _textSecondary, fontSize: 12))),
         ],
       ),
     );
@@ -543,14 +676,21 @@ class _InspectorDrawer extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Capa interactiva', style: TextStyle(fontSize: 12, color: _text, fontWeight: FontWeight.w500)),
+                    const Text('Capa interactiva',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: _text,
+                            fontWeight: FontWeight.w500)),
                     Text(showLayers ? 'Superposición activa' : 'Base PNG plana',
-                        style: const TextStyle(fontSize: 10, color: _textMuted)),
+                        style:
+                            const TextStyle(fontSize: 10, color: _textMuted)),
                   ],
                 ),
               ),
               _Toggle(
-                icon: showLayers ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                icon: showLayers
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
                 label: showLayers ? 'Visible' : 'Oculta',
                 active: showLayers,
                 onTap: onToggleLayers,
@@ -565,14 +705,21 @@ class _InspectorDrawer extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Animación Lottie', style: TextStyle(fontSize: 12, color: _text, fontWeight: FontWeight.w500)),
+                      const Text('Animación Lottie',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: _text,
+                              fontWeight: FontWeight.w500)),
                       Text(allowLottie ? 'Reproduciendo' : 'Desactivado',
-                          style: const TextStyle(fontSize: 10, color: _textMuted)),
+                          style:
+                              const TextStyle(fontSize: 10, color: _textMuted)),
                     ],
                   ),
                 ),
                 _Toggle(
-                  icon: allowLottie ? Icons.play_circle_outline : Icons.pause_circle_outline,
+                  icon: allowLottie
+                      ? Icons.play_circle_outline
+                      : Icons.pause_circle_outline,
                   label: allowLottie ? 'Activo' : 'Pausado',
                   active: allowLottie,
                   onTap: onToggleLottie,
@@ -584,7 +731,8 @@ class _InspectorDrawer extends StatelessWidget {
             if (s is! Map) return false;
             final st = s['style'] as Map?;
             final p = s['parallax'] ?? st?['parallax'];
-            return (p is Map && p['enabled'] == true) || st?['sceneLoop'] != null;
+            return (p is Map && p['enabled'] == true) ||
+                st?['sceneLoop'] != null;
           })) ...[
             const SizedBox(height: 10),
             Row(
@@ -593,9 +741,14 @@ class _InspectorDrawer extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Movimiento continuo', style: TextStyle(fontSize: 12, color: _text, fontWeight: FontWeight.w500)),
+                      const Text('Movimiento continuo',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: _text,
+                              fontWeight: FontWeight.w500)),
                       Text(playMotion ? 'Bucle en vivo' : 'Pausado',
-                          style: const TextStyle(fontSize: 10, color: _textMuted)),
+                          style:
+                              const TextStyle(fontSize: 10, color: _textMuted)),
                     ],
                   ),
                 ),
@@ -610,20 +763,27 @@ class _InspectorDrawer extends StatelessWidget {
           ],
           if (languages.length > 1) ...[
             const SizedBox(height: 12),
-            const Text('Idioma', style: TextStyle(fontSize: 12, color: _text, fontWeight: FontWeight.w500)),
+            const Text('Idioma',
+                style: TextStyle(
+                    fontSize: 12, color: _text, fontWeight: FontWeight.w500)),
             const SizedBox(height: 6),
             Wrap(
               spacing: 4,
               runSpacing: 4,
               children: [
                 for (final l in languages)
-                  _LangChip(label: l.toUpperCase(), active: l.toLowerCase() == language.toLowerCase(), onTap: () => onSelectLanguage(l)),
+                  _LangChip(
+                      label: l.toUpperCase(),
+                      active: l.toLowerCase() == language.toLowerCase(),
+                      onTap: () => onSelectLanguage(l)),
               ],
             ),
           ],
           if (palettes.isNotEmpty) ...[
             const SizedBox(height: 12),
-            const Text('Tema de color / Paleta', style: TextStyle(fontSize: 12, color: _text, fontWeight: FontWeight.w500)),
+            const Text('Tema de color / Paleta',
+                style: TextStyle(
+                    fontSize: 12, color: _text, fontWeight: FontWeight.w500)),
             const SizedBox(height: 6),
             Wrap(
               spacing: 4,
@@ -641,13 +801,18 @@ class _InspectorDrawer extends StatelessWidget {
           const SizedBox(height: 16),
           const Divider(height: 1, color: _border),
           const SizedBox(height: 16),
-          _SectionHeader(title: 'FICHA TÉCNICA', trailing: 'v${meta['oim'] ?? meta['version'] ?? '1.0'}'),
+          _SectionHeader(
+              title: 'FICHA TÉCNICA', trailing: schemaVersionOf(meta)),
           const SizedBox(height: 12),
           _SpecRow(label: 'Archivo', value: fileName, mono: true),
           _SpecRow(label: 'Peso', value: sizeLabel, mono: true),
           _SpecRow(label: 'Resolución', value: dims),
-          _SpecRow(label: 'Esquema OIM', value: 'v${meta['oim'] ?? meta['version'] ?? '1.0'}', mono: true),
-          _SpecRow(label: 'Reedición', value: reeditLabel, valueColor: reedit == 'public' ? _ok : null),
+          _SpecRow(
+              label: 'Esquema OIM', value: schemaVersionOf(meta), mono: true),
+          _SpecRow(
+              label: 'Reedición',
+              value: reeditLabel,
+              valueColor: reedit == 'public' ? _ok : null),
           _SpecRow(
             label: 'Firma',
             value: badge.text,
@@ -655,7 +820,8 @@ class _InspectorDrawer extends StatelessWidget {
           ),
           if (counts.isNotEmpty) ...[
             const SizedBox(height: 4),
-            const Text('Desglose de capas', style: TextStyle(fontSize: 10, color: _textMuted)),
+            const Text('Desglose de capas',
+                style: TextStyle(fontSize: 10, color: _textMuted)),
             const SizedBox(height: 5),
             Wrap(
               spacing: 4,
@@ -663,14 +829,21 @@ class _InspectorDrawer extends StatelessWidget {
               children: [
                 for (final e in counts.entries)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(color: _chipBg, borderRadius: BorderRadius.circular(4)),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                        color: _chipBg, borderRadius: BorderRadius.circular(4)),
                     child: Text.rich(
                       TextSpan(
-                        style: _mono.copyWith(fontSize: 10, color: const Color(0xFFD4D4D8)),
+                        style: _mono.copyWith(
+                            fontSize: 10, color: const Color(0xFFD4D4D8)),
                         children: [
                           TextSpan(text: '${e.key.toUpperCase()} '),
-                          TextSpan(text: '${e.value}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                          TextSpan(
+                              text: '${e.value}',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700)),
                         ],
                       ),
                     ),
@@ -694,12 +867,19 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.only(bottom: 8),
-      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: _border))),
+      decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: _border))),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: const TextStyle(fontSize: 11, color: _textSecondary, fontWeight: FontWeight.w700, letterSpacing: 0.66)),
-          Text(trailing, style: _mono.copyWith(fontSize: 10, color: _textMuted)),
+          Text(title,
+              style: const TextStyle(
+                  fontSize: 11,
+                  color: _textSecondary,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.66)),
+          Text(trailing,
+              style: _mono.copyWith(fontSize: 10, color: _textMuted)),
         ],
       ),
     );
@@ -707,7 +887,11 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _Toggle extends StatelessWidget {
-  const _Toggle({required this.icon, required this.label, required this.active, required this.onTap});
+  const _Toggle(
+      {required this.icon,
+      required this.label,
+      required this.active,
+      required this.onTap});
 
   final IconData icon;
   final String label;
@@ -724,7 +908,8 @@ class _Toggle extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
         decoration: BoxDecoration(
           color: active ? Colors.white : Colors.transparent,
-          border: Border.all(color: active ? Colors.white : const Color(0x1FFFFFFF)),
+          border: Border.all(
+              color: active ? Colors.white : const Color(0x1FFFFFFF)),
           borderRadius: BorderRadius.circular(6),
         ),
         child: Row(
@@ -732,7 +917,9 @@ class _Toggle extends StatelessWidget {
           children: [
             Icon(icon, size: 13, color: fg),
             const SizedBox(width: 5),
-            Text(label, style: TextStyle(fontSize: 11, color: fg, fontWeight: FontWeight.w600)),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 11, color: fg, fontWeight: FontWeight.w600)),
           ],
         ),
       ),
@@ -741,7 +928,8 @@ class _Toggle extends StatelessWidget {
 }
 
 class _LangChip extends StatelessWidget {
-  const _LangChip({required this.label, required this.active, required this.onTap});
+  const _LangChip(
+      {required this.label, required this.active, required this.onTap});
 
   final String label;
   final bool active;
@@ -759,14 +947,22 @@ class _LangChip extends StatelessWidget {
           border: Border.all(color: active ? Colors.white : _chipBorder),
           borderRadius: BorderRadius.circular(5),
         ),
-        child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: active ? _bg : const Color(0xFFD4D4D8))),
+        child: Text(label,
+            style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: active ? _bg : const Color(0xFFD4D4D8))),
       ),
     );
   }
 }
 
 class _SpecRow extends StatelessWidget {
-  const _SpecRow({required this.label, required this.value, this.mono = false, this.valueColor});
+  const _SpecRow(
+      {required this.label,
+      required this.value,
+      this.mono = false,
+      this.valueColor});
 
   final String label;
   final String value;
@@ -775,7 +971,8 @@ class _SpecRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = (mono ? _mono : const TextStyle()).copyWith(fontSize: 11, color: valueColor ?? _text);
+    final style = (mono ? _mono : const TextStyle())
+        .copyWith(fontSize: 11, color: valueColor ?? _text);
     return Padding(
       padding: const EdgeInsets.only(bottom: 9),
       child: Row(
@@ -784,7 +981,11 @@ class _SpecRow extends StatelessWidget {
         children: [
           Text(label, style: const TextStyle(fontSize: 11, color: _textMuted)),
           const SizedBox(width: 10),
-          Expanded(child: Text(value, textAlign: TextAlign.right, overflow: TextOverflow.ellipsis, style: style)),
+          Expanded(
+              child: Text(value,
+                  textAlign: TextAlign.right,
+                  overflow: TextOverflow.ellipsis,
+                  style: style)),
         ],
       ),
     );

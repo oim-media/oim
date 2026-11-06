@@ -28,7 +28,7 @@ URLs only) and `@oim-media/core/generative` and `@oim-media/core/generative/cata
 
 - `OimMetadataSchema`, `OvmMetadataSchema`, `OIMOrOVMMetadata`: Zod schemas of the
   metadata. Types `OIMMetadata`, `OVMMetadata`, `Slot`, `TextMark`, `Reveal`, ...
-- `CONTRACT_VERSION`: the contract version this build implements (`"1.27.1"`).
+- `CONTRACT_VERSION`: the contract version this build implements (`"1.27.2"`).
 - `BASE_CONTRACT_VERSION`, `PLAYER_CAPABILITIES`, `VERSION_BY_CAPABILITY`, `minVersionFor`.
 - `MAX_SLOTS`, `MAX_MARKS`, `MARK_NAME`, `PALETTE_NAME_PATTERN`, `CSS_GRADIENT_PATTERN`.
 

@@ -5,6 +5,13 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+- Flutter: text marks, precalculated lines and text animations. `{name}…{/name}`
+  marks paint with `style.marks` (colour, bold, italic, underline; a highlight
+  as a plain background); `style.textRuns` places each line where the exporter
+  measured it; `typewriter`, `wave-chars`, the six entrances and both glitches
+  animate as on the web, and stop with `disableAnimations`. Pinned by
+  `packages/spec/marks-cases.json` and the new `text-effect-cases.json`, which
+  the web also passes. Embedded `.woff2` fonts are not loaded yet.
 - Flutter: gradient, pattern and grain fills. `fillGradient` (CSS linear and
   radial) fills shapes and text; pattern fills, pattern layers and the canvas
   background pattern are tiled and moved as on the web, with their colour

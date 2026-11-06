@@ -5,6 +5,13 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+- Flutter: masks, frame shapes and languages. A `mask` layer in `window` mode
+  paints its frame with the silhouette as a hole (canvas or `container`
+  coverage, outline with `maskStrokeWidth`); in `cutout` mode it clips the
+  layers below it, with `maskFeather` blurring the edge; `cuts` place several
+  silhouettes. Geo layers paint their `geoShape`. Layers with `languages` show
+  only in those languages, and `oimLanguages(metadata)` lists the languages of
+  a file, as the web player's `languages`.
 - Flutter: text marks, precalculated lines and text animations. `{name}…{/name}`
   marks paint with `style.marks` (colour, bold, italic, underline; a highlight
   as a plain background); `style.textRuns` places each line where the exporter

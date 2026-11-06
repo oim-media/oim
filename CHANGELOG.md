@@ -3,8 +3,13 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
-## Unreleased
+## 1.27.1 — 2026-11-06
 
+- Contract 1.27.1: a `"woff"` entry may carry `STAT`. Static fonts carry it
+  and HarfBuzz keeps it when instancing, so 1.27.0 rejected valid exports;
+  the variation tables are `fvar`, `gvar`, `avar`, `HVAR` and `MVAR`. No
+  format change.
+- Release: the GitHub release is created before the binary jobs upload.
 - Flutter: embedded fonts. Each `"woff"` entry is unwrapped to an sfnt
   (zlib per table) and registered with `FontLoader` under its `name`; text
   uses the entry of its family and style closest to its weight. `"woff2"`

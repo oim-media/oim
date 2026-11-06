@@ -43,7 +43,8 @@
  * the format can change without the player being touched. Tying both numbers
  * together would make an internal fix look like a format break.
  */
-export const CONTRACT_VERSION = "1.27.0";
+export const CONTRACT_VERSION = "1.27.1";
+// 1.27.1: a "woff" entry may carry STAT (static fonts do); no format change.
 // 1.27.0: embedded fonts in WOFF. `fonts[].format` is "woff" (written) or
 // "woff2" (read forever); a "woff" entry is a static instance (no fvar, gvar,
 // avar, HVAR or MVAR; STAT may stay), so every reader paints its declared weight. WOFF

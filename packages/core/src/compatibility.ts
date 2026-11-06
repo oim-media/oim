@@ -43,7 +43,12 @@
  * the format can change without the player being touched. Tying both numbers
  * together would make an internal fix look like a format break.
  */
-export const CONTRACT_VERSION = "1.26.1";
+export const CONTRACT_VERSION = "1.27.0";
+// 1.27.0: embedded fonts in WOFF. `fonts[].format` is "woff" (written) or
+// "woff2" (read forever); a "woff" entry is a static instance (no fvar, gvar,
+// avar, HVAR, MVAR or STAT), so every reader paints its declared weight. WOFF
+// only needs zlib, which every language ships. No min_player: an older player
+// skips the entry and paints the family it has.
 // 1.26.1: the reedit-english vector is signed; no format change.
 // 1.26.0: player default language is English when lang is not set; no format change.
 // 1.25.1: typings list expired_key; dead options marked deprecated; no format change.

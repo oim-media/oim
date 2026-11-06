@@ -5,6 +5,14 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+- Contract 1.27.0: embedded fonts in WOFF. `fonts[].format` is `"woff"`
+  (written from now on) or `"woff2"` (read forever). A `"woff"` entry is a
+  static instance: no `fvar`, `gvar`, `avar`, `HVAR`, `MVAR` or `STAT`, so
+  readers outside the browser paint the weight it declares. WOFF needs only
+  zlib, which every language ships. `embeddedFontProblem(format, bytes)` in
+  core checks the magic and the static rule; the web player loads both
+  formats. No `min_player`: an older player skips a `"woff"` entry and paints
+  the family it has.
 - Flutter: masks, frame shapes and languages. A `mask` layer in `window` mode
   paints its frame with the silhouette as a hole (canvas or `container`
   coverage, outline with `maskStrokeWidth`); in `cutout` mode it clips the

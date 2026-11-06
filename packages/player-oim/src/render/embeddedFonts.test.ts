@@ -28,6 +28,12 @@ describe("readEmbeddedFonts", () => {
     expect(readEmbeddedFonts({ fonts: malas })).toEqual([]);
   });
 
+  it("1.27.0: takes woff, whose content must start wOFF", () => {
+    const woff = entry({ format: "woff", data: btoa("wOFF" + "x".repeat(40)) });
+    expect(readEmbeddedFonts({ fonts: [woff] })).toEqual([expect.objectContaining({ format: "woff" })]);
+    expect(readEmbeddedFonts({ fonts: [entry({ format: "woff" })] })).toEqual([]);
+  });
+
   it("without fonts it returns nothing", () => {
     expect(readEmbeddedFonts({ slots: [] })).toEqual([]);
   });
@@ -41,6 +47,13 @@ describe("registerEmbeddedFonts", () => {
     expect(make).toHaveBeenCalledWith("oim-3f9a1c2b-Lora", expect.stringContaining("data:font/woff2;base64,"), { weight: "700", style: "italic" });
     expect(add).toHaveBeenCalledTimes(1);
     expect(map.get("Lora")).toBe("oim-3f9a1c2b-Lora");
+  });
+
+  it("registers a woff with its own MIME type", async () => {
+    const make = vi.fn((name: string) => ({ name, load: async () => {} }) as any);
+    const fonts = readEmbeddedFonts({ fonts: [entry({ format: "woff", data: btoa("wOFF" + "x".repeat(40)) })] });
+    await registerEmbeddedFonts(fonts, { add: vi.fn() } as any, make);
+    expect(make).toHaveBeenCalledWith("oim-3f9a1c2b-Lora", expect.stringContaining("data:font/woff;base64,"), expect.anything());
   });
 
   it("a font that does not load is left out and its layer falls back to Google", async () => {

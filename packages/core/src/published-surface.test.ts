@@ -138,6 +138,8 @@ const SUPERFICIE = [
   "EMBEDDED_FONTS_MAX_TOTAL_BYTES",
   "EMBEDDED_FONTS_MAX_ENTRIES",
   "embeddedFontName",
+  "embeddedFontProblem",
+  "EMBEDDED_FONT_FORMATS",
   "embeddedFontSchema",
   "cssColorSchema",
   "CSS_GRADIENT_PATTERN",

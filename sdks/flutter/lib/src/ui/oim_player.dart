@@ -10,6 +10,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import '../binary/oim_extractor.dart';
+import 'embedded_fonts.dart';
 import 'color_util.dart';
 import 'dynamic_colors.dart';
 import 'effects.dart';
@@ -93,6 +94,10 @@ class _OimPlayerState extends State<OimPlayer> {
         _resetInteraction(res.metadata);
         _extractionResult = res;
         _error = null;
+      });
+      // Text repaints in the embedded fonts once FontLoader has them.
+      loadEmbeddedFonts(res.metadata['fonts'] as List<dynamic>?).then((_) {
+        if (mounted) setState(() {});
       });
     } catch (e) {
       setState(() {
@@ -590,7 +595,15 @@ class _OimPlayerState extends State<OimPlayer> {
     final letterSpacing = (style['letterSpacing'] as num?)?.toDouble();
     final lineHeight = (style['lineHeight'] as num?)?.toDouble();
 
+    final family = style['fontFamily']?.toString();
     final textStyle = TextStyle(
+      fontFamily: embeddedFontName(
+            _extractionResult?.metadata['fonts'] as List<dynamic>?,
+            family,
+            rawWeight is num ? rawWeight.toInt() : (rawWeight?.toString().toLowerCase() == 'bold' ? 700 : 400),
+            style['fontStyle'] == 'italic' ? 'italic' : 'normal',
+          ) ??
+          family,
       fontSize: fontSize,
       color: color,
       fontWeight: fontWeight,

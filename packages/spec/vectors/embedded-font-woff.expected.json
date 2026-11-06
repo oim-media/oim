@@ -1,0 +1,57 @@
+{
+  "description": "Embedded font (contract 1.27.0): Inter bold as a static WOFF subset, signed by the production service",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "languages": [
+    "es"
+  ],
+  "signed": true,
+  "key_version": "v1",
+  "reedit": "author_only",
+  "fonts": [
+    {
+      "family": "Inter",
+      "name": "oim-26dd479f-Inter",
+      "weight": 700,
+      "style": "normal",
+      "format": "woff"
+    }
+  ],
+  "slots": [
+    {
+      "id": "fuente_incrustada",
+      "type": "text",
+      "position": [
+        7.5,
+        41.6667
+      ],
+      "name": "Fuente incrustada",
+      "content": {
+        "es": "Fuente incrustada"
+      },
+      "style": {
+        "width": "85.0cqw",
+        "height": "12.5cqw",
+        "fontSize": "8.0cqw",
+        "fillColor": "#111111",
+        "fontFamily": "Inter",
+        "fontWeight": 700,
+        "textRuns": {
+          "es": {
+            "fontSize": 64,
+            "lineHeight": 80,
+            "lines": [
+              {
+                "text": "Fuente incrustada",
+                "width": 564.3,
+                "yOffset": 0
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

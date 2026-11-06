@@ -69,6 +69,8 @@ function expectedOutput(m: any) {
     ...(m.palettes ? { palettes: m.palettes, defaultPalette: m.defaultPalette } : {}),
     // 1.23.0: the reedit permission is part of the result, so reedit-english checks it.
     ...(m.reedit !== undefined ? { reedit: m.reedit } : {}),
+    // 1.27.0: embedded fonts, without their bytes (the name carries their hash).
+    ...(m.fonts ? { fonts: m.fonts.map((f: any) => ({ family: f.family, name: f.name, weight: f.weight, style: f.style, format: f.format })) } : {}),
     slots: (m.slots || []).map((s: any) => {
       const style: Record<string, unknown> = {};
       for (const k of DEL_ESTILO) if (s.style && s.style[k] !== undefined) style[k] = s.style[k];

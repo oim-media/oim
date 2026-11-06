@@ -12,7 +12,7 @@ this says what **result** comes out of a specific one.
 ## The Normative Vectors
 
 A reduced suite cannot tell apart an implementation that **reads the format**
-from one that **gets a simple case right by chance**. These 33 vectors cover the
+from one that **gets a simple case right by chance**. These 34 vectors cover the
 initial 20-vector matrix plus every capability added since contract 1.10.0:
 
 | # | Vector | What it covers |
@@ -50,6 +50,7 @@ initial 20-vector matrix plus every capability added since contract 1.10.0:
 | 31 | `pattern-color-roles` | Colour roles in patterns and shadows (contract 1.21.0) |
 | 32 | `reveal-and-play` | Per-layer reveal and the `play` action (contract 1.22.0) |
 | 33 | `reedit-english` | Re-edit permission in English (contract 1.23.0): `reedit: "public"`, signed by the production service |
+| 34 | `embedded-font-woff` | Embedded font (contract 1.27.0): Inter bold as a static WOFF subset (`fonts[].format: "woff"`) |
 
 ## How to use it from another language
 
@@ -66,7 +67,7 @@ without a look, which is a vector that no longer checks anything.
 
 ## The signature
 
-All 33 vectors are signed with the public key published in `packages/spec/keys.json`.
+All 34 vectors are signed with the public key published in `packages/spec/keys.json`.
 The signature covers the canonical serialisation
 of the metadata and the cryptographic hash of the pixels (`image_hash` over the `IDAT` chunks).
 A reader that verifies must rebuild that canonical form following the seven rules

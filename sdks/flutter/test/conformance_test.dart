@@ -47,6 +47,13 @@ Map<String, dynamic> projectCanonicalOutput(Map<String, dynamic> m) {
   if (m.containsKey('reedit') && m['reedit'] != null) {
     out['reedit'] = m['reedit'];
   }
+  // 1.27.0: embedded fonts, without their bytes.
+  if (m['fonts'] is List) {
+    out['fonts'] = [
+      for (final f in (m['fonts'] as List).whereType<Map>())
+        {'family': f['family'], 'name': f['name'], 'weight': f['weight'], 'style': f['style'], 'format': f['format']},
+    ];
+  }
 
   final rawSlots = m['slots'] as List<dynamic>? ?? [];
   out['slots'] = rawSlots.map((rawSlot) {

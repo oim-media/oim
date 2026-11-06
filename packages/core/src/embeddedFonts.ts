@@ -33,6 +33,35 @@ export const EMBEDDED_FONTS_MAX_ENTRIES = 32;
  * variants, ordered by weight and then style (normal before italic), so every
  * variant of a family shares one name, which is how CSS picks bold and italic.
  */
+/** 1.27.0: the formats an entry may declare. Writers emit "woff"; "woff2" is read forever. */
+export const EMBEDDED_FONT_FORMATS = ["woff", "woff2"] as const;
+
+const MAGIC: Record<string, string> = { woff: "wOFF", woff2: "wOF2" };
+
+/** Tables that make a font variable. A "woff" entry is a static instance (1.27.0). */
+const VARIATION_TABLES = new Set(["fvar", "gvar", "avar", "HVAR", "MVAR", "STAT"]);
+
+/**
+ * Why an entry's bytes break the contract, or null. Checks the magic of its
+ * format and, for WOFF, that no variation table is listed: readers outside the
+ * browser paint a variable font's default instance, so bold would show regular.
+ * WOFF2 is not inspected (its directory is compressed); it is legacy, read only.
+ */
+export function embeddedFontProblem(format: string, bytes: Uint8Array): "format" | "magic" | "variable" | null {
+  const magic = MAGIC[format];
+  if (!magic) return "format";
+  if (bytes.length < 4 || String.fromCharCode(...bytes.subarray(0, 4)) !== magic) return "magic";
+  if (format === "woff2") return null;
+  if (bytes.length < 44) return "magic";
+  const tables = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint16(12);
+  if (bytes.length < 44 + tables * 20) return "magic";
+  for (let i = 0; i < tables; i++) {
+    const at = 44 + i * 20;
+    if (VARIATION_TABLES.has(String.fromCharCode(...bytes.subarray(at, at + 4)))) return "variable";
+  }
+  return null;
+}
+
 export function embeddedFontName(family: string, sha256Hex: string): string {
   return `oim-${sha256Hex.slice(0, 8)}-${family}`;
 }

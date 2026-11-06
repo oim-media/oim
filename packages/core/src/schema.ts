@@ -749,14 +749,15 @@ export const grainConfigSchema = z.object({
   color: z.string().max(64).regex(/^#[0-9a-fA-F]{3,8}$|^rgba?\([\d.,\s%]+\)$/).optional(),
 }).passthrough();
 
-// One embedded font variant. `data` is base64 woff2; the bound is the decoded
+// One embedded font variant. `data` is base64 WOFF (written since 1.27.0, a
+// static instance) or WOFF2 (read forever); the bound is the decoded
 // ceiling expressed in base64 characters.
 export const embeddedFontSchema = z.object({
   family: z.string().min(1).max(128),
   name: z.string().regex(EMBEDDED_FONT_NAME),
   weight: z.number().int().min(100).max(900),
   style: z.enum(["normal", "italic"]),
-  format: z.literal("woff2"),
+  format: z.enum(["woff", "woff2"]),
   data: z.string().max(Math.ceil(EMBEDDED_FONT_MAX_BYTES / 3) * 4),
 });
 

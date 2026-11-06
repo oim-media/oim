@@ -1,6 +1,6 @@
 # OIM (Open Interactive Media) Canonical Metadata Specification
 
-**Contract version:** 1.26.1  
+**Contract version:** 1.27.0  
 **Date:** 2026-11-02 (reviewed against `packages/core/src/schema.ts`; the source of truth is the schema, this document summarises it)  
 **Status:** Normative / In force  
 **License:** Apache-2.0  
@@ -282,7 +282,7 @@ Top-level structure carried in the `OIM_Data` payload:
 
 | Key | Type | Description |
 |---|---|---|
-| `oim` | `string` | Format version of the document (e.g. `"1.26.1"`), the contract version the backend signs against. |
+| `oim` | `string` | Format version of the document (e.g. `"1.27.0"`), the contract version the backend signs against. |
 | `min_player` | `string` | Minimum player version required to rebuild the document (`minVersionFor`). |
 | `oim_id` | `string` | Unique document identifier for re-editing and registry checks (max 128 chars). |
 | `media_type` | `"image" \| "video"` | Media type of the OIM document. |
@@ -298,7 +298,7 @@ Top-level structure carried in the `OIM_Data` payload:
 | `zones` | `OimZone[]` | Optional catalogue of named bounding box zones. |
 | `capabilities` | `("vector_parallax" \| "infinite_parallax" \| "text_marks" \| "image_fill" \| "media_filters" \| "frame_shapes")[]` | Capabilities used by the document. |
 | `capabilities_required` | same as `capabilities` | Capabilities the reader **must** implement to paint with fidelity (glTF pattern). |
-| `fonts` | `EmbeddedFont[]` | Up to 16 WOFF2 font variants embedded in base64 for offline rendering (1.3.0). |
+| `fonts` | `EmbeddedFont[]` | Font variants embedded in base64 for offline rendering (1.3.0): subset, static (no `fvar`, `gvar`, `avar`, `HVAR`, `MVAR`, `STAT`) WOFF, `format: "woff"`, written since 1.27.0; WOFF2 (`format: "woff2"`) is read forever. The content starts with the magic of its format (`wOFF` / `wOF2`). |
 | `image_hash` | `string` | SHA-256 hash of the base image `IDAT` chunk payloads (`imageDataHash`). |
 | `image_hash_alg` | `"sha256-idat"` | Image sealing algorithm identifier. |
 | `signature` | `string` | ECDSA P-256 digital signature (Base64) over RFC 8785 canonical JSON (`serializeCanonical`). |

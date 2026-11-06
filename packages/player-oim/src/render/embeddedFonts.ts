@@ -22,14 +22,18 @@ export interface EmbeddedFontEntry {
   name: string;
   weight: number;
   style: 'normal' | 'italic';
+  /** 1.27.0: "woff" is what writers emit; "woff2" is read forever. */
+  format: 'woff' | 'woff2';
   data: string;
 }
 
 const MAX_BASE64 = Math.ceil(EMBEDDED_FONT_MAX_BYTES / 3) * 4;
 
-function looksLikeWoff2(base64: string): boolean {
+const MAGIC = { woff: 'wOFF', woff2: 'wOF2' } as const;
+
+function hasMagic(base64: string, format: 'woff' | 'woff2'): boolean {
   try {
-    return atob(base64.slice(0, 8)).startsWith('wOF2');
+    return atob(base64.slice(0, 8)).startsWith(MAGIC[format]);
   } catch (_) {
     return false;
   }
@@ -41,12 +45,12 @@ export function readEmbeddedFonts(metadata: any): EmbeddedFontEntry[] {
   const out: EmbeddedFontEntry[] = [];
   for (const f of list) {
     if (!f || typeof f !== 'object') continue;
-    if (f.format !== 'woff2' || typeof f.family !== 'string' || typeof f.data !== 'string') continue;
+    if ((f.format !== 'woff' && f.format !== 'woff2') || typeof f.family !== 'string' || typeof f.data !== 'string') continue;
     if (typeof f.name !== 'string' || !EMBEDDED_FONT_NAME.test(f.name)) continue;
     if (f.style !== 'normal' && f.style !== 'italic') continue;
     if (typeof f.weight !== 'number' || f.weight < 100 || f.weight > 900) continue;
-    if (f.data.length > MAX_BASE64 || !looksLikeWoff2(f.data)) continue;
-    out.push({ family: f.family, name: f.name, weight: f.weight, style: f.style, data: f.data });
+    if (f.data.length > MAX_BASE64 || !hasMagic(f.data, f.format)) continue;
+    out.push({ family: f.family, name: f.name, weight: f.weight, style: f.style, format: f.format, data: f.data });
   }
   return out;
 }
@@ -65,7 +69,7 @@ export async function registerEmbeddedFonts(
   const map = new Map<string, string>();
   await Promise.all(entries.map(async (e) => {
     try {
-      const face = make(e.name, `url(data:font/woff2;base64,${e.data})`, { weight: String(e.weight), style: e.style });
+      const face = make(e.name, `url(data:font/${e.format};base64,${e.data})`, { weight: String(e.weight), style: e.style });
       await face.load();
       fonts.add(face);
       map.set(e.family, e.name);

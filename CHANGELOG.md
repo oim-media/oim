@@ -5,6 +5,12 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+- Flutter: gradient, pattern and grain fills. `fillGradient` (CSS linear and
+  radial) fills shapes and text; pattern fills, pattern layers and the canvas
+  background pattern are tiled and moved as on the web, with their colour
+  roles; per-layer grain is the browser's `feTurbulence` noise (seed 7) cut to
+  the layer and blended with it. The tile layout is pinned by
+  `packages/spec/pattern-cases.json`, which the web core also passes.
 - Flutter: interactive layers respond. `states.hover` scales, rotates and fades
   the layer and runs its actions until the pointer leaves; `states.active`
   actions (`show`, `hide`, `toggle`, `setText`, `play`) run on tap; the legacy

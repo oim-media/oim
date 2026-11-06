@@ -3,6 +3,12 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.27.2 — 2026-11-06
+
+- Player: an image layer moved by keyframes is no longer clipped by its own
+  box. A jumping layer vanished and a travelling one only showed near its
+  home position. No format change.
+
 ## 1.27.1 — 2026-11-06
 
 - Contract 1.27.1: a `"woff"` entry may carry `STAT`. Static fonts carry it

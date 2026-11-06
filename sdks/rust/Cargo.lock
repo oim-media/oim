@@ -265,7 +265,7 @@ dependencies = [
 
 [[package]]
 name = "oim"
-version = "1.27.0"
+version = "1.27.1"
 dependencies = [
  "base64",
  "flate2",

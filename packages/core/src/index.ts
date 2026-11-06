@@ -25,6 +25,7 @@ export * from "./compatibility.js";
 export * from "./media-filters.js";
 export * from "./flip.js";
 export * from "./reveal.js";
+export * from "./keyframes.js";
 export * from "./crop.js";
 // The four format rules that the editor had COPIED into
 // `src/lib/parallax/`, with its own lock file and its

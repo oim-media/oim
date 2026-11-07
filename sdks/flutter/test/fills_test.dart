@@ -103,6 +103,15 @@ void main() {
     });
   });
 
+  testWidgets('shapes filled with a picture paint it, not the fallback colour (image-fill vector)', (t) async {
+    final bytes = File(p.join(_spec, 'vectors', 'image-fill.oim.png')).readAsBytesSync();
+    await t.pumpWidget(MaterialApp(home: SizedBox(width: 800, height: 600, child: OimPlayer(bytes: bytes, showBaseImage: false))));
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+    await t.pump();
+    // The circle and the star.
+    expect(find.byType(OimImageFillWidget), findsNWidgets(2));
+  });
+
   testWidgets('vectors paint their grain and patterns', (t) async {
     for (final name in ['layer-grain', 'pattern-color-roles']) {
       final bytes = File(p.join(_spec, 'vectors', '$name.oim.png')).readAsBytesSync();

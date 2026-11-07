@@ -3,6 +3,13 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.27.3 — 2026-11-07
+
+- Viewers (desktop and Flutter): the library is read from
+  `library.oim.media/v1/showcase`, paginated with «Load more», and search and
+  category run on the server over the whole library. The viewers no longer
+  ship a database URL or key. No format change.
+
 ## 1.27.2 — 2026-11-06
 
 - Player: an image layer moved by keyframes is no longer clipped by its own

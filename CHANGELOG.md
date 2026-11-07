@@ -3,6 +3,15 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.27.7 — 2026-11-07
+
+- Flutter player: text is laid out by the player, like the web, instead of following the
+  editor's precalculated lines (`textRuns`). A short label such as «EST. 94» no longer breaks
+  in two and spills out of its badge.
+- Flutter viewer: the interface follows the system language (Spanish or English), like the
+  Tauri viewer. It was Spanish only.
+  No format change.
+
 ## 1.27.6 — 2026-11-07
 
 - Web player: a photo frame drawn with its own `svgPath` no longer shows a box in its

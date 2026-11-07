@@ -9,6 +9,7 @@ import 'package:oim_flutter/oim_flutter.dart';
 import 'package:oim_flutter/src/ui/css_gradient.dart';
 import 'package:oim_flutter/src/ui/grain.dart';
 import 'package:oim_flutter/src/ui/patterns.dart';
+import 'package:oim_flutter/src/ui/text_animation.dart';
 import 'package:path/path.dart' as p;
 
 final _spec = p.join(Directory.current.path, '..', '..', 'packages', 'spec');
@@ -45,6 +46,19 @@ void main() {
         }
       });
     }
+  });
+
+  test('the same data URI decodes to the same bytes instance, so the image cache hits', () {
+    const uri = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGN4nh8IRwzEcQC5Ehpxr683xgAAAABJRU5ErkJggg==';
+    expect(identical(decodeDataUri(uri), decodeDataUri(uri)), isTrue);
+  });
+
+  test('textAlign maps the CSS values the web uses', () {
+    expect(textAlignOf('center'), TextAlign.center);
+    expect(textAlignOf('right'), TextAlign.right);
+    expect(textAlignOf('justify'), TextAlign.justify);
+    expect(textAlignOf('left'), TextAlign.left);
+    expect(textAlignOf(null), TextAlign.left);
   });
 
   group('CSS gradients', () {

@@ -625,6 +625,7 @@ class _OimPlayerState extends State<OimPlayer> {
         intensity: n('textAnimationIntensity')?.toDouble(),
         cursor: style['typewriterCursor'] != false,
         unit: _unit,
+        textAlign: textAlignOf(style['textAlign']),
       );
     }
     // Precalculated lines (`style.textRuns[lang]`): no layout of our own, each line where the exporter put it.
@@ -639,12 +640,14 @@ class _OimPlayerState extends State<OimPlayer> {
         for (final l in (runs['lines'] as List).whereType<Map>())
           Positioned(
             left: 0,
+            right: 0,
             top: ((l['yOffset'] as num?) ?? 0) * _unit,
-            child: Text(tx(plainText('${l['text'] ?? ''}', marks.keys)), style: lineStyle, softWrap: false),
+            child: Text(tx(plainText('${l['text'] ?? ''}', marks.keys)),
+                style: lineStyle, softWrap: false, overflow: TextOverflow.visible, textAlign: textAlignOf(style['textAlign'])),
           ),
       ]);
     }
-    return markedText(text, marks, textStyle, activePalette, tx);
+    return markedText(text, marks, textStyle, activePalette, tx, textAlign: textAlignOf(style['textAlign']));
   }
 
   Widget _buildGeoSlot(

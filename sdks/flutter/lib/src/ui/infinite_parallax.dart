@@ -99,13 +99,13 @@ InfiniteLayerPlan computeInfiniteLayerPlan(
   );
 }
 
-/// Parses infinite parallax or sceneLoop configuration from a slot and style.
+/// Parses a layer's own infinite parallax. Like the web, a group's `sceneLoop` moves nothing by
+/// itself (it only makes the group clip); [parentSceneLoop] is accepted and ignored.
 InfiniteLayerConfig? parseInfiniteParallax(
   Map<String, dynamic> slot,
   Map<String, dynamic> style, {
   Map<String, dynamic>? parentSceneLoop,
 }) {
-  final groupLoop = parentSceneLoop ?? (style['sceneLoop'] as Map<String, dynamic>?);
   final parallaxCfg = (slot['parallax'] as Map<String, dynamic>?) ??
       (style['parallax'] as Map<String, dynamic>?);
 
@@ -134,29 +134,6 @@ InfiniteLayerConfig? parseInfiniteParallax(
         inf['pauseOnHover'] ??
         inf['pause_on_hover'] ??
         false;
-
-    return InfiniteLayerConfig(
-      speedPxSec: speed,
-      direction: direction == 'left_to_right' ? 'left_to_right' : 'right_to_left',
-      mirror: mirror == true,
-      pauseOnHover: pauseOnHover == true,
-    );
-  }
-
-  if (groupLoop != null) {
-    final rawSpeed = groupLoop['speedPxSec'] ?? groupLoop['speed_px_sec'];
-    final baseSpeed = (rawSpeed as num?)?.toDouble() ?? 0.0;
-    if (baseSpeed <= 0) return null;
-
-    final depth = (style['loopDepth'] as num?)?.toDouble() ??
-        (style['parallaxDepth'] as num?)?.toDouble() ??
-        1.0;
-    final speed = baseSpeed * depth;
-    if (speed <= 0) return null;
-
-    final direction = (groupLoop['direction'] ?? 'right_to_left').toString();
-    final mirror = groupLoop['mirror'] ?? groupLoop['seamlessTile'] ?? true;
-    final pauseOnHover = groupLoop['pauseOnHover'] ?? groupLoop['pause_on_hover'] ?? false;
 
     return InfiniteLayerConfig(
       speedPxSec: speed,
@@ -284,7 +261,13 @@ class _InfiniteParallaxTrackState extends State<InfiniteParallaxTrack>
           child: widget.child,
         );
       }
-      pieces.add(pieceContent);
+      // Stretched 1 px under the next piece (web SEAM_OVERLAP_PX): pieces that only touch leave a
+      // half-transparent column on a fractional pixel, a 1 px line travelling with the scene.
+      pieces.add(Transform(
+        alignment: Alignment.centerLeft,
+        transform: Matrix4.diagonal3Values((effectivePieceWidth + 1) / effectivePieceWidth, 1.0, 1.0),
+        child: pieceContent,
+      ));
     }
 
     Widget track = AnimatedBuilder(

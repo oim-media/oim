@@ -10,6 +10,7 @@ import 'dart:convert' show base64;
 import 'dart:io' show ZLibDecoder;
 import 'dart:typed_data';
 import 'package:flutter/services.dart' show FontLoader;
+import 'woff2.dart';
 
 /// The sfnt inside a WOFF 1 file, or null on any inconsistency.
 Uint8List? woffToSfnt(Uint8List woff) {
@@ -68,7 +69,7 @@ String? embeddedFontName(List<dynamic>? fonts, String? family, int weight, Strin
   String? best;
   var gap = 1 << 30;
   for (final f in fonts.whereType<Map>()) {
-    if (f['family'] != family || f['format'] != 'woff' || (f['style'] ?? 'normal') != style) continue;
+    if (f['family'] != family || !_formats.contains(f['format']) || (f['style'] ?? 'normal') != style) continue;
     final d = (((f['weight'] as num?) ?? 400).toInt() - weight).abs();
     if (d < gap) {
       gap = d;
@@ -79,14 +80,17 @@ String? embeddedFontName(List<dynamic>? fonts, String? family, int weight, Strin
 }
 
 final _loaded = <String>{};
+// "woff" is what writers emit; "woff2" (files before 1.27.0) is read forever.
+const _formats = {'woff', 'woff2'};
 
 /// Registers every WOFF entry of [fonts] under its name; each name loads once per process.
 Future<void> loadEmbeddedFonts(List<dynamic>? fonts) async {
   for (final f in fonts?.whereType<Map>() ?? const <Map>[]) {
     final name = f['name']?.toString(), data = f['data'];
-    if (f['format'] != 'woff' || name == null || data is! String || !_loaded.add(name)) continue;
+    if (!_formats.contains(f['format']) || name == null || data is! String || !_loaded.add(name)) continue;
     try {
-      final sfnt = woffToSfnt(base64.decode(data.replaceAll(RegExp(r'\s+'), '')));
+      final bytes = base64.decode(data.replaceAll(RegExp(r'\s+'), ''));
+      final sfnt = f['format'] == 'woff2' ? woff2ToSfnt(bytes) : woffToSfnt(bytes);
       if (sfnt == null) continue;
       await (FontLoader(name)..addFont(Future.value(ByteData.sublistView(sfnt)))).load();
     } catch (_) {

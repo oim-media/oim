@@ -36,7 +36,7 @@ void main() {
     expect(embeddedFontName(fonts, 'Inter', 700, 'normal'), 'oim-2-Inter');
     expect(embeddedFontName(fonts, 'Inter', 600, 'normal'), 'oim-2-Inter');
     expect(embeddedFontName(fonts, 'Inter', 400, 'italic'), 'oim-3-Inter');
-    expect(embeddedFontName(fonts, 'Lora', 400, 'normal'), isNull); // woff2 is not read here
+    expect(embeddedFontName(fonts, 'Lora', 400, 'normal'), 'oim-4-Lora'); // woff2 is read too
     expect(embeddedFontName(fonts, 'Roboto', 400, 'normal'), isNull);
   });
 

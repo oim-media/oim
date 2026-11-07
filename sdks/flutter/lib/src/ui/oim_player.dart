@@ -518,7 +518,7 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
       slotWidget = _Grain(style: style, child: slotWidget);
     }
 
-    slotWidget = _applyEffects(slotWidget, style);
+    slotWidget = _applyEffects(slotWidget, style, mediaFilter: type == 'image');
 
     if (opacity < 1.0) {
       slotWidget = Opacity(opacity: opacity.clamp(0.0, 1.0), child: slotWidget);
@@ -741,23 +741,23 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
       fillLayer = OimPatternFill(style: style, palette: activePalette, unit: _unit, disableAnimations: widget.disableAnimations);
     } else if (style['fillType'] == 'image' && style['fillImage'] is String && (style['fillImage'] as String).trim().startsWith('data:image/')) {
       // 1.17.0 picture fill; like the web, only an embedded data:image counts, otherwise the colour stays.
-      fillLayer = OimImageFillWidget(
+      fillLayer = _mediaFiltered(style, OimImageFillWidget(
         imageUrl: (style['fillImage'] as String).trim(),
         crop: style['fillImageCrop'] as Map<String, dynamic>?,
         flipX: style['fillImageFlipX'] == true,
         flipY: style['fillImageFlipY'] == true,
-      );
+      ));
     }
     if (fillLayer != null) fillColor = Colors.transparent;
-    // The contract's names are stroke*; border* is what this renderer read before, kept as a fallback.
-    final borderColor = resolveColor(style['strokeColorRole'] ?? style['borderColorRole'], style['strokeColor'] ?? style['borderColor'], activePalette);
-    final borderWidth = resolveCssUnit(style['strokeWidth'] ?? style['borderWidth'], containerWidth, containerHeight) ?? 0.0;
+    // Only the contract's stroke*: the web ignores border*, so a stroke drawn from them is one it never shows.
+    final borderColor = resolveColor(style['strokeColorRole'], style['strokeColor'], activePalette);
+    final borderWidth = resolveCssUnit(style['strokeWidth'], containerWidth, containerHeight) ?? 0.0;
     final borderRadius = parseBorderRadius(style['borderRadius'], containerWidth, containerHeight);
 
     final shapeName = style['drawing']?.toString() ?? style['geoDrawing']?.toString() ?? style['shape']?.toString();
     final ShapeDrawing? drawing = shapeName != null ? geoShapes[shapeName] : shapeDrawing(style['geoShape']);
     final svgPath = style['svgPath']?.toString() ?? style['path']?.toString();
-    final borderStyle = (style['strokeStyle'] ?? style['borderStyle'])?.toString();
+    final borderStyle = style['strokeStyle']?.toString();
     final isDashed = borderStyle == 'dashed';
     final isDotted = borderStyle == 'dotted';
 
@@ -887,11 +887,22 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
   }
 }
 
+/// An image fill's media filter (web image-fill.ts: on the <img>, inside the clip).
+Widget _mediaFiltered(Map<String, dynamic> style, Widget picture) {
+  final filter = parseCssFilter(mediaFilterCss(style));
+  var w = picture;
+  if (filter?.matrix != null) w = ColorFiltered(colorFilter: ColorFilter.matrix(filter!.matrix!), child: w);
+  final sigma = filter?.blurSigma ?? 0;
+  if (sigma > 0) w = ImageFiltered(imageFilter: ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma, tileMode: TileMode.decal), child: w);
+  return w;
+}
+
 /// Everything the style says about the slot as a whole, in the order the player
 /// applies it: filter chain, layer blur, flip, rotation. Opacity and blend mode wrap it after.
-Widget _applyEffects(Widget child, Map<String, dynamic> style) {
+Widget _applyEffects(Widget child, Map<String, dynamic> style, {bool mediaFilter = false}) {
   var w = child;
-  final filter = parseCssFilter(mediaFilterCss(style));
+  // Web: media filters belong to image layers (and image fills, see _mediaFiltered), never to the rest.
+  final filter = mediaFilter ? parseCssFilter(mediaFilterCss(style)) : null;
   if (filter?.matrix != null) {
     w = ColorFiltered(colorFilter: ColorFilter.matrix(filter!.matrix!), child: w);
   }

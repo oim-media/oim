@@ -8,16 +8,8 @@
       "reason": "layer opacity is ignored on the overlapping layer",
       "since": "2026-11-07"
     },
-    "filter-effects": {
-      "reason": "colour filter gives a different hue",
-      "since": "2026-11-07"
-    },
     "frame-shapes": {
       "reason": "frame background missing and the framed triangle is drawn tiny",
-      "since": "2026-11-07"
-    },
-    "media-filters": {
-      "reason": "dark halo on the filtered image edge",
       "since": "2026-11-07"
     }
   }

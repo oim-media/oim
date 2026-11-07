@@ -440,13 +440,12 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
 
       groupWrapper = _applyEffects(groupWrapper, style);
 
-      final opacity = (style['opacity'] as num?)?.toDouble() ?? 1.0;
+      final opacity = _opacityOf(style);
       if (opacity < 1.0) {
         groupWrapper = Opacity(opacity: opacity.clamp(0.0, 1.0), child: groupWrapper);
       }
 
-      final blend = blendModeOf(style['blendMode']);
-      if (blend != null) groupWrapper = _BlendMask(mode: blend, child: groupWrapper);
+      // style.blendMode was retired in 1.12.0: readers draw the layer as normal (as the web does).
 
       // Check if group itself has infinite motion / parallax
       final parallaxCfg = parseInfiniteParallax(raw, style);
@@ -481,7 +480,7 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
 
     final slotWidth = resolveCssUnit(style['width'], containerWidth, containerHeight);
     final slotHeight = resolveCssUnit(style['height'], containerWidth, containerHeight);
-    final opacity = (style['opacity'] as num?)?.toDouble() ?? 1.0;
+    final opacity = _opacityOf(style);
 
     Widget slotWidget;
 
@@ -496,7 +495,7 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
       slotWidget = OimPatternFill(style: style, palette: activePalette, unit: _unit, disableAnimations: widget.disableAnimations);
       final drawing = shapeDrawing(style['geoShape']);
       if (drawing != null) slotWidget = ClipPath(clipper: GeoShapeClipper(drawing: drawing), child: slotWidget);
-    } else if (type == 'geo' || type == 'shape') {
+    } else if (type == 'geo' || type == 'shape' || type == 'container') { // web: container is geo-like
       slotWidget = _buildGeoSlot(style, activePalette, slotWidth ?? 100, slotHeight ?? 100, containerWidth, containerHeight);
     } else if (type == 'image') {
       slotWidget = _buildImageSlot(raw, style, currentLang, containerWidth, containerHeight);
@@ -518,14 +517,13 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
       slotWidget = _Grain(style: style, child: slotWidget);
     }
 
-    slotWidget = _applyEffects(slotWidget, style);
+    slotWidget = _applyEffects(slotWidget, style, mediaFilter: type == 'image');
 
     if (opacity < 1.0) {
       slotWidget = Opacity(opacity: opacity.clamp(0.0, 1.0), child: slotWidget);
     }
 
-    final blend = blendModeOf(style['blendMode']);
-    if (blend != null) slotWidget = _BlendMask(mode: blend, child: slotWidget);
+    // style.blendMode was retired in 1.12.0: readers draw the layer as normal (as the web does).
 
     // Infinite parallax check
     final parallaxCfg = parseInfiniteParallax(
@@ -623,7 +621,9 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
           style['color'] ?? style['fillColor'],
           activePalette,
         ) ??
-        Colors.white;
+        // No colour set: the player's own default text colour (the root DefaultTextStyle), as a
+        // browser paints uncoloured text black. It was white, which hid the text on light works.
+        const Color(0xFF000000);
 
     FontWeight fontWeight = FontWeight.normal;
     final rawWeight = style['fontWeight'];
@@ -739,23 +739,25 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
       fillLayer = OimPatternFill(style: style, palette: activePalette, unit: _unit, disableAnimations: widget.disableAnimations);
     } else if (style['fillType'] == 'image' && style['fillImage'] is String && (style['fillImage'] as String).trim().startsWith('data:image/')) {
       // 1.17.0 picture fill; like the web, only an embedded data:image counts, otherwise the colour stays.
-      fillLayer = OimImageFillWidget(
+      fillLayer = _mediaFiltered(style, OimImageFillWidget(
         imageUrl: (style['fillImage'] as String).trim(),
         crop: style['fillImageCrop'] as Map<String, dynamic>?,
         flipX: style['fillImageFlipX'] == true,
         flipY: style['fillImageFlipY'] == true,
-      );
+      ));
     }
     if (fillLayer != null) fillColor = Colors.transparent;
-    // The contract's names are stroke*; border* is what this renderer read before, kept as a fallback.
-    final borderColor = resolveColor(style['strokeColorRole'] ?? style['borderColorRole'], style['strokeColor'] ?? style['borderColor'], activePalette);
-    final borderWidth = resolveCssUnit(style['strokeWidth'] ?? style['borderWidth'], containerWidth, containerHeight) ?? 0.0;
+    // Only the contract's stroke*: the web ignores border*, so a stroke drawn from them is one it never shows.
+    final borderColor = resolveColor(style['strokeColorRole'], style['strokeColor'], activePalette);
+    final borderWidth = resolveCssUnit(style['strokeWidth'], containerWidth, containerHeight) ?? 0.0;
     final borderRadius = parseBorderRadius(style['borderRadius'], containerWidth, containerHeight);
 
     final shapeName = style['drawing']?.toString() ?? style['geoDrawing']?.toString() ?? style['shape']?.toString();
     final ShapeDrawing? drawing = shapeName != null ? geoShapes[shapeName] : shapeDrawing(style['geoShape']);
     final svgPath = style['svgPath']?.toString() ?? style['path']?.toString();
-    final borderStyle = (style['strokeStyle'] ?? style['borderStyle'])?.toString();
+    // core frameSilhouette: only a custom path (no catalogue shape) is drawn in its own svgViewBox.
+    final viewBox = drawing == null ? _viewBoxOf(style['svgViewBox']) : const Rect.fromLTWH(0, 0, 100, 100);
+    final borderStyle = style['strokeStyle']?.toString();
     final isDashed = borderStyle == 'dashed';
     final isDotted = borderStyle == 'dotted';
 
@@ -765,6 +767,7 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
         painter: GeoShapePainter(
           drawing: drawing,
           svgPath: svgPath,
+          viewBox: viewBox,
           fillColor: fillColor,
           borderColor: borderColor,
           borderWidth: borderWidth,
@@ -783,6 +786,7 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
           painter: GeoShapePainter(
             drawing: drawing,
             svgPath: svgPath,
+            viewBox: viewBox,
             fillColor: tint(fillLayer == null ? fillColor : Colors.black),
             borderColor: tint(borderColor),
             borderWidth: borderWidth,
@@ -799,7 +803,7 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
       // The shadow goes under the picture fill, not over it.
       return Stack(fit: StackFit.expand, clipBehavior: Clip.none, children: [
         if (castShadow != null) castShadow,
-        if (fillLayer != null) ClipPath(clipper: GeoShapeClipper(drawing: drawing, svgPath: svgPath), child: fillLayer),
+        if (fillLayer != null) ClipPath(clipper: GeoShapeClipper(drawing: drawing, svgPath: svgPath, viewBox: viewBox), child: fillLayer),
         geo,
       ]);
     }
@@ -885,11 +889,32 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
   }
 }
 
+/// `svgViewBox` ("minX minY width height"), or core's default 0 0 100 100 when absent or invalid.
+Rect _viewBoxOf(dynamic raw) {
+  final n = (raw?.toString() ?? '').trim().split(RegExp(r'[\s,]+')).map(double.tryParse).toList();
+  if (n.length != 4 || n.any((v) => v == null) || n[2]! <= 0 || n[3]! <= 0) return const Rect.fromLTWH(0, 0, 100, 100);
+  return Rect.fromLTWH(n[0]!, n[1]!, n[2]!, n[3]!);
+}
+
+/// Contract: style.opacity is a percentage, 0..100.
+double _opacityOf(Map<String, dynamic> style) => (((style['opacity'] as num?)?.toDouble() ?? 100) / 100).clamp(0.0, 1.0);
+
+/// An image fill's media filter (web image-fill.ts: on the <img>, inside the clip).
+Widget _mediaFiltered(Map<String, dynamic> style, Widget picture) {
+  final filter = parseCssFilter(mediaFilterCss(style));
+  var w = picture;
+  if (filter?.matrix != null) w = ColorFiltered(colorFilter: ColorFilter.matrix(filter!.matrix!), child: w);
+  final sigma = filter?.blurSigma ?? 0;
+  if (sigma > 0) w = ImageFiltered(imageFilter: ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma, tileMode: TileMode.decal), child: w);
+  return w;
+}
+
 /// Everything the style says about the slot as a whole, in the order the player
 /// applies it: filter chain, layer blur, flip, rotation. Opacity and blend mode wrap it after.
-Widget _applyEffects(Widget child, Map<String, dynamic> style) {
+Widget _applyEffects(Widget child, Map<String, dynamic> style, {bool mediaFilter = false}) {
   var w = child;
-  final filter = parseCssFilter(mediaFilterCss(style));
+  // Web: media filters belong to image layers (and image fills, see _mediaFiltered), never to the rest.
+  final filter = mediaFilter ? parseCssFilter(mediaFilterCss(style)) : null;
   if (filter?.matrix != null) {
     w = ColorFiltered(colorFilter: ColorFilter.matrix(filter!.matrix!), child: w);
   }

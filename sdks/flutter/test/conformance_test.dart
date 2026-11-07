@@ -41,7 +41,8 @@ Map<String, dynamic> projectCanonicalOutput(Map<String, dynamic> m) {
 
   if (m.containsKey('palettes') && m['palettes'] != null) {
     out['palettes'] = m['palettes'];
-    out['defaultPalette'] = m['defaultPalette'];
+    // The reference projection is JSON: an absent defaultPalette is dropped, not null.
+    if (m['defaultPalette'] != null) out['defaultPalette'] = m['defaultPalette'];
   }
 
   if (m.containsKey('reedit') && m['reedit'] != null) {

@@ -672,10 +672,15 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
       shadows: shadowOf(style) == null ? null : [shadowOf(style)!],
     );
     final marks = style['marks'] is Map ? (style['marks'] as Map).cast<String, dynamic>() : const <String, dynamic>{};
+    // Web: `.oim-slot` has `padding: 0 0.25em 0 0` (content-box) and is
+    // translated by 0% (left), -50% (centre) or -100% (right) of that padded box: the text moves
+    // left by none, half or all of the 0.25em.
+    final shift = switch (style['textAlign'] ?? slot['align']) { 'left' => 0.0, 'right' => 0.25, _ => 0.125 };
+    Widget slotPadding(Widget child) => Transform.translate(offset: Offset(-shift * (textStyle.fontSize ?? 0), 0), child: child);
     final animType = style['textAnimationType'];
     if (isTextAnimation(animType) && !widget.disableAnimations) {
       num? n(String k) => style[k] is num ? style[k] as num : null;
-      return OimTextAnimation(
+      return slotPadding(OimTextAnimation(
         text: tx(plainText(text, marks.keys)),
         style: textStyle,
         type: animType as String,
@@ -684,26 +689,36 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
         intensity: n('textAnimationIntensity')?.toDouble(),
         cursor: style['typewriterCursor'] != false,
         unit: _unit,
-        textAlign: textAlignOf(style['textAlign']),
-      );
+        textAlign: textAlignOf(style['textAlign'] ?? slot['align']),
+      ));
     }
     // Precalculated lines (`style.textRuns[lang]`): no layout of our own, each line where the exporter put it.
     // The runs of the language whose content is the text shown (the fallback language too; none after an action changed it).
     final content = slot['content'];
     final runs = style['textRuns'] is Map && content is Map ? (style['textRuns'] as Map).entries.where((e) => content[e.key]?.toString() == text).firstOrNull?.value : null;
     if (runs is Map && runs['lines'] is List && runs['fontSize'] is num) {
-      final lineStyle = textStyle.copyWith(fontSize: (runs['fontSize'] as num) * _unit, height: 1);
-      return Stack(clipBehavior: Clip.none, children: [
-        for (final l in (runs['lines'] as List).whereType<Map>())
+      final lines = (runs['lines'] as List).whereType<Map>();
+      final lineHeight = ((runs['lineHeight'] as num?) ?? (runs['fontSize'] as num)).toDouble();
+      // CSS line-height: each line box is lineHeight tall with the glyphs centred in it (half-leading).
+      final lineStyle = textStyle.copyWith(
+        fontSize: (runs['fontSize'] as num) * _unit,
+        height: lineHeight / (runs['fontSize'] as num),
+        leadingDistribution: TextLeadingDistribution.even,
+      );
+      final blockHeight = lines.fold<double>(0, (h, l) => math.max(h, ((l['yOffset'] as num?) ?? 0) + lineHeight));
+      // Web: the text slot is a flex column with justify-content: center, so the block sits mid-box.
+      return slotPadding(Center(child: SizedBox(width: double.infinity, height: blockHeight * _unit, child: Stack(clipBehavior: Clip.none, children: [
+        for (final l in lines)
           Positioned(
             left: 0,
             right: 0,
             top: ((l['yOffset'] as num?) ?? 0) * _unit,
-            child: Text(tx(plainText('${l['text'] ?? ''}', marks.keys)), style: lineStyle, softWrap: false, overflow: TextOverflow.visible, textAlign: textAlignOf(style['textAlign'])),
+            child: Text(tx(plainText('${l['text'] ?? ''}', marks.keys)), style: lineStyle, softWrap: false, overflow: TextOverflow.visible, textAlign: textAlignOf(style['textAlign'] ?? slot['align'])),
           ),
-      ]);
+      ]))));
     }
-    return markedText(text, marks, textStyle, activePalette, tx, textAlign: textAlignOf(style['textAlign']));
+    // Web: the text slot is a flex column with justify-content: center.
+    return slotPadding(Center(child: markedText(text, marks, textStyle, activePalette, tx, textAlign: textAlignOf(style['textAlign'] ?? slot['align']))));
   }
 
   Widget _buildGeoSlot(

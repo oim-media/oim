@@ -217,71 +217,76 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
       prefersDark: widget.prefersDark ?? (Theme.of(context).brightness == Brightness.dark),
     );
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        double containerWidth;
-        double containerHeight;
+    // Like the web component, the work does not inherit the host's text style: without a Material
+    // ancestor that is Flutter's error style (red, 48px monospace, yellow double underline).
+    return DefaultTextStyle(
+      style: const TextStyle(color: Color(0xFF000000), fontSize: 14, fontWeight: FontWeight.w400, decoration: TextDecoration.none),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          double containerWidth;
+          double containerHeight;
 
-        if (constraints.maxWidth.isFinite && constraints.maxHeight.isFinite) {
-          final boxRatio = constraints.maxWidth / constraints.maxHeight;
-          if (boxRatio > aspectRatio) {
+          if (constraints.maxWidth.isFinite && constraints.maxHeight.isFinite) {
+            final boxRatio = constraints.maxWidth / constraints.maxHeight;
+            if (boxRatio > aspectRatio) {
+              containerHeight = constraints.maxHeight;
+              containerWidth = containerHeight * aspectRatio;
+            } else {
+              containerWidth = constraints.maxWidth;
+              containerHeight = containerWidth / aspectRatio;
+            }
+          } else if (constraints.maxWidth.isFinite) {
+            containerWidth = constraints.maxWidth;
+            containerHeight = containerWidth / aspectRatio;
+          } else if (constraints.maxHeight.isFinite) {
             containerHeight = constraints.maxHeight;
             containerWidth = containerHeight * aspectRatio;
           } else {
-            containerWidth = constraints.maxWidth;
-            containerHeight = containerWidth / aspectRatio;
+            containerWidth = naturalWidth;
+            containerHeight = naturalHeight;
           }
-        } else if (constraints.maxWidth.isFinite) {
-          containerWidth = constraints.maxWidth;
-          containerHeight = containerWidth / aspectRatio;
-        } else if (constraints.maxHeight.isFinite) {
-          containerHeight = constraints.maxHeight;
-          containerWidth = containerHeight * aspectRatio;
-        } else {
-          containerWidth = naturalWidth;
-          containerHeight = naturalHeight;
-        }
-        _unit = containerWidth / naturalWidth;
+          _unit = containerWidth / naturalWidth;
 
-        return AnimatedBuilder(
-          animation: _blur,
-          builder: (context, child) => ImageFiltered(
-            key: const ValueKey('oim-language-blur'),
-            // Always in the tree, only toggled: swapping the wrapper would remount the slots and restart their motion.
-            enabled: _blur.value > 0,
-            imageFilter: ui.ImageFilter.blur(sigmaX: 14 * _blur.value, sigmaY: 14 * _blur.value),
-            child: child,
-          ),
-          child: Center(
-            child: SizedBox(
-              width: containerWidth,
-              height: containerHeight,
-              child: ClipRect(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    if (widget.showBaseImage && res.imageBytes.isNotEmpty)
-                      Positioned.fill(
-                        child: Image.memory(
-                          res.imageBytes,
-                          fit: BoxFit.fill,
-                          gaplessPlayback: true,
+          return AnimatedBuilder(
+            animation: _blur,
+            builder: (context, child) => ImageFiltered(
+              key: const ValueKey('oim-language-blur'),
+              // Always in the tree, only toggled: swapping the wrapper would remount the slots and restart their motion.
+              enabled: _blur.value > 0,
+              imageFilter: ui.ImageFilter.blur(sigmaX: 14 * _blur.value, sigmaY: 14 * _blur.value),
+              child: child,
+            ),
+            child: Center(
+              child: SizedBox(
+                width: containerWidth,
+                height: containerHeight,
+                child: ClipRect(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      if (widget.showBaseImage && res.imageBytes.isNotEmpty)
+                        Positioned.fill(
+                          child: Image.memory(
+                            res.imageBytes,
+                            fit: BoxFit.fill,
+                            gaplessPlayback: true,
+                          ),
                         ),
+                      ..._buildSlots(
+                        res.metadata,
+                        currentLang,
+                        activePalette,
+                        containerWidth,
+                        containerHeight,
                       ),
-                    ..._buildSlots(
-                      res.metadata,
-                      currentLang,
-                      activePalette,
-                      containerWidth,
-                      containerHeight,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 

@@ -41,6 +41,9 @@ class OimPlayer extends StatefulWidget {
   final bool showBaseImage;
   final bool allowLottie;
   final bool disableAnimations;
+  /// Family for text that names none, like CSS `font-family` on the web element.
+  /// Null keeps the platform default.
+  final String? fontFamily;
   final Widget Function(BuildContext, Object)? errorBuilder;
 
   const OimPlayer({
@@ -53,6 +56,7 @@ class OimPlayer extends StatefulWidget {
     this.showBaseImage = true,
     this.allowLottie = true,
     this.disableAnimations = false,
+    this.fontFamily,
     this.errorBuilder,
   });
 
@@ -220,7 +224,7 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
     // Like the web component, the work does not inherit the host's text style: without a Material
     // ancestor that is Flutter's error style (red, 48px monospace, yellow double underline).
     return DefaultTextStyle(
-      style: const TextStyle(color: Color(0xFF000000), fontSize: 14, fontWeight: FontWeight.w400, decoration: TextDecoration.none),
+      style: TextStyle(fontFamily: widget.fontFamily, color: const Color(0xFF000000), fontSize: 14, fontWeight: FontWeight.w400, decoration: TextDecoration.none),
       child: LayoutBuilder(
         builder: (context, constraints) {
           double containerWidth;

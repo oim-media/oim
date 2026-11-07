@@ -31,6 +31,12 @@ export interface ShowcaseItem {
 export const SHOWCASE_API = "https://library.oim.media/v1/showcase";
 const PAGE_SIZE = 48;
 
+/** Server-side filters: `category` matches the stored label loosely, `q` searches titles and tags. */
+export interface ShowcaseFilters {
+  category?: string;
+  q?: string;
+}
+
 export const MAX_CACHE_BYTES = 50 * 1024 * 1024; // 50 MB strict quota
 const LAST_SEEN_KEY = "oim_viewer_library_last_seen";
 
@@ -127,6 +133,7 @@ export class LibraryClient {
   private cachedShowcaseList: ShowcaseItem[] | null = null;
   private lastFetchTime = 0;
   private nextCursor: string | null = null;
+  private filters: ShowcaseFilters = {};
 
   constructor(cache = globalLibraryCache) {
     this.cache = cache;
@@ -140,6 +147,8 @@ export class LibraryClient {
   private async fetchPage(cursor: string | null): Promise<ShowcaseItem[]> {
     const url = new URL(SHOWCASE_API);
     url.searchParams.set("limit", String(PAGE_SIZE));
+    if (this.filters.category) url.searchParams.set("category", this.filters.category);
+    if (this.filters.q?.trim()) url.searchParams.set("q", this.filters.q.trim());
     if (cursor) url.searchParams.set("cursor", cursor);
     const response = await fetch(url.toString());
     if (!response.ok) {
@@ -151,14 +160,16 @@ export class LibraryClient {
   }
 
   /**
-   * First page of approved works, newest first.
+   * First page of approved works matching `filters`, newest first.
    * Cached for 60 seconds in memory to avoid repeated requests on filter clicks.
    */
-  public async fetchShowcaseItems(forceRefresh = false): Promise<ShowcaseItem[]> {
+  public async fetchShowcaseItems(forceRefresh = false, filters: ShowcaseFilters = {}): Promise<ShowcaseItem[]> {
     const now = Date.now();
-    if (!forceRefresh && this.cachedShowcaseList && now - this.lastFetchTime < 60000) {
+    const sameFilters = JSON.stringify(filters) === JSON.stringify(this.filters);
+    if (!forceRefresh && sameFilters && this.cachedShowcaseList && now - this.lastFetchTime < 60000) {
       return this.cachedShowcaseList;
     }
+    this.filters = { ...filters };
     this.cachedShowcaseList = await this.fetchPage(null);
     this.lastFetchTime = now;
     return this.cachedShowcaseList;

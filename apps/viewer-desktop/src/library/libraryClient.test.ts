@@ -110,6 +110,17 @@ describe("LibraryClient (public showcase API)", () => {
     expect(client.hasMore).toBe(true);
   });
 
+  it("sends category and search to the server and refetches when they change", async () => {
+    const fetchMock = vi.fn(async () => Response.json({ items: [item("a")], next_cursor: null }));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new LibraryClient(new LibraryLruCache());
+    await client.fetchShowcaseItems(false, { category: "ui", q: " hero " });
+    await client.fetchShowcaseItems(false, { category: "ui", q: " hero " });
+    await client.fetchShowcaseItems(false, {});
+    const urls = fetchMock.mock.calls.map((c) => String((c as unknown as [string])[0]));
+    expect(urls).toEqual([`${SHOWCASE_API}?limit=48&category=ui&q=hero`, `${SHOWCASE_API}?limit=48`]);
+  });
+
   it("loadMore sends the cursor and appends", async () => {
     const fetchMock = vi
       .fn()

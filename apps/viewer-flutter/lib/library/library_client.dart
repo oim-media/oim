@@ -89,6 +89,8 @@ class LibraryClient {
   List<LibraryItem>? _items;
   DateTime? _itemsAt;
   String? _nextCursor;
+  String _category = 'all';
+  String _query = '';
   int _inFlight = 0;
   final _waiting = <Completer<void>>[];
 
@@ -103,6 +105,8 @@ class LibraryClient {
   Future<List<LibraryItem>> _page(String? cursor) async {
     final url = Uri.parse(showcaseApi).replace(queryParameters: {
       'limit': '$pageSize',
+      if (_category != 'all') 'category': _category,
+      if (_query.isNotEmpty) 'q': _query,
       if (cursor != null) 'cursor': cursor,
     });
     final raw = await _fetch(url, const {});
@@ -121,11 +125,16 @@ class LibraryClient {
   }
 
   /// First page of approved works, newest first, cached for 60 s.
-  Future<List<LibraryItem>> fetchItems({bool force = false}) async {
+  /// [category] matches the stored label loosely and [query] searches titles and tags, both on the server.
+  Future<List<LibraryItem>> fetchItems({bool force = false, String category = 'all', String query = ''}) async {
     final at = _itemsAt;
-    if (!force && _items != null && at != null && _now().difference(at) < const Duration(seconds: 60)) {
+    final q = query.trim();
+    final same = category == _category && q == _query;
+    if (!force && same && _items != null && at != null && _now().difference(at) < const Duration(seconds: 60)) {
       return _items!;
     }
+    _category = category;
+    _query = q;
     _items = await _page(null);
     _itemsAt = _now();
     return _items!;

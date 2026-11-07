@@ -27,6 +27,16 @@ void main() {
       expect(c.hasMore, isTrue);
     });
 
+    test('sends category and search to the server', () async {
+      late Uri asked;
+      final c = LibraryClient(fetch: (u, h) async {
+        asked = u;
+        return Uint8List.fromList(utf8.encode('{"items":[],"next_cursor":null}'));
+      });
+      await c.fetchItems(category: 'ui', query: ' hero ');
+      expect(asked.queryParameters, {'limit': '48', 'category': 'ui', 'q': 'hero'});
+    });
+
     test('fetchMore sends the cursor and appends', () async {
       final asked = <Uri>[];
       final pages = [

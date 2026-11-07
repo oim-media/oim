@@ -13,19 +13,6 @@ LibraryItem _item(String id, {String? title, String? cat, double ar = 1}) =>
     LibraryItem(id: id, title: title ?? id, mediaUrl: 'https://x/$id.oim.png', category: cat, aspectRatio: ar);
 
 void main() {
-  group('filterItems', () {
-    final items = [
-      _item('1', title: 'Hero Landing', cat: 'marketing'),
-      const LibraryItem(id: '2', title: 'Carta', titleEn: 'Menu card', mediaUrl: 'u', category: 'arte'),
-    ];
-    test('all + no query keeps everything', () => expect(filterItems(items, '', 'all').length, 2));
-    test('matches title or English title, ignoring case', () {
-      expect(filterItems(items, 'hero', 'all').single.id, '1');
-      expect(filterItems(items, 'MENU', 'all').single.id, '2');
-    });
-    test('category filter', () => expect(filterItems(items, '', 'arte').single.id, '2'));
-  });
-
   group('justifiedRows', () {
     test('fills each row to the width and keeps every item once, in order', () {
       final items = [for (var i = 0; i < 7; i++) _item('$i', ar: i.isEven ? 1.5 : 0.75)];
@@ -44,10 +31,14 @@ void main() {
     var fail = true;
     final client = LibraryClient(fetch: (u, h) async {
       if (fail) throw const LibraryException('offline');
-      return Uint8List.fromList(utf8.encode(jsonEncode({'next_cursor': null, 'items': [
+      final all = [
         {'id': '1', 'title': 'Hero', 'media_url': 'https://x/1.oim.png', 'aspect_ratio': '16/9'},
         {'id': '2', 'title': 'Carta', 'media_url': 'https://x/2.oim.png', 'aspect_ratio': '1/1'},
-      ]})));
+      ];
+      // Stand-in for the server-side search.
+      final q = (u.queryParameters['q'] ?? '').toLowerCase();
+      final items = [for (final i in all) if ((i['title'] as String).toLowerCase().contains(q)) i];
+      return Uint8List.fromList(utf8.encode(jsonEncode({'next_cursor': null, 'items': items})));
     });
     await t.pumpWidget(MaterialApp(home: LibraryScreen(client: client, onOpen: (_, __) {}, loadCards: false)));
     await t.pumpAndSettle();
@@ -57,6 +48,7 @@ void main() {
     await t.pumpAndSettle();
     expect(find.text('2 obras'), findsOneWidget);
     await t.enterText(find.byType(TextField), 'carta');
+    await t.pump(const Duration(milliseconds: 350));
     await t.pumpAndSettle();
     expect(find.text('1 obras'), findsOneWidget);
   });

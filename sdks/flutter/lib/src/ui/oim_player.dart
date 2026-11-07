@@ -59,7 +59,7 @@ class OimPlayer extends StatefulWidget {
   State<OimPlayer> createState() => _OimPlayerState();
 }
 
-class _OimPlayerState extends State<OimPlayer> {
+class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMixin {
   OimExtractionResult? _extractionResult;
   Object? _error;
 
@@ -72,6 +72,9 @@ class _OimPlayerState extends State<OimPlayer> {
   final _hoverBaseText = <String, Map<String, String?>>{};
   // Design px to logical px, for pattern tiles (160 design px * scale).
   double _unit = 1;
+  // The language on screen: it trails widget.language until the blur peaks (web: _switchWithBlur).
+  late String _lang = widget.language ?? oimDefaultLanguage;
+  late final AnimationController _blur = AnimationController(vsync: this);
 
   @override
   void initState() {
@@ -80,10 +83,36 @@ class _OimPlayerState extends State<OimPlayer> {
   }
 
   @override
+  void dispose() {
+    _blur.dispose();
+    super.dispose();
+  }
+
+  void _switchLanguage(String next) {
+    final slots = (_extractionResult?.metadata['slots'] as List<dynamic>?) ?? const [];
+    // Same image in both languages: a blur would suggest a change that did not happen.
+    // shortcut: compares content only, not per-language textRuns or styles; extend if those start to differ alone.
+    final changes = slots.any((s) => s is Map && resolveContent(s['content'], _lang) != resolveContent(s['content'], next));
+    if (!changes || (MediaQuery.maybeDisableAnimationsOf(context) ?? false)) {
+      _blur.value = 0;
+      setState(() => _lang = next);
+      return;
+    }
+    _blur.animateTo(1, duration: const Duration(milliseconds: 180), curve: Curves.easeOut).then((_) {
+      if (!mounted) return;
+      setState(() => _lang = next);
+      _blur.animateTo(0, duration: const Duration(milliseconds: 320), curve: Curves.easeInOut);
+    });
+  }
+
+  @override
   void didUpdateWidget(OimPlayer oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.bytes != oldWidget.bytes) {
+      _lang = widget.language ?? oimDefaultLanguage;
       _parseOim();
+    } else if (widget.language != oldWidget.language) {
+      _switchLanguage(widget.language ?? oimDefaultLanguage);
     }
   }
 
@@ -178,7 +207,7 @@ class _OimPlayerState extends State<OimPlayer> {
     final naturalHeight = (canvas?['natural_height'] as num?)?.toDouble() ?? 600.0;
     final aspectRatio = naturalWidth / naturalHeight;
 
-    final currentLang = widget.language ?? oimDefaultLanguage;
+    final currentLang = _lang;
 
     // Dynamic color resolution
     final activePalette = resolvePalette(
@@ -213,30 +242,40 @@ class _OimPlayerState extends State<OimPlayer> {
         }
         _unit = containerWidth / naturalWidth;
 
-        return Center(
-          child: SizedBox(
-            width: containerWidth,
-            height: containerHeight,
-            child: ClipRect(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (widget.showBaseImage && res.imageBytes.isNotEmpty)
-                    Positioned.fill(
-                      child: Image.memory(
-                        res.imageBytes,
-                        fit: BoxFit.fill,
-                        gaplessPlayback: true,
+        return AnimatedBuilder(
+          animation: _blur,
+          builder: (context, child) => ImageFiltered(
+            key: const ValueKey('oim-language-blur'),
+            // Always in the tree, only toggled: swapping the wrapper would remount the slots and restart their motion.
+            enabled: _blur.value > 0,
+            imageFilter: ui.ImageFilter.blur(sigmaX: 14 * _blur.value, sigmaY: 14 * _blur.value),
+            child: child,
+          ),
+          child: Center(
+            child: SizedBox(
+              width: containerWidth,
+              height: containerHeight,
+              child: ClipRect(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (widget.showBaseImage && res.imageBytes.isNotEmpty)
+                      Positioned.fill(
+                        child: Image.memory(
+                          res.imageBytes,
+                          fit: BoxFit.fill,
+                          gaplessPlayback: true,
+                        ),
                       ),
+                    ..._buildSlots(
+                      res.metadata,
+                      currentLang,
+                      activePalette,
+                      containerWidth,
+                      containerHeight,
                     ),
-                  ..._buildSlots(
-                    res.metadata,
-                    currentLang,
-                    activePalette,
-                    containerWidth,
-                    containerHeight,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -300,10 +339,8 @@ class _OimPlayerState extends State<OimPlayer> {
           final painter = WindowMaskPainter(
             windowPath(style, box, canvas, _unit),
             maskSilhouettes(style, box, _unit),
-            resolveColor(style['maskBgColorRole'] ?? style['fillColorRole'], style['maskBgColor'] ?? '#38BDF8', activePalette) ??
-                const Color(0xFF38BDF8),
-            resolveColor(style['maskStrokeColorRole'] ?? style['strokeColorRole'], style['maskStrokeColor'] ?? '#FFFFFF', activePalette) ??
-                const Color(0xFFFFFFFF),
+            resolveColor(style['maskBgColorRole'] ?? style['fillColorRole'], style['maskBgColor'] ?? '#38BDF8', activePalette) ?? const Color(0xFF38BDF8),
+            resolveColor(style['maskStrokeColorRole'] ?? style['strokeColorRole'], style['maskStrokeColor'] ?? '#FFFFFF', activePalette) ?? const Color(0xFFFFFFFF),
             ((style['maskStrokeWidth'] as num?) ?? 0).toDouble() * _unit,
           );
           widgets.add(Positioned.fill(child: _wrap(raw, style, CustomPaint(painter: painter), containerWidth)));
@@ -411,10 +448,7 @@ class _OimPlayerState extends State<OimPlayer> {
         }
       }
 
-      final isParallaxGrp = style['sceneLoop'] != null ||
-          style['isParallaxGroup'] == true ||
-          raw['isParallaxGroup'] == true ||
-          raw['name']?.toString().toLowerCase().contains('parallax') == true;
+      final isParallaxGrp = style['sceneLoop'] != null || style['isParallaxGroup'] == true || raw['isParallaxGroup'] == true || raw['name']?.toString().toLowerCase().contains('parallax') == true;
 
       if (isParallaxGrp) {
         groupWrapper = ClipRect(child: groupWrapper);
@@ -437,12 +471,11 @@ class _OimPlayerState extends State<OimPlayer> {
     Widget slotWidget;
 
     if (type == 'text') {
-      slotWidget = _textFill(_buildTextSlot(raw, style, currentLang, activePalette, containerWidth, containerHeight),
-          style, activePalette, Size(slotWidth ?? containerWidth, slotHeight ?? containerHeight));
+      slotWidget =
+          _textFill(_buildTextSlot(raw, style, currentLang, activePalette, containerWidth, containerHeight), style, activePalette, Size(slotWidth ?? containerWidth, slotHeight ?? containerHeight));
     } else if (style['backgroundType'] == 'pattern' && hasPattern(style)) {
       // The canvas background pattern (web `isBackgroundSlot`): a tile across the whole layer.
-      slotWidget = OimPatternFill(
-          style: style, palette: activePalette, unit: _unit, disableAnimations: widget.disableAnimations, background: true);
+      slotWidget = OimPatternFill(style: style, palette: activePalette, unit: _unit, disableAnimations: widget.disableAnimations, background: true);
     } else if (type == 'pattern') {
       // A pattern layer: tiled and moved, cut to its `geoShape` (web `patternLayerCss`).
       slotWidget = OimPatternFill(style: style, palette: activePalette, unit: _unit, disableAnimations: widget.disableAnimations);
@@ -580,11 +613,16 @@ class _OimPlayerState extends State<OimPlayer> {
     if (rawWeight != null) {
       if (rawWeight is num) {
         final w = rawWeight.toInt();
-        if (w >= 900) fontWeight = FontWeight.w900;
-        else if (w >= 800) fontWeight = FontWeight.w800;
-        else if (w >= 700) fontWeight = FontWeight.w700;
-        else if (w >= 600) fontWeight = FontWeight.w600;
-        else if (w >= 500) fontWeight = FontWeight.w500;
+        if (w >= 900)
+          fontWeight = FontWeight.w900;
+        else if (w >= 800)
+          fontWeight = FontWeight.w800;
+        else if (w >= 700)
+          fontWeight = FontWeight.w700;
+        else if (w >= 600)
+          fontWeight = FontWeight.w600;
+        else if (w >= 500)
+          fontWeight = FontWeight.w500;
         else if (w >= 300) fontWeight = FontWeight.w300;
       } else if (rawWeight.toString().toLowerCase() == 'bold') {
         fontWeight = FontWeight.bold;
@@ -631,9 +669,7 @@ class _OimPlayerState extends State<OimPlayer> {
     // Precalculated lines (`style.textRuns[lang]`): no layout of our own, each line where the exporter put it.
     // The runs of the language whose content is the text shown (the fallback language too; none after an action changed it).
     final content = slot['content'];
-    final runs = style['textRuns'] is Map && content is Map
-        ? (style['textRuns'] as Map).entries.where((e) => content[e.key]?.toString() == text).firstOrNull?.value
-        : null;
+    final runs = style['textRuns'] is Map && content is Map ? (style['textRuns'] as Map).entries.where((e) => content[e.key]?.toString() == text).firstOrNull?.value : null;
     if (runs is Map && runs['lines'] is List && runs['fontSize'] is num) {
       final lineStyle = textStyle.copyWith(fontSize: (runs['fontSize'] as num) * _unit, height: 1);
       return Stack(clipBehavior: Clip.none, children: [
@@ -642,8 +678,7 @@ class _OimPlayerState extends State<OimPlayer> {
             left: 0,
             right: 0,
             top: ((l['yOffset'] as num?) ?? 0) * _unit,
-            child: Text(tx(plainText('${l['text'] ?? ''}', marks.keys)),
-                style: lineStyle, softWrap: false, overflow: TextOverflow.visible, textAlign: textAlignOf(style['textAlign'])),
+            child: Text(tx(plainText('${l['text'] ?? ''}', marks.keys)), style: lineStyle, softWrap: false, overflow: TextOverflow.visible, textAlign: textAlignOf(style['textAlign'])),
           ),
       ]);
     }
@@ -658,8 +693,7 @@ class _OimPlayerState extends State<OimPlayer> {
     double containerWidth,
     double containerHeight,
   ) {
-    var fillColor = resolveColor(style['fillColorRole'], style['fillColor'], activePalette) ??
-        Colors.transparent;
+    var fillColor = resolveColor(style['fillColorRole'], style['fillColor'], activePalette) ?? Colors.transparent;
     // Gradient and pattern fills replace the colour; without a valid one the colour stays (web `getFillCss`).
     Widget? fillLayer;
     if (style['fillType'] == 'gradient') {
@@ -667,8 +701,7 @@ class _OimPlayerState extends State<OimPlayer> {
       if (g != null) fillLayer = DecoratedBox(decoration: BoxDecoration(gradient: g));
     } else if (style['fillType'] == 'pattern' && style['fillPatternType'] != null) {
       fillLayer = OimPatternFill(style: style, palette: activePalette, unit: _unit, disableAnimations: widget.disableAnimations);
-    } else if (style['fillType'] == 'image' && style['fillImage'] is String &&
-        (style['fillImage'] as String).trim().startsWith('data:image/')) {
+    } else if (style['fillType'] == 'image' && style['fillImage'] is String && (style['fillImage'] as String).trim().startsWith('data:image/')) {
       // 1.17.0 picture fill; like the web, only an embedded data:image counts, otherwise the colour stays.
       fillLayer = OimImageFillWidget(
         imageUrl: (style['fillImage'] as String).trim(),
@@ -719,16 +752,12 @@ class _OimPlayerState extends State<OimPlayer> {
     // Default rectangle
     final dashed = isDashed || isDotted;
     final rect = Container(
-      foregroundDecoration: dashed && borderWidth > 0 && borderColor != null
-          ? _DashedBorder(color: borderColor, width: borderWidth, radius: borderRadius, dotted: isDotted)
-          : null,
+      foregroundDecoration: dashed && borderWidth > 0 && borderColor != null ? _DashedBorder(color: borderColor, width: borderWidth, radius: borderRadius, dotted: isDotted) : null,
       decoration: BoxDecoration(
         color: fillColor,
         borderRadius: borderRadius,
         boxShadow: shadowOf(style) == null ? null : [shadowOf(style)!],
-        border: borderWidth > 0 && borderColor != null && !dashed
-            ? Border.all(color: borderColor, width: borderWidth)
-            : null,
+        border: borderWidth > 0 && borderColor != null && !dashed ? Border.all(color: borderColor, width: borderWidth) : null,
       ),
     );
     if (fillLayer == null) return rect;

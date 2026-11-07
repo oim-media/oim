@@ -5,8 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oim_viewer_flutter/library/library_screen.dart';
 import 'package:oim_viewer_flutter/main.dart';
+import 'package:oim_viewer_flutter/ui/i18n.dart';
 
 void main() {
+  setUp(() => uiSpanish = true);
   testWidgets('the Library button and Ctrl+B open the public library', (t) async {
     await t.pumpWidget(const OimViewerApp());
     await t.tap(find.text('Biblioteca'));

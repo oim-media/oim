@@ -46,7 +46,8 @@ Future<void> _loadSystemFonts(Iterable<File> vectors) async {
 
 void main() {
   if (Platform.environment['OIM_PARITY'] != '1') return;
-  final spec = p.normalize(p.join(Directory.current.path, '..', '..', 'packages', 'spec', 'vectors'));
+  // OIM_VECTORS renders any folder of works (e.g. real files) instead of the conformance vectors.
+  final spec = Platform.environment['OIM_VECTORS'] ?? p.normalize(p.join(Directory.current.path, '..', '..', 'packages', 'spec', 'vectors'));
   final out = p.join(Directory.current.path, 'build', 'parity', 'flutter');
   final vectors = Directory(spec).listSync().where((f) => f.path.endsWith('.oim.png')).toList()
     ..sort((a, b) => a.path.compareTo(b.path));

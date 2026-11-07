@@ -669,7 +669,9 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
       fontStyle: fontStyle,
       letterSpacing: letterSpacing,
       height: lineHeight,
-      shadows: shadowOf(style) == null ? null : [shadowOf(style)!],
+      // CSS puts half the leading above the glyphs and half below.
+      leadingDistribution: TextLeadingDistribution.even,
+      shadows: [if (shadowOf(style) != null) shadowOf(style)!, ...textEffectShadows(style, activePalette)],
     );
     final marks = style['marks'] is Map ? (style['marks'] as Map).cast<String, dynamic>() : const <String, dynamic>{};
     // Web: `.oim-slot` has `padding: 0 0.25em 0 0` (content-box) and is

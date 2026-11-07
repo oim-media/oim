@@ -108,4 +108,28 @@ void main() {
       }
     });
   }
+
+  // CSS splits the line-height leading evenly above and below the glyphs; Flutter by default
+  // splits it in proportion to ascent and descent, which moved a lineHeight 1 title ~12 px up.
+  testWidgets('line-height leading is split evenly, as in CSS', (t) async {
+    final meta = {
+      'canvas': {'natural_width': 800, 'natural_height': 600},
+      'slots': [
+        {
+          'id': 'title',
+          'type': 'text',
+          'position': [0, 0],
+          'content': {'es': 'Hola'},
+          'style': {'width': '50cqw', 'height': '20cqw', 'fontSize': '5cqw', 'lineHeight': 1},
+        },
+      ],
+    };
+    await t.pumpWidget(MaterialApp(
+      home: Align(alignment: Alignment.topLeft, child: SizedBox(width: 800, height: 600, child: OimPlayer(bytes: _oim(meta), showBaseImage: false))),
+    ));
+    await t.pump();
+    final rich = t.widget<RichText>(find.descendant(of: find.text('Hola'), matching: find.byType(RichText)));
+    expect(rich.text.style!.leadingDistribution, TextLeadingDistribution.even);
+  });
 }
+

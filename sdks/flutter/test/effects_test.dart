@@ -93,4 +93,32 @@ void main() {
       expect(blendModeOf('invalid-blend'), isNull);
     });
   });
+
+  // Web (ImageEngine, unified effects stack): on text, drop-shadow is one text-shadow and glow
+  // is two, blur r*0.4 then r; disabled effects and other types draw nothing here.
+  test('text effects become the same text shadows as the web', () {
+    final shadows = textEffectShadows({
+      'effects': [
+        {'type': 'glow', 'color': '#FCD34D', 'radius': 48},
+        {'type': 'drop-shadow', 'x': 2, 'y': 3, 'blur': 5, 'color': '#000000'},
+        {'type': 'glow', 'radius': 10, 'enabled': false},
+        {'type': 'blur', 'radius': 4},
+      ],
+    }, null);
+    expect(shadows.length, 3);
+    expect(shadows[0].blurRadius, closeTo(19.2, 1e-9));
+    expect(shadows[1].blurRadius, 48);
+    expect(shadows[0].color, const Color(0xFFFCD34D));
+    expect(shadows[0].offset, Offset.zero);
+    expect(shadows[2].offset, const Offset(2, 3));
+    expect(shadows[2].blurRadius, 5);
+    // Defaults as on the web: glow radius 16 in amber, drop-shadow y 4 blur 12.
+    final d = textEffectShadows({'effects': [{'type': 'glow'}, {'type': 'drop-shadow'}]}, null);
+    expect(d[1].blurRadius, 16);
+    expect(d[0].color, const Color(0xFFF59E0B));
+    expect(d[2].offset, const Offset(0, 4));
+    expect(d[2].blurRadius, 12);
+    expect(textEffectShadows({}, null), isEmpty);
+  });
 }
+

@@ -3,6 +3,15 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## Unreleased
+
+- Flutter player: a text glow or drop shadow from `style.effects` is drawn, as on the web.
+  It was missing, so a glowing title showed flat.
+- Flutter player: line-height leading is split evenly above and below the text, as in CSS.
+  A title with `lineHeight: 1` sat about 12 px too high.
+- Tools: `OIM_VECTORS=<folder>` makes `render-web-goldens.mjs` and the Flutter parity test
+  render any folder of works, to compare real files between web and Flutter.
+
 ## 1.27.7 — 2026-11-07
 
 - Flutter player: text is laid out by the player, like the web, instead of following the

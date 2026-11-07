@@ -92,7 +92,7 @@ interface OimSlot {
 - `textDecoration`: `"none" | "underline"` (max 64 chars).
 - `textAlign`: `"left" | "center" | "right" | "justify"`.
 - `lineHeight`: Numeric multiplier factor (e.g. `1.2`, `1.5`) or a bounded string.
-- `letterSpacing`: Numeric pixel spacing or `cqw` string.
+- `letterSpacing`: A CSS length with its unit (`"2px"`, `"0.05em"`). A bare number is not a length: readers ignore it, as the browser does (section 4.8).
 - `maxWidth`: Container percentage string (e.g. `"80cqw"`, `"none"`) or numeric value.
 - `fontSizes`: Map of size specific to each language `{ "es": "3.0cqw", "ja": "2.5cqw" }`.
 - `maxWidths`: Map of maximum width specific to each language `{ "en": "60cqw" }`.
@@ -100,7 +100,7 @@ interface OimSlot {
 - **Text marks (1.11.0, `text_marks` capability):** `content` can wrap phrases in `{name}…{/name}`; literal braces are doubled (`{{`, `}}`). `style.marks` defines each mark with a closed set (`color`/`colorRole`, `bold`, `italic`, `underline`, `highlight{style, color, colorRole, paddingX, paddingY, borderRadius}`). Names `^[a-z][a-z0-9-]{0,23}$`, maximum 8 per layer, not nested. A single interpretation: `parseMarks`, `markStyle` (`@oim-media/core`). The backend does not sign malformed tags (`OIM_E_TEXT_MARKS_INVALID`).
 - `dropCap`: `{ enabled, lines: 2|3, fontFamily?, color?, marginRight? }`. Size is set with `dropCapStyle`; the rest of the text keeps its marks (`splitDropCap`).
 - `textHighlight`: **retired** (1.12.0). Kept read-only for published files; new writers use `marks`.
-- `textRuns`: **Precalculated lines** for native renderers (iOS/Android/Desktop) that lack a complex paragraph layout engine:
+- `textRuns`: **Precalculated lines**, only for readers **without** a paragraph layout engine. A reader that can lay out text (web, Flutter) ignores them: the exporter's line breaks can disagree with the real layout (section 4.8):
   ```json
   "textRuns": {
     "es": {
@@ -222,6 +222,43 @@ Colours are validated against the strict `cssColor` pattern (hexadecimal `#RGB` 
   - `fade-chars`, `slide-up`, `bounce-chars`, `reveal-mask`, `scale-in` and `rise-words` are entrance effects defined as portable data in `@oim-media/core` (`text-effects.ts`).
   - `glitch-cyberpunk` and `glitch-slice` are defined as portable layer primitives in `@oim-media/core` (`glitch.ts`).
   - `blur-chars` is **retired** (not portable): it still validates, and readers draw the text without animation.
+
+### 4.8. Rendering rules for readers
+
+The web player (`@oim-media/player-oim`) is the reference renderer (section 9.1). These are the rules it
+follows that the schema alone does not say. Every reader must follow them; each one has cost a visible
+difference between renderers before it was written down.
+
+**Order and stacking**
+- Layers paint in `slots` order, except the background pattern layer (`is_background_pattern: true`, or
+  id `background-pattern-slot`), which always paints behind every other layer.
+
+**Text**
+- The text box is a column centred vertically (`justify-content: center`). Horizontal alignment is
+  `style.textAlign`, else the slot's `align`, else `left`.
+- The box has a right padding of `0.25em` and is anchored by its padded width: left-aligned text does not
+  move, centred text moves `0.125em` left and right-aligned text `0.25em` left.
+- Text with no colour is black.
+- `letterSpacing` applies only as a length with its unit (`px`, `em`); a bare number is ignored.
+- `textRuns` are ignored by a reader that lays out text itself; it lays out `content` instead.
+- A text layer's shadow follows the glyphs (CSS `text-shadow`).
+
+**Shapes, strokes and fills**
+- Borders are drawn only from `strokeColor`, `strokeWidth` and `strokeStyle`. `borderColor` and
+  `borderWidth` are not contract keys and are not drawn.
+- A custom path (`svgPath`) is scaled from its `svgViewBox` into the layer box; a photo frame with its own
+  `svgPath` masks its colour layer to that path too, so no box of the fill colour shows around the photo.
+- A `container` layer paints like a `geo` layer.
+- A pattern tile is `160 × fillPatternScale` (or `backgroundPatternScale`) canvas units. A stored tile
+  (`svgRawXml`) wins over the one generated from the pattern type.
+
+**Effects**
+- The shadow of a non-text layer, and the `drop-shadow` effect, follow the layer's silhouette (its alpha),
+  not its bounding box, and paint under the layer.
+- Media filters (`filterPreset`, `filter*`) apply only to `image` layers and to the picture of an image
+  fill, never to the frame or to other layer types.
+- `opacity` is read as `0..100`.
+- Retired keys (section 8), such as `blendMode`, are not drawn.
 
 ---
 

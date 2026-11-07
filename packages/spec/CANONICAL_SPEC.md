@@ -334,7 +334,7 @@ which is the reference renderer.
 
 **Procedure.** 800 px wide; height `round(800 × h / w)` from the vector's PNG header; device pixel ratio 1;
 animations disabled; white background; host font `sans-serif` for text that names no family. Goldens
-are only valid when rendered on the CI runner's Linux (`node tools/render-web-goldens.mjs vectors/golden`),
+are only valid when rendered on the CI job's Linux image (`node tools/render-web-goldens.mjs vectors/golden`),
 because fonts rasterise differently on each system.
 
 **Metric** (`tools/parity-core.mjs`). A pixel differs when any channel differs by more than 40. The

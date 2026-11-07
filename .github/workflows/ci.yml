@@ -62,12 +62,10 @@ jobs:
           flutter test
 
   parity:
-    # Visual conformance (CANONICAL_SPEC.md 9.1). Goldens are only valid on the
-    # self-hosted runner's Linux, where they were rendered, so this job never runs
-    # elsewhere: not on forks, not without CI_RUNNER. One-time setup on the runner:
-    # Playwright's system libraries and unzip (see packages/spec/README.md).
-    if: vars.CI_RUNNER != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
-    runs-on: ${{ vars.CI_RUNNER }}
+    # Visual conformance (CANONICAL_SPEC.md 9.1). Goldens are rendered on Ubuntu with its
+    # default fonts; regenerate them on the same image this job runs on. Forks get
+    # GitHub's runner, as in `test`.
+    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) && 'ubuntu-latest' || vars.CI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -78,7 +76,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: pnpm --filter @oim-media/spec exec playwright install chromium
+      # GitHub's image can install Chromium's system libraries; a self-hosted runner has them already (no sudo).
+      - run: pnpm --filter @oim-media/spec exec playwright install ${{ runner.environment == 'github-hosted' && '--with-deps' || '' }} chromium
       # The web player against its own goldens: a stale golden or a changed web render fails here.
       - name: Web self-check
         run: |

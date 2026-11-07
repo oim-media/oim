@@ -294,12 +294,12 @@ and every other renderer is compared with it pixel by pixel. Procedure, metric a
 [`CANONICAL_SPEC.md`](CANONICAL_SPEC.md) section 9.1.
 
 ```bash
-pnpm --filter @oim-media/spec goldens          # regenerate the goldens (runner's Linux only)
+pnpm --filter @oim-media/spec goldens          # regenerate the goldens (on the CI image only)
 pnpm --filter @oim-media/spec parity <dir> --renderer flutter --out <diff-dir>
 ```
 
-CI runs it in the `parity` job, only on the self-hosted runner (`vars.CI_RUNNER`). The runner
-needs, once, with sudo: `sudo apt install unzip` (Flutter) and
+CI runs it in the `parity` job, on the same runner as `test`. A self-hosted runner
+(`vars.CI_RUNNER`) needs, once, with sudo: `sudo apt install unzip` (Flutter) and
 `pnpm --filter @oim-media/spec exec playwright install-deps chromium` (Chromium's system libraries).
 Known differences live in `vectors/golden/exceptions.json`, one entry per renderer and vector with
 its reason; remove the entry in the same change that fixes the renderer.

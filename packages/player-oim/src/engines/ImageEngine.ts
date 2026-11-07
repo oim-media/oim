@@ -2265,7 +2265,7 @@ export class ImageEngine {
             fillPatternCounts: style.fillPatternCounts,
             fillPatternDispersions: style.fillPatternDispersions,
           }),
-          ...(isVectorFill ? svgSilhouetteMaskCss(text) : shapeMaskCss(style.geoShape)),
+          ...(isVectorFill ? svgSilhouetteMaskCss(text) : shapeMaskCss(style.geoShape, style)),
         };
         // The drawing goes above the fill: a positioned sibling paints over a
         // static one, and the absolute fill layer hid the icon's stroke.

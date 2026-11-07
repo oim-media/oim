@@ -1,8 +1,3 @@
 {
-  "flutter": {
-    "frame-shapes": {
-      "reason": "web bug, not Flutter: a custom svgPath frame leaves the fillColor layer unmasked (shapeMaskCss uses only geoShape), so a grey box shows around the photo",
-      "since": "2026-11-07"
-    }
-  }
+  "flutter": {}
 }

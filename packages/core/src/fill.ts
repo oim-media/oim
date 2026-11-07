@@ -18,6 +18,7 @@ import { renderGenerativeSVG } from "./generative/index.js";
 import { generatePatternSVG } from "./patterns.js";
 import { GEO_SHAPES, pointsToAttribute } from "./geoShapes.js";
 import { isSafeCssGradient } from "./css-gradient.js";
+import { frameSilhouette } from "./frame-silhouette.js";
 
 export interface Shape {
   width?: number;
@@ -171,7 +172,12 @@ export const PATTERN_SHAPES = ["rectangle", "circle", "triangle", "star", "diamo
  * stretched to the layer's box. The rectangle has no mask; it is cut by its
  * corner radius, as always. Used for pattern layers and complex fills of shapes.
  */
-export function shapeMaskCss(geoShape?: string): CSSProperties {
+export function shapeMaskCss(geoShape?: string, custom?: { svgPath?: string; svgViewBox?: string }): CSSProperties {
+  // A custom svgPath frame (no catalogue shape): the outline frameSilhouette draws, already sanitised.
+  if (!geoShape && custom?.svgPath) {
+    const own = frameSilhouette({ svgPath: custom.svgPath, svgViewBox: custom.svgViewBox });
+    return own?.d ? maskFromSvg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${own.viewBox}" preserveAspectRatio="none"><path d="${own.d}" fill="black"/></svg>`) : {};
+  }
   if (!geoShape || geoShape === "rectangle") return {};
   // Every closed catalogue shape, not a fixed list: shapes added later (arch,
   // cloud...) painted their fill colour over the whole box.
@@ -180,7 +186,10 @@ export function shapeMaskCss(geoShape?: string): CSSProperties {
   const body = drawing.kind === "polygon"
     ? `<polygon points="${pointsToAttribute(drawing.points)}" fill="black"/>`
     : `<path d="${drawing.d}" fill="black"/>`;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">${body}</svg>`;
+  return maskFromSvg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">${body}</svg>`);
+}
+
+function maskFromSvg(svg: string): CSSProperties {
   const uri = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
   return {
     maskImage: uri, WebkitMaskImage: uri,

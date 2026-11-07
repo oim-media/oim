@@ -9,6 +9,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../binary/oim_extractor.dart';
 import 'embedded_fonts.dart';
 import 'color_util.dart';
@@ -485,6 +486,8 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
       slotWidget = _buildGeoSlot(style, activePalette, slotWidth ?? 100, slotHeight ?? 100, containerWidth, containerHeight);
     } else if (type == 'image') {
       slotWidget = _buildImageSlot(raw, style, currentLang, containerWidth, containerHeight);
+    } else if (type == 'svg') {
+      slotWidget = _buildSvgSlot(raw, style, currentLang, activePalette);
     } else if (type == 'lottie') {
       slotWidget = LottieSlot(
         slot: raw,
@@ -711,14 +714,15 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
       );
     }
     if (fillLayer != null) fillColor = Colors.transparent;
-    final borderColor = resolveColor(style['borderColorRole'], style['borderColor'], activePalette);
-    final borderWidth = resolveCssUnit(style['borderWidth'], containerWidth, containerHeight) ?? 0.0;
+    // The contract's names are stroke*; border* is what this renderer read before, kept as a fallback.
+    final borderColor = resolveColor(style['strokeColorRole'] ?? style['borderColorRole'], style['strokeColor'] ?? style['borderColor'], activePalette);
+    final borderWidth = resolveCssUnit(style['strokeWidth'] ?? style['borderWidth'], containerWidth, containerHeight) ?? 0.0;
     final borderRadius = parseBorderRadius(style['borderRadius'], containerWidth, containerHeight);
 
     final shapeName = style['drawing']?.toString() ?? style['geoDrawing']?.toString() ?? style['shape']?.toString();
     final ShapeDrawing? drawing = shapeName != null ? geoShapes[shapeName] : shapeDrawing(style['geoShape']);
     final svgPath = style['svgPath']?.toString() ?? style['path']?.toString();
-    final borderStyle = style['borderStyle']?.toString();
+    final borderStyle = (style['strokeStyle'] ?? style['borderStyle'])?.toString();
     final isDashed = borderStyle == 'dashed';
     final isDotted = borderStyle == 'dotted';
 
@@ -736,11 +740,26 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
         ),
       );
 
-      if (shadowOf(style) != null) {
-        geo = DecoratedBox(
-          decoration: BoxDecoration(boxShadow: [shadowOf(style)!]),
-          child: geo,
+      final shadow = shadowOf(style);
+      if (shadow != null) {
+        // CSS drop-shadow follows the silhouette; a BoxShadow is the slot's rectangle (the dark square behind a circle).
+        Color? tint(Color? c) => c == null ? null : shadow.color.withValues(alpha: shadow.color.a * c.a);
+        Widget cast = CustomPaint(
+          size: Size(slotWidth, slotHeight),
+          painter: GeoShapePainter(
+            drawing: drawing,
+            svgPath: svgPath,
+            fillColor: tint(fillLayer == null ? fillColor : Colors.black),
+            borderColor: tint(borderColor),
+            borderWidth: borderWidth,
+            isDashed: isDashed,
+            isDotted: isDotted,
+          ),
         );
+        if (shadow.blurRadius > 0) {
+          cast = ImageFiltered(imageFilter: ui.ImageFilter.blur(sigmaX: shadow.blurSigma, sigmaY: shadow.blurSigma, tileMode: TileMode.decal), child: cast);
+        }
+        geo = Stack(clipBehavior: Clip.none, children: [Transform.translate(offset: shadow.offset, child: cast), geo]);
       }
       if (fillLayer == null) return geo;
       return Stack(fit: StackFit.expand, children: [
@@ -790,6 +809,21 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
       );
     }
     return text;
+  }
+
+  /// An icon or vector layer: its markup in `content` (a language map, like a text's), or `svgRawXml`.
+  Widget _buildSvgSlot(Map raw, Map<String, dynamic> style, String language, OimPalette? palette) {
+    var xml = resolveContent(raw['content'], language);
+    if (!xml.contains('<svg')) xml = style['svgRawXml']?.toString() ?? '';
+    if (!xml.contains('<svg')) return const SizedBox.shrink();
+    // Web: `currentColor` strokes take the layer's stroke colour; explicit colours stay.
+    final stroke = resolveColor(style['strokeColorRole'], style['strokeColor'], palette);
+    return SvgPicture.string(
+      xml,
+      fit: BoxFit.contain,
+      theme: SvgTheme(currentColor: stroke ?? const Color(0xFF000000)),
+      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+    );
   }
 
   Widget _buildImageSlot(

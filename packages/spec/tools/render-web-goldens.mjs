@@ -36,7 +36,7 @@ const goldenSize = (pngBytes) => {
 };
 
 const page = (src, height) => `<!doctype html><html><head><meta charset="utf-8">
-<style>html,body{margin:0;background:#fff}oim-player{display:block;width:${WIDTH}px;height:${height}px}</style>
+<style>html,body{margin:0;background:#fff;font-family:sans-serif}oim-player{display:block;width:${WIDTH}px;height:${height}px}</style>
 <script src="/oim-player.js"></script></head>
 <body><oim-player id="p" src="${src}" disable-animations="true"></oim-player></body></html>`;
 

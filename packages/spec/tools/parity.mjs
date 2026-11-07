@@ -44,26 +44,29 @@ export const runParity = ({
   for (const name of goldens.filter((g) => vectors.includes(g))) {
     const renderPath = path.join(rendersDir, `${name}.png`);
     const excepted = name in exceptions;
-    let verdict, detail = '';
+    // `broken`: no comparison happened (missing, unreadable or wrong-size render). An exception never covers it.
+    let verdict, detail = '', broken = false;
     if (!fs.existsSync(renderPath)) {
-      verdict = 'FAIL'; detail = 'missing render';
+      verdict = 'FAIL'; detail = 'missing render'; broken = true;
     } else {
-      const golden = decodePng(fs.readFileSync(path.join(goldenDir, `${name}.web.png`)));
-      let r;
+      let golden, r;
       try {
+        golden = decodePng(fs.readFileSync(path.join(goldenDir, `${name}.web.png`)));
         r = compare(golden, decodePng(fs.readFileSync(renderPath)));
       } catch (err) {
         r = { ok: false, reason: err.message, area: 1, largestBlob: 0 };
       }
+      broken = !r.ok && !r.mask?.length;
       detail = r.reason ?? `area=${(r.area * 100).toFixed(3)}% blob=${r.largestBlob}px`;
       verdict = r.ok ? 'PASS' : 'FAIL';
       if (!r.ok && outDir && r.mask?.length) fs.writeFileSync(path.join(outDir, `${name}.diff.png`), encodePng(diffImage(golden, r.mask)));
     }
     if (excepted && verdict === 'PASS') failures.push(`${name}: passes, remove the exception for ${renderer}`);
-    else if (excepted) verdict = 'EXCEPTED';
+    else if (excepted && !broken) verdict = 'EXCEPTED';
     else if (verdict === 'FAIL') failures.push(`${name}: ${detail}`);
     lines.push(`${name.padEnd(32)} ${verdict.padEnd(8)} ${detail}`);
   }
+  if (!lines.length) failures.push('no vectors compared: check the vectors and goldens directories');
   return { failures, lines };
 };
 

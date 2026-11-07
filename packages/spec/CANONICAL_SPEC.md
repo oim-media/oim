@@ -338,7 +338,7 @@ are only valid when rendered on the CI job's Linux image (`node tools/render-web
 because fonts rasterise differently on each system.
 
 **Metric** (`tools/parity-core.mjs`). A pixel differs when any channel differs by more than 40. The
-difference mask is eroded with a 3×3 kernel, which removes anti-aliasing edges. A render fails when the
+difference mask is eroded with a 3×3 kernel, which removes anti-aliasing edges. The outermost 1 px ring of the image is not measured (the kernel has no neighbours there). A render fails when the
 remaining area exceeds **0.4 %** of the image or any 4-connected blob exceeds **576 px** (a 24 × 24 square).
 
 The threshold was calibrated on 2026-11-07 against bugs reproduced on purpose:

@@ -12,7 +12,7 @@ this says what **result** comes out of a specific one.
 ## The Normative Vectors
 
 A reduced suite cannot tell apart an implementation that **reads the format**
-from one that **gets a simple case right by chance**. These 34 vectors cover the
+from one that **gets a simple case right by chance**. These 36 vectors cover the
 initial 20-vector matrix plus every capability added since contract 1.10.0:
 
 | # | Vector | What it covers |

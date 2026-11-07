@@ -62,10 +62,10 @@ jobs:
           flutter test
 
   parity:
-    # Visual conformance (CANONICAL_SPEC.md 9.1). Goldens are rendered on Ubuntu with its
-    # default fonts; regenerate them on the same image this job runs on. Forks get
-    # GitHub's runner, as in `test`.
-    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) && 'ubuntu-latest' || vars.CI_RUNNER || 'ubuntu-latest' }}
+    # Visual conformance (CANONICAL_SPEC.md 9.1). Goldens depend on the fonts of the image
+    # they were rendered on, so a fork PR (always on GitHub's runner) skips this job.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

@@ -58,3 +58,13 @@ test('unknown vector in exceptions fails', () => {
   const exceptions = { flutter: { zz: { reason: 'x', since: '2026-11-07' } } };
   assert.match(why(setup({ exceptions })), /zz: unknown vector in exceptions/);
 });
+
+test('excepted vector with a missing render still fails', () =>
+  assert.match(why(setup({ renders: { a: white() }, exceptions: { flutter: { b: 'known' } } })), /b: missing render/));
+
+test('excepted vector with a size mismatch still fails', () => {
+  const small = { width: 20, height: 20, rgba: new Uint8Array(20 * 20 * 4).fill(255) };
+  assert.match(why(setup({ renders: { a: white(), b: small }, exceptions: { flutter: { b: 'known' } } })), /^b: /m);
+});
+
+test('no vectors at all fails', () => assert.match(why(setup({ vectors: [], goldens: [], renders: {} })), /no vectors/));

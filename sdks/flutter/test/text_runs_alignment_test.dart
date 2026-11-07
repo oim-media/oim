@@ -15,23 +15,24 @@ Uint8List _oim(Map<String, dynamic> meta) {
 }
 
 void main() {
-  // Web: a text slot is a flex column with justify-content: center, so its lines sit in the
-  // middle of the box. The precalculated lines (textRuns) keep their offsets inside that block.
-  testWidgets('precalculated lines are centred vertically in the text box', (t) async {
+  // Web lays text out itself and ignores textRuns (packages/player-oim text-runs-render.test.ts);
+  // Flutter has a paragraph engine too, so it must not follow the exporter's line breaks either.
+  // Real case: the editor broke "EST. 94" in two although it fits on one line.
+  testWidgets('textRuns line breaks are ignored: the text is laid out like on the web', (t) async {
     final meta = {
       'canvas': {'natural_width': 800, 'natural_height': 600},
       'slots': [
         {
-          'id': 'title',
+          'id': 'badge',
           'type': 'text',
           'position': [0, 0],
-          'content': {'es': 'Hola'},
+          'content': {'es': 'EST. 94'},
           'style': {
             'width': '50cqw',
             'height': '10cqw',
-            'fontSize': '6cqw',
+            'fontSize': '3cqw',
             'textRuns': {
-              'es': {'fontSize': 48, 'lineHeight': 60, 'lines': [{'text': 'Hola', 'width': 100, 'yOffset': 0}]},
+              'es': {'fontSize': 24, 'lineHeight': 30, 'lines': [{'text': 'EST.', 'width': 50, 'yOffset': 0}, {'text': '94', 'width': 25, 'yOffset': 30}]},
             },
           },
         },
@@ -41,8 +42,8 @@ void main() {
       home: Align(alignment: Alignment.topLeft, child: SizedBox(width: 800, height: 600, child: OimPlayer(bytes: _oim(meta), showBaseImage: false))),
     ));
     await t.pump();
-    // Box 80 px tall, one 60 px line box: 10 px above it.
-    expect(t.getTopLeft(find.text('Hola')).dy, closeTo(10, 0.5));
+    expect(find.text('EST. 94'), findsOneWidget);
+    expect(find.text('94'), findsNothing);
   });
 
   // Web: text-align is style.textAlign, else the slot's `align`, else left; and the text is

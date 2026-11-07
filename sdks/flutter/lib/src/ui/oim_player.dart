@@ -692,31 +692,8 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
         textAlign: textAlignOf(style['textAlign'] ?? slot['align']),
       ));
     }
-    // Precalculated lines (`style.textRuns[lang]`): no layout of our own, each line where the exporter put it.
-    // The runs of the language whose content is the text shown (the fallback language too; none after an action changed it).
-    final content = slot['content'];
-    final runs = style['textRuns'] is Map && content is Map ? (style['textRuns'] as Map).entries.where((e) => content[e.key]?.toString() == text).firstOrNull?.value : null;
-    if (runs is Map && runs['lines'] is List && runs['fontSize'] is num) {
-      final lines = (runs['lines'] as List).whereType<Map>();
-      final lineHeight = ((runs['lineHeight'] as num?) ?? (runs['fontSize'] as num)).toDouble();
-      // CSS line-height: each line box is lineHeight tall with the glyphs centred in it (half-leading).
-      final lineStyle = textStyle.copyWith(
-        fontSize: (runs['fontSize'] as num) * _unit,
-        height: lineHeight / (runs['fontSize'] as num),
-        leadingDistribution: TextLeadingDistribution.even,
-      );
-      final blockHeight = lines.fold<double>(0, (h, l) => math.max(h, ((l['yOffset'] as num?) ?? 0) + lineHeight));
-      // Web: the text slot is a flex column with justify-content: center, so the block sits mid-box.
-      return slotPadding(Center(child: SizedBox(width: double.infinity, height: blockHeight * _unit, child: Stack(clipBehavior: Clip.none, children: [
-        for (final l in lines)
-          Positioned(
-            left: 0,
-            right: 0,
-            top: ((l['yOffset'] as num?) ?? 0) * _unit,
-            child: Text(tx(plainText('${l['text'] ?? ''}', marks.keys)), style: lineStyle, softWrap: false, overflow: TextOverflow.visible, textAlign: textAlignOf(style['textAlign'] ?? slot['align'])),
-          ),
-      ]))));
-    }
+    // `style.textRuns` is ignored, as on the web: it is for readers without a paragraph engine, and
+    // the editor's line breaks can disagree with the real layout (CANONICAL_SPEC.md, textRuns).
     // Web: the text slot is a flex column with justify-content: center.
     return slotPadding(Center(child: markedText(text, marks, textStyle, activePalette, tx, textAlign: textAlignOf(style['textAlign'] ?? slot['align']))));
   }

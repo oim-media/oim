@@ -107,14 +107,13 @@ void main() {
     expect(find.text('X'), findsNWidgets(3));
   });
 
-  testWidgets('the text-runs vector paints its precalculated lines', (t) async {
+  // Like the web, the text-runs vector is laid out from its content, not from its textRuns lines.
+  testWidgets('the text-runs vector lays out its content, not the precalculated lines', (t) async {
     final bytes = File(p.join(_spec, 'vectors', 'text-runs-precalculated.oim.png')).readAsBytesSync();
     await t.pumpWidget(MaterialApp(home: SizedBox(width: 800, height: 600, child: OimPlayer(bytes: bytes, showBaseImage: false))));
     await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
     await t.pump();
-    expect(find.text('Primera línea'), findsOneWidget);
-    expect(find.text('Segunda línea'), findsOneWidget);
-    final a = t.getTopLeft(find.text('Primera línea')), b = t.getTopLeft(find.text('Segunda línea'));
-    expect(b.dy - a.dy, closeTo(30, 0.5)); // 800 px wide = 1 logical px per design px
+    expect(find.text('Primera línea\nSegunda línea'), findsOneWidget);
+    expect(find.text('Primera línea'), findsNothing);
   });
 }

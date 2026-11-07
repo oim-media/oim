@@ -129,25 +129,11 @@ void main() {
       expect(cfg.direction, equals('right_to_left'));
     });
 
-    test('parses group sceneLoop and child loopDepth', () {
-      final parentSceneLoop = {
-        'speedPxSec': 60,
-        'direction': 'right_to_left',
-        'mirror': true,
-        'pauseOnHover': false,
-      };
-      final childStyle = {
-        'loopDepth': 0.5,
-      };
-      final cfg = parseInfiniteParallax(
-        const {},
-        childStyle,
-        parentSceneLoop: parentSceneLoop,
-      );
-      expect(cfg, isNotNull);
-      expect(cfg!.speedPxSec, equals(30.0)); // 60 * 0.5
-      expect(cfg.direction, equals('right_to_left'));
-      expect(cfg.mirror, isTrue);
+    // Changed: the web never loops a group or a child without its own parallax; sceneLoop only clips.
+    test('a sceneLoop does not move a group or a child without its own parallax (like the web)', () {
+      final loop = {'speedPxSec': 60, 'direction': 'right_to_left'};
+      expect(parseInfiniteParallax(const {}, {'sceneLoop': loop}), isNull);
+      expect(parseInfiniteParallax(const {}, {'loopDepth': 0.5}, parentSceneLoop: loop), isNull);
     });
 
     test('returns null when loop is disabled', () {
@@ -180,6 +166,19 @@ void main() {
       );
 
       expect(find.text('Still Piece'), findsOneWidget);
+    });
+
+    testWidgets('each piece is stretched 1 px under the next, so no seam shows (like the web)', (tester) async {
+      final plan = computeInfiniteLayerPlan(const InfiniteLayerConfig(speedPxSec: 40, mirror: false), 200, 200);
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: InfiniteParallaxTrack(plan: plan, pieceWidth: 200, pieceHeight: 100, child: const SizedBox()),
+        ),
+      ));
+      final stretched = tester
+          .widgetList<Transform>(find.byType(Transform))
+          .where((t) => (t.transform.storage[0] - 201 / 200).abs() < 1e-9);
+      expect(stretched.length, plan.copies);
     });
 
     testWidgets('renders correct number of duplicated copies and alternates mirroring', (tester) async {

@@ -9,9 +9,25 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'geo_shapes.dart';
 
-/// Decodes an embedded base64 data URL (`data:image/...;base64,...`).
+// Decoded data URIs, so every rebuild hands Image.memory the same bytes: MemoryImage compares by
+// identity, and fresh bytes each build re-decode the picture (dropped frames, a flickering layer).
+final _decoded = <String, Uint8List>{};
+const _decodedMax = 64;
+
+/// Decodes an embedded base64 data URL (`data:image/...;base64,...`), memoised.
 Uint8List? decodeDataUri(String? uri) {
   if (uri == null) return null;
+  final hit = _decoded.remove(uri);
+  if (hit != null) return _decoded[uri] = hit;
+  final bytes = _decodeDataUri(uri);
+  if (bytes != null) {
+    if (_decoded.length >= _decodedMax) _decoded.remove(_decoded.keys.first);
+    _decoded[uri] = bytes;
+  }
+  return bytes;
+}
+
+Uint8List? _decodeDataUri(String uri) {
   final trimmed = uri.trim();
   if (!trimmed.startsWith('data:image/')) return null;
 
@@ -71,6 +87,7 @@ class OimImageFillWidget extends StatelessWidget {
           decoded,
           fit: BoxFit.cover,
           alignment: _alignment,
+          gaplessPlayback: true,
           errorBuilder: (_, __, ___) => const SizedBox.shrink(),
         );
       } else if (imageUrl!.startsWith('http://') || imageUrl!.startsWith('https://')) {
@@ -78,6 +95,7 @@ class OimImageFillWidget extends StatelessWidget {
           imageUrl!,
           fit: BoxFit.cover,
           alignment: _alignment,
+          gaplessPlayback: true,
           errorBuilder: (_, __, ___) => const SizedBox.shrink(),
         );
       }

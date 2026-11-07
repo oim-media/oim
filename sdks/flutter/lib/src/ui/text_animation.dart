@@ -147,7 +147,16 @@ class _Band extends CustomClipper<Rect> {
 /// `markStyle` of @oim-media/core. [transform] is the CSS text-transform.
 /// shortcut: every highlight style paints as a plain background (no padding,
 /// radius or thick underline); upgrade if a design depends on the pill shape.
-Widget markedText(String text, Map<String, dynamic> marks, TextStyle style, OimPalette? palette, String Function(String) transform) {
+/// CSS `text-align` as the web applies it; anything else is the CSS default, left.
+TextAlign textAlignOf(Object? v) => switch (v) {
+      'center' => TextAlign.center,
+      'right' || 'end' => TextAlign.right,
+      'justify' => TextAlign.justify,
+      _ => TextAlign.left,
+    };
+
+Widget markedText(String text, Map<String, dynamic> marks, TextStyle style, OimPalette? palette, String Function(String) transform,
+    {TextAlign textAlign = TextAlign.left}) {
   TextStyle? markStyle(Object? raw) {
     if (raw is! Map) return null;
     final m = raw.cast<String, dynamic>();
@@ -161,8 +170,15 @@ Widget markedText(String text, Map<String, dynamic> marks, TextStyle style, OimP
     );
   }
 
-  if (marks.isEmpty) return Text(transform(text), style: style);
-  return Text.rich(TextSpan(style: style, children: [
-    for (final r in parseMarks(text, marks.keys)) TextSpan(text: transform(r.text), style: r.mark == null ? null : markStyle(marks[r.mark])),
-  ]));
+  // Full slot width, so the alignment has room to act (a Text otherwise shrinks to its content).
+  if (marks.isEmpty) return SizedBox(width: double.infinity, child: Text(transform(text), style: style, textAlign: textAlign));
+  return SizedBox(
+    width: double.infinity,
+    child: Text.rich(
+      TextSpan(style: style, children: [
+        for (final r in parseMarks(text, marks.keys)) TextSpan(text: transform(r.text), style: r.mark == null ? null : markStyle(marks[r.mark])),
+      ]),
+      textAlign: textAlign,
+    ),
+  );
 }

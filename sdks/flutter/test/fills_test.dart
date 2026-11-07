@@ -112,6 +112,16 @@ void main() {
     expect(find.byType(OimImageFillWidget), findsNWidgets(2));
   });
 
+  testWidgets('an image layer whose content is a language map shows its picture (crop vector)', (t) async {
+    final bytes = File(p.join(_spec, 'vectors', 'crop.oim.png')).readAsBytesSync();
+    await t.pumpWidget(MaterialApp(home: SizedBox(width: 800, height: 600, child: OimPlayer(bytes: bytes, showBaseImage: false))));
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
+    await t.pump();
+    final fills = t.widgetList<OimImageFillWidget>(find.byType(OimImageFillWidget));
+    expect(fills, isNotEmpty);
+    expect(fills.map((w) => w.imageUrl), everyElement('https://cdn.oim.media/demos/crop.png'));
+  });
+
   testWidgets('vectors paint their grain and patterns', (t) async {
     for (final name in ['layer-grain', 'pattern-color-roles']) {
       final bytes = File(p.join(_spec, 'vectors', '$name.oim.png')).readAsBytesSync();

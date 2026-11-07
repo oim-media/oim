@@ -451,7 +451,7 @@ class _OimPlayerState extends State<OimPlayer> {
     } else if (type == 'geo' || type == 'shape') {
       slotWidget = _buildGeoSlot(style, activePalette, slotWidth ?? 100, slotHeight ?? 100, containerWidth, containerHeight);
     } else if (type == 'image') {
-      slotWidget = _buildImageSlot(raw, style, containerWidth, containerHeight);
+      slotWidget = _buildImageSlot(raw, style, currentLang, containerWidth, containerHeight);
     } else if (type == 'lottie') {
       slotWidget = LottieSlot(
         slot: raw,
@@ -763,10 +763,13 @@ class _OimPlayerState extends State<OimPlayer> {
   Widget _buildImageSlot(
     Map<String, dynamic> raw,
     Map<String, dynamic> style,
+    String language,
     double containerWidth,
     double containerHeight,
   ) {
-    final imageUri = raw['content']?.toString() ?? style['src']?.toString();
+    // Content may be a language map (`{"*": "data:image/..."}`), like a text's.
+    final resolved = resolveContent(raw['content'], language);
+    final imageUri = resolved.isNotEmpty ? resolved : style['src']?.toString();
     final crop = (style['imageCrop'] ?? style['crop']) as Map<String, dynamic>?;
     final borderRadius = parseBorderRadius(style['borderRadius'], containerWidth, containerHeight);
 

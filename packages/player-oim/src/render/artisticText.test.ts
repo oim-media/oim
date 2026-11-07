@@ -51,3 +51,25 @@ describe("generateArtisticTextSvgString with line breaks", () => {
     expect(model.lineHeight).toBe(1.25);
   });
 });
+
+describe("buildArtisticTextModelFromSlot sizes", () => {
+  // The exporter writes `fontSize` and the box in cqw of the canvas. The player read cqw
+  // against a fixed 800 px canvas, so on a 1200 px canvas the text came out at 2/3 of the
+  // size the author set (160 px in the editor, 107 px published).
+  it("reads cqw against the real canvas width", () => {
+    const exported = { id: "r", type: "artistic-text", width_px: 800, height_px: 220, content: { es: "RETRO" },
+      style: { fontSize: "13.3333cqw", width: "66.6667cqw", height: "18.3333cqw" } };
+    const m = buildArtisticTextModelFromSlot(exported, "es", 1200);
+    expect(m.fontSize).toBeCloseTo(160, 0);
+    expect(m.width).toBe(800);
+    expect(m.height).toBe(220);
+  });
+
+  it("sizes the box from cqw when the exporter left no px box", () => {
+    const m = buildArtisticTextModelFromSlot({ id: "r", type: "artistic-text", content: { es: "A" },
+      style: { fontSize: "10cqw", width: "50cqw", height: "20cqw" } }, "es", 1000);
+    expect(m.width).toBe(500);
+    expect(m.height).toBe(200);
+    expect(m.fontSize).toBe(100);
+  });
+});

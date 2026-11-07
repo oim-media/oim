@@ -190,6 +190,8 @@ Colours are validated against the strict `cssColor` pattern (hexadecimal `#RGB` 
 - `curveAmount`: Text curvature (`-100` to `100`).
 - `curveType`: Curvature geometry (`"arc" | "wave" | "arch"`).
 - `outerStrokeColor`, `outerStrokeWidth`, `innerStrokeColor`, `innerStrokeWidth`, `textGradientType`.
+- **Rendering:** the layer is an SVG box of `width_px x height_px` canvas px (else `style.width`/`height`), fitted into the slot (`meet`) without clipping. `fontSize` is canvas px; a `cqw` value is a percentage of the canvas `natural_width`, not of a fixed width. Each line (`
+`) is drawn on its own, `fontSize * lineHeight` apart around the centre. Back to front: the extrusion layers (fill and a stroke of their colour, `outerStrokeWidth` or 1 px), the outer stroke (`outerStrokeWidth * 2`), the inner stroke and then the face. With `curveAmount` the glyphs sit on the curve path, centred on it. Curve path, line offsets and extrusion layers are in `artistic-text-cases.json`.
 
 ### 4.7. Animations, Keyframes and Reveal (`animation`, `reveal`)
 - `animation.loop`: Loop preset (`"none" | "pulse" | "float" | "bounce" | "spin" | "glow" | "custom"`).

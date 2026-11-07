@@ -23,6 +23,7 @@ import 'infinite_parallax.dart';
 import 'lottie_slot.dart';
 import 'motion.dart';
 import 'actions.dart';
+import 'artistic_text.dart';
 import 'interaction.dart';
 import 'css_gradient.dart';
 import 'grain.dart';
@@ -487,6 +488,17 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
     if (type == 'text') {
       slotWidget =
           _textFill(_buildTextSlot(raw, style, currentLang, activePalette, containerWidth, containerHeight), style, activePalette, Size(slotWidth ?? containerWidth, slotHeight ?? containerHeight));
+    } else if (type == 'artistic-text') {
+      final family = style['fontFamily']?.toString() ?? 'Bangers';
+      final bold = style['fontWeight'] == 'bold' || (num.tryParse('${style['fontWeight']}') ?? 0) >= 700;
+      final text = resolveContent(raw['content'], currentLang);
+      slotWidget = artisticTextSlot(ArtisticTextModel.fromSlot(
+        raw,
+        style,
+        text.isEmpty ? 'CARTEL' : text,
+        containerWidth / _unit,
+        embeddedFontName(_extractionResult?.metadata['fonts'] as List<dynamic>?, family, bold ? 700 : 400, 'normal') ?? family,
+      ));
     } else if (style['backgroundType'] == 'pattern' && hasPattern(style)) {
       // The canvas background pattern (web `isBackgroundSlot`): a tile across the whole layer.
       slotWidget = OimPatternFill(style: style, palette: activePalette, unit: _unit, disableAnimations: widget.disableAnimations, background: true);

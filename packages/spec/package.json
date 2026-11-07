@@ -22,6 +22,7 @@
     "action-cases.json",
     "pattern-cases.json",
     "text-effect-cases.json",
+    "artistic-text-cases.json",
     "keys.json",
     "tools/parity.mjs",
     "tools/parity-core.mjs",

@@ -1702,7 +1702,7 @@ export class ImageEngine {
         hoverWrap.style.justifyContent = 'center';
         hoverWrap.style.pointerEvents = 'none';
 
-        const model = buildArtisticTextModelFromSlot(slot, self.lang);
+        const model = buildArtisticTextModelFromSlot(slot, self.lang, baseWidth);
         // The SVG appends ", sans-serif" itself; the embedded name goes first.
         const embeddedArtistic = embeddedFontFamily(model.fontFamily, self.embeddedFontFamilies);
         if (embeddedArtistic) model.fontFamily = embeddedArtistic.replace(/, sans-serif$/, '');

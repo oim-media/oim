@@ -16,10 +16,6 @@
       "reason": "frame background missing and the framed triangle is drawn tiny",
       "since": "2026-11-07"
     },
-    "layer-blur": {
-      "reason": "a blurred text layer is missing",
-      "since": "2026-11-07"
-    },
     "media-filters": {
       "reason": "dark halo on the filtered image edge",
       "since": "2026-11-07"

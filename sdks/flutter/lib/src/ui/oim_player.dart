@@ -623,7 +623,9 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
           style['color'] ?? style['fillColor'],
           activePalette,
         ) ??
-        Colors.white;
+        // No colour set: the player's own default text colour (the root DefaultTextStyle), as a
+        // browser paints uncoloured text black. It was white, which hid the text on light works.
+        const Color(0xFF000000);
 
     FontWeight fontWeight = FontWeight.normal;
     final rawWeight = style['fontWeight'];

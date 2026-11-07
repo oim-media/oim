@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Xue Studios LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../ui/tokens.dart';
@@ -51,22 +52,28 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _scroll.dispose();
     super.dispose();
   }
 
+  Timer? _debounce;
+  int _token = 0;
+
   Future<void> _fetch({bool force = false}) async {
+    // Search and category run on the server; only the latest request may render.
+    final token = ++_token;
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      final items = await widget.client.fetchItems(force: force);
-      if (mounted) setState(() => _items = items);
+      final items = await widget.client.fetchItems(force: force, category: _category, query: _query);
+      if (mounted && token == _token) setState(() => _items = items);
     } on LibraryException catch (e) {
-      if (mounted) setState(() => _error = e.message);
+      if (mounted && token == _token) setState(() => _error = e.message);
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && token == _token) setState(() => _loading = false);
     }
   }
 
@@ -86,7 +93,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final shown = filterItems(_items, _query, _category);
+    final shown = _items;
     return Scaffold(
       backgroundColor: kBg,
       appBar: AppBar(
@@ -102,7 +109,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
           child: Row(children: [
             Expanded(
               child: TextField(
-                onChanged: (v) => setState(() => _query = v),
+                onChanged: (v) {
+                  _query = v;
+                  _debounce?.cancel();
+                  _debounce = Timer(const Duration(milliseconds: 300), _fetch);
+                },
                 style: const TextStyle(color: kText, fontSize: 13),
                 decoration: InputDecoration(
                   hintText: 'Buscar obra...',
@@ -136,7 +147,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     backgroundColor: kChipBg,
                     side: const BorderSide(color: kChipBorder),
                     showCheckmark: false,
-                    onSelected: (_) => setState(() => _category = id),
+                    onSelected: (_) {
+                      setState(() => _category = id);
+                      _fetch();
+                    },
                   ),
                 ),
             ],

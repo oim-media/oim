@@ -3,16 +3,6 @@
 
 import 'library_client.dart';
 
-/// Search and category as in the Tauri library (`applyFilter`).
-List<LibraryItem> filterItems(List<LibraryItem> items, String query, String category) {
-  final q = query.trim().toLowerCase();
-  return items.where((it) {
-    if (category != 'all' && !(it.category?.toLowerCase().contains(category.toLowerCase()) ?? false)) return false;
-    if (q.isEmpty) return true;
-    return it.title.toLowerCase().contains(q) || (it.titleEn?.toLowerCase().contains(q) ?? false);
-  }).toList();
-}
-
 class LibraryRow {
   final List<LibraryItem> items;
   final double height;

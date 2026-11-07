@@ -93,22 +93,32 @@ export class LibraryModal {
   }
 
   private isLoadingMore = false;
+  private loadToken = 0;
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
   private async loadItems(): Promise<void> {
     this.isLoading = true;
     this.renderBody();
+    // Search and category run on the server, over the whole library; only the latest request may render.
+    const token = ++this.loadToken;
+    const filters = {
+      category: this.selectedCategory === "all" ? undefined : this.selectedCategory,
+      q: this.searchQuery.trim() || undefined,
+    };
 
     try {
-      const items = await this.client.fetchShowcaseItems();
+      const items = await this.client.fetchShowcaseItems(false, filters);
+      if (token !== this.loadToken) return;
       this.items = items;
       this.applyFilter();
       this.isLoading = false;
       this.renderBody();
 
-      if (items.length > 0) {
+      if (items.length > 0 && !filters.category && !filters.q) {
         this.client.markAsSeen(items[0].created_at);
       }
     } catch (err) {
+      if (token !== this.loadToken) return;
       console.error("[LibraryModal] Failed to load showcase items:", err);
       this.isLoading = false;
       this.renderBody(true);
@@ -116,23 +126,7 @@ export class LibraryModal {
   }
 
   private applyFilter(): void {
-    const q = this.searchQuery.trim().toLowerCase();
-    this.filteredItems = this.items.filter((item) => {
-      const matchesCategory =
-        this.selectedCategory === "all" ||
-        (item.category && item.category.toLowerCase().includes(this.selectedCategory.toLowerCase()));
-
-      if (!matchesCategory) return false;
-      if (!q) return true;
-
-      const titleMatch =
-        (item.title && item.title.toLowerCase().includes(q)) ||
-        (item.title_en && item.title_en.toLowerCase().includes(q));
-      const tagMatch = item.tags?.some((t) => t.toLowerCase().includes(q));
-      const authorMatch = item.author?.username?.toLowerCase().includes(q);
-
-      return titleMatch || tagMatch || authorMatch;
-    });
+    this.filteredItems = this.items;
 
     const countEl = this.overlayEl?.querySelector("#library-item-count");
     if (countEl) {
@@ -323,8 +317,8 @@ export class LibraryModal {
     if (searchInput) {
       searchInput.addEventListener("input", (e) => {
         this.searchQuery = (e.target as HTMLInputElement).value;
-        this.applyFilter();
-        this.renderBody();
+        if (this.searchTimer) clearTimeout(this.searchTimer);
+        this.searchTimer = setTimeout(() => void this.loadItems(), 300);
       });
     }
 
@@ -392,8 +386,7 @@ export class LibraryModal {
           parent.innerHTML = this.renderCategoryChips();
           this.wireCategoryClicks();
         }
-        this.applyFilter();
-        this.renderBody();
+        void this.loadItems();
       });
     });
   }

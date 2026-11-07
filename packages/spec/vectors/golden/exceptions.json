@@ -1,15 +1,7 @@
 {
   "flutter": {
-    "multi-container-layout": {
-      "reason": "container slots with fillColor are not painted",
-      "since": "2026-11-07"
-    },
-    "color-blending-opacity": {
-      "reason": "layer opacity is ignored on the overlapping layer",
-      "since": "2026-11-07"
-    },
     "frame-shapes": {
-      "reason": "frame background missing and the framed triangle is drawn tiny",
+      "reason": "web bug, not Flutter: a custom svgPath frame leaves the fillColor layer unmasked (shapeMaskCss uses only geoShape), so a grey box shows around the photo",
       "since": "2026-11-07"
     }
   }

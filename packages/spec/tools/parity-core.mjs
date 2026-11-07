@@ -4,7 +4,8 @@
 import zlib from 'node:zlib';
 
 export const CHANNEL_TOLERANCE = 40;
-export const MAX_AREA = 0.005;
+// Calibrated 2026-11-07: passing text noise reaches 0.265 %, a unitless letterSpacing bug 0.511 %.
+export const MAX_AREA = 0.004;
 export const MAX_BLOB = 24 * 24;
 
 const SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);

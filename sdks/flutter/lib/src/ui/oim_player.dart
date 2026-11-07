@@ -664,6 +664,15 @@ class _OimPlayerState extends State<OimPlayer> {
       if (g != null) fillLayer = DecoratedBox(decoration: BoxDecoration(gradient: g));
     } else if (style['fillType'] == 'pattern' && style['fillPatternType'] != null) {
       fillLayer = OimPatternFill(style: style, palette: activePalette, unit: _unit, disableAnimations: widget.disableAnimations);
+    } else if (style['fillType'] == 'image' && style['fillImage'] is String &&
+        (style['fillImage'] as String).trim().startsWith('data:image/')) {
+      // 1.17.0 picture fill; like the web, only an embedded data:image counts, otherwise the colour stays.
+      fillLayer = OimImageFillWidget(
+        imageUrl: (style['fillImage'] as String).trim(),
+        crop: style['fillImageCrop'] as Map<String, dynamic>?,
+        flipX: style['fillImageFlipX'] == true,
+        flipY: style['fillImageFlipY'] == true,
+      );
     }
     if (fillLayer != null) fillColor = Colors.transparent;
     final borderColor = resolveColor(style['borderColorRole'], style['borderColor'], activePalette);

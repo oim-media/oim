@@ -1,14 +1,29 @@
 # Installs Flutter from the official repository. Replaces subosito/flutter-action,
 # which calls actions/cache by tag and so cannot run while the repo requires
 # every action to be pinned by SHA.
+# Windows uses pwsh: on a self-hosted Windows runner `bash` can resolve to WSL's
+# System32\bash.exe, which would run the clone inside Linux.
 name: setup-flutter
 description: Install the Flutter stable channel and put it on PATH
 runs:
   using: composite
   steps:
-    - shell: bash
+    - if: runner.os != 'Windows'
+      shell: bash
       run: |
+        rm -rf "$RUNNER_TEMP/flutter"
         git clone --depth 1 --branch stable https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
         echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
-    - shell: bash
+    - if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $dir = Join-Path $env:RUNNER_TEMP 'flutter'
+        if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
+        git clone --depth 1 --branch stable https://github.com/flutter/flutter.git $dir
+        Join-Path $dir 'bin' | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+    - if: runner.os != 'Windows'
+      shell: bash
+      run: flutter --version
+    - if: runner.os == 'Windows'
+      shell: pwsh
       run: flutter --version

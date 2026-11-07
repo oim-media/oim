@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   formatCompactTitle,
   LibraryLruCache,
+  LibraryClient,
+  SHOWCASE_API,
 } from "./libraryClient.js";
 
 describe("formatCompactTitle", () => {
@@ -90,5 +92,43 @@ describe("LibraryLruCache", () => {
 
     expect(cache.get("oversized")).toBeNull();
     expect(cache.getTotalBytes()).toBe(0);
+  });
+});
+
+describe("LibraryClient (public showcase API)", () => {
+  const item = (id: string) => ({ id, created_at: "2026-11-06T12:00:00Z" });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("reads the first page from the public API without any key", async () => {
+    const fetchMock = vi.fn(async () => Response.json({ items: [item("a")], next_cursor: "c1" }));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new LibraryClient(new LibraryLruCache());
+    expect(await client.fetchShowcaseItems()).toHaveLength(1);
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit | undefined];
+    expect(url).toBe(`${SHOWCASE_API}?limit=48`);
+    expect(init?.headers).toBeUndefined();
+    expect(client.hasMore).toBe(true);
+  });
+
+  it("loadMore sends the cursor and appends", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ items: [item("a")], next_cursor: "c1" }))
+      .mockResolvedValueOnce(Response.json({ items: [item("b")], next_cursor: null }));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new LibraryClient(new LibraryLruCache());
+    await client.fetchShowcaseItems();
+    const all = await client.fetchMoreShowcaseItems();
+    expect(all.map((i) => i.id)).toEqual(["a", "b"]);
+    expect(String(fetchMock.mock.calls[1][0])).toContain("cursor=c1");
+    expect(client.hasMore).toBe(false);
+  });
+
+  it("checkForUpdates reads the count from /updates", async () => {
+    const fetchMock = vi.fn(async () => Response.json({ count: 3, latest: "2026-11-06T12:00:00Z" }));
+    vi.stubGlobal("fetch", fetchMock);
+    const r = await new LibraryClient(new LibraryLruCache()).checkForUpdates();
+    expect(r).toEqual({ hasNew: true, latestDate: "2026-11-06T12:00:00Z", count: 3 });
+    expect(String((fetchMock.mock.calls[0] as unknown as [string])[0])).toContain("/v1/showcase/updates?since=");
   });
 });

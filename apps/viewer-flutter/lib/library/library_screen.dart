@@ -70,6 +70,20 @@ class _LibraryScreenState extends State<LibraryScreen> {
     }
   }
 
+  bool _loadingMore = false;
+
+  Future<void> _fetchMore() async {
+    setState(() => _loadingMore = true);
+    try {
+      final items = await widget.client.fetchMore();
+      if (mounted) setState(() => _items = items);
+    } on LibraryException catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final shown = filterItems(_items, _query, _category);
@@ -152,11 +166,20 @@ class _LibraryScreenState extends State<LibraryScreen> {
     return LayoutBuilder(builder: (context, box) {
       const pad = 16.0, gap = 8.0;
       final rows = justifiedRows(shown, width: box.maxWidth - pad * 2, gap: gap);
+      final more = widget.client.hasMore;
       return ListView.builder(
         controller: _scroll,
         padding: const EdgeInsets.fromLTRB(pad, 8, pad, pad),
-        itemCount: rows.length,
+        itemCount: rows.length + (more ? 1 : 0),
         itemBuilder: (context, i) {
+          if (i == rows.length) {
+            return Center(
+              child: OutlinedButton(
+                onPressed: _loadingMore ? null : _fetchMore,
+                child: Text(_loadingMore ? 'Cargando...' : 'Cargar más'),
+              ),
+            );
+          }
           final row = rows[i];
           return Padding(
             padding: const EdgeInsets.only(bottom: gap),

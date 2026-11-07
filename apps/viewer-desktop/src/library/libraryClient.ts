@@ -27,13 +27,9 @@ export interface ShowcaseItem {
   author?: ShowcaseAuthor;
 }
 
-// Only what the gallery shows: never author or moderation columns.
-const PUBLIC_COLUMNS =
-  "id,title,title_en,description,description_en,thumbnail_url,media_url,type,aspect_ratio,category,tags,features,created_at";
-
-const SUPABASE_URL = "https://eawltbnmonimtmtqslmk.supabase.co";
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhd2x0Ym5tb25pbXRtdHFzbG1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDEwOTAsImV4cCI6MjA5NzgxNzA5MH0.EERuWIHr-WcXvewklF3DbjIZz7-JYEPsqpeszCd2ySo";
+// Public, paginated and edge-cached: the viewers never talk to the database.
+export const SHOWCASE_API = "https://library.oim.media/v1/showcase";
+const PAGE_SIZE = 48;
 
 export const MAX_CACHE_BYTES = 50 * 1024 * 1024; // 50 MB strict quota
 const LAST_SEEN_KEY = "oim_viewer_library_last_seen";
@@ -130,38 +126,50 @@ export class LibraryClient {
   private cache: LibraryLruCache;
   private cachedShowcaseList: ShowcaseItem[] | null = null;
   private lastFetchTime = 0;
+  private nextCursor: string | null = null;
 
   constructor(cache = globalLibraryCache) {
     this.cache = cache;
   }
 
+  /** Whether the gallery has more pages to load. */
+  public get hasMore(): boolean {
+    return this.nextCursor !== null;
+  }
+
+  private async fetchPage(cursor: string | null): Promise<ShowcaseItem[]> {
+    const url = new URL(SHOWCASE_API);
+    url.searchParams.set("limit", String(PAGE_SIZE));
+    if (cursor) url.searchParams.set("cursor", cursor);
+    const response = await fetch(url.toString());
+    if (!response.ok) {
+      throw new Error(`Failed to fetch public showcase items: ${response.status}`);
+    }
+    const page = (await response.json()) as { items: ShowcaseItem[]; next_cursor: string | null };
+    this.nextCursor = page.next_cursor;
+    return page.items;
+  }
+
   /**
-   * Fetches public approved showcase items.
-   * Cached for 60 seconds in memory to avoid repeated queries on filter clicks.
+   * First page of approved works, newest first.
+   * Cached for 60 seconds in memory to avoid repeated requests on filter clicks.
    */
   public async fetchShowcaseItems(forceRefresh = false): Promise<ShowcaseItem[]> {
     const now = Date.now();
     if (!forceRefresh && this.cachedShowcaseList && now - this.lastFetchTime < 60000) {
       return this.cachedShowcaseList;
     }
-
-    const url = `${SUPABASE_URL}/rest/v1/showcase_items?status=eq.approved&order=created_at.desc&select=${PUBLIC_COLUMNS}`;
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch public showcase items: ${response.status}`);
-    }
-
-    const data = (await response.json()) as ShowcaseItem[];
-    this.cachedShowcaseList = data;
+    this.cachedShowcaseList = await this.fetchPage(null);
     this.lastFetchTime = now;
-    return data;
+    return this.cachedShowcaseList;
+  }
+
+  /** Appends the next page and returns every work loaded so far. */
+  public async fetchMoreShowcaseItems(): Promise<ShowcaseItem[]> {
+    const loaded = this.cachedShowcaseList ?? [];
+    if (this.nextCursor === null) return loaded;
+    this.cachedShowcaseList = [...loaded, ...(await this.fetchPage(this.nextCursor))];
+    return this.cachedShowcaseList;
   }
 
   /**
@@ -199,27 +207,15 @@ export class LibraryClient {
    */
   public async checkForUpdates(): Promise<{ hasNew: boolean; latestDate: string | null; count: number }> {
     try {
-      const items = await this.fetchShowcaseItems();
-      if (!items || items.length === 0) {
-        return { hasNew: false, latestDate: null, count: 0 };
-      }
-
-      const latestItem = items[0];
-      const latestDate = latestItem.created_at;
       const lastSeen = typeof localStorage !== "undefined" ? localStorage.getItem(LAST_SEEN_KEY) : null;
-
-      if (!lastSeen) {
-        return { hasNew: true, latestDate, count: items.length };
-      }
-
-      const lastSeenTime = new Date(lastSeen).getTime();
-      const newItems = items.filter((item) => new Date(item.created_at).getTime() > lastSeenTime);
-
-      return {
-        hasNew: newItems.length > 0,
-        latestDate,
-        count: newItems.length,
-      };
+      const since = lastSeen ? new Date(lastSeen) : new Date(0);
+      if (Number.isNaN(since.getTime())) return { hasNew: false, latestDate: null, count: 0 };
+      const url = new URL(`${SHOWCASE_API}/updates`);
+      url.searchParams.set("since", since.toISOString());
+      const response = await fetch(url.toString());
+      if (!response.ok) throw new Error(`updates ${response.status}`);
+      const { count, latest } = (await response.json()) as { count: number; latest: string | null };
+      return { hasNew: count > 0, latestDate: latest, count };
     } catch (err) {
       console.warn("[LibraryClient] Check for updates failed:", err);
       return { hasNew: false, latestDate: null, count: 0 };

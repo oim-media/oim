@@ -92,6 +92,8 @@ export class LibraryModal {
     return this.overlayEl !== null;
   }
 
+  private isLoadingMore = false;
+
   private async loadItems(): Promise<void> {
     this.isLoading = true;
     this.renderBody();
@@ -577,9 +579,34 @@ export class LibraryModal {
           )
           .join("")}
       </div>
+      ${
+        this.client.hasMore
+          ? `<button id="btn-library-more" type="button" style="
+              align-self: center; margin: 16px auto 4px; display: block; padding: 8px 18px;
+              border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.14);
+              background: transparent; color: #e4e4e7; font-size: 12px; cursor: pointer;
+            ">${this.isLoadingMore ? this.t("Cargando…", "Loading…") : this.t("Cargar más", "Load more")}</button>`
+          : ""
+      }
     `;
 
+    bodyEl.querySelector("#btn-library-more")?.addEventListener("click", () => void this.loadMore());
     this.wireCardClicks();
+  }
+
+  private async loadMore(): Promise<void> {
+    if (this.isLoadingMore) return;
+    this.isLoadingMore = true;
+    this.renderBody();
+    try {
+      this.items = await this.client.fetchMoreShowcaseItems();
+      this.applyFilter();
+    } catch (err) {
+      console.error("[LibraryModal] Failed to load more showcase items:", err);
+    } finally {
+      this.isLoadingMore = false;
+      this.renderBody();
+    }
   }
 
   private wireCardClicks(): void {

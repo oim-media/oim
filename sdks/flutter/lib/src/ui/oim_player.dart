@@ -399,7 +399,7 @@ class _OimPlayerState extends State<OimPlayer> {
       // Check if group itself has infinite motion / parallax
       final parallaxCfg = parseInfiniteParallax(raw, style);
       if (parallaxCfg != null) {
-        final plan = computeInfiniteLayerPlan(parallaxCfg, containerWidth, containerWidth);
+        final plan = computeInfiniteLayerPlan(parallaxCfg, containerWidth, containerWidth, _unit);
         if (plan.duplicate) {
           groupWrapper = InfiniteParallaxTrack(
             plan: plan,
@@ -486,7 +486,7 @@ class _OimPlayerState extends State<OimPlayer> {
     if (parallaxCfg != null) {
       final pieceW = slotWidth ?? containerWidth;
       final pieceH = slotHeight ?? containerHeight;
-      final plan = computeInfiniteLayerPlan(parallaxCfg, pieceW, containerWidth);
+      final plan = computeInfiniteLayerPlan(parallaxCfg, pieceW, containerWidth, _unit);
       if (plan.duplicate) {
         slotWidget = InfiniteParallaxTrack(
           plan: plan,

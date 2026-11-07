@@ -62,6 +62,7 @@ InfiniteLayerPlan computeInfiniteLayerPlan(
   InfiniteLayerConfig cfg,
   double pieceWidthPx, [
   double? canvasWidthPx,
+  double canvasScale = 1,
 ]) {
   if (cfg.speedPxSec <= 0 ||
       !cfg.speedPxSec.isFinite ||
@@ -81,7 +82,8 @@ InfiniteLayerPlan computeInfiniteLayerPlan(
     copies += 1;
   }
 
-  final duration = unitPx / cfg.speedPxSec;
+  // `speedPxSec` is in canvas pixels (the web scales it with the canvas); widths here are on-screen.
+  final duration = unitPx / (cfg.speedPxSec * (canvasScale > 0 && canvasScale.isFinite ? canvasScale : 1));
   if (!duration.isFinite || duration <= 0) {
     return InfiniteLayerPlan.empty;
   }

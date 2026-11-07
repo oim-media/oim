@@ -44,10 +44,10 @@ void main() {
     var fail = true;
     final client = LibraryClient(fetch: (u, h) async {
       if (fail) throw const LibraryException('offline');
-      return Uint8List.fromList(utf8.encode(jsonEncode([
+      return Uint8List.fromList(utf8.encode(jsonEncode({'next_cursor': null, 'items': [
         {'id': '1', 'title': 'Hero', 'media_url': 'https://x/1.oim.png', 'aspect_ratio': '16/9'},
         {'id': '2', 'title': 'Carta', 'media_url': 'https://x/2.oim.png', 'aspect_ratio': '1/1'},
-      ])));
+      ]})));
     });
     await t.pumpWidget(MaterialApp(home: LibraryScreen(client: client, onOpen: (_, __) {}, loadCards: false)));
     await t.pumpAndSettle();

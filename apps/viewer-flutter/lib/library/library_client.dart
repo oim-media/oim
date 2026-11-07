@@ -78,13 +78,9 @@ Future<Uint8List> _httpFetch(Uri url, Map<String, String> headers) async {
 }
 
 class LibraryClient {
-  static const supabaseUrl = 'https://eawltbnmonimtmtqslmk.supabase.co';
-  // Public anon key, read-only through RLS; the Tauri viewer ships the same one.
-  static const anonKey =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhd2x0Ym5tb25pbXRtdHFzbG1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDEwOTAsImV4cCI6MjA5NzgxNzA5MH0.EERuWIHr-WcXvewklF3DbjIZz7-JYEPsqpeszCd2ySo';
-  // Only what the gallery shows: never author or moderation columns.
-  static const publicColumns =
-      'id,title,title_en,description,description_en,thumbnail_url,media_url,type,aspect_ratio,category,tags,features,created_at';
+  // Public, paginated and edge-cached: the viewers never talk to the database.
+  static const showcaseApi = 'https://library.oim.media/v1/showcase';
+  static const pageSize = 48;
   static const maxInFlight = 4;
 
   final Fetch _fetch;
@@ -92,6 +88,7 @@ class LibraryClient {
   final LruBytes cache;
   List<LibraryItem>? _items;
   DateTime? _itemsAt;
+  String? _nextCursor;
   int _inFlight = 0;
   final _waiting = <Completer<void>>[];
 
@@ -100,26 +97,45 @@ class LibraryClient {
         _now = now ?? DateTime.now,
         cache = LruBytes(maxBytes);
 
+  /// Whether the gallery has more pages to load.
+  bool get hasMore => _nextCursor != null;
+
+  Future<List<LibraryItem>> _page(String? cursor) async {
+    final url = Uri.parse(showcaseApi).replace(queryParameters: {
+      'limit': '$pageSize',
+      if (cursor != null) 'cursor': cursor,
+    });
+    final raw = await _fetch(url, const {});
+    final Object? page;
+    try {
+      page = jsonDecode(utf8.decode(raw));
+    } on FormatException {
+      throw const LibraryException('Invalid library response');
+    }
+    if (page is! Map<String, dynamic> || page['items'] is! List) {
+      throw const LibraryException('Invalid library response');
+    }
+    final next = page['next_cursor'];
+    _nextCursor = next is String ? next : null;
+    return [for (final j in page['items'] as List) if (j is Map<String, dynamic>) LibraryItem.fromJson(j)];
+  }
+
+  /// First page of approved works, newest first, cached for 60 s.
   Future<List<LibraryItem>> fetchItems({bool force = false}) async {
     final at = _itemsAt;
     if (!force && _items != null && at != null && _now().difference(at) < const Duration(seconds: 60)) {
       return _items!;
     }
-    final url = Uri.parse('$supabaseUrl/rest/v1/showcase_items').replace(queryParameters: {
-      'status': 'eq.approved',
-      'order': 'created_at.desc',
-      'select': publicColumns,
-    });
-    final raw = await _fetch(url, const {'apikey': anonKey, 'Authorization': 'Bearer $anonKey'});
-    final Object? list;
-    try {
-      list = jsonDecode(utf8.decode(raw));
-    } on FormatException {
-      throw const LibraryException('Invalid library response');
-    }
-    if (list is! List) throw const LibraryException('Invalid library response');
-    _items = [for (final j in list) if (j is Map<String, dynamic>) LibraryItem.fromJson(j)];
+    _items = await _page(null);
     _itemsAt = _now();
+    return _items!;
+  }
+
+  /// Appends the next page and returns every work loaded so far.
+  Future<List<LibraryItem>> fetchMore() async {
+    final cursor = _nextCursor;
+    if (cursor == null) return _items ?? const [];
+    _items = [...?_items, ...await _page(cursor)];
     return _items!;
   }
 

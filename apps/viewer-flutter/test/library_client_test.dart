@@ -11,21 +11,37 @@ Uint8List _b(int n) => Uint8List(n);
 
 void main() {
   group('LibraryClient', () {
-    test('asks for approved public items with the anon key, like the Tauri viewer', () async {
+    test('reads the first page from the public API without any key', () async {
       late Uri asked;
       late Map<String, String> headers;
       final c = LibraryClient(fetch: (u, h) async {
         asked = u;
         headers = h;
-        return Uint8List.fromList(utf8.encode('[{"id":"1","title":"A","media_url":"https://x/a.oim.png","aspect_ratio":"1/1"}]'));
+        return Uint8List.fromList(utf8.encode(
+            '{"items":[{"id":"1","title":"A","media_url":"https://x/a.oim.png","aspect_ratio":"1/1"}],"next_cursor":"c1"}'));
       });
       final items = await c.fetchItems();
       expect(items.single.title, 'A');
-      expect(asked.path, '/rest/v1/showcase_items');
-      expect(asked.queryParameters['status'], 'eq.approved');
-      expect(asked.queryParameters['select'], LibraryClient.publicColumns);
-      expect(headers['apikey'], isNotEmpty);
-      expect(headers['Authorization'], 'Bearer ${headers['apikey']}');
+      expect(asked.toString(), '${LibraryClient.showcaseApi}?limit=48');
+      expect(headers, isEmpty);
+      expect(c.hasMore, isTrue);
+    });
+
+    test('fetchMore sends the cursor and appends', () async {
+      final asked = <Uri>[];
+      final pages = [
+        '{"items":[{"id":"1","media_url":"https://x/a"}],"next_cursor":"c1"}',
+        '{"items":[{"id":"2","media_url":"https://x/b"}],"next_cursor":null}',
+      ];
+      final c = LibraryClient(fetch: (u, h) async {
+        asked.add(u);
+        return Uint8List.fromList(utf8.encode(pages[asked.length - 1]));
+      });
+      await c.fetchItems();
+      final all = await c.fetchMore();
+      expect(all.map((i) => i.id), ['1', '2']);
+      expect(asked[1].queryParameters['cursor'], 'c1');
+      expect(c.hasMore, isFalse);
     });
 
     test('caches the list for 60 s', () async {
@@ -33,7 +49,7 @@ void main() {
       var now = DateTime(2026);
       final c = LibraryClient(now: () => now, fetch: (u, h) async {
         calls++;
-        return Uint8List.fromList(utf8.encode('[]'));
+        return Uint8List.fromList(utf8.encode('{"items":[],"next_cursor":null}'));
       });
       await c.fetchItems();
       now = now.add(const Duration(seconds: 59));

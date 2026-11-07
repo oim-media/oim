@@ -37,7 +37,7 @@ describe("contract 1.22.0: reveal, trigger and play", () => {
     expect(styleSchema.safeParse({ width: "10cqw" }).success).toBe(true);
   });
 
-  it("contract is 1.27.4", () => {
-    expect(CONTRACT_VERSION).toBe("1.27.4");
+  it("contract is 1.27.5", () => {
+    expect(CONTRACT_VERSION).toBe("1.27.5");
   });
 });

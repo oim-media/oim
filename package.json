@@ -10,6 +10,6 @@
     "typecheck": "pnpm -r typecheck",
     "conformance": "pnpm --filter @oim-media/core exec vitest run conformance",
     "check:licenses": "node tools/licenses.mjs",
-    "test:tools": "pnpm --filter @oim-media/core exec vitest run --root ../.. tools --exclude \"packages/spec/tools/**\" && node --test packages/spec/tools/"
+    "test:tools": "pnpm --filter @oim-media/core exec vitest run --root ../.. tools --exclude \"packages/spec/tools/**\" && node --test \"packages/spec/tools/*.test.mjs\""
   }
 }

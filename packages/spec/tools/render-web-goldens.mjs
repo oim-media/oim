@@ -12,7 +12,8 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const VECTORS = path.join(HERE, '..', 'vectors');
+// OIM_VECTORS renders any folder of works (e.g. real files) instead of the conformance vectors.
+const VECTORS = process.env.OIM_VECTORS ?? path.join(HERE, '..', 'vectors');
 const PLAYER = path.join(HERE, '..', '..', 'player-oim', 'dist', 'oim-player.js');
 const WIDTH = 800;
 

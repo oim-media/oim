@@ -3,6 +3,7 @@
 
 import 'dart:math' as math;
 import 'package:flutter/painting.dart';
+import 'dynamic_colors.dart';
 
 /// Same table and order as `mediaFilterCss` in `@oim-media/core` (media-filters.ts):
 /// preset, blur, brightness, contrast, saturation, hue-rotate. Neutral values
@@ -192,6 +193,28 @@ BoxShadow? shadowOf(Map<String, dynamic> style) {
     ),
     blurRadius: (style['shadowBlur'] as num?)?.toDouble() ?? 0,
   );
+}
+
+/// `style.effects` on a text layer, as the web paints it (ImageEngine, unified effects stack):
+/// `drop-shadow` is one text-shadow and `glow` two (blur radius*0.4, then radius). Other types
+/// (blur, texture, color-grade) are not drawn here yet.
+List<Shadow> textEffectShadows(Map<String, dynamic> style, OimPalette? palette) {
+  final effects = style['effects'];
+  if (effects is! List) return const [];
+  num n(dynamic v, num d) => v is num ? v : d;
+  final out = <Shadow>[];
+  for (final e in effects) {
+    if (e is! Map || e['enabled'] == false) continue;
+    if (e['type'] == 'drop-shadow') {
+      final c = resolveColor(e['colorRole'] ?? style['shadowColorRole'], e['color'] ?? 'rgba(0, 0, 0, 0.35)', palette);
+      out.add(Shadow(color: c ?? const Color(0x59000000), offset: Offset(n(e['x'], 0).toDouble(), n(e['y'], 4).toDouble()), blurRadius: n(e['blur'], 12).toDouble()));
+    } else if (e['type'] == 'glow') {
+      final r = (e['radius'] is num && e['radius'] != 0 ? e['radius'] as num : 16).toDouble();
+      final c = resolveColor(e['colorRole'] ?? style['effectColorRole'], e['color'] ?? '#f59e0b', palette) ?? const Color(0xFFF59E0B);
+      out..add(Shadow(color: c, blurRadius: r * 0.4))..add(Shadow(color: c, blurRadius: r));
+    }
+  }
+  return out;
 }
 
 /// CSS `mix-blend-mode` names to Flutter blend modes. `normal` and unknown names return null.

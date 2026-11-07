@@ -242,6 +242,8 @@ difference between renderers before it was written down.
 - `letterSpacing` applies only as a length with its unit (`px`, `em`); a bare number is ignored.
 - `textRuns` are ignored by a reader that lays out text itself; it lays out `content` instead.
 - A text layer's shadow follows the glyphs (CSS `text-shadow`).
+- The `lineHeight` leading is split evenly above and below the glyphs, as in CSS.
+- On a text layer, `effects` of type `drop-shadow` add one text-shadow (`x`, `y` default 0 and 4, `blur` default 12) and `glow` adds two, blurred `radius * 0.4` and `radius` (default 16, colour `#f59e0b`).
 
 **Shapes, strokes and fills**
 - Borders are drawn only from `strokeColor`, `strokeWidth` and `strokeStyle`. `borderColor` and

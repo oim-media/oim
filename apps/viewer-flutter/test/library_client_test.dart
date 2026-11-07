@@ -37,6 +37,17 @@ void main() {
       expect(asked.queryParameters, {'limit': '48', 'category': 'ui', 'q': 'hero'});
     });
 
+    test('a repeated request for new filters never returns the previous filters list', () async {
+      final c = LibraryClient(fetch: (u, h) async {
+        final id = u.queryParameters['category'] == 'ui' ? 'ui' : 'hero';
+        return Uint8List.fromList(utf8.encode('{"items":[{"id":"$id","media_url":"https://x/$id"}],"next_cursor":null}'));
+      });
+      await c.fetchItems(query: 'hero');
+      // A chip tap and a pending search debounce ask for the same new filters while the first is in flight.
+      final both = await Future.wait([c.fetchItems(category: 'ui'), c.fetchItems(category: 'ui')]);
+      expect(both.map((l) => l.single.id), ['ui', 'ui']);
+    });
+
     test('fetchMore sends the cursor and appends', () async {
       final asked = <Uri>[];
       final pages = [

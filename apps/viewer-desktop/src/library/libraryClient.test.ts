@@ -121,6 +121,22 @@ describe("LibraryClient (public showcase API)", () => {
     expect(urls).toEqual([`${SHOWCASE_API}?limit=48&category=ui&q=hero`, `${SHOWCASE_API}?limit=48`]);
   });
 
+  it("a repeated request for new filters never returns the previous filters' list", async () => {
+    const fetchMock = vi.fn(async (url: string) =>
+      Response.json({ items: [item(url.includes("category=ui") ? "ui" : "hero")], next_cursor: null }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new LibraryClient(new LibraryLruCache());
+    await client.fetchShowcaseItems(false, { q: "hero" });
+    // A chip click and a pending search debounce ask for the same new filters while the first is in flight.
+    const [a, b] = await Promise.all([
+      client.fetchShowcaseItems(false, { category: "ui" }),
+      client.fetchShowcaseItems(false, { category: "ui" }),
+    ]);
+    expect(a.map((i) => i.id)).toEqual(["ui"]);
+    expect(b.map((i) => i.id)).toEqual(["ui"]);
+  });
+
   it("loadMore sends the cursor and appends", async () => {
     const fetchMock = vi
       .fn()

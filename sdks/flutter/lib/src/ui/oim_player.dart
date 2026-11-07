@@ -316,7 +316,12 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
 
     final widgets = <Widget>[];
 
-    for (final raw in rawSlots) {
+    // Web: the canvas background has z-index 0 and every other layer 1, so it is behind them all
+    // even when listed last.
+    bool isBackground(dynamic s) => s is Map && (s['is_background_pattern'] == true || s['id'] == 'background-pattern-slot');
+    final ordered = [...rawSlots.where(isBackground), ...rawSlots.where((s) => !isBackground(s))];
+
+    for (final raw in ordered) {
       if (raw is! Map<String, dynamic>) continue;
       final slotId = raw['id']?.toString() ?? '';
 
@@ -638,7 +643,11 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
     }
 
     final fontStyle = style['fontStyle'] == 'italic' ? FontStyle.italic : FontStyle.normal;
-    final letterSpacing = (style['letterSpacing'] as num?)?.toDouble();
+    // Web sets `letter-spacing` verbatim: a bare number is invalid CSS and the browser ignores it,
+    // so only a length with its unit spaces the letters (the editor measured textRuns that way).
+    final spacingMatch = RegExp(r'^\s*(-?[\d.]+)(px|em)\s*$').firstMatch(style['letterSpacing']?.toString() ?? '');
+    final spacingValue = spacingMatch == null ? null : double.tryParse(spacingMatch[1]!);
+    final letterSpacing = spacingValue == null ? null : (spacingMatch![2] == 'em' ? spacingValue * fontSize : spacingValue);
     final lineHeight = (style['lineHeight'] as num?)?.toDouble();
 
     final family = style['fontFamily']?.toString();
@@ -745,6 +754,7 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
         ),
       );
 
+      Widget? castShadow;
       final shadow = shadowOf(style);
       if (shadow != null) {
         // CSS drop-shadow follows the silhouette; a BoxShadow is the slot's rectangle (the dark square behind a circle).
@@ -764,11 +774,13 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
         if (shadow.blurRadius > 0) {
           cast = ImageFiltered(imageFilter: ui.ImageFilter.blur(sigmaX: shadow.blurSigma, sigmaY: shadow.blurSigma, tileMode: TileMode.decal), child: cast);
         }
-        geo = Stack(clipBehavior: Clip.none, children: [Transform.translate(offset: shadow.offset, child: cast), geo]);
+        castShadow = Transform.translate(offset: shadow.offset, child: cast);
       }
-      if (fillLayer == null) return geo;
-      return Stack(fit: StackFit.expand, children: [
-        ClipPath(clipper: GeoShapeClipper(drawing: drawing, svgPath: svgPath), child: fillLayer),
+      if (fillLayer == null && castShadow == null) return geo;
+      // The shadow goes under the picture fill, not over it.
+      return Stack(fit: StackFit.expand, clipBehavior: Clip.none, children: [
+        if (castShadow != null) castShadow,
+        if (fillLayer != null) ClipPath(clipper: GeoShapeClipper(drawing: drawing, svgPath: svgPath), child: fillLayer),
         geo,
       ]);
     }

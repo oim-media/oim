@@ -10,6 +10,7 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/widgets.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'color_util.dart';
 import 'dynamic_colors.dart';
 import 'svg_path.dart';
@@ -235,6 +236,40 @@ ui.Image buildPatternTile(Map style, OimPalette? palette, int pixels) {
   return paintPatternTile(figures, bg, pixels);
 }
 
+/// Web `recolorPatternSvg`: swaps the tile's stored colours for the resolved ones in one pass,
+/// longest first and never inside a longer hex ("#fff" does not eat "#ffffff").
+String recolorPatternSvg(String svg, Map<String, String> swaps) {
+  final map = {for (final e in swaps.entries) if (e.key.toLowerCase() != e.value.toLowerCase()) e.key.toLowerCase(): e.value};
+  if (map.isEmpty) return svg;
+  final keys = map.keys.toList()..sort((x, y) => y.length - x.length);
+  final re = RegExp('(${keys.map(RegExp.escape).join('|')})(?![0-9a-f])', caseSensitive: false);
+  return svg.replaceAllMapped(re, (m) => map[m[0]!.toLowerCase()]!);
+}
+
+/// The tile the file carries (`svgRawXml`), recoloured to [palette]: what the web paints.
+Future<ui.Image?> storedPatternTile(Map style, OimPalette? palette, int pixels) async {
+  final svg = style['svgRawXml']?.toString() ?? '';
+  if (!svg.contains('<svg')) return null;
+  final rawFg = _field(style, 'Color')?.toString();
+  final rawBg = _field(style, 'BgColor')?.toString();
+  final fg = resolveColor(_field(style, 'ColorRole'), rawFg, palette);
+  final bg = resolveColor(_field(style, 'BgColorRole'), rawBg, palette);
+  final swaps = <String, String>{
+    if (rawBg != null && bg != null) rawBg: _hex(bg),
+    if (rawFg != null && fg != null) rawFg: _hex(fg),
+  };
+  try {
+    final info = await vg.loadPicture(SvgStringLoader(recolorPatternSvg(svg, swaps)), null);
+    final rec = ui.PictureRecorder();
+    final canvas = Canvas(rec)..scale(pixels / info.size.width, pixels / info.size.height);
+    canvas.drawPicture(info.picture);
+    info.picture.dispose();
+    return rec.endRecording().toImageSync(pixels, pixels);
+  } catch (_) {
+    return null; // A broken tile keeps the generated one.
+  }
+}
+
 String _hex(Color c) => '#${c.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}${c.a < 1 ? (c.a * 255).round().toRadixString(16).padLeft(2, '0') : ''}';
 
 /// A tiled pattern filling its box, moving as the web's `background-animation-*`.
@@ -263,6 +298,7 @@ class _OimPatternFillState extends State<OimPatternFill> with SingleTickerProvid
   ui.Image? _tile;
   AnimationController? _c;
   String _direction = 'none';
+  int _generation = 0;
 
   double get _scale => double.tryParse('${_field(widget.style, 'Scale')}') ?? 1;
   double get _tileSize => kPatternTile * _scale * widget.unit;
@@ -288,6 +324,15 @@ class _OimPatternFillState extends State<OimPatternFill> with SingleTickerProvid
   void _setup() {
     final px = (_tileSize * ui.PlatformDispatcher.instance.implicitView!.devicePixelRatio).round().clamp(16, 1024);
     _tile = buildPatternTile(widget.style, widget.palette, px);
+    final generation = ++_generation;
+    storedPatternTile(widget.style, widget.palette, px).then((stored) {
+      if (stored == null) return;
+      if (!mounted || generation != _generation) return stored.dispose();
+      setState(() {
+        _tile?.dispose();
+        _tile = stored;
+      });
+    });
     final s = widget.style;
     num? speed;
     if (widget.background) {

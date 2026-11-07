@@ -351,8 +351,8 @@ describe("1.12.0 marks what nobody uses, without deleting it (audit of 10 Oct)",
   };
 
   // 1.21.0 added colour roles in patterns and backgrounds; 1.22.0 added reveal, trigger and play.
-  it("the contract declares 1.27.2", () => {
-    expect(CONTRACT_VERSION).toBe("1.27.2");
+  it("the contract declares 1.27.3", () => {
+    expect(CONTRACT_VERSION).toBe("1.27.3");
   });
 
   // A repeated definition goes to $defs and the property keeps a $ref.

@@ -5,6 +5,11 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+- Flutter player: `artistic-text` layers are drawn (3D extrusion, curve, strokes and built-in
+  gradients), as on the web. They were blank.
+- Web player: artistic text is sized against the real canvas width. On a canvas wider than
+  800 px it came out smaller than in the editor (107 px instead of 160 on a 1200 px canvas).
+- Spec: `artistic-text-cases.json` holds the shared curve, line and extrusion cases.
 - Flutter player: a text glow or drop shadow from `style.effects` is drawn, as on the web.
   It was missing, so a glowing title showed flat.
 - Flutter player: line-height leading is split evenly above and below the text, as in CSS.

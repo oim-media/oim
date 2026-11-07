@@ -859,8 +859,8 @@ export class ImageEngine {
       // player does not implement; a file using them would render poorly without
       // its author being able to tell this apart from their own mistake.
       //
-      // Only for ACCEPTED files: if the signature is invalid or the domain is
-      // blocked, nothing is rendered, and discussing capabilities there would
+      // Only for ACCEPTED files: if the signature is invalid or the file is
+      // revoked, nothing is rendered, and discussing capabilities there would
       // distract from the real issue.
       announce = true;
       // Normalize the Python backend format AFTER signature validation (mutating it before would break the signature check).

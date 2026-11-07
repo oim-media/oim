@@ -2,7 +2,7 @@
   "name": "@oim-media/viewer-desktop",
   "license": "Apache-2.0",
   "private": true,
-  "version": "1.27.5",
+  "version": "1.27.6",
   "type": "module",
   "scripts": {
     "dev": "vite",

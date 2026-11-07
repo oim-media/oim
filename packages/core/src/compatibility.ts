@@ -43,7 +43,8 @@
  * the format can change without the player being touched. Tying both numbers
  * together would make an internal fix look like a format break.
  */
-export const CONTRACT_VERSION = "1.27.5";
+export const CONTRACT_VERSION = "1.27.6";
+// 1.27.6: a custom svgPath frame masks its fill-colour layer (web player); Flutter fixes (opacity 0..100, retired blendMode, media-filter scope, svgViewBox, container fills, default text colour); no format change.
 // 1.27.5: Flutter player parity with the web (WOFF2, background order, stored pattern tiles, strokes, svg layers, letterSpacing, language blur); no format change.
 // 1.27.4: viewer fixes (library filters, Flutter picture fills and image content); no format change.
 // 1.27.3: the viewers read the library through library.oim.media/v1/showcase; no format change.

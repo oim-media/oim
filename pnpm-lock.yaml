@@ -73,7 +73,7 @@ importers:
   packages/player-oim:
     dependencies:
       '@oim-media/core':
-        specifier: workspace:1.27.3
+        specifier: workspace:1.27.4
         version: link:../core
       lottie-web:
         specifier: ^5.12.2

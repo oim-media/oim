@@ -10,6 +10,15 @@ import 'package:oim_flutter/oim_flutter.dart';
 
 void main() {
   group('computeInfiniteLayerPlan', () {
+    test('speed is in canvas pixels: a lap lasts the same at any display size (like the web)', () {
+      const cfg = InfiniteLayerConfig(speedPxSec: 90, mirror: false);
+      final atCanvasSize = computeInfiniteLayerPlan(cfg, 800, 800);
+      // The same 800-px-wide canvas drawn at 400 px on screen.
+      final halfSize = computeInfiniteLayerPlan(cfg, 400, 400, 0.5);
+      expect(atCanvasSize.durationSeconds, closeTo(800 / 90, 1e-9));
+      expect(halfSize.durationSeconds, closeTo(atCanvasSize.durationSeconds, 1e-9));
+    });
+
     test('returns empty plan when speed is 0 or negative', () {
       final plan = computeInfiniteLayerPlan(
         const InfiniteLayerConfig(speedPxSec: 0),

@@ -3,6 +3,21 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.27.6 — 2026-11-07
+
+- Web player: a photo frame drawn with its own `svgPath` no longer shows a box in its
+  fill colour around the photo.
+- Flutter player, closer to the web:
+  - `opacity` is read as 0..100, as the contract says;
+  - the retired `blendMode` and the non-contract `borderColor`/`borderWidth` are not drawn;
+  - media filters apply only to image layers and to an image fill's picture;
+  - custom paths use their `svgViewBox`; `container` layers are painted;
+  - text without a colour is black, not white;
+  - text sits where the web puts it (vertical centring, slot `align`, the 0.25em padding).
+- Visual parity gate: every vector has a web golden; CI compares the Flutter player
+  pixel by pixel. Two new vectors: `background-pattern-order`, `shape-shadows`.
+  No format change.
+
 ## 1.27.5 — 2026-11-07
 
 - Flutter player, closer to the web:

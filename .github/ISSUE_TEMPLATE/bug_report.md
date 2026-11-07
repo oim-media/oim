@@ -5,7 +5,7 @@ labels: bug
 ---
 
 **Package and version**
-e.g. `@oim-media/player-oim` 1.27.5, `oim_flutter` 1.27.0
+e.g. `@oim-media/player-oim` 1.27.6, `oim_flutter` 1.27.0
 
 **What happened**
 

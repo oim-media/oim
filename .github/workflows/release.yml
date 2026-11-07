@@ -65,13 +65,13 @@ jobs:
   # The binary jobs upload to the release; it exists before any of them ends
   # (v1.27.0: Android, iOS and Windows-Flutter finished before Tauri created it).
   release:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     permissions:
       contents: write
     steps:
       - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.ref_name }}
+          tag: ${{ github.event.inputs.tag || github.ref_name }}
         run: gh release view "$tag" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create "$tag" -R "$GITHUB_REPOSITORY" --title "OIM $tag" --generate-notes
 
   desktop-windows:
@@ -122,7 +122,8 @@ jobs:
 
   mobile-android:
     needs: release
-    runs-on: ubuntu-latest
+    # The self-hosted runner has the Android SDK in ~/Android (ANDROID_HOME set in the runner's .env).
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 25
     permissions:
       contents: write

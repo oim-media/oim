@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:oim_flutter/oim_flutter.dart';
 import '../ui/tokens.dart';
+import '../ui/i18n.dart';
 import 'library_client.dart';
 
 /// A library card: the flattened thumbnail, and the work itself only while hovered
@@ -87,7 +88,7 @@ class _LibraryCardState extends State<LibraryCard> {
             child: Stack(fit: StackFit.expand, children: [
               body,
               if (_refused)
-                const Center(child: Icon(Icons.lock_outline, color: kWarning, size: 28, semanticLabel: 'Archivo alterado')),
+                Center(child: Icon(Icons.lock_outline, color: kWarning, size: 28, semanticLabel: t('Archivo alterado', 'File altered'))),
               Positioned(
                 left: 0,
                 right: 0,

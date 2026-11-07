@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'library/library_client.dart';
 import 'library/library_bench.dart';
 import 'library/library_screen.dart';
+import 'ui/i18n.dart';
 import 'viewer_format.dart';
 
 // Design tokens mirrored from apps/viewer-desktop (Tauri) so both viewers look the same.
@@ -75,7 +76,7 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
           .readAsBytes()
           .then((b) => _load(b, fileNameOf(path)))
           .catchError((Object e) {
-        if (mounted) setState(() => _error = 'No se pudo abrir $path');
+        if (mounted) setState(() => _error = t('No se pudo abrir $path', 'Could not open $path'));
       });
     }
     if (_bench) WidgetsBinding.instance.addPostFrameCallback((_) => _openLibrary(bench: LibraryBench()));
@@ -164,7 +165,7 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
       if (isRefused(status)) {
         // An altered file is not shown: neither its image nor its layers.
         setState(() => _error =
-            'Archivo alterado (${_badgeFor(status).text}): no se muestra.');
+            t('Archivo alterado (${_badgeFor(status).text}): no se muestra.', 'File altered (${_badgeFor(status).text}): not shown.'));
         return;
       }
       final langs = (result.metadata['languages'] as List?)
@@ -189,7 +190,7 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
         _error = null;
       });
     } catch (e) {
-      setState(() => _error = 'No se pudo leer el archivo OIM: $e');
+      setState(() => _error = t('No se pudo leer el archivo OIM: $e', 'Could not read the OIM file: $e'));
     }
   }
 
@@ -328,22 +329,22 @@ class _Badge {
 _Badge _badgeFor(OimSecurityStatus? s) {
   switch (s) {
     case OimSecurityStatus.verified:
-      return const _Badge('Firmado con OIM', _ok);
+      return _Badge(t('Firmado con OIM', 'Signed with OIM'), _ok);
     case OimSecurityStatus.verifiedAuthorless:
-      return const _Badge('Firmado · sin autoría', _signed);
+      return _Badge(t('Firmado · sin autoría', 'Signed · no authorship'), _signed);
     case OimSecurityStatus.imageUnsealed:
-      return const _Badge('Firmado · sin sello', Color(0xFFCBD5E1));
+      return _Badge(t('Firmado · sin sello', 'Signed · unsealed'), const Color(0xFFCBD5E1));
     case OimSecurityStatus.expiredKey:
-      return const _Badge('Clave expirada', Color(0xFFF59E0B));
+      return _Badge(t('Clave expirada', 'Expired key'), const Color(0xFFF59E0B));
     case OimSecurityStatus.unknownKey:
-      return const _Badge('Clave desconocida', Color(0xFFF59E0B));
+      return _Badge(t('Clave desconocida', 'Unknown key'), const Color(0xFFF59E0B));
     case OimSecurityStatus.imageMismatch:
-      return const _Badge('Imagen alterada', Color(0xFFEF4444));
+      return _Badge(t('Imagen alterada', 'Image altered'), const Color(0xFFEF4444));
     case OimSecurityStatus.invalidSignature:
-      return const _Badge('Firma inválida', Color(0xFFEF4444));
+      return _Badge(t('Firma inválida', 'Invalid signature'), const Color(0xFFEF4444));
     case OimSecurityStatus.unsigned:
     case null:
-      return const _Badge('Sin firma', _unsigned);
+      return _Badge(t('Sin firma', 'Unsigned'), _unsigned);
   }
 }
 
@@ -434,7 +435,7 @@ class _TopBar extends StatelessWidget {
           ],
           if (palettes.isNotEmpty) ...[
             PopupMenuButton<String>(
-              tooltip: 'Cambiar tema de color',
+              tooltip: t('Cambiar tema de color', 'Change colour theme'),
               color: _drawerBg,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -483,7 +484,7 @@ class _TopBar extends StatelessWidget {
                         size: 13, color: _textSoft),
                     const SizedBox(width: 4),
                     Text(
-                      selectedPalette?.toUpperCase() ?? 'TEMA',
+                      selectedPalette?.toUpperCase() ?? t('TEMA', 'THEME'),
                       style: const TextStyle(
                           fontSize: 11,
                           color: _textSoft,
@@ -497,18 +498,18 @@ class _TopBar extends StatelessWidget {
           ],
           _BarButton(
               icon: Icons.grid_view_outlined,
-              label: 'Biblioteca',
+              label: t('Biblioteca', 'Library'),
               onTap: onLibrary),
           const SizedBox(width: 6),
           _BarButton(
               icon: Icons.folder_open_outlined,
-              label: 'Cargar otro',
+              label: t('Cargar otro', 'Load another'),
               onTap: onOpen),
           if (hasFile) ...[
             const SizedBox(width: 6),
             _BarButton(
                 icon: Icons.tune,
-                label: 'Ajustes',
+                label: t('Ajustes', 'Settings'),
                 active: inspectorOpen,
                 onTap: onToggleInspector),
           ],
@@ -572,12 +573,12 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('Abre un archivo .oim.png',
-              style: TextStyle(
+          Text(t('Abre un archivo .oim.png', 'Open a .oim.png file'),
+              style: const TextStyle(
                   fontSize: 16, color: _text, fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
-          const Text('Se lee y se dibuja de forma nativa, sin navegador.',
-              style: TextStyle(fontSize: 12, color: _textMuted)),
+          Text(t('Se lee y se dibuja de forma nativa, sin navegador.', 'Read and drawn natively, no browser.'),
+              style: const TextStyle(fontSize: 12, color: _textMuted)),
           const SizedBox(height: 18),
           InkWell(
             borderRadius: BorderRadius.circular(8),
@@ -586,16 +587,16 @@ class _EmptyState extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
               decoration: BoxDecoration(
                   color: Colors.white, borderRadius: BorderRadius.circular(8)),
-              child: const Text('Cargar archivo',
-                  style: TextStyle(
+              child: Text(t('Cargar archivo', 'Load file'),
+                  style: const TextStyle(
                       color: _bg, fontSize: 12, fontWeight: FontWeight.w700)),
             ),
           ),
           const SizedBox(height: 10),
           TextButton(
               onPressed: onLibrary,
-              child: const Text('Explorar la biblioteca pública',
-                  style: TextStyle(color: _textSecondary, fontSize: 12))),
+              child: Text(t('Explorar la biblioteca pública', 'Browse the public library'),
+                  style: const TextStyle(color: _textSecondary, fontSize: 12))),
         ],
       ),
     );
@@ -649,10 +650,10 @@ class _InspectorDrawer extends StatelessWidget {
     final badge = _badgeFor(status);
     final reedit = '${meta['reedit'] ?? ''}';
     final reeditLabel = reedit == 'public'
-        ? 'Público (editable)'
+        ? t('Público (editable)', 'Public (editable)')
         : reedit == 'sealed'
-            ? 'Sellado (inmutable)'
-            : 'Solo autor';
+            ? t('Sellado (inmutable)', 'Sealed (immutable)')
+            : t('Solo autor', 'Author only');
     final counts = <String, int>{};
     for (final s in slots) {
       final t = (s is Map ? s['type'] : null)?.toString() ?? 'other';
@@ -668,7 +669,7 @@ class _InspectorDrawer extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
         children: [
-          _SectionHeader(title: 'AJUSTES', trailing: '${slots.length} slots'),
+          _SectionHeader(title: t('AJUSTES', 'SETTINGS'), trailing: '${slots.length} slots'),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -676,12 +677,12 @@ class _InspectorDrawer extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Capa interactiva',
-                        style: TextStyle(
+                    Text(t('Capa interactiva', 'Interactive layer'),
+                        style: const TextStyle(
                             fontSize: 12,
                             color: _text,
                             fontWeight: FontWeight.w500)),
-                    Text(showLayers ? 'Superposición activa' : 'Base PNG plana',
+                    Text(showLayers ? t('Superposición activa', 'Overlay on') : t('Base PNG plana', 'Flat PNG base'),
                         style:
                             const TextStyle(fontSize: 10, color: _textMuted)),
                   ],
@@ -691,7 +692,7 @@ class _InspectorDrawer extends StatelessWidget {
                 icon: showLayers
                     ? Icons.visibility_outlined
                     : Icons.visibility_off_outlined,
-                label: showLayers ? 'Visible' : 'Oculta',
+                label: showLayers ? 'Visible' : t('Oculta', 'Hidden'),
                 active: showLayers,
                 onTap: onToggleLayers,
               ),
@@ -705,12 +706,12 @@ class _InspectorDrawer extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Animación Lottie',
-                          style: TextStyle(
+                      Text(t('Animación Lottie', 'Lottie animation'),
+                          style: const TextStyle(
                               fontSize: 12,
                               color: _text,
                               fontWeight: FontWeight.w500)),
-                      Text(allowLottie ? 'Reproduciendo' : 'Desactivado',
+                      Text(allowLottie ? t('Reproduciendo', 'Playing') : t('Desactivado', 'Off'),
                           style:
                               const TextStyle(fontSize: 10, color: _textMuted)),
                     ],
@@ -720,7 +721,7 @@ class _InspectorDrawer extends StatelessWidget {
                   icon: allowLottie
                       ? Icons.play_circle_outline
                       : Icons.pause_circle_outline,
-                  label: allowLottie ? 'Activo' : 'Pausado',
+                  label: allowLottie ? t('Activo', 'On') : t('Pausado', 'Paused'),
                   active: allowLottie,
                   onTap: onToggleLottie,
                 ),
@@ -741,12 +742,12 @@ class _InspectorDrawer extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Movimiento continuo',
-                          style: TextStyle(
+                      Text(t('Movimiento continuo', 'Continuous motion'),
+                          style: const TextStyle(
                               fontSize: 12,
                               color: _text,
                               fontWeight: FontWeight.w500)),
-                      Text(playMotion ? 'Bucle en vivo' : 'Pausado',
+                      Text(playMotion ? t('Bucle en vivo', 'Live loop') : t('Pausado', 'Paused'),
                           style:
                               const TextStyle(fontSize: 10, color: _textMuted)),
                     ],
@@ -754,7 +755,7 @@ class _InspectorDrawer extends StatelessWidget {
                 ),
                 _Toggle(
                   icon: playMotion ? Icons.animation : Icons.motion_photos_off,
-                  label: playMotion ? 'Activo' : 'Pausado',
+                  label: playMotion ? t('Activo', 'On') : t('Pausado', 'Paused'),
                   active: playMotion,
                   onTap: onToggleMotion,
                 ),
@@ -763,8 +764,8 @@ class _InspectorDrawer extends StatelessWidget {
           ],
           if (languages.length > 1) ...[
             const SizedBox(height: 12),
-            const Text('Idioma',
-                style: TextStyle(
+            Text(t('Idioma', 'Language'),
+                style: const TextStyle(
                     fontSize: 12, color: _text, fontWeight: FontWeight.w500)),
             const SizedBox(height: 6),
             Wrap(
@@ -781,8 +782,8 @@ class _InspectorDrawer extends StatelessWidget {
           ],
           if (palettes.isNotEmpty) ...[
             const SizedBox(height: 12),
-            const Text('Tema de color / Paleta',
-                style: TextStyle(
+            Text(t('Tema de color / Paleta', 'Colour theme / Palette'),
+                style: const TextStyle(
                     fontSize: 12, color: _text, fontWeight: FontWeight.w500)),
             const SizedBox(height: 6),
             Wrap(
@@ -802,26 +803,26 @@ class _InspectorDrawer extends StatelessWidget {
           const Divider(height: 1, color: _border),
           const SizedBox(height: 16),
           _SectionHeader(
-              title: 'FICHA TÉCNICA', trailing: schemaVersionOf(meta)),
+              title: t('FICHA TÉCNICA', 'DETAILS'), trailing: schemaVersionOf(meta)),
           const SizedBox(height: 12),
-          _SpecRow(label: 'Archivo', value: fileName, mono: true),
-          _SpecRow(label: 'Peso', value: sizeLabel, mono: true),
-          _SpecRow(label: 'Resolución', value: dims),
+          _SpecRow(label: t('Archivo', 'File'), value: fileName, mono: true),
+          _SpecRow(label: t('Peso', 'Size'), value: sizeLabel, mono: true),
+          _SpecRow(label: t('Resolución', 'Resolution'), value: dims),
           _SpecRow(
-              label: 'Esquema OIM', value: schemaVersionOf(meta), mono: true),
+              label: t('Esquema OIM', 'OIM schema'), value: schemaVersionOf(meta), mono: true),
           _SpecRow(
-              label: 'Reedición',
+              label: t('Reedición', 'Re-editing'),
               value: reeditLabel,
               valueColor: reedit == 'public' ? _ok : null),
           _SpecRow(
-            label: 'Firma',
+            label: t('Firma', 'Signature'),
             value: badge.text,
             valueColor: badge.color,
           ),
           if (counts.isNotEmpty) ...[
             const SizedBox(height: 4),
-            const Text('Desglose de capas',
-                style: TextStyle(fontSize: 10, color: _textMuted)),
+            Text(t('Desglose de capas', 'Layer breakdown'),
+                style: const TextStyle(fontSize: 10, color: _textMuted)),
             const SizedBox(height: 5),
             Wrap(
               spacing: 4,

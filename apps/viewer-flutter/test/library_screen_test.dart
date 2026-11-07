@@ -8,11 +8,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:oim_viewer_flutter/library/library_client.dart';
 import 'package:oim_viewer_flutter/library/library_layout.dart';
 import 'package:oim_viewer_flutter/library/library_screen.dart';
+import 'package:oim_viewer_flutter/ui/i18n.dart';
 
 LibraryItem _item(String id, {String? title, String? cat, double ar = 1}) =>
     LibraryItem(id: id, title: title ?? id, mediaUrl: 'https://x/$id.oim.png', category: cat, aspectRatio: ar);
 
 void main() {
+  setUp(() => uiSpanish = true);
   group('justifiedRows', () {
     test('fills each row to the width and keeps every item once, in order', () {
       final items = [for (var i = 0; i < 7; i++) _item('$i', ar: i.isEven ? 1.5 : 0.75)];

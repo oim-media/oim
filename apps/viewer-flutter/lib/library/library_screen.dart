@@ -8,14 +8,15 @@ import '../ui/tokens.dart';
 import 'library_bench.dart';
 import 'library_card.dart';
 import 'library_client.dart';
+import '../ui/i18n.dart';
 import 'library_layout.dart';
 
-const _categories = [
-  ('all', 'Todas'),
+final _categories = [
+  ('all', t('Todas', 'All')),
   ('ui', 'UI & Dashboards'),
   ('marketing', 'Marketing'),
-  ('arte', 'Arte'),
-  ('tipografia', 'Tipografía'),
+  ('arte', t('Arte', 'Art')),
+  ('tipografia', t('Tipografía', 'Typography')),
 ];
 
 class LibraryScreen extends StatefulWidget {
@@ -100,7 +101,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         backgroundColor: kBg,
         foregroundColor: kText,
         elevation: 0,
-        title: const Text('Biblioteca', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+        title: Text(t('Biblioteca', 'Library'), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
         bottom: const PreferredSize(preferredSize: Size.fromHeight(1), child: Divider(height: 1, color: kBorder)),
       ),
       body: Column(children: [
@@ -116,7 +117,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 },
                 style: const TextStyle(color: kText, fontSize: 13),
                 decoration: InputDecoration(
-                  hintText: 'Buscar obra...',
+                  hintText: t('Buscar obra...', 'Search works...'),
                   hintStyle: const TextStyle(color: kTextMuted),
                   prefixIcon: const Icon(Icons.search, size: 18, color: kTextSecondary),
                   isDense: true,
@@ -128,7 +129,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            Text('${shown.length} obras', style: kMono.copyWith(fontSize: 11, color: kTextSecondary)),
+            Text(t('${shown.length} obras', '${shown.length} works'), style: kMono.copyWith(fontSize: 11, color: kTextSecondary)),
           ]),
         ),
         SizedBox(
@@ -163,19 +164,19 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   Widget _body(List<LibraryItem> shown) {
     if (_loading && _items.isEmpty) {
-      return const Center(child: Text('Cargando obras...', style: TextStyle(color: kTextMuted, fontSize: 12)));
+      return Center(child: Text(t('Cargando obras...', 'Loading works...'), style: const TextStyle(color: kTextMuted, fontSize: 12)));
     }
     if (_error != null) {
       return Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Text('No se pudo cargar la biblioteca. Revisa la conexión.', style: TextStyle(color: kTextSecondary, fontSize: 12)),
+          Text(t('No se pudo cargar la biblioteca. Revisa la conexión.', 'Could not load the library. Check your connection.'), style: const TextStyle(color: kTextSecondary, fontSize: 12)),
           const SizedBox(height: 12),
-          OutlinedButton(onPressed: () => _fetch(force: true), child: const Text('Reintentar')),
+          OutlinedButton(onPressed: () => _fetch(force: true), child: Text(t('Reintentar', 'Retry'))),
         ]),
       );
     }
     if (shown.isEmpty) {
-      return const Center(child: Text('Sin resultados. Intenta buscar con otros términos.', style: TextStyle(color: kTextMuted, fontSize: 12)));
+      return Center(child: Text(t('Sin resultados. Intenta buscar con otros términos.', 'No results. Try other search terms.'), style: const TextStyle(color: kTextMuted, fontSize: 12)));
     }
     return LayoutBuilder(builder: (context, box) {
       const pad = 16.0, gap = 8.0;
@@ -190,7 +191,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             return Center(
               child: OutlinedButton(
                 onPressed: _loadingMore ? null : _fetchMore,
-                child: Text(_loadingMore ? 'Cargando...' : 'Cargar más'),
+                child: Text(_loadingMore ? t('Cargando...', 'Loading...') : t('Cargar más', 'Load more')),
               ),
             );
           }

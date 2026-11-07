@@ -30,11 +30,12 @@ jobs:
       - run: node tools/pack-contents.mjs
 
   rust:
-    # GitHub's image ships rustup and cargo, so no toolchain action is needed.
-    runs-on: ubuntu-latest
+    # GitHub's image ships rustup and cargo; on the self-hosted runner rustup lives in ~/.cargo.
+    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) && 'ubuntu-latest' || vars.CI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
       - name: Test Rust SDK & Conformance
         run: |
           cd sdks/rust
@@ -43,7 +44,7 @@ jobs:
           cargo test
 
   flutter:
-    runs-on: ubuntu-latest
+    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) && 'ubuntu-latest' || vars.CI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

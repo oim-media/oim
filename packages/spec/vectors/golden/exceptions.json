@@ -1,0 +1,28 @@
+{
+  "flutter": {
+    "multi-container-layout": {
+      "reason": "container slots with fillColor are not painted",
+      "since": "2026-11-07"
+    },
+    "color-blending-opacity": {
+      "reason": "layer opacity is ignored on the overlapping layer",
+      "since": "2026-11-07"
+    },
+    "filter-effects": {
+      "reason": "colour filter gives a different hue",
+      "since": "2026-11-07"
+    },
+    "frame-shapes": {
+      "reason": "frame background missing and the framed triangle is drawn tiny",
+      "since": "2026-11-07"
+    },
+    "layer-blur": {
+      "reason": "a blurred text layer is missing",
+      "since": "2026-11-07"
+    },
+    "media-filters": {
+      "reason": "dark halo on the filtered image edge",
+      "since": "2026-11-07"
+    }
+  }
+}

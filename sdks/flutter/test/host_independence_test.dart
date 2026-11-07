@@ -30,4 +30,15 @@ void main() {
       }
     });
   }
+
+  testWidgets('text without a fontFamily uses the host-chosen fontFamily', (t) async {
+    // Like CSS font-family set on the web element: the work's own families still win.
+    final bytes = File(p.join(_vectors.path, 'extreme-aspect-ratios.oim.png')).readAsBytesSync();
+    await t.pumpWidget(MaterialApp(
+      home: SizedBox(width: 800, height: 600, child: OimPlayer(bytes: bytes, showBaseImage: false, fontFamily: 'HostSans')),
+    ));
+    await t.pump(const Duration(milliseconds: 100));
+    final rt = t.widget<RichText>(find.byWidgetPredicate((w) => w is RichText && w.text.toPlainText().contains('Panor')));
+    expect(rt.text.style?.fontFamily, 'HostSans');
+  });
 }

@@ -325,3 +325,34 @@ Conformance of any generator or reader with this specification is validated auto
 pnpm conformance
 pnpm --filter @oim-media/core test
 ```
+
+### 9.1. Visual conformance
+
+The metadata vectors cannot see pixels: two renderers can read the same JSON and paint it differently.
+Every vector therefore also has a golden: `vectors/golden/<vector>.web.png`, rendered by the web player,
+which is the reference renderer.
+
+**Procedure.** 800 px wide; height `round(800 × h / w)` from the vector's PNG header; device pixel ratio 1;
+animations disabled; white background; host font `sans-serif` for text that names no family. Goldens
+are only valid when rendered on the CI job's Linux image (`node tools/render-web-goldens.mjs vectors/golden`),
+because fonts rasterise differently on each system.
+
+**Metric** (`tools/parity-core.mjs`). A pixel differs when any channel differs by more than 40. The
+difference mask is eroded with a 3×3 kernel, which removes anti-aliasing edges. The outermost 1 px ring of the image is not measured (the kernel has no neighbours there). A render fails when the
+remaining area exceeds **0.4 %** of the image or any 4-connected blob exceeds **576 px** (a 24 × 24 square).
+
+The threshold was calibrated on 2026-11-07 against bugs reproduced on purpose:
+
+| Case | Area |
+|---|---|
+| Largest passing vector (text anti-aliasing, `typography-styling`) | 0.265 % |
+| Unitless `letterSpacing` ignored | 0.509 % |
+| Square shadow on a round shape | 6.96 % |
+| Shadow painted over the fill | 6.29 % |
+| Pattern tile at the wrong size | 10.9 % |
+| Pattern background painted over the layers | 24.6 % |
+
+**Running it.** A renderer writes `<vector>.png` per vector following the procedure, then
+`node tools/parity.mjs <renders-dir> --renderer <name> --out <diff-dir>` compares them and writes a red
+difference image for each failure. Known differences go in `vectors/golden/exceptions.json`, per renderer,
+with a reason; an excepted vector that passes fails the run, so a fixed bug cannot keep its exception.

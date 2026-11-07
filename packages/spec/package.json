@@ -23,6 +23,8 @@
     "pattern-cases.json",
     "text-effect-cases.json",
     "keys.json",
+    "tools/parity.mjs",
+    "tools/parity-core.mjs",
     "LICENSE",
     "NOTICE"
   ],
@@ -33,5 +35,12 @@
     "type": "git",
     "url": "https://github.com/oim-media/oim.git",
     "directory": "packages/spec"
+  },
+  "scripts": {
+    "parity": "node tools/parity.mjs",
+    "goldens": "node tools/render-web-goldens.mjs vectors/golden"
+  },
+  "devDependencies": {
+    "playwright": "1.64.1"
   }
 }

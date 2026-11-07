@@ -60,3 +60,39 @@ jobs:
           flutter pub get
           flutter analyze
           flutter test
+
+  parity:
+    # Visual conformance (CANONICAL_SPEC.md 9.1). Goldens depend on the fonts of the image
+    # they were rendered on, so a fork PR (always on GitHub's runner) skips this job.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      # GitHub's image can install Chromium's system libraries; a self-hosted runner has them already (no sudo).
+      - run: pnpm --filter @oim-media/spec exec playwright install ${{ runner.environment == 'github-hosted' && '--with-deps' || '' }} chromium
+      # The web player against its own goldens: a stale golden or a changed web render fails here.
+      - name: Web self-check
+        run: |
+          cd packages/spec
+          node tools/render-web-goldens.mjs "$RUNNER_TEMP/parity/web" --suffix ""
+          node tools/parity.mjs "$RUNNER_TEMP/parity/web" --renderer web --out "$RUNNER_TEMP/parity/diff/web"
+      - uses: ./.github/actions/setup-flutter
+      - name: Flutter against the goldens
+        run: |
+          cd sdks/flutter
+          flutter pub get
+          OIM_PARITY=1 flutter test test/visual_parity_test.dart
+          node ../../packages/spec/tools/parity.mjs build/parity/flutter --renderer flutter --out "$RUNNER_TEMP/parity/diff/flutter"
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: parity-diffs
+          path: ${{ runner.temp }}/parity

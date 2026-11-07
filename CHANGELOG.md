@@ -3,6 +3,21 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.27.5 — 2026-11-07
+
+- Flutter player, closer to the web:
+  - embedded WOFF2 fonts are read (works made before 1.27.0);
+  - the canvas background stays behind the layers when it is listed last;
+  - background patterns use the tile the file carries;
+  - shapes draw their outline (`strokeColor`/`strokeWidth`) and a shadow that
+    follows the shape, under a picture fill;
+  - SVG layers are drawn;
+  - a unitless `letterSpacing` is ignored, as browsers do;
+  - the viewport blurs when the language changes;
+  - text no longer inherits the host app's style.
+- Flutter player: parallax speed in canvas pixels, no seam between tiles,
+  centred text alignment. No format change.
+
 ## 1.27.4 — 2026-11-07
 
 - Viewers: changing a filter right after clearing the search no longer shows

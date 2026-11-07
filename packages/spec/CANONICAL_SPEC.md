@@ -1,6 +1,6 @@
 # OIM (Open Interactive Media) Canonical Metadata Specification
 
-**Contract version:** 1.27.4  
+**Contract version:** 1.27.5  
 **Date:** 2026-11-02 (reviewed against `packages/core/src/schema.ts`; the source of truth is the schema, this document summarises it)  
 **Status:** Normative / In force  
 **License:** Apache-2.0  
@@ -282,7 +282,7 @@ Top-level structure carried in the `OIM_Data` payload:
 
 | Key | Type | Description |
 |---|---|---|
-| `oim` | `string` | Format version of the document (e.g. `"1.27.4"`), the contract version the backend signs against. |
+| `oim` | `string` | Format version of the document (e.g. `"1.27.5"`), the contract version the backend signs against. |
 | `min_player` | `string` | Minimum player version required to rebuild the document (`minVersionFor`). |
 | `oim_id` | `string` | Unique document identifier for re-editing and registry checks (max 128 chars). |
 | `media_type` | `"image" \| "video"` | Media type of the OIM document. |

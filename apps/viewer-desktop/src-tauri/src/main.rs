@@ -85,17 +85,22 @@ async fn set_window_fullscreen(window: tauri::WebviewWindow, fullscreen: bool) -
         .set_fullscreen(fullscreen)
         .map_err(|e| format!("Cannot set fullscreen: {e}"))?;
 
+    // Windows: after the switch the physical cursor could stay frozen until Alt+Tab or Esc (which
+    // reset the clip rect and capture). This command runs on a worker thread, where ReleaseCapture
+    // does nothing, and before the main thread has applied the fullscreen; so release on the main
+    // thread, once now and again after the resize has settled.
     #[cfg(windows)]
-    {
-        // On Windows Win32, entering/exiting borderless fullscreen can trap mouse capture or clip rect.
-        // Explicitly releasing mouse capture and clearing the cursor clipping rect ensures the physical
-        // OS cursor moves freely across the screen without freezing.
-        unsafe {
-            use windows_sys::Win32::UI::Input::KeyboardAndMouse::ReleaseCapture;
-            use windows_sys::Win32::UI::WindowsAndMessaging::ClipCursor;
-            ReleaseCapture();
-            ClipCursor(std::ptr::null());
-        }
+    for delay_ms in [0u64, 150, 500] {
+        let w = window.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(delay_ms));
+            let _ = w.run_on_main_thread(|| unsafe {
+                use windows_sys::Win32::UI::Input::KeyboardAndMouse::ReleaseCapture;
+                use windows_sys::Win32::UI::WindowsAndMessaging::ClipCursor;
+                ReleaseCapture();
+                ClipCursor(std::ptr::null());
+            });
+        });
     }
 
     let _ = window.set_cursor_visible(true);

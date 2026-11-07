@@ -10,6 +10,8 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
   in two and spills out of its badge.
 - Flutter viewer: the interface follows the system language (Spanish or English), like the
   Tauri viewer. It was Spanish only.
+- Tauri viewer (Windows): the mouse pointer no longer freezes after entering full screen
+  with the toolbar button.
   No format change.
 
 ## 1.27.6 — 2026-11-07

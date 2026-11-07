@@ -43,7 +43,8 @@
  * the format can change without the player being touched. Tying both numbers
  * together would make an internal fix look like a format break.
  */
-export const CONTRACT_VERSION = "1.27.3";
+export const CONTRACT_VERSION = "1.27.4";
+// 1.27.4: viewer fixes (library filters, Flutter picture fills and image content); no format change.
 // 1.27.3: the viewers read the library through library.oim.media/v1/showcase; no format change.
 // 1.27.2: an image moved by keyframes is not clipped by its own box; no format change.
 // 1.27.1: a "woff" entry may carry STAT (static fonts do); no format change.

@@ -1,6 +1,6 @@
 {
   "name": "@oim-media/core",
-  "version": "1.27.3",
+  "version": "1.27.4",
   "description": "Core of the OIM format: the contract schema, binary extraction from PNG and the shared rendering logic used by every OIM player.",
   "keywords": [
     "oim",

@@ -1,6 +1,6 @@
 [package]
 name = "oim-viewer"
-version = "1.27.3"
+version = "1.27.4"
 description = "Native desktop viewer for OIM interactive images"
 authors = ["Xue Studios LLC"]
 license = "Apache-2.0"

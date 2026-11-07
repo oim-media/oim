@@ -3,6 +3,15 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.27.4 — 2026-11-07
+
+- Viewers: changing a filter right after clearing the search no longer shows
+  the previous results.
+- Flutter player: shapes filled with a picture and image layers whose content
+  is a language map now show their image (they were grey or empty).
+- Flutter viewer: the gallery shows thumbnails and plays a work only on hover.
+  No format change.
+
 ## 1.27.3 — 2026-11-07
 
 - Viewers (desktop and Flutter): the library is read from

@@ -210,6 +210,15 @@ describe("phase A: a pattern fill on a shape tiles and moves", () => {
 });
 
 describe("fase A: shapeMaskCss", () => {
+  // A custom svgPath frame (no catalogue shape) kept its fill colour unmasked: a grey
+  // box showed around the photo (frame-shapes vector). Same outline as frameSilhouette.
+  it("masks a custom svgPath frame with its own path and viewBox", () => {
+    const uri = decodeURIComponent(String((shapeMaskCss(undefined, { svgPath: "M12 2L22 22H2Z", svgViewBox: "0 0 24 24" }) as any).maskImage));
+    expect(uri).toContain('viewBox="0 0 24 24"');
+    expect(uri).toContain('d="M12 2L22 22H2Z"');
+    expect(shapeMaskCss(undefined, {})).toEqual({});
+  });
+
   it("is the shape mask, and patternShapeMask stays the same", () => {
     expect(shapeMaskCss("circle")).toEqual(patternShapeMask("circle"));
     expect((shapeMaskCss("heart") as any).maskImage).toMatch(/^url\("data:image\/svg\+xml,/);

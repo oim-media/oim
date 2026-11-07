@@ -7,8 +7,8 @@ import 'package:oim_flutter/oim_flutter.dart';
 import '../ui/tokens.dart';
 import 'library_client.dart';
 
-/// A library card: the thumbnail first, then the work itself once its bytes are
-/// verified. Only the hovered card animates; a refused file never shows its layers.
+/// A library card: the flattened thumbnail, and the work itself only while hovered
+/// (downloaded and verified on the first hover). A refused file never shows its layers.
 class LibraryCard extends StatefulWidget {
   final LibraryItem item;
   final LibraryClient client;
@@ -24,11 +24,15 @@ class _LibraryCardState extends State<LibraryCard> {
   Uint8List? _bytes;
   bool _refused = false;
   bool _hovered = false;
+  bool _loading = false;
 
-  @override
-  void initState() {
-    super.initState();
-    if (widget.live) _load();
+  void _onHover(bool hovered) {
+    setState(() => _hovered = hovered);
+    // A whole grid of live players costs every file's download and composition; only the hovered one pays it.
+    if (hovered && widget.live && _bytes == null && !_refused && !_loading) {
+      _loading = true;
+      _load();
+    }
   }
 
   Future<void> _load() async {
@@ -42,6 +46,8 @@ class _LibraryCardState extends State<LibraryCard> {
       });
     } catch (_) {
       // The thumbnail stays; opening the card retries the download.
+    } finally {
+      _loading = false;
     }
   }
 
@@ -55,8 +61,8 @@ class _LibraryCardState extends State<LibraryCard> {
   Widget build(BuildContext context) {
     final thumb = widget.item.thumbnailUrl;
     Widget body;
-    if (_bytes != null) {
-      body = OimPlayer(bytes: _bytes!, disableAnimations: !_hovered, isInteractive: false);
+    if (_bytes != null && _hovered) {
+      body = OimPlayer(bytes: _bytes!, isInteractive: false);
     } else if (thumb != null && thumb.isNotEmpty) {
       body = Image.network(thumb, fit: BoxFit.cover, errorBuilder: (context, error, stack) => const SizedBox());
     } else {
@@ -67,8 +73,8 @@ class _LibraryCardState extends State<LibraryCard> {
       label: widget.item.title,
       child: MouseRegion(
         cursor: _refused ? SystemMouseCursors.basic : SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
+        onEnter: (_) => _onHover(true),
+        onExit: (_) => _onHover(false),
         child: GestureDetector(
           onTap: _open,
           child: Container(

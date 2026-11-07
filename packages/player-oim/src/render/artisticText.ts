@@ -43,8 +43,17 @@ export interface ArtisticTextRenderModel {
  */
 export function buildArtisticTextModelFromSlot(
   slot: any,
-  lang: string = "en"
+  lang: string = "en",
+  canvasWidth: number = 800
 ): ArtisticTextRenderModel {
+  // Sizes are canvas px: a number, "Npx", or "Ncqw" of the canvas width (the exporter's form).
+  const px = (v: unknown): number | undefined => {
+    if (typeof v === "number") return v > 0 ? v : undefined;
+    if (typeof v !== "string") return undefined;
+    const n = parseFloat(v);
+    if (!(n > 0)) return undefined;
+    return v.includes("cqw") ? (n / 100) * canvasWidth : n;
+  };
   // Short aliases (st, c) retired in 1.12.0: one name per concept.
   const style = slot.style || {};
   const contentObj = slot.content || {};
@@ -52,22 +61,10 @@ export function buildArtisticTextModelFromSlot(
     (typeof contentObj === "object" ? (contentObj[lang] || contentObj.es || contentObj.en || Object.values(contentObj)[0]) : contentObj) ||
     "CARTEL";
 
-  const width = slot.width_px || slot.w || style.width || 400;
-  const height = slot.height_px || slot.h || style.height || 120;
+  const width = slot.width_px || slot.w || px(style.width) || 400;
+  const height = slot.height_px || slot.h || px(style.height) || 120;
   const fontFamily = style.fontFamily || "Bangers";
-  let fontSize = 48;
-  if (typeof slot.font_size_px === "number" && slot.font_size_px > 0) {
-    fontSize = slot.font_size_px;
-  } else if (typeof style.fontSize === "number" && style.fontSize > 0) {
-    fontSize = style.fontSize;
-  } else if (typeof style.fontSize === "string") {
-    if (style.fontSize.includes("cqw")) {
-      const cqwVal = parseFloat(style.fontSize);
-      fontSize = Math.round((cqwVal / 100) * 800) || 48;
-    } else {
-      fontSize = parseFloat(style.fontSize) || 48;
-    }
-  }
+  const fontSize = (typeof slot.font_size_px === "number" && slot.font_size_px > 0 ? slot.font_size_px : px(style.fontSize)) || 48;
   const bold = style.fontWeight === "bold" || Number(style.fontWeight) >= 700;
   const letterSpacing = typeof style.letterSpacing === "number" ? style.letterSpacing : parseFloat(style.letterSpacing) || 0;
   // Same rule as the editor (default 1.25, clamped). The player used to fall

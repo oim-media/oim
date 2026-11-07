@@ -30,7 +30,8 @@ OimPlayer(
 ```
 
 Other options: `palette`, `prefersDark`, `isInteractive`, `showBaseImage`,
-`allowLottie`, `disableAnimations`.
+`allowLottie`, `disableAnimations`, and `fontFamily` (the family for text that names
+none, like a browser's default font; embedded fonts and named families still win).
 
 ## Read and verify without rendering
 

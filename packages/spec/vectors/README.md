@@ -51,6 +51,8 @@ initial 20-vector matrix plus every capability added since contract 1.10.0:
 | 32 | `reveal-and-play` | Per-layer reveal and the `play` action (contract 1.22.0) |
 | 33 | `reedit-english` | Re-edit permission in English (contract 1.23.0): `reedit: "public"`, signed by the production service |
 | 34 | `embedded-font-woff` | Embedded font (contract 1.27.0): Inter bold as a static WOFF subset (`fonts[].format: "woff"`) |
+| 35 | `background-pattern-order` | A pattern background listed last still paints under every layer; pattern tile size; unitless `letterSpacing` on centred text |
+| 36 | `shape-shadows` | Hard shadows on a circle and on a circular photo frame: the shadow follows the shape, not its box |
 
 ## How to use it from another language
 
@@ -67,7 +69,7 @@ without a look, which is a vector that no longer checks anything.
 
 ## The signature
 
-All 34 vectors are signed with the public key published in `packages/spec/keys.json`.
+All 36 vectors are signed with the public key published in `packages/spec/keys.json`.
 The signature covers the canonical serialisation
 of the metadata and the cryptographic hash of the pixels (`image_hash` over the `IDAT` chunks).
 A reader that verifies must rebuild that canonical form following the seven rules

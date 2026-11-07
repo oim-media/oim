@@ -135,6 +135,8 @@ class LibraryClient {
     }
     _category = category;
     _query = q;
+    // Drop the old list first: a concurrent call with the new filters must not get it from the cache.
+    _items = null;
     _items = await _page(null);
     _itemsAt = _now();
     return _items!;

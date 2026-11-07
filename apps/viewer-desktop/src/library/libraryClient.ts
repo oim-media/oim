@@ -170,6 +170,8 @@ export class LibraryClient {
       return this.cachedShowcaseList;
     }
     this.filters = { ...filters };
+    // Drop the old list first: a concurrent call with the new filters must not get it from the cache.
+    this.cachedShowcaseList = null;
     this.cachedShowcaseList = await this.fetchPage(null);
     this.lastFetchTime = now;
     return this.cachedShowcaseList;

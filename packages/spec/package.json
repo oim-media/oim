@@ -39,5 +39,8 @@
   "scripts": {
     "parity": "node tools/parity.mjs",
     "goldens": "node tools/render-web-goldens.mjs vectors/golden"
+  },
+  "devDependencies": {
+    "playwright": "1.64.1"
   }
 }

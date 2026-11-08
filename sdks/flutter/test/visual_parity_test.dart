@@ -78,7 +78,7 @@ void main() {
             key: key,
             child: ColoredBox(
               color: const Color(0xFFFFFFFF),
-              child: SizedBox(width: _width.toDouble(), height: height.toDouble(), child: OimPlayer(bytes: bytes, fontFamily: 'sans-serif')),
+              child: SizedBox(width: _width.toDouble(), height: height.toDouble(), child: OimPlayer(bytes: bytes, fontFamily: 'sans-serif', disableAnimations: true, palette: Platform.environment['OIM_PALETTE'])),
             ),
           ),
         ),

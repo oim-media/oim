@@ -13,6 +13,8 @@ import { chromium } from 'playwright';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 // OIM_VECTORS renders any folder of works (e.g. real files) instead of the conformance vectors.
+// OIM_PALETTE picks a named palette, to compare a work's palettes across renderers.
+const PALETTE = process.env.OIM_PALETTE;
 const VECTORS = process.env.OIM_VECTORS ?? path.join(HERE, '..', 'vectors');
 const PLAYER = path.join(HERE, '..', '..', 'player-oim', 'dist', 'oim-player.js');
 const WIDTH = 800;
@@ -39,7 +41,7 @@ const goldenSize = (pngBytes) => {
 const page = (src, height) => `<!doctype html><html><head><meta charset="utf-8">
 <style>html,body{margin:0;background:#fff;font-family:sans-serif}oim-player{display:block;width:${WIDTH}px;height:${height}px}</style>
 <script src="/oim-player.js"></script></head>
-<body><oim-player id="p" src="${src}" disable-animations="true"></oim-player></body></html>`;
+<body><oim-player id="p" src="${src}" disable-animations="true"${PALETTE ? ` palette="${PALETTE}"` : ''}></oim-player></body></html>`;
 
 const server = http.createServer((req, res) => {
   const url = decodeURIComponent(req.url.split('?')[0]);

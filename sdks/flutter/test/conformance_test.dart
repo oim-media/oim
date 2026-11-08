@@ -26,6 +26,9 @@ const delEstilo = [
   'fillPatternType', 'fillPatternColor', 'fillPatternColorRole', 'fillPatternBgColor', 'fillPatternBgColorRole',
   'backgroundType', 'backgroundPatternType', 'backgroundPatternColor', 'backgroundPatternColorRole',
   'backgroundPatternBgColor', 'backgroundPatternBgColorRole', 'shadowColorRole',
+  // 4.6 artistic text, vector artistic-text.
+  'artisticPreset', 'extrusionDepth', 'extrusionAngle', 'extrusionColor', 'extrusionShading', 'curveAmount', 'curveType',
+  'outerStrokeColor', 'outerStrokeWidth', 'innerStrokeColor', 'innerStrokeWidth', 'textGradientType',
 ];
 
 Map<String, dynamic> projectCanonicalOutput(Map<String, dynamic> m) {

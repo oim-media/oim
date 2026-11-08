@@ -178,7 +178,8 @@ OimFilter? parseCssFilter(String? css) {
 
 /// The slot's drop shadow. The player uses CSS `drop-shadow`, whose blur radius
 /// is twice the Gaussian sigma, which is what Flutter's `blurRadius` means too.
-BoxShadow? shadowOf(Map<String, dynamic> style) {
+/// [unit] turns design px into canvas px: the web's shadow lives in the scaled stage.
+BoxShadow? shadowOf(Map<String, dynamic> style, {double unit = 1}) {
   if (style['shadowEnabled'] != true || hasEffectsStack(style)) return null;
   final raw = (style['shadowColor'] ?? '#000000').toString().replaceFirst('#', '');
   final hex = raw.length == 3 ? raw.split('').map((c) => '$c$c').join() : raw;
@@ -189,10 +190,10 @@ BoxShadow? shadowOf(Map<String, dynamic> style) {
   return BoxShadow(
     color: Color.fromRGBO(r, g, b, opacity.toDouble()),
     offset: Offset(
-      (style['shadowOffsetX'] as num?)?.toDouble() ?? 0,
-      (style['shadowOffsetY'] as num?)?.toDouble() ?? 0,
+      ((style['shadowOffsetX'] as num?)?.toDouble() ?? 0) * unit,
+      ((style['shadowOffsetY'] as num?)?.toDouble() ?? 0) * unit,
     ),
-    blurRadius: (style['shadowBlur'] as num?)?.toDouble() ?? 0,
+    blurRadius: ((style['shadowBlur'] as num?)?.toDouble() ?? 0) * unit,
   );
 }
 
@@ -202,7 +203,7 @@ bool hasEffectsStack(Map<String, dynamic> style) => style['effects'] is List && 
 /// `style.effects` on a text layer, as the web paints it (ImageEngine, unified effects stack):
 /// `drop-shadow` is one text-shadow and `glow` two (blur radius*0.4, then radius). `blur` is in
 /// [layerEffects]; `texture` is not drawn yet.
-List<Shadow> textEffectShadows(Map<String, dynamic> style, OimPalette? palette) {
+List<Shadow> textEffectShadows(Map<String, dynamic> style, OimPalette? palette, {double unit = 1}) {
   final effects = style['effects'];
   if (effects is! List) return const [];
   num n(dynamic v, num d) => v is num ? v : d;
@@ -211,9 +212,9 @@ List<Shadow> textEffectShadows(Map<String, dynamic> style, OimPalette? palette) 
     if (e is! Map || e['enabled'] == false) continue;
     if (e['type'] == 'drop-shadow') {
       final c = resolveColor(e['colorRole'] ?? style['shadowColorRole'], e['color'] ?? 'rgba(0, 0, 0, 0.35)', palette);
-      out.add(Shadow(color: c ?? const Color(0x59000000), offset: Offset(n(e['x'], 0).toDouble(), n(e['y'], 4).toDouble()), blurRadius: n(e['blur'], 12).toDouble()));
+      out.add(Shadow(color: c ?? const Color(0x59000000), offset: Offset(n(e['x'], 0).toDouble(), n(e['y'], 4).toDouble()) * unit, blurRadius: n(e['blur'], 12).toDouble() * unit));
     } else if (e['type'] == 'glow') {
-      final r = (e['radius'] is num && e['radius'] != 0 ? e['radius'] as num : 16).toDouble();
+      final r = (e['radius'] is num && e['radius'] != 0 ? e['radius'] as num : 16).toDouble() * unit;
       final c = resolveColor(e['colorRole'] ?? style['effectColorRole'], e['color'] ?? '#f59e0b', palette) ?? const Color(0xFFF59E0B);
       out..add(Shadow(color: c, blurRadius: r * 0.4))..add(Shadow(color: c, blurRadius: r));
     }
@@ -263,7 +264,7 @@ BlendMode? blendModeOf(dynamic name) {
 /// stack), applied in file order: `blur` blurs, and on non-text layers `drop-shadow` and `glow`
 /// cast the layer's own silhouette (CSS `drop-shadow()`), not its box. On text layers those two
 /// are text shadows ([textEffectShadows]) and are skipped here.
-Widget layerEffects(Widget child, Map<String, dynamic> style, OimPalette? palette, {required bool isText}) {
+Widget layerEffects(Widget child, Map<String, dynamic> style, OimPalette? palette, {required bool isText, double unit = 1}) {
   final effects = style['effects'];
   if (effects is! List) return child;
   num n(dynamic v, num d) => v is num ? v : d;
@@ -280,16 +281,16 @@ Widget layerEffects(Widget child, Map<String, dynamic> style, OimPalette? palett
     if (e is! Map || e['enabled'] == false) continue;
     final type = e['type'];
     if (type == 'blur') {
-      final r = n(e['radius'], 8).toDouble();
+      final r = n(e['radius'], 8).toDouble() * unit;
       // CSS blur() takes the standard deviation itself.
       if (r > 0) w = ImageFiltered(imageFilter: ui.ImageFilter.blur(sigmaX: r, sigmaY: r, tileMode: TileMode.decal), child: w);
     } else if (isText) {
       continue;
     } else if (type == 'drop-shadow') {
       final c = resolveColor(e['colorRole'] ?? style['shadowColorRole'], e['color'] ?? 'rgba(0, 0, 0, 0.35)', palette) ?? const Color(0x59000000);
-      w = cast(w, c, Offset(n(e['x'], 0).toDouble(), n(e['y'], 4).toDouble()), n(e['blur'], 12).toDouble());
+      w = cast(w, c, Offset(n(e['x'], 0).toDouble(), n(e['y'], 4).toDouble()) * unit, n(e['blur'], 12).toDouble() * unit);
     } else if (type == 'glow') {
-      final r = (e['radius'] is num && e['radius'] != 0 ? e['radius'] as num : 16).toDouble();
+      final r = (e['radius'] is num && e['radius'] != 0 ? e['radius'] as num : 16).toDouble() * unit;
       final c = resolveColor(e['colorRole'] ?? style['effectColorRole'], e['color'] ?? '#f59e0b', palette) ?? const Color(0xFFF59E0B);
       w = cast(cast(w, c, Offset.zero, r * 0.4), c, Offset.zero, r);
     }

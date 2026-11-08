@@ -1,5 +1,3 @@
 {
-  "flutter": {
-    "artistic-text": "Edges, not font: both sides draw the embedded Inter, but each glyph of the curved title is placed with sub-pixel rotation, so 1 px anti-aliased edges along the extrusion differ (area 0.42% against a 0.4% limit, largest blob 384 px). Line layout, strokes and gradient match."
-  }
+  "flutter": {}
 }

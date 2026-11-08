@@ -38,8 +38,10 @@ const goldenSize = (pngBytes) => {
   return { width: WIDTH, height: Math.round((WIDTH * h) / w) };
 };
 
+// geometricPrecision: headless Linux Chrome otherwise rounds each glyph advance to whole px,
+// so a line can fit where the exact width (editor, Flutter, Windows) wraps it.
 const page = (src, height) => `<!doctype html><html><head><meta charset="utf-8">
-<style>html,body{margin:0;background:#fff;font-family:sans-serif}oim-player{display:block;width:${WIDTH}px;height:${height}px}</style>
+<style>html,body{margin:0;background:#fff;font-family:sans-serif}oim-player{display:block;text-rendering:geometricPrecision;width:${WIDTH}px;height:${height}px}</style>
 <script src="/oim-player.js"></script></head>
 <body><oim-player id="p" src="${src}" disable-animations="true"${PALETTE ? ` palette="${PALETTE}"` : ''}></oim-player></body></html>`;
 
@@ -63,7 +65,8 @@ await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const base = `http://127.0.0.1:${server.address().port}`;
 
 fs.mkdirSync(outDir, { recursive: true });
-const browser = await chromium.launch();
+// Grey anti-aliasing: LCD text fringes depend on the screen and no other renderer draws them.
+const browser = await chromium.launch({ args: ['--disable-lcd-text'] });
 const context = await browser.newContext({ viewport: { width: WIDTH, height: 4000 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
 let failed = 0;
 for (const file of fs.readdirSync(VECTORS).filter((f) => f.endsWith('.oim.png')).sort()) {

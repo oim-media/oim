@@ -473,7 +473,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
         children: childrenWidgets,
       );
 
-      groupWrapper = _applyEffects(groupWrapper, style);
+      groupWrapper = _applyEffects(groupWrapper, style, unit: _unit);
 
       final opacity = _opacityOf(style);
       if (opacity < 1.0) {
@@ -510,11 +510,11 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
 
     final posX = (pos[0] as num).toDouble();
     final posY = (pos[1] as num).toDouble();
-    final left = (posX / 100.0) * containerWidth;
-    final top = (posY / 100.0) * containerHeight;
+    var left = (posX / 100.0) * containerWidth;
+    var top = (posY / 100.0) * containerHeight;
 
-    final slotWidth = resolveCssUnit(style['width'], containerWidth, containerHeight);
-    final slotHeight = resolveCssUnit(style['height'], containerWidth, containerHeight);
+    var slotWidth = resolveCssUnit(style['width'], containerWidth, containerHeight);
+    var slotHeight = resolveCssUnit(style['height'], containerWidth, containerHeight);
     final opacity = _opacityOf(style);
 
     Widget slotWidget;
@@ -543,6 +543,16 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
       if (drawing != null) slotWidget = ClipPath(clipper: GeoShapeClipper(drawing: drawing), child: slotWidget);
     } else if (type == 'geo' || type == 'shape' || type == 'container') { // web: container is geo-like
       slotWidget = _buildGeoSlot(style, activePalette, slotWidth ?? 100, slotHeight ?? 100, containerWidth, containerHeight);
+      // Web: a rectangle's stroke is a CSS border on a content-box element, so the box grows by
+      // it on every side, keeps its vertical centre and is anchored horizontally by textAlign.
+      final b = _rectBorderWidth(style, activePalette, containerWidth, containerHeight);
+      if (b > 0 && slotWidth != null && slotHeight != null) {
+        final align = (style['textAlign'] ?? raw['align'])?.toString() ?? 'left';
+        left -= align == 'center' ? b : align == 'right' ? 2 * b : 0;
+        top -= b;
+        slotWidth += 2 * b;
+        slotHeight += 2 * b;
+      }
     } else if (type == 'image') {
       slotWidget = _buildImageSlot(raw, style, currentLang, containerWidth, containerHeight);
     } else if (type == 'svg') {
@@ -576,7 +586,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
       );
     }
 
-    slotWidget = _applyEffects(slotWidget, style, mediaFilter: type == 'image', palette: activePalette, isText: type == 'text' || type == 'artistic-text');
+    slotWidget = _applyEffects(slotWidget, style, mediaFilter: type == 'image', palette: activePalette, isText: type == 'text' || type == 'artistic-text', unit: _unit);
 
     if (opacity < 1.0) {
       slotWidget = Opacity(opacity: opacity.clamp(0.0, 1.0), child: slotWidget);
@@ -731,7 +741,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
       height: lineHeight,
       // CSS puts half the leading above the glyphs and half below.
       leadingDistribution: TextLeadingDistribution.even,
-      shadows: [if (shadowOf(style) != null) shadowOf(style)!, ...textEffectShadows(style, activePalette)],
+      shadows: [if (shadowOf(style, unit: _unit) != null) shadowOf(style, unit: _unit)!, ...textEffectShadows(style, activePalette, unit: _unit)],
     );
     final marks = style['marks'] is Map ? (style['marks'] as Map).cast<String, dynamic>() : const <String, dynamic>{};
     // Web: `.oim-slot` has `padding: 0 0.25em 0 0` (content-box) and is
@@ -758,6 +768,23 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
     // the editor's line breaks can disagree with the real layout (CANONICAL_SPEC.md, textRuns).
     // Web: the text slot is a flex column with justify-content: center.
     return slotPadding(Center(child: markedText(text, marks, textStyle, activePalette, tx, textAlign: textAlignOf(style['textAlign'] ?? slot['align']))));
+  }
+
+  /// `strokeWidth` in canvas units: a number is design px and scales with the canvas, like the
+  /// web's border inside its scaled stage.
+  double _strokeWidth(Map<String, dynamic> style, double cw, double ch) {
+    final v = style['strokeWidth'];
+    return v is num ? v.toDouble() * _unit : resolveCssUnit(v, cw, ch) ?? 0.0;
+  }
+
+  /// The width of the CSS border the web puts on a plain rectangle, or 0. Shapes drawn as SVG
+  /// (a catalogue shape, `svgPath`, `svgRawXml`) stroke their outline instead (web `hasVector`).
+  double _rectBorderWidth(Map<String, dynamic> style, OimPalette? palette, double cw, double ch) {
+    final shapeName = style['drawing']?.toString() ?? style['geoDrawing']?.toString() ?? style['shape']?.toString();
+    if ((shapeName != null && geoShapes[shapeName] != null) || shapeDrawing(style['geoShape']) != null) return 0;
+    if (style['svgPath'] != null || style['path'] != null || style['svgRawXml'] != null) return 0;
+    if (resolveColor(style['strokeColorRole'], style['strokeColor'], palette) == null) return 0;
+    return _strokeWidth(style, cw, ch);
   }
 
   Widget _buildGeoSlot(
@@ -788,7 +815,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
     if (fillLayer != null) fillColor = Colors.transparent;
     // Only the contract's stroke*: the web ignores border*, so a stroke drawn from them is one it never shows.
     final borderColor = resolveColor(style['strokeColorRole'], style['strokeColor'], activePalette);
-    final borderWidth = resolveCssUnit(style['strokeWidth'], containerWidth, containerHeight) ?? 0.0;
+    final borderWidth = _strokeWidth(style, containerWidth, containerHeight);
     final borderRadius = parseBorderRadius(style['borderRadius'], containerWidth, containerHeight);
 
     final shapeName = style['drawing']?.toString() ?? style['geoDrawing']?.toString() ?? style['shape']?.toString();
@@ -816,7 +843,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
       );
 
       Widget? castShadow;
-      final shadow = shadowOf(style);
+      final shadow = shadowOf(style, unit: _unit);
       if (shadow != null) {
         // CSS drop-shadow follows the silhouette; a BoxShadow is the slot's rectangle (the dark square behind a circle).
         Color? tint(Color? c) => c == null ? null : shadow.color.withValues(alpha: shadow.color.a * c.a);
@@ -854,7 +881,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         color: fillColor,
         borderRadius: borderRadius,
-        boxShadow: shadowOf(style) == null ? null : [shadowOf(style)!],
+        boxShadow: shadowOf(style, unit: _unit) == null ? null : [shadowOf(style, unit: _unit)!],
         border: borderWidth > 0 && borderColor != null && !dashed ? Border.all(color: borderColor, width: borderWidth) : null,
       ),
     );
@@ -950,7 +977,7 @@ Widget _mediaFiltered(Map<String, dynamic> style, Widget picture) {
 
 /// Everything the style says about the slot as a whole, in the order the player
 /// applies it: filter chain, layer blur, flip, rotation. Opacity and blend mode wrap it after.
-Widget _applyEffects(Widget child, Map<String, dynamic> style, {bool mediaFilter = false, OimPalette? palette, bool? isText}) {
+Widget _applyEffects(Widget child, Map<String, dynamic> style, {bool mediaFilter = false, OimPalette? palette, bool? isText, double unit = 1}) {
   var w = child;
   // Web: media filters belong to image layers (and image fills, see _mediaFiltered), never to the rest.
   final filter = mediaFilter ? parseCssFilter(mediaFilterCss(style)) : null;
@@ -958,7 +985,7 @@ Widget _applyEffects(Widget child, Map<String, dynamic> style, {bool mediaFilter
     w = ColorFiltered(colorFilter: ColorFilter.matrix(filter!.matrix!), child: w);
   }
   final layerBlur = hasEffectsStack(style) ? 0.0 : (style['layerBlur'] as num?)?.toDouble() ?? (style['blur'] as num?)?.toDouble() ?? 0;
-  final sigma = (filter?.blurSigma ?? 0) + (layerBlur > 0 ? layerBlur : 0);
+  final sigma = ((filter?.blurSigma ?? 0) + (layerBlur > 0 ? layerBlur : 0)) * unit;
   if (sigma > 0) {
     w = ImageFiltered(
       imageFilter: ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma, tileMode: TileMode.decal),
@@ -966,7 +993,7 @@ Widget _applyEffects(Widget child, Map<String, dynamic> style, {bool mediaFilter
     );
   }
   // Groups pass no isText: the web stack is per slot.
-  if (isText != null) w = layerEffects(w, style, palette, isText: isText);
+  if (isText != null) w = layerEffects(w, style, palette, isText: isText, unit: unit);
   final fx = style['flipX'] == true ? -1.0 : 1.0;
   final fy = style['flipY'] == true ? -1.0 : 1.0;
   if (fx < 0 || fy < 0) {

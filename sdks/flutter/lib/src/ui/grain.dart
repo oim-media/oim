@@ -108,7 +108,49 @@ class _Turbulence {
     }
     return sum;
   }
+
+  /// fractalNoise with separate base frequencies, as `feTurbulence baseFrequency="fx fy"`.
+  /// Stitched over a [tileW] x [tileH] tile from 0 when both are given; free otherwise.
+  double fractalXY(int ch, double px, double py, double fx, double fy, int octaves, {double tileX = 0, double tileY = 0, double? tileW, double? tileH}) {
+    double adjust(double f, double t) {
+      final lo = (t * f).floorToDouble() / t, hi = (t * f).ceilToDouble() / t;
+      return lo > 0 && f / lo < hi / f ? lo : hi;
+    }
+
+    final stitch = tileW != null && tileH != null;
+    var w = 0, h = 0, wrapX = 0x7fffffff, wrapY = 0x7fffffff;
+    if (stitch) {
+      fx = adjust(fx, tileW);
+      fy = adjust(fy, tileH);
+      w = (tileW * fx + 0.5).toInt();
+      h = (tileH * fy + 0.5).toInt();
+      wrapX = (tileX * fx + _perlinN + w).toInt();
+      wrapY = (tileY * fy + _perlinN + h).toInt();
+    }
+    var x = px * fx, y = py * fy, ratio = 1.0, sum = 0.0;
+    for (var o = 0; o < octaves; o++) {
+      sum += noise2(ch, x, y, w, h, wrapX, wrapY) / ratio;
+      x *= 2;
+      y *= 2;
+      ratio *= 2;
+      if (stitch) {
+        w *= 2;
+        h *= 2;
+        wrapX = 2 * wrapX - _perlinN;
+        wrapY = 2 * wrapY - _perlinN;
+      }
+    }
+    return sum;
+  }
 }
+
+final _seed0 = _Turbulence(0);
+
+/// [_Turbulence.fractalXY] with the SVG default seed (0), which the texture tiles use.
+/// A stitched [tile] is the SVG filter region: the default -10% / 120% of the rect.
+double textureNoise(int ch, double px, double py, double fx, double fy, int octaves, {double? tile}) => tile == null
+    ? _seed0.fractalXY(ch, px, py, fx, fy, octaves)
+    : _seed0.fractalXY(ch, px, py, fx, fy, octaves, tileX: -0.1 * tile, tileY: -0.1 * tile, tileW: 1.2 * tile, tileH: 1.2 * tile);
 
 final _turbulence = _Turbulence(7);
 

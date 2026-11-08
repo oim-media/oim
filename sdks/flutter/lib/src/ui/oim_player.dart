@@ -27,6 +27,7 @@ import 'artistic_text.dart';
 import 'interaction.dart';
 import 'css_gradient.dart';
 import 'grain.dart';
+import 'texture.dart';
 import 'masks.dart';
 import 'patterns.dart';
 import 'text_animation.dart';
@@ -284,6 +285,12 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
                         containerWidth,
                         containerHeight,
                       ),
+                      if (textureEffectOf(res.metadata) case final t?)
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: _Texture(effect: t, unit: _unit, ink: false, overlay: true, canvas: true, child: const SizedBox.expand()),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -527,6 +534,19 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
 
     if (style['grain'] == true && !hasEffectsStack(style) && _grainTypes.contains(type)) {
       slotWidget = _Grain(style: style, child: slotWidget);
+    }
+
+    final texture = textureEffectOf(style);
+    if (texture != null) {
+      final ink = type == 'text' || type == 'artistic-text';
+      slotWidget = _Texture(
+        effect: texture,
+        unit: _unit,
+        // Web: text gets the tile clipped to its glyphs; svg and image an overlay masked to their pixels; the rest an overlay on the box.
+        ink: ink || type == 'svg' || type == 'image',
+        overlay: !ink,
+        child: slotWidget,
+      );
     }
 
     slotWidget = _applyEffects(slotWidget, style, mediaFilter: type == 'image', palette: activePalette, isText: type == 'text' || type == 'artistic-text');
@@ -990,14 +1010,82 @@ class _GrainState extends State<_Grain> {
   }
 }
 
+/// The `texture` effect (web ImageEngine): the preset tile repeated at `tileSize * scale` canvas
+/// units and blended with the layer. [overlay] tiles also fade by the intensity, as the web's
+/// overlay div does; the canvas-level one draws its tile at the preset's default intensity.
+class _Texture extends StatefulWidget {
+  final Map<String, dynamic> effect;
+  final double unit;
+  final bool ink, overlay, canvas;
+  final Widget child;
+  const _Texture({required this.effect, required this.unit, required this.ink, required this.overlay, this.canvas = false, required this.child});
+
+  @override
+  State<_Texture> createState() => _TextureState();
+}
+
+class _TextureState extends State<_Texture> {
+  ui.Image? _tile;
+  double _logical = 0;
+  String _key = '';
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(_Texture old) {
+    super.didUpdateWidget(old);
+    _load();
+  }
+
+  void _load() {
+    final e = widget.effect;
+    final preset = e['preset'].toString();
+    final def = texturePresets[preset]!;
+    final scale = e['scale'] is num && e['scale'] != 0 ? (e['scale'] as num).toDouble() : 1.0;
+    final ratio = MediaQuery.maybeDevicePixelRatioOf(context)?.clamp(1, 3).toDouble() ?? 1;
+    _logical = def.size * scale * widget.unit;
+    final intensity = (!widget.canvas && e['intensity'] is num ? (e['intensity'] as num).toDouble() : def.intensity) / 100;
+    final color = resolveColor(null, e['color'] ?? '#ffffff', null) ?? const Color(0xFFFFFFFF);
+    final px = (_logical * ratio).round();
+    final key = '$preset|$px|$intensity|${color.toARGB32()}';
+    if (key == _key) return;
+    _key = key;
+    textureTile(preset, color, intensity, px)?.then((img) {
+      if (mounted && key == _key) setState(() => _tile = img);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tile = _tile;
+    if (tile == null || _logical <= 0) return widget.child;
+    final e = widget.effect;
+    final def = texturePresets[e['preset'].toString()]!;
+    final k = _logical / tile.width;
+    final fade = widget.overlay ? ((e['intensity'] is num ? (e['intensity'] as num).toDouble() : def.intensity) / 100).clamp(0.0, 1.0) : 1.0;
+    return _GrainPaint(
+      shader: ImageShader(tile, TileMode.repeated, TileMode.repeated, Matrix4.diagonal3Values(k, k, 1).storage),
+      blend: blendModeOf(e['blend'] ?? def.blend) ?? BlendMode.srcOver,
+      opacity: fade,
+      ink: widget.ink,
+      child: widget.child,
+    );
+  }
+}
+
 class _GrainPaint extends SingleChildRenderObjectWidget {
   final Shader shader;
   final BlendMode blend;
   final double opacity;
-  const _GrainPaint({required this.shader, required this.blend, required this.opacity, super.child});
+  final bool ink;
+  const _GrainPaint({required this.shader, required this.blend, required this.opacity, this.ink = true, super.child});
 
   @override
-  RenderObject createRenderObject(BuildContext context) => _RenderGrain(shader, blend, opacity);
+  RenderObject createRenderObject(BuildContext context) => _RenderGrain(shader, blend, opacity)..ink = ink;
 
   @override
   void updateRenderObject(BuildContext context, _RenderGrain r) {
@@ -1005,6 +1093,7 @@ class _GrainPaint extends SingleChildRenderObjectWidget {
       ..shader = shader
       ..blend = blend
       ..opacity = opacity
+      ..ink = ink
       ..markNeedsPaint();
   }
 }
@@ -1016,12 +1105,22 @@ class _RenderGrain extends RenderProxyBox {
   Shader shader;
   BlendMode blend;
   double opacity;
+  /// False: the noise covers the whole box instead of only the layer's ink.
+  bool ink = true;
   _RenderGrain(this.shader, this.blend, this.opacity);
 
   @override
   void paint(PaintingContext context, Offset offset) {
     super.paint(context, offset);
     final child = this.child;
+    if (!ink) {
+      context.canvas
+        ..save()
+        ..translate(offset.dx, offset.dy)
+        ..drawRect(Offset.zero & size, Paint()..shader = shader..blendMode = blend..color = Color.fromRGBO(0, 0, 0, opacity))
+        ..restore();
+      return;
+    }
     // shortcut: a child on its own compositing layer cannot be used as a mask here; it keeps no grain.
     if (child == null || child.needsCompositing) return;
     final canvas = context.canvas;

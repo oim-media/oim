@@ -264,7 +264,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "oim"
+name = "oim-media"
 version = "1.27.7"
 dependencies = [
  "base64",

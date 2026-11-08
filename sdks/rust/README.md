@@ -5,7 +5,7 @@ the public keys are embedded, and packaging or signing is the CLI's job.
 
 ```toml
 [dependencies]
-oim = { git = "https://github.com/oim-media/oim" }
+oim-media = { git = "https://github.com/oim-media/oim" }
 ```
 
 ```rust

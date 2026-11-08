@@ -5,6 +5,10 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+- Spec tools: web goldens render with `text-rendering: geometricPrecision`. Headless Linux
+  Chrome rounded each glyph advance to whole px, so a line could fit where the exact width
+  (editor, Flutter, Windows) wraps. All goldens regenerated; `artistic-text` now passes in
+  Flutter without an exception.
 - Flutter player: embedded fonts that share a name (one family, several weights, like
   `@font-face` rules) all load; only the first did, so bold text drew with the regular subset
   and lost glyphs. A moving pattern no longer throws when its palette changes.

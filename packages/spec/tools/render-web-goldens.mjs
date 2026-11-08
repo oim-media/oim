@@ -38,8 +38,10 @@ const goldenSize = (pngBytes) => {
   return { width: WIDTH, height: Math.round((WIDTH * h) / w) };
 };
 
+// geometricPrecision: headless Linux Chrome otherwise rounds each glyph advance to whole px,
+// so a line can fit where the exact width (editor, Flutter, Windows) wraps it.
 const page = (src, height) => `<!doctype html><html><head><meta charset="utf-8">
-<style>html,body{margin:0;background:#fff;font-family:sans-serif}oim-player{display:block;width:${WIDTH}px;height:${height}px}</style>
+<style>html,body{margin:0;background:#fff;font-family:sans-serif}oim-player{display:block;text-rendering:geometricPrecision;width:${WIDTH}px;height:${height}px}</style>
 <script src="/oim-player.js"></script></head>
 <body><oim-player id="p" src="${src}" disable-animations="true"${PALETTE ? ` palette="${PALETTE}"` : ''}></oim-player></body></html>`;
 

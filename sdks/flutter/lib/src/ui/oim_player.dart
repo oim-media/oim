@@ -473,7 +473,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
         children: childrenWidgets,
       );
 
-      groupWrapper = _applyEffects(groupWrapper, style);
+      groupWrapper = _applyEffects(groupWrapper, style, unit: _unit);
 
       final opacity = _opacityOf(style);
       if (opacity < 1.0) {
@@ -586,7 +586,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
       );
     }
 
-    slotWidget = _applyEffects(slotWidget, style, mediaFilter: type == 'image', palette: activePalette, isText: type == 'text' || type == 'artistic-text');
+    slotWidget = _applyEffects(slotWidget, style, mediaFilter: type == 'image', palette: activePalette, isText: type == 'text' || type == 'artistic-text', unit: _unit);
 
     if (opacity < 1.0) {
       slotWidget = Opacity(opacity: opacity.clamp(0.0, 1.0), child: slotWidget);
@@ -741,7 +741,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
       height: lineHeight,
       // CSS puts half the leading above the glyphs and half below.
       leadingDistribution: TextLeadingDistribution.even,
-      shadows: [if (shadowOf(style) != null) shadowOf(style)!, ...textEffectShadows(style, activePalette)],
+      shadows: [if (shadowOf(style, unit: _unit) != null) shadowOf(style, unit: _unit)!, ...textEffectShadows(style, activePalette, unit: _unit)],
     );
     final marks = style['marks'] is Map ? (style['marks'] as Map).cast<String, dynamic>() : const <String, dynamic>{};
     // Web: `.oim-slot` has `padding: 0 0.25em 0 0` (content-box) and is
@@ -843,7 +843,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
       );
 
       Widget? castShadow;
-      final shadow = shadowOf(style);
+      final shadow = shadowOf(style, unit: _unit);
       if (shadow != null) {
         // CSS drop-shadow follows the silhouette; a BoxShadow is the slot's rectangle (the dark square behind a circle).
         Color? tint(Color? c) => c == null ? null : shadow.color.withValues(alpha: shadow.color.a * c.a);
@@ -881,7 +881,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         color: fillColor,
         borderRadius: borderRadius,
-        boxShadow: shadowOf(style) == null ? null : [shadowOf(style)!],
+        boxShadow: shadowOf(style, unit: _unit) == null ? null : [shadowOf(style, unit: _unit)!],
         border: borderWidth > 0 && borderColor != null && !dashed ? Border.all(color: borderColor, width: borderWidth) : null,
       ),
     );
@@ -977,7 +977,7 @@ Widget _mediaFiltered(Map<String, dynamic> style, Widget picture) {
 
 /// Everything the style says about the slot as a whole, in the order the player
 /// applies it: filter chain, layer blur, flip, rotation. Opacity and blend mode wrap it after.
-Widget _applyEffects(Widget child, Map<String, dynamic> style, {bool mediaFilter = false, OimPalette? palette, bool? isText}) {
+Widget _applyEffects(Widget child, Map<String, dynamic> style, {bool mediaFilter = false, OimPalette? palette, bool? isText, double unit = 1}) {
   var w = child;
   // Web: media filters belong to image layers (and image fills, see _mediaFiltered), never to the rest.
   final filter = mediaFilter ? parseCssFilter(mediaFilterCss(style)) : null;
@@ -985,7 +985,7 @@ Widget _applyEffects(Widget child, Map<String, dynamic> style, {bool mediaFilter
     w = ColorFiltered(colorFilter: ColorFilter.matrix(filter!.matrix!), child: w);
   }
   final layerBlur = hasEffectsStack(style) ? 0.0 : (style['layerBlur'] as num?)?.toDouble() ?? (style['blur'] as num?)?.toDouble() ?? 0;
-  final sigma = (filter?.blurSigma ?? 0) + (layerBlur > 0 ? layerBlur : 0);
+  final sigma = ((filter?.blurSigma ?? 0) + (layerBlur > 0 ? layerBlur : 0)) * unit;
   if (sigma > 0) {
     w = ImageFiltered(
       imageFilter: ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma, tileMode: TileMode.decal),
@@ -993,7 +993,7 @@ Widget _applyEffects(Widget child, Map<String, dynamic> style, {bool mediaFilter
     );
   }
   // Groups pass no isText: the web stack is per slot.
-  if (isText != null) w = layerEffects(w, style, palette, isText: isText);
+  if (isText != null) w = layerEffects(w, style, palette, isText: isText, unit: unit);
   final fx = style['flipX'] == true ? -1.0 : 1.0;
   final fy = style['flipY'] == true ? -1.0 : 1.0;
   if (fx < 0 || fy < 0) {

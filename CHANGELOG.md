@@ -5,6 +5,8 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+- Flutter player: shadows, `effects` (drop-shadow, glow, blur), layer blur and filter blur scale
+  with the canvas. They stayed at design pixels, so on a small player they were too large.
 - Flutter player: a rectangle's stroke scales with the canvas and grows the box outward, as
   the web's CSS border does (the box keeps its vertical centre and its `textAlign` anchor). It
   used to stay at design pixels and sit inside the box.

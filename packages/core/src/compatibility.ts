@@ -43,7 +43,8 @@
  * the format can change without the player being touched. Tying both numbers
  * together would make an internal fix look like a format break.
  */
-export const CONTRACT_VERSION = "1.27.7";
+export const CONTRACT_VERSION = "1.27.8";
+// 1.27.8: Flutter stroke and effects scale with the canvas; packages on npm, pub.dev and crates.io.
 // 1.27.7: Flutter ignores textRuns and lays text out like the web; the Flutter viewer follows the system language; no format change.
 // 1.27.6: a custom svgPath frame masks its fill-colour layer (web player); Flutter fixes (opacity 0..100, retired blendMode, media-filter scope, svgViewBox, container fills, default text colour); no format change.
 // 1.27.5: Flutter player parity with the web (WOFF2, background order, stored pattern tiles, strokes, svg layers, letterSpacing, language blur); no format change.

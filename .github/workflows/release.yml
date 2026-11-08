@@ -1,4 +1,5 @@
-# Publishes the four @oim-media packages to GitHub Packages and builds + attaches
+# Publishes the packages to npm (@oim-media/*), pub.dev (oim_flutter) and crates.io
+# (oim-media) with trusted publishing (OIDC, no stored token), and builds + attaches
 # the Windows desktop viewer installers (.exe / .msi) and the Android Flutter APK to the GitHub Release when
 # a tag vX.Y.Z is pushed (or when triggered via workflow_dispatch).
 # The tag must name CONTRACT_VERSION. A package version that already exists
@@ -19,13 +20,16 @@ permissions:
   contents: read
 
 jobs:
-  publish:
+  # npm trusted publishing only accepts GitHub-hosted runners, so the publish jobs never
+  # use CI_RUNNER. Each registry must list this repo and release.yml as a trusted
+  # publisher. A version that already exists is refused: versions are never overwritten.
+  publish-npm:
     if: github.event_name == 'push'
-    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
       contents: read
-      packages: write
+      id-token: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -33,8 +37,7 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-          registry-url: https://npm.pkg.github.com
-          scope: '@oim-media'
+          registry-url: https://registry.npmjs.org
       - run: node tools/versions.mjs "${{ github.ref_name }}"
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
@@ -44,23 +47,53 @@ jobs:
       - run: pnpm test:tools
       - run: pnpm check:licenses
       - run: node tools/pack-contents.mjs
-      # pnpm 11 does not read the user .npmrc that setup-node writes, so the
-      # token goes into the project one, inside the job only (never committed).
+      # pnpm pack rewrites workspace: ranges; npm publish then signs with OIDC + provenance.
       - run: |
-          echo "//npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}" >> .npmrc
-          pnpm -r --filter "./packages/*" publish --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # pnpm skips a package silently in some cases; all four must exist.
+          mkdir -p "$RUNNER_TEMP/tgz"
+          for p in core player-oim player-ovm spec; do (cd "packages/$p" && pnpm pack --pack-destination "$RUNNER_TEMP/tgz"); done
+          for t in "$RUNNER_TEMP"/tgz/*.tgz; do npm publish "$t" --access public --provenance; done
       - name: All four packages published
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           v="${GITHUB_REF_NAME#v}"
           for p in core player-oim player-ovm spec; do
-            versions=$(gh api --paginate "orgs/oim-media/packages/npm/$p/versions" --jq '.[].name')
-            grep -qx "$v" <<< "$versions" || { echo "missing @oim-media/$p@$v"; exit 1; }
+            npm view "@oim-media/$p@$v" version >/dev/null || { echo "missing @oim-media/$p@$v"; exit 1; }
           done
+
+  publish-pub:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Exchanges the GitHub OIDC token for a pub.dev one (PUB_TOKEN).
+      - uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1.8.1
+      - uses: ./.github/actions/setup-flutter
+      - run: |
+          cd sdks/flutter
+          flutter pub get
+          flutter test
+          flutter pub publish --force
+
+  publish-crates:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
+        id: auth
+      - run: |
+          cd sdks/rust
+          cargo test
+          cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
   # The binary jobs upload to the release; it exists before any of them ends
   # (v1.27.0: Android, iOS and Windows-Flutter finished before Tauri created it).

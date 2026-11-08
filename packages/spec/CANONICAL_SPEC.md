@@ -262,6 +262,10 @@ difference between renderers before it was written down.
 - `effects` apply in file order to the whole layer, before its flip and rotation. `blur` blurs with a
   standard deviation of `radius` (default 8). On a non-text layer `drop-shadow` casts the silhouette
   (Gaussian sigma `blur / 2`) and `glow` casts it twice, blurred `radius * 0.4` then `radius`.
+- A non-empty `effects` replaces the legacy `shadow*`, `layerBlur`/`blur` and `grain` fields.
+- `texture` repeats its preset tile (`@oim-media/core` `TEXTURE_CATALOG`) at `tile size * scale` canvas units, blended
+  with `blend` (default per preset). Text takes it inside its glyphs; `svg` and `image` layers over their pixels;
+  other layers over their box, faded once more by `intensity`. In document `metadata.effects` it covers the canvas.
 - Media filters (`filterPreset`, `filter*`) apply only to `image` layers and to the picture of an image
   fill, never to the frame or to other layer types.
 - `opacity` is read as `0..100`.

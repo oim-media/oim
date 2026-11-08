@@ -7,6 +7,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -66,7 +67,7 @@ class OimPlayer extends StatefulWidget {
   State<OimPlayer> createState() => _OimPlayerState();
 }
 
-class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMixin {
+class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
   OimExtractionResult? _extractionResult;
   Object? _error;
 
@@ -82,6 +83,9 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
   // The language on screen: it trails widget.language until the blur peaks (web: _switchWithBlur).
   late String _lang = widget.language ?? oimDefaultLanguage;
   late final AnimationController _blur = AnimationController(vsync: this);
+  // Web _switchWithFade: on phones and with reduced motion only the changing layers fade out and back.
+  late final AnimationController _fade = AnimationController(vsync: this, duration: const Duration(milliseconds: 120));
+  Set<String> _fading = const {};
 
   @override
   void initState() {
@@ -92,6 +96,7 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
   @override
   void dispose() {
     _blur.dispose();
+    _fade.dispose();
     super.dispose();
   }
 
@@ -99,10 +104,29 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
     final slots = (_extractionResult?.metadata['slots'] as List<dynamic>?) ?? const [];
     // Same image in both languages: a blur would suggest a change that did not happen.
     // shortcut: compares content only, not per-language textRuns or styles; extend if those start to differ alone.
-    final changes = slots.any((s) => s is Map && resolveContent(s['content'], _lang) != resolveContent(s['content'], next));
-    if (!changes || (MediaQuery.maybeDisableAnimationsOf(context) ?? false)) {
+    final changed = {
+      for (final s in slots)
+        if (s is Map && resolveContent(s['content'], _lang) != resolveContent(s['content'], next)) s['id']?.toString() ?? '',
+    };
+    if (changed.isEmpty || widget.disableAnimations) {
       _blur.value = 0;
       setState(() => _lang = next);
+      return;
+    }
+    final mobile = switch (defaultTargetPlatform) {
+      TargetPlatform.android || TargetPlatform.iOS || TargetPlatform.fuchsia => true,
+      _ => false,
+    };
+    if (mobile || (MediaQuery.maybeDisableAnimationsOf(context) ?? false)) {
+      _blur.value = 0;
+      setState(() => _fading = changed);
+      _fade.forward(from: 0).then((_) {
+        if (!mounted) return;
+        setState(() => _lang = next);
+        _fade.reverse().then((_) {
+          if (mounted) setState(() => _fading = const {});
+        });
+      });
       return;
     }
     _blur.animateTo(1, duration: const Duration(milliseconds: 180), curve: Curves.easeOut).then((_) {
@@ -630,7 +654,8 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
       reveal: style['reveal'] is Map ? style['reveal'] as Map : null,
       canvasWidth: canvasWidth,
       disableAnimations: widget.disableAnimations,
-      child: w,
+      // Always in the tree, only its animation swaps: changing the wrapper would remount the layer.
+      child: FadeTransition(opacity: _fading.contains(id) ? ReverseAnimation(_fade) : kAlwaysCompleteAnimation, child: w),
     );
   }
 

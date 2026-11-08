@@ -9,6 +9,7 @@
 
 import 'dart:math' as math;
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'color_util.dart';
@@ -294,7 +295,7 @@ class OimPatternFill extends StatefulWidget {
   State<OimPatternFill> createState() => _OimPatternFillState();
 }
 
-class _OimPatternFillState extends State<OimPatternFill> with SingleTickerProviderStateMixin {
+class _OimPatternFillState extends State<OimPatternFill> with TickerProviderStateMixin {
   ui.Image? _tile;
   AnimationController? _c;
   String _direction = 'none';
@@ -312,7 +313,7 @@ class _OimPatternFillState extends State<OimPatternFill> with SingleTickerProvid
   @override
   void didUpdateWidget(OimPatternFill old) {
     super.didUpdateWidget(old);
-    if (old.style != widget.style || old.palette != widget.palette || old.unit != widget.unit ||
+    if (old.style != widget.style || !mapEquals(old.palette, widget.palette) || old.unit != widget.unit ||
         old.disableAnimations != widget.disableAnimations) {
       _tile?.dispose();
       _c?.dispose();

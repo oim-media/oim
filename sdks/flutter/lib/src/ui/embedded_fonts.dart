@@ -84,15 +84,29 @@ final _loaded = <String>{};
 const _formats = {'woff', 'woff2'};
 
 /// Registers every WOFF entry of [fonts] under its name; each name loads once per process.
+/// Entries sharing a name are faces of one family (like @font-face rules with the same
+/// font-family and different weights), so they load together and the engine picks by weight.
 Future<void> loadEmbeddedFonts(List<dynamic>? fonts) async {
+  final faces = <String, List<Uint8List>>{};
   for (final f in fonts?.whereType<Map>() ?? const <Map>[]) {
     final name = f['name']?.toString(), data = f['data'];
-    if (!_formats.contains(f['format']) || name == null || data is! String || !_loaded.add(name)) continue;
+    if (!_formats.contains(f['format']) || name == null || data is! String || _loaded.contains(name)) continue;
     try {
       final bytes = base64.decode(data.replaceAll(RegExp(r'\s+'), ''));
       final sfnt = f['format'] == 'woff2' ? woff2ToSfnt(bytes) : woffToSfnt(bytes);
-      if (sfnt == null) continue;
-      await (FontLoader(name)..addFont(Future.value(ByteData.sublistView(sfnt)))).load();
+      if (sfnt != null) (faces[name] ??= []).add(sfnt);
+    } catch (_) {
+      // A broken entry is skipped; its siblings still load.
+    }
+  }
+  for (final MapEntry(key: name, value: sfnts) in faces.entries) {
+    if (!_loaded.add(name)) continue;
+    try {
+      final loader = FontLoader(name);
+      for (final sfnt in sfnts) {
+        loader.addFont(Future.value(ByteData.sublistView(sfnt)));
+      }
+      await loader.load();
     } catch (_) {
       _loaded.remove(name);
     }

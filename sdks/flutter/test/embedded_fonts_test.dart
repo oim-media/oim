@@ -54,6 +54,22 @@ void main() {
     expect(width('oim-test-Bangers'), isNot(closeTo(width('missing-family'), 1)));
   });
 
+  test('every weight sharing a name is registered, not only the first', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    // Like two @font-face rules with one family: a work saves Space Mono 400 and 700 under
+    // one name. Only the first used to load, so 700 text drew with the 400 subset.
+    await loadEmbeddedFonts([
+      {'family': 'Dup', 'name': 'oim-test-dup', 'weight': 400, 'style': 'normal', 'format': 'woff', 'data': base64.encode(_woff.sublist(0, 60))},
+      {'family': 'Dup', 'name': 'oim-test-dup', 'weight': 700, 'style': 'normal', 'format': 'woff', 'data': base64.encode(_woff)},
+    ]);
+    double width(String family) => (TextPainter(
+          text: TextSpan(text: 'Texto regular', style: TextStyle(fontFamily: family, fontSize: 40, fontWeight: FontWeight.w700)),
+          textDirection: TextDirection.ltr,
+        )..layout())
+            .width;
+    expect(width('oim-test-dup'), isNot(closeTo(width('missing-family'), 1)));
+  });
+
   testWidgets('the vector paints its text in the embedded font', (t) async {
     await t.runAsync(() async {
       await t.pumpWidget(MaterialApp(home: SizedBox(width: 800, height: 600, child: OimPlayer(bytes: _vector, showBaseImage: false))));

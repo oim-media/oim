@@ -525,7 +525,7 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
       slotWidget = const SizedBox.shrink();
     }
 
-    if (style['grain'] == true && _grainTypes.contains(type)) {
+    if (style['grain'] == true && !hasEffectsStack(style) && _grainTypes.contains(type)) {
       slotWidget = _Grain(style: style, child: slotWidget);
     }
 
@@ -909,7 +909,7 @@ Widget _applyEffects(Widget child, Map<String, dynamic> style, {bool mediaFilter
   if (filter?.matrix != null) {
     w = ColorFiltered(colorFilter: ColorFilter.matrix(filter!.matrix!), child: w);
   }
-  final layerBlur = (style['layerBlur'] as num?)?.toDouble() ?? (style['blur'] as num?)?.toDouble() ?? 0;
+  final layerBlur = hasEffectsStack(style) ? 0.0 : (style['layerBlur'] as num?)?.toDouble() ?? (style['blur'] as num?)?.toDouble() ?? 0;
   final sigma = (filter?.blurSigma ?? 0) + (layerBlur > 0 ? layerBlur : 0);
   if (sigma > 0) {
     w = ImageFiltered(

@@ -179,7 +179,7 @@ OimFilter? parseCssFilter(String? css) {
 /// The slot's drop shadow. The player uses CSS `drop-shadow`, whose blur radius
 /// is twice the Gaussian sigma, which is what Flutter's `blurRadius` means too.
 BoxShadow? shadowOf(Map<String, dynamic> style) {
-  if (style['shadowEnabled'] != true) return null;
+  if (style['shadowEnabled'] != true || hasEffectsStack(style)) return null;
   final raw = (style['shadowColor'] ?? '#000000').toString().replaceFirst('#', '');
   final hex = raw.length == 3 ? raw.split('').map((c) => '$c$c').join() : raw;
   final r = int.tryParse(hex.length >= 2 ? hex.substring(0, 2) : '', radix: 16) ?? 0;
@@ -195,6 +195,9 @@ BoxShadow? shadowOf(Map<String, dynamic> style) {
     blurRadius: (style['shadowBlur'] as num?)?.toDouble() ?? 0,
   );
 }
+
+/// Web: a non-empty `style.effects` replaces the legacy shadow, layer blur and grain fields.
+bool hasEffectsStack(Map<String, dynamic> style) => style['effects'] is List && (style['effects'] as List).isNotEmpty;
 
 /// `style.effects` on a text layer, as the web paints it (ImageEngine, unified effects stack):
 /// `drop-shadow` is one text-shadow and `glow` two (blur radius*0.4, then radius). `blur` is in

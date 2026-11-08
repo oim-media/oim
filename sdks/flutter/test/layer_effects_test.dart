@@ -42,4 +42,11 @@ void main() {
     expect(identical(layerEffects(box, fx([{'type': 'drop-shadow'}, {'type': 'glow'}]), null, isText: true), box), isTrue);
     expect(identical(layerEffects(box, fx([{'type': 'blur', 'enabled': false}]), null, isText: false), box), isTrue);
   });
+
+  test('a non-empty effects stack replaces the legacy shadow, as on the web', () {
+    final legacy = {'shadowEnabled': true, 'shadowBlur': 4};
+    expect(shadowOf(legacy), isNotNull);
+    expect(shadowOf({...legacy, 'effects': [{'type': 'blur'}]}), isNull);
+    expect(shadowOf({...legacy, 'effects': []}), isNotNull);
+  });
 }

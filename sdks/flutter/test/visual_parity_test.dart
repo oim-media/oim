@@ -37,10 +37,16 @@ Future<void> _loadSystemFonts(Iterable<File> vectors) async {
   }
   for (final family in families) {
     final first = family.split(',').first.trim().replaceAll(RegExp('["\']'), '');
-    final result = await Process.run('fc-match', ['-f', '%{file}', first]);
-    final file = File(result.stdout.toString());
-    if (!file.existsSync()) continue;
-    await (FontLoader(family)..addFont(Future.value(ByteData.sublistView(file.readAsBytesSync())))).load();
+    // The bold face too: the browser asks fontconfig for the weight it needs, so a bold layer gets the real bold file.
+    final loader = FontLoader(family);
+    final seen = <String>{};
+    for (final pattern in [first, '$first:bold']) {
+      final result = await Process.run('fc-match', ['-f', '%{file}', pattern]);
+      final file = File(result.stdout.toString());
+      if (!file.existsSync() || !seen.add(file.path)) continue;
+      loader.addFont(Future.value(ByteData.sublistView(file.readAsBytesSync())));
+    }
+    if (seen.isNotEmpty) await loader.load();
   }
 }
 

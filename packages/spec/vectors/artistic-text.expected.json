@@ -1,0 +1,75 @@
+{
+  "description": "Artistic text (4.6): a curved 3D title with shaded extrusion, outer and inner strokes and a built-in gradient, and a second two-line word with no curve.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "reedit": "author_only",
+  "slots": [
+    {
+      "id": "retro-title",
+      "type": "artistic-text",
+      "position": [
+        0,
+        10
+      ],
+      "name": "Retro title",
+      "content": {
+        "es": "RETRO"
+      },
+      "style": {
+        "width": "100.0cqw",
+        "height": "27.5cqw",
+        "fontSize": "15.0cqw",
+        "fillColor": "#f9a8d4",
+        "fontFamily": "Inter",
+        "fontWeight": "900",
+        "lineHeight": 1.25,
+        "artisticPreset": "retro-wave-3d",
+        "extrusionDepth": 18,
+        "extrusionAngle": 45,
+        "extrusionColor": "#DB2777",
+        "extrusionShading": true,
+        "curveAmount": 60,
+        "curveType": "arc",
+        "outerStrokeColor": "#1e1b4b",
+        "outerStrokeWidth": 4,
+        "innerStrokeColor": "#ffffff",
+        "innerStrokeWidth": 1,
+        "textGradientType": "sunset-gold"
+      }
+    },
+    {
+      "id": "two-lines",
+      "type": "artistic-text",
+      "position": [
+        25,
+        56.6667
+      ],
+      "name": "Two lines",
+      "content": {
+        "es": "UNO\nDOS"
+      },
+      "style": {
+        "width": "50.0cqw",
+        "height": "25.0cqw",
+        "fontSize": "8.0cqw",
+        "fillColor": "#fde047",
+        "fontFamily": "Inter",
+        "fontWeight": "800",
+        "lineHeight": 1.25,
+        "artisticPreset": "custom",
+        "extrusionDepth": 10,
+        "extrusionAngle": 135,
+        "extrusionColor": "#7c2d12",
+        "extrusionShading": false,
+        "curveAmount": 0,
+        "curveType": "arc",
+        "outerStrokeColor": "#000000",
+        "outerStrokeWidth": 2
+      }
+    }
+  ]
+}

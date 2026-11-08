@@ -57,6 +57,9 @@ const DEL_ESTILO = [
   "fillPatternType", "fillPatternColor", "fillPatternColorRole", "fillPatternBgColor", "fillPatternBgColorRole",
   "backgroundType", "backgroundPatternType", "backgroundPatternColor", "backgroundPatternColorRole",
   "backgroundPatternBgColor", "backgroundPatternBgColorRole", "shadowColorRole",
+  // 4.6 artistic text, vector artistic-text.
+  "artisticPreset", "extrusionDepth", "extrusionAngle", "extrusionColor", "extrusionShading", "curveAmount", "curveType",
+  "outerStrokeColor", "outerStrokeWidth", "innerStrokeColor", "innerStrokeWidth", "textGradientType",
 ];
 
 function expectedOutput(m: any) {

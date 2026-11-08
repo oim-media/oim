@@ -1,3 +1,5 @@
 {
-  "flutter": {}
+  "flutter": {
+    "artistic-text": "Font, not geometry: the vector names Inter, which neither side embeds. Chrome draws the SVG text with the system fallback and flutter test only has Roboto, so glyph widths differ. Extrusion, strokes, gradient, curve and line layout match by eye."
+  }
 }

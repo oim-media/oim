@@ -1,11 +1,10 @@
 [package]
 name = "oim-media"
-version = "1.27.7"
+version = "1.27.8"
 edition = "2024"
 license = "Apache-2.0"
 description = "Read, verify and interpret .oim files"
 repository = "https://github.com/oim-media/oim"
-publish = false
 
 # Package name differs because "oim" is taken on crates.io; code still imports `oim::`.
 [lib]

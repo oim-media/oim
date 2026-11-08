@@ -3,7 +3,11 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
-## Unreleased
+## 1.27.8
+
+- Release: the packages are published to the public registries, with no token: `@oim-media/*`
+  on npm, `oim_flutter` on pub.dev and `oim-media` on crates.io. GitHub Packages is no longer
+  updated.
 
 - Flutter player: shadows, `effects` (drop-shadow, glow, blur), layer blur and filter blur scale
   with the canvas. They stayed at design pixels, so on a small player they were too large.

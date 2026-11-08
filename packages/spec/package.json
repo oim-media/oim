@@ -1,6 +1,6 @@
 {
   "name": "@oim-media/spec",
-  "version": "1.27.7",
+  "version": "1.27.8",
   "description": "OIM format contract: JSON Schema, normative specification and conformance vectors that every OIM player must pass.",
   "keywords": [
     "oim",
@@ -30,7 +30,8 @@
     "NOTICE"
   ],
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public",
+    "provenance": true
   },
   "repository": {
     "type": "git",

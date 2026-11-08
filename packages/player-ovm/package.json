@@ -1,6 +1,6 @@
 {
   "name": "@oim-media/player-ovm",
-  "version": "1.27.7",
+  "version": "1.27.8",
   "description": "Web player for OVM interactive video: a framework-free web component.",
   "keywords": [
     "oim",
@@ -23,7 +23,8 @@
     "NOTICE"
   ],
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public",
+    "provenance": true
   },
   "repository": {
     "type": "git",

@@ -13,9 +13,6 @@ positioned by the tracking data stored in the file.
 pnpm add @oim-media/player-ovm
 ```
 
-The package is published to GitHub Packages. See the
-[install section](../../README.md#install) for the `.npmrc` lines.
-
 ```js
 import "@oim-media/player-ovm"; // registers <ovm-player>
 ```

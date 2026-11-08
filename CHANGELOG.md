@@ -8,6 +8,8 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 - Flutter player: embedded fonts that share a name (one family, several weights, like
   `@font-face` rules) all load; only the first did, so bold text drew with the regular subset
   and lost glyphs. A moving pattern no longer throws when its palette changes.
+- Flutter player: `allowDynamicColors: false` ignores the work's palettes and keeps the literal
+  colours, like `allow-dynamic-colors="false"` on the web element.
 - Flutter player: on phones and with reduced motion a language change fades the layers that
   change (120 ms), as the web does; the whole-canvas blur stays for desktop. Reduced motion used to
   swap with no transition.

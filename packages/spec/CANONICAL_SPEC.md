@@ -248,6 +248,9 @@ difference between renderers before it was written down.
 - On a text layer, `effects` of type `drop-shadow` add one text-shadow (`x`, `y` default 0 and 4, `blur` default 12) and `glow` adds two, blurred `radius * 0.4` and `radius` (default 16, colour `#f59e0b`).
 
 **Shapes, strokes and fills**
+- A plain rectangle's stroke is a border outside its box: the box grows by `strokeWidth` on every side,
+  keeps its vertical centre, and is anchored horizontally by `textAlign` (left by default). The fill
+  paints under the border. Shapes drawn as SVG (catalogue shape, `svgPath`) stroke their outline instead.
 - Borders are drawn only from `strokeColor`, `strokeWidth` and `strokeStyle`. `borderColor` and
   `borderWidth` are not contract keys and are not drawn.
 - A custom path (`svgPath`) is scaled from its `svgViewBox` into the layer box; a photo frame with its own

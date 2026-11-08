@@ -510,11 +510,11 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
 
     final posX = (pos[0] as num).toDouble();
     final posY = (pos[1] as num).toDouble();
-    final left = (posX / 100.0) * containerWidth;
-    final top = (posY / 100.0) * containerHeight;
+    var left = (posX / 100.0) * containerWidth;
+    var top = (posY / 100.0) * containerHeight;
 
-    final slotWidth = resolveCssUnit(style['width'], containerWidth, containerHeight);
-    final slotHeight = resolveCssUnit(style['height'], containerWidth, containerHeight);
+    var slotWidth = resolveCssUnit(style['width'], containerWidth, containerHeight);
+    var slotHeight = resolveCssUnit(style['height'], containerWidth, containerHeight);
     final opacity = _opacityOf(style);
 
     Widget slotWidget;
@@ -543,6 +543,16 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
       if (drawing != null) slotWidget = ClipPath(clipper: GeoShapeClipper(drawing: drawing), child: slotWidget);
     } else if (type == 'geo' || type == 'shape' || type == 'container') { // web: container is geo-like
       slotWidget = _buildGeoSlot(style, activePalette, slotWidth ?? 100, slotHeight ?? 100, containerWidth, containerHeight);
+      // Web: a rectangle's stroke is a CSS border on a content-box element, so the box grows by
+      // it on every side, keeps its vertical centre and is anchored horizontally by textAlign.
+      final b = _rectBorderWidth(style, activePalette, containerWidth, containerHeight);
+      if (b > 0 && slotWidth != null && slotHeight != null) {
+        final align = (style['textAlign'] ?? raw['align'])?.toString() ?? 'left';
+        left -= align == 'center' ? b : align == 'right' ? 2 * b : 0;
+        top -= b;
+        slotWidth += 2 * b;
+        slotHeight += 2 * b;
+      }
     } else if (type == 'image') {
       slotWidget = _buildImageSlot(raw, style, currentLang, containerWidth, containerHeight);
     } else if (type == 'svg') {
@@ -760,6 +770,23 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
     return slotPadding(Center(child: markedText(text, marks, textStyle, activePalette, tx, textAlign: textAlignOf(style['textAlign'] ?? slot['align']))));
   }
 
+  /// `strokeWidth` in canvas units: a number is design px and scales with the canvas, like the
+  /// web's border inside its scaled stage.
+  double _strokeWidth(Map<String, dynamic> style, double cw, double ch) {
+    final v = style['strokeWidth'];
+    return v is num ? v.toDouble() * _unit : resolveCssUnit(v, cw, ch) ?? 0.0;
+  }
+
+  /// The width of the CSS border the web puts on a plain rectangle, or 0. Shapes drawn as SVG
+  /// (a catalogue shape, `svgPath`, `svgRawXml`) stroke their outline instead (web `hasVector`).
+  double _rectBorderWidth(Map<String, dynamic> style, OimPalette? palette, double cw, double ch) {
+    final shapeName = style['drawing']?.toString() ?? style['geoDrawing']?.toString() ?? style['shape']?.toString();
+    if ((shapeName != null && geoShapes[shapeName] != null) || shapeDrawing(style['geoShape']) != null) return 0;
+    if (style['svgPath'] != null || style['path'] != null || style['svgRawXml'] != null) return 0;
+    if (resolveColor(style['strokeColorRole'], style['strokeColor'], palette) == null) return 0;
+    return _strokeWidth(style, cw, ch);
+  }
+
   Widget _buildGeoSlot(
     Map<String, dynamic> style,
     OimPalette? activePalette,
@@ -788,7 +815,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
     if (fillLayer != null) fillColor = Colors.transparent;
     // Only the contract's stroke*: the web ignores border*, so a stroke drawn from them is one it never shows.
     final borderColor = resolveColor(style['strokeColorRole'], style['strokeColor'], activePalette);
-    final borderWidth = resolveCssUnit(style['strokeWidth'], containerWidth, containerHeight) ?? 0.0;
+    final borderWidth = _strokeWidth(style, containerWidth, containerHeight);
     final borderRadius = parseBorderRadius(style['borderRadius'], containerWidth, containerHeight);
 
     final shapeName = style['drawing']?.toString() ?? style['geoDrawing']?.toString() ?? style['shape']?.toString();

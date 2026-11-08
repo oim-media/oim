@@ -65,7 +65,8 @@ await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const base = `http://127.0.0.1:${server.address().port}`;
 
 fs.mkdirSync(outDir, { recursive: true });
-const browser = await chromium.launch();
+// Grey anti-aliasing: LCD text fringes depend on the screen and no other renderer draws them.
+const browser = await chromium.launch({ args: ['--disable-lcd-text'] });
 const context = await browser.newContext({ viewport: { width: WIDTH, height: 4000 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
 let failed = 0;
 for (const file of fs.readdirSync(VECTORS).filter((f) => f.endsWith('.oim.png')).sort()) {

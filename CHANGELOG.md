@@ -10,6 +10,8 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 - Flutter player: a rectangle's stroke scales with the canvas and grows the box outward, as
   the web's CSS border does (the box keeps its vertical centre and its `textAlign` anchor). It
   used to stay at design pixels and sit inside the box.
+- Spec tools: web goldens render with grey text anti-aliasing (`--disable-lcd-text`); LCD colour
+  fringes depend on the screen and no other renderer draws them.
 - Spec tools: web goldens render with `text-rendering: geometricPrecision`. Headless Linux
   Chrome rounded each glyph advance to whole px, so a line could fit where the exact width
   (editor, Flutter, Windows) wraps. All goldens regenerated; `artistic-text` now passes in

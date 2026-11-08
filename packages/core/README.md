@@ -12,8 +12,6 @@ embed a file in a page; for that use [`@oim-media/player-oim`](../player-oim/REA
 pnpm add @oim-media/core
 ```
 
-The package is published to GitHub Packages. See the [install instructions](../../README.md#install).
-
 It needs `crypto.subtle`, `Blob`, `DecompressionStream` and `TextDecoder`, which current
 browsers and recent Node.js provide. It is ESM only and declares `sideEffects: false`, so
 bundlers can drop what you do not import.

@@ -20,21 +20,13 @@ and interactions on top of it.
 
 ## Install
 
-The packages are published to GitHub Packages under the `@oim-media` scope. Point
-that scope at the GitHub registry in your project's `.npmrc`:
-
-```ini
-@oim-media:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
-```
-
-`NODE_AUTH_TOKEN` must hold a GitHub token with the `read:packages` scope. The
-token is required even though the packages are public: the GitHub registry does not
-serve `@oim-media` anonymously. Then:
-
 ```bash
-pnpm add @oim-media/player-oim
+pnpm add @oim-media/player-oim   # npm
+flutter pub add oim_flutter       # pub.dev
+cargo add oim-media               # crates.io
 ```
+
+No token or registry configuration is needed.
 
 Start with [`@oim-media/player-oim`](packages/player-oim/README.md) to embed a file in
 a page, or [`@oim-media/core`](packages/core/README.md) to read or write metadata.

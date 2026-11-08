@@ -13,10 +13,6 @@ A `.oim` file is still a PNG. Where there is no OIM player, the picture is still
 pnpm add @oim-media/player-oim
 ```
 
-The package is published to GitHub Packages. Your `.npmrc` must map the scope to
-that registry, and the token needs the `read:packages` scope even for this public
-package. See the [install section](../../README.md#install).
-
 Two ways to load it:
 
 ```js

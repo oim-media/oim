@@ -5,6 +5,9 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+- Flutter player: on phones and with reduced motion a language change fades the layers that
+  change (120 ms), as the web does; the whole-canvas blur stays for desktop. Reduced motion used to
+  swap with no transition.
 - Flutter player: the `texture` effect is drawn (the eight presets, on layers and on the canvas),
   with noise that matches the browser's. It was ignored.
 - Flutter player: layer effects (`blur`, and `drop-shadow` and `glow` on non-text layers) are

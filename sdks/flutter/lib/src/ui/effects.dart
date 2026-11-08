@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'dart:math' as math;
-import 'package:flutter/painting.dart';
+import 'dart:ui' as ui;
+import 'package:flutter/widgets.dart';
 import 'dynamic_colors.dart';
 
 /// Same table and order as `mediaFilterCss` in `@oim-media/core` (media-filters.ts):
@@ -196,8 +197,8 @@ BoxShadow? shadowOf(Map<String, dynamic> style) {
 }
 
 /// `style.effects` on a text layer, as the web paints it (ImageEngine, unified effects stack):
-/// `drop-shadow` is one text-shadow and `glow` two (blur radius*0.4, then radius). Other types
-/// (blur, texture, color-grade) are not drawn here yet.
+/// `drop-shadow` is one text-shadow and `glow` two (blur radius*0.4, then radius). `blur` is in
+/// [layerEffects]; `texture` is not drawn yet.
 List<Shadow> textEffectShadows(Map<String, dynamic> style, OimPalette? palette) {
   final effects = style['effects'];
   if (effects is! List) return const [];
@@ -253,4 +254,42 @@ BlendMode? blendModeOf(dynamic name) {
     default:
       return null;
   }
+}
+
+/// `style.effects` as a CSS filter chain on the whole layer (web ImageEngine, unified effects
+/// stack), applied in file order: `blur` blurs, and on non-text layers `drop-shadow` and `glow`
+/// cast the layer's own silhouette (CSS `drop-shadow()`), not its box. On text layers those two
+/// are text shadows ([textEffectShadows]) and are skipped here.
+Widget layerEffects(Widget child, Map<String, dynamic> style, OimPalette? palette, {required bool isText}) {
+  final effects = style['effects'];
+  if (effects is! List) return child;
+  num n(dynamic v, num d) => v is num ? v : d;
+  var w = child;
+  Widget cast(Widget src, Color c, Offset offset, double blurRadius) {
+    // drop-shadow() blur radius is twice the Gaussian sigma (unlike blur()).
+    Widget s = ColorFiltered(colorFilter: ColorFilter.mode(c, BlendMode.srcIn), child: src);
+    if (blurRadius > 0) {
+      s = ImageFiltered(imageFilter: ui.ImageFilter.blur(sigmaX: blurRadius / 2, sigmaY: blurRadius / 2, tileMode: TileMode.decal), child: s);
+    }
+    return Stack(fit: StackFit.passthrough, clipBehavior: Clip.none, children: [Transform.translate(offset: offset, child: s), src]);
+  }
+  for (final e in effects) {
+    if (e is! Map || e['enabled'] == false) continue;
+    final type = e['type'];
+    if (type == 'blur') {
+      final r = n(e['radius'], 8).toDouble();
+      // CSS blur() takes the standard deviation itself.
+      if (r > 0) w = ImageFiltered(imageFilter: ui.ImageFilter.blur(sigmaX: r, sigmaY: r, tileMode: TileMode.decal), child: w);
+    } else if (isText) {
+      continue;
+    } else if (type == 'drop-shadow') {
+      final c = resolveColor(e['colorRole'] ?? style['shadowColorRole'], e['color'] ?? 'rgba(0, 0, 0, 0.35)', palette) ?? const Color(0x59000000);
+      w = cast(w, c, Offset(n(e['x'], 0).toDouble(), n(e['y'], 4).toDouble()), n(e['blur'], 12).toDouble());
+    } else if (type == 'glow') {
+      final r = (e['radius'] is num && e['radius'] != 0 ? e['radius'] as num : 16).toDouble();
+      final c = resolveColor(e['colorRole'] ?? style['effectColorRole'], e['color'] ?? '#f59e0b', palette) ?? const Color(0xFFF59E0B);
+      w = cast(cast(w, c, Offset.zero, r * 0.4), c, Offset.zero, r);
+    }
+  }
+  return w;
 }

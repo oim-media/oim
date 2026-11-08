@@ -5,6 +5,8 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+- Flutter player: layer effects (`blur`, and `drop-shadow` and `glow` on non-text layers) are
+  drawn, following the silhouette as on the web. Only text shadows were drawn before.
 - Flutter player: `artistic-text` layers are drawn (3D extrusion, curve, strokes and built-in
   gradients), as on the web. They were blank.
 - Web player: artistic text is sized against the real canvas width. On a canvas wider than

@@ -529,7 +529,7 @@ class _OimPlayerState extends State<OimPlayer> with SingleTickerProviderStateMix
       slotWidget = _Grain(style: style, child: slotWidget);
     }
 
-    slotWidget = _applyEffects(slotWidget, style, mediaFilter: type == 'image');
+    slotWidget = _applyEffects(slotWidget, style, mediaFilter: type == 'image', palette: activePalette, isText: type == 'text' || type == 'artistic-text');
 
     if (opacity < 1.0) {
       slotWidget = Opacity(opacity: opacity.clamp(0.0, 1.0), child: slotWidget);
@@ -902,7 +902,7 @@ Widget _mediaFiltered(Map<String, dynamic> style, Widget picture) {
 
 /// Everything the style says about the slot as a whole, in the order the player
 /// applies it: filter chain, layer blur, flip, rotation. Opacity and blend mode wrap it after.
-Widget _applyEffects(Widget child, Map<String, dynamic> style, {bool mediaFilter = false}) {
+Widget _applyEffects(Widget child, Map<String, dynamic> style, {bool mediaFilter = false, OimPalette? palette, bool? isText}) {
   var w = child;
   // Web: media filters belong to image layers (and image fills, see _mediaFiltered), never to the rest.
   final filter = mediaFilter ? parseCssFilter(mediaFilterCss(style)) : null;
@@ -917,6 +917,8 @@ Widget _applyEffects(Widget child, Map<String, dynamic> style, {bool mediaFilter
       child: w,
     );
   }
+  // Groups pass no isText: the web stack is per slot.
+  if (isText != null) w = layerEffects(w, style, palette, isText: isText);
   final fx = style['flipX'] == true ? -1.0 : 1.0;
   final fy = style['flipY'] == true ? -1.0 : 1.0;
   if (fx < 0 || fy < 0) {

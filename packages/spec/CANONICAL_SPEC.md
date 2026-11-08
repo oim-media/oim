@@ -259,6 +259,9 @@ difference between renderers before it was written down.
 **Effects**
 - The shadow of a non-text layer, and the `drop-shadow` effect, follow the layer's silhouette (its alpha),
   not its bounding box, and paint under the layer.
+- `effects` apply in file order to the whole layer, before its flip and rotation. `blur` blurs with a
+  standard deviation of `radius` (default 8). On a non-text layer `drop-shadow` casts the silhouette
+  (Gaussian sigma `blur / 2`) and `glow` casts it twice, blurred `radius * 0.4` then `radius`.
 - Media filters (`filterPreset`, `filter*`) apply only to `image` layers and to the picture of an image
   fill, never to the frame or to other layer types.
 - `opacity` is read as `0..100`.

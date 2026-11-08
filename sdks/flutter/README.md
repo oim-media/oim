@@ -29,7 +29,7 @@ OimPlayer(
 )
 ```
 
-Other options: `palette`, `prefersDark`, `isInteractive`, `showBaseImage`,
+Other options: `palette`, `prefersDark`, `allowDynamicColors`, `isInteractive`, `showBaseImage`,
 `allowLottie`, `disableAnimations`, and `fontFamily` (the family for text that names
 none, like a browser's default font; embedded fonts and named families still win).
 

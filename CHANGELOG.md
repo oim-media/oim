@@ -5,6 +5,8 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+- Flutter player: `allowDynamicColors: false` ignores the work's palettes and keeps the literal
+  colours, like `allow-dynamic-colors="false"` on the web element.
 - Flutter player: on phones and with reduced motion a language change fades the layers that
   change (120 ms), as the web does; the whole-canvas blur stays for desktop. Reduced motion used to
   swap with no transition.

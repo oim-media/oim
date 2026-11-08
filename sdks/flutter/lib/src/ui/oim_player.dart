@@ -40,6 +40,8 @@ class OimPlayer extends StatefulWidget {
   final String? language;
   final String? palette;
   final bool? prefersDark;
+  /// False ignores the work's palettes, like allow-dynamic-colors="false" on the web element.
+  final bool allowDynamicColors;
   final bool isInteractive;
   final bool showBaseImage;
   final bool allowLottie;
@@ -55,6 +57,7 @@ class OimPlayer extends StatefulWidget {
     this.language,
     this.palette,
     this.prefersDark,
+    this.allowDynamicColors = true,
     this.isInteractive = true,
     this.showBaseImage = true,
     this.allowLottie = true,
@@ -241,7 +244,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
     final currentLang = _lang;
 
     // Dynamic color resolution
-    final activePalette = resolvePalette(
+    final activePalette = !widget.allowDynamicColors ? null : resolvePalette(
       res.metadata,
       requested: widget.palette,
       prefersDark: widget.prefersDark ?? (Theme.of(context).brightness == Brightness.dark),

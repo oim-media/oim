@@ -1,5 +1,5 @@
 {
-  "description": "Artistic text (4.6): a curved 3D title with shaded extrusion, outer and inner strokes and a built-in gradient, and a second two-line word with no curve.",
+  "description": "Artistic text (4.6): a curved 3D title with shaded extrusion, outer and inner strokes and a built-in gradient, and a second two-line word with no curve. Inter bold embedded (the embedded-font-woff subset), so every reader draws the same glyphs.",
   "canvas": {
     "natural_height": 600,
     "natural_width": 800
@@ -7,6 +7,15 @@
   "signed": true,
   "key_version": "v1",
   "reedit": "author_only",
+  "fonts": [
+    {
+      "family": "Inter",
+      "name": "oim-26dd479f-Inter",
+      "weight": 700,
+      "style": "normal",
+      "format": "woff"
+    }
+  ],
   "slots": [
     {
       "id": "retro-title",
@@ -17,7 +26,7 @@
       ],
       "name": "Retro title",
       "content": {
-        "es": "RETRO"
+        "es": "Fuente"
       },
       "style": {
         "width": "100.0cqw",
@@ -25,7 +34,7 @@
         "fontSize": "15.0cqw",
         "fillColor": "#f9a8d4",
         "fontFamily": "Inter",
-        "fontWeight": "900",
+        "fontWeight": "700",
         "lineHeight": 1.25,
         "artisticPreset": "retro-wave-3d",
         "extrusionDepth": 18,
@@ -50,7 +59,7 @@
       ],
       "name": "Two lines",
       "content": {
-        "es": "UNO\nDOS"
+        "es": "ciudad\nsur"
       },
       "style": {
         "width": "50.0cqw",
@@ -58,7 +67,7 @@
         "fontSize": "8.0cqw",
         "fillColor": "#fde047",
         "fontFamily": "Inter",
-        "fontWeight": "800",
+        "fontWeight": "700",
         "lineHeight": 1.25,
         "artisticPreset": "custom",
         "extrusionDepth": 10,

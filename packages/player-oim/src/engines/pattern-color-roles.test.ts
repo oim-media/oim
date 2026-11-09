@@ -58,7 +58,8 @@ describe("pattern color roles in ImageEngine", () => {
     expect(slotEl.style.getPropertyValue("--oim-pat-fg")).toContain("var(--oim-color-accent");
     expect(slotEl.style.getPropertyValue("--oim-pat-mask")).toContain("url(");
     expect(slotEl.style.backgroundImage).toBe("none");
-    expect(slotEl.style.animation).toBe("background-animation-up 2s linear infinite");
+    // Token order: jsdom 31 serialises the animation shorthand in a different order.
+    expect(slotEl.style.animation.split(" ").sort()).toEqual(["2s", "background-animation-up", "infinite", "linear"].sort());
   });
 
   it("uses backgroundImage without a mask when there is no semantic role", async () => {
@@ -86,7 +87,8 @@ describe("pattern color roles in ImageEngine", () => {
     expect(slotEl).not.toBeNull();
     expect(slotEl.style.backgroundImage).toContain("url(");
     expect(slotEl.style.webkitMaskImage || (slotEl.style as any).maskImage || "").toBe("");
-    expect(slotEl.style.animation).toBe("background-animation-right 3s linear infinite");
+    // Token order: jsdom 31 serialises the animation shorthand in a different order.
+    expect(slotEl.style.animation.split(" ").sort()).toEqual(["3s", "background-animation-right", "infinite", "linear"].sort());
   });
 
   it("soporta fillPatternColorRole y fillPatternBgColorRole como alias en background-pattern-slot", async () => {

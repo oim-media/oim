@@ -1,5 +1,13 @@
 # OIM
 
+[![ci](https://github.com/oim-media/oim/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/oim-media/oim/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@oim-media/player-oim?label=npm)](https://www.npmjs.com/package/@oim-media/player-oim)
+[![pub.dev](https://img.shields.io/pub/v/oim_flutter?label=pub.dev)](https://pub.dev/packages/oim_flutter)
+[![crates.io](https://img.shields.io/crates/v/oim-media?label=crates.io)](https://crates.io/crates/oim-media)
+[![license](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+
+Documentation: [English](https://oim.media/docs/) · [Español](https://oim.media/docs/es/)
+
 OIM is an open format for interactive images. An `.oim` file is a PNG that also
 carries signed, layered and animated content in a metadata chunk. It still opens
 as an ordinary image anywhere; OIM-aware players compose the layers, animations

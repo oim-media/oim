@@ -5,6 +5,12 @@ carries signed, layered and animated content in a metadata chunk. It still opens
 as an ordinary image anywhere; OIM-aware players compose the layers, animations
 and interactions on top of it.
 
+![The same file shown by an img tag and by oim-player, which cycles its embedded languages](.github/assets/oim-vs-png.gif)
+
+Both panels load the same file, [`la-luz.oim.png`](https://oim.media/la-luz.oim.png).
+Download it and open it in any image viewer: it is a normal PNG. The ten
+translations travel inside it. There is a live demo at [oim.media](https://oim.media).
+
 ## Packages & Applications
 
 | Package / App | What it is |

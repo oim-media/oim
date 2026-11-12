@@ -4,7 +4,9 @@
 # Windows uses pwsh: on a self-hosted Windows runner `bash` can resolve to WSL's
 # System32\bash.exe, which would run the clone inside Linux.
 name: setup-flutter
-description: Install the Flutter stable channel and put it on PATH
+description: Install a pinned Flutter release and put it on PATH
+# Pinned: the stable channel moved to 3.50.0, which deprecates
+# package:flutter/material.dart, and `flutter analyze` failed with no change here.
 runs:
   using: composite
   steps:
@@ -12,14 +14,14 @@ runs:
       shell: bash
       run: |
         rm -rf "$RUNNER_TEMP/flutter"
-        git clone --depth 1 --branch stable https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+        git clone --depth 1 --branch 3.47.9 https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
         echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
     - if: runner.os == 'Windows'
       shell: pwsh
       run: |
         $dir = Join-Path $env:RUNNER_TEMP 'flutter'
         if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
-        git clone --depth 1 --branch stable https://github.com/flutter/flutter.git $dir
+        git clone --depth 1 --branch 3.47.9 https://github.com/flutter/flutter.git $dir
         Join-Path $dir 'bin' | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
     - if: runner.os != 'Windows'
       shell: bash

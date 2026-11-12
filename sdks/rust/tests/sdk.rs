@@ -288,6 +288,20 @@ fn image_hash_is_sha256_of_idat() {
 
 // --- canonical form ---
 
+// The case lives in packages/spec/canonical-cases.json so every implementation
+// rebuilds the same signed bytes. It is read from text on purpose: the JSON
+// parser is part of what is under test (serde_json needs float_roundtrip).
+#[test]
+fn canonical_matches_the_shared_known_answer_case() {
+    let path =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../packages/spec/canonical-cases.json");
+    let case: Value = serde_json::from_str(&fs::read_to_string(path).unwrap()).unwrap();
+    assert_eq!(
+        canonical_json(&case["input"]),
+        case["expected"].as_str().unwrap()
+    );
+}
+
 #[test]
 fn canonical_numbers_follow_javascript() {
     let cases = [

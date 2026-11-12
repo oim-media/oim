@@ -18,6 +18,7 @@
     "CANONICAL_SPEC.md",
     "README.md",
     "marks-cases.json",
+    "canonical-cases.json",
     "keyframe-cases.json",
     "action-cases.json",
     "pattern-cases.json",

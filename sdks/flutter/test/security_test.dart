@@ -24,6 +24,13 @@ void main() {
     ..sort((a, b) => a.path.compareTo(b.path));
 
   group('canonical serialization (same bytes as JSON.stringify)', () {
+    // Shared with the TypeScript and Rust implementations.
+    test('matches the shared known-answer case', () {
+      final file = File(p.join(Directory.current.path, '..', '..', 'packages', 'spec', 'canonical-cases.json'));
+      final c = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+      expect(_canonical(c['input'] as Map<String, dynamic>), c['expected']);
+    });
+
     test('drops the four root keys and nothing deeper', () {
       final out = _canonical({
         'signature': 'x',

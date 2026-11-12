@@ -15,7 +15,9 @@ base64 = "0.22"
 flate2 = "1"
 p256 = { version = "0.13", features = ["ecdsa"] }
 ryu-js = "1"
-serde_json = { version = "1", features = ["preserve_order"] }
+# float_roundtrip: without it serde_json may parse a decimal one bit off and the
+# canonical bytes stop matching the signer's.
+serde_json = { version = "1", features = ["preserve_order", "float_roundtrip"] }
 sha2 = "0.10"
 
 [lints.clippy]

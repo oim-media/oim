@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import { serializeCanonical } from './canonical.js';
 
-describe('serializeCanonical - 7 canonical rules (RFC 8785)', () => {
+describe('serializeCanonical - 7 canonical rules (OIM profile)', () => {
   it('Rule 2: excludes signature, key_version, timestamp and creator_user_id ONLY from the root', () => {
     const input = {
       signature: 'sig123',

@@ -1,4 +1,4 @@
-# OIM (Open Interactive Media) Container Binary Specification
+# OIM (Object Interactive Media) Container Binary Specification
 
 **Version:** 1.0  
 **Date:** 2026-09-22  
@@ -119,9 +119,12 @@ A signed `.oim` file guarantees the authorship, integrity and non-repudiation of
 - **Signature format:** raw IEEE P1363 (`r || s`, 32 bytes for $r$ + 32 bytes for $s$ = exactly **64 binary bytes**).
 - **JSON serialisation:** Base64 of the 64 binary bytes in the `signature` property. *(No ASN.1/DER encoding is used.)*
 
-### 5.1. Canonical Serialisation Rules (JCS - JSON Canonicalization)
+### 5.1. Canonical Serialisation Rules (OIM profile)
 
-So that any implementation in any language (TypeScript, Python, Rust, Go, Swift) verifies the signature identically, without a single byte of discrepancy, the payload to be signed or verified is built by strictly following these **7 rules**:
+So that any implementation in any language (TypeScript, Python, Rust, Go, Swift) verifies the signature identically, without a single byte of discrepancy, the payload to be signed or verified is built by strictly following these **7 rules**.
+
+This is OIM's own profile, **not RFC 8785 (JCS)**: rule 3 rounds numbers and rule 4 orders keys by code point, where JCS keeps the number and orders by UTF-16 code unit. A stock JCS library does not produce these bytes. [`canonical-cases.json`](canonical-cases.json) is a known-answer case every implementation in this repository is tested against.
+
 
 1. **Base object:** Take the decoded OIM metadata dictionary.
 2. **Root exclusions:** Exclude from the root only the fields:

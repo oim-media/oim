@@ -8,7 +8,7 @@
     "build": "pnpm -r --filter ./packages/core --filter ./packages/player-oim --filter ./packages/player-ovm --filter ./apps/viewer-desktop build",
     "test": "pnpm -r --filter ./packages/core --filter ./packages/player-oim --filter ./apps/viewer-desktop test",
     "typecheck": "pnpm -r typecheck",
-    "conformance": "pnpm --filter @oim-media/core exec vitest run conformance",
+    "conformance": "pnpm --filter @oim-media/core exec vitest run conformance && node packages/spec/tools/canonical-check.mjs",
     "check:licenses": "node tools/licenses.mjs",
     "test:tools": "pnpm --filter @oim-media/core exec vitest run --root ../.. tools --exclude \"packages/spec/tools/**\" && node --test \"packages/spec/tools/*.test.mjs\""
   }

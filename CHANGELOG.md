@@ -3,6 +3,18 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## Unreleased
+
+- Rust crate: a signed decimal with many digits (for example `1.0000004999999999`) could be
+  read one bit off and the file reported as tampered. `serde_json` now parses with
+  `float_roundtrip`.
+- Spec: `canonical-cases.json` is a known-answer case for the canonical form, checked by the
+  TypeScript, Rust and Dart implementations. `BINARY_SPEC.md` 5.1 says plainly that the
+  canonical form is OIM's own profile, not RFC 8785 (JCS).
+- Spec: the conformance gate now also runs `tools/canonical-check.mjs`, which rebuilds the
+  canonical form and verifies every vector's signature.
+- Docs: one expansion of the name, Object Interactive Media; the vector count is 37.
+
 ## 1.27.8
 
 - Release: the packages are published to the public registries, with no token: `@oim-media/*`

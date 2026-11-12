@@ -1,4 +1,4 @@
-# OIM (Open Interactive Media) Canonical Metadata Specification
+# OIM (Object Interactive Media) Canonical Metadata Specification
 
 **Contract version:** 1.27.8  
 **Date:** 2026-11-02 (reviewed against `packages/core/src/schema.ts`; the source of truth is the schema, this document summarises it)  

@@ -105,6 +105,8 @@ describe('keys', () => {
       fs.readFileSync(new URL('./security.ts', import.meta.url), 'utf8')
     );
     expect(src).toContain('signatureIsWithinKeyWindow');
+    // Same guardrail for the number range (BINARY_SPEC 5.1 rule 3).
+    expect(src).toContain('if (hasNumberOutOfRange(metadata)) return false;');
     expect(src).not.toContain('5Qavr4M_npVognquI5k5D9K8wcXBXM9Z0mZHjqyehAs');
   });
 });

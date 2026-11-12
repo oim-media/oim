@@ -136,6 +136,7 @@ This is OIM's own profile, **not RFC 8785 (JCS)**: rule 3 rounds numbers and rul
 3. **Numeric normalisation:**
    - If a decimal number has an exact integer value (e.g. `2.0` or `-0.0`), it is formatted as an integer (`2`, `0`).
    - Floating-point numbers are formatted to a maximum of **6 decimal places** with standard symmetric rounding.
+   - **Range:** every number in the metadata, at any depth, must be finite and no larger in magnitude than **2^53 − 1** (`9007199254740991`). Beyond that, JSON parsers disagree on the value they read, so the number has no canonical form: a signer must refuse the metadata and a verifier must report the signature as invalid.
 4. **Lexical key ordering:** All object keys (at the root and recursively at every level and inside arrays) are sorted by ascending Unicode code point.
 5. **Compact serialisation:** No whitespace between keys, colons or commas: `{"a":1,"b":"dos"}`.
 6. **UTF-8 preservation:** Do not escape non-ASCII Unicode characters with `\uXXXX` sequences. They are emitted directly as native UTF-8 (e.g. `"Zürich"` instead of `"Z\u00fcrich"`).

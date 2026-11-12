@@ -14,6 +14,11 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 - Spec: the conformance gate now also runs `tools/canonical-check.mjs`, which rebuilds the
   canonical form and verifies every vector's signature.
 - Docs: one expansion of the name, Object Interactive Media; the vector count is 37.
+- Contract (BINARY_SPEC 5.1 rule 3): a number in the metadata must be finite and within
+  ±(2^53 − 1). Beyond that the implementations read different values (four different
+  answers for `1e21`), so it has no canonical form: signers refuse it and the web player,
+  the Flutter SDK and the Rust crate report the signature as invalid. No vector and no
+  file made by the editor carries such a number.
 
 ## 1.27.8
 

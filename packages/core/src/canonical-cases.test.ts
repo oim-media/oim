@@ -9,10 +9,18 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { serializeCanonical } from "./canonical.js";
+import { hasNumberOutOfRange, serializeCanonical } from "./canonical.js";
 
 const CASE = JSON.parse(readFileSync(join(__dirname, "..", "..", "spec", "canonical-cases.json"), "utf8"));
 
 it("serializeCanonical matches the shared known-answer case", () => {
   expect(new TextDecoder().decode(serializeCanonical(CASE.input))).toBe(CASE.expected);
+});
+
+it("numbers up to 2^53 - 1 are in range, and every outOfRange case is refused", () => {
+  expect(hasNumberOutOfRange(CASE.input)).toBe(false);
+  expect(CASE.outOfRange.length).toBeGreaterThan(5);
+  for (const metadata of CASE.outOfRange) {
+    expect(hasNumberOutOfRange(metadata), JSON.stringify(metadata)).toBe(true);
+  }
 });

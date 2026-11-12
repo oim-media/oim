@@ -42,6 +42,7 @@ URLs only) and `@oim-media/core/generative` and `@oim-media/core/generative/cata
 
 - `serializeCanonical(metadata)`: returns the `Uint8Array` the signer hashes.
 - `normalizeCanonicalNumbers(value)` and `sortKeysByCodePoint(value)`: the two rules used by `serializeCanonical`.
+- `hasNumberOutOfRange(value)` and `MAX_CANONICAL_NUMBER`: whether metadata holds a number beyond ±(2^53 − 1), which has no canonical form; a signer refuses it and a verifier reports the signature as invalid.
 
 Signature *verification* is not in this package. The player verifies with its
 embedded keys (see [`@oim-media/spec`](../spec/README.md#embedded-player-keys)).

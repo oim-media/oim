@@ -29,6 +29,13 @@ void main() {
       final file = File(p.join(Directory.current.path, '..', '..', 'packages', 'spec', 'canonical-cases.json'));
       final c = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
       expect(_canonical(c['input'] as Map<String, dynamic>), c['expected']);
+
+      expect(hasNumberOutOfRange(c['input']), isFalse);
+      final refused = c['outOfRange'] as List;
+      expect(refused.length, greaterThan(5));
+      for (final metadata in refused) {
+        expect(hasNumberOutOfRange(metadata), isTrue, reason: jsonEncode(metadata));
+      }
     });
 
     test('drops the four root keys and nothing deeper', () {

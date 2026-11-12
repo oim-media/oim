@@ -99,6 +99,8 @@ const SUPERFICIE = [
   "imageDataHash",
   // canonical.ts — canonical serialization for ECDSA signatures (RFC 8785).
   "serializeCanonical",
+  "hasNumberOutOfRange",
+  "MAX_CANONICAL_NUMBER",
   "normalizeCanonicalNumbers",
   "sortKeysByCodePoint",
   // api.ts — public endpoint contract.

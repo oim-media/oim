@@ -300,6 +300,13 @@ fn canonical_matches_the_shared_known_answer_case() {
         canonical_json(&case["input"]),
         case["expected"].as_str().unwrap()
     );
+
+    assert!(!has_number_out_of_range(&case["input"]));
+    let refused = case["outOfRange"].as_array().unwrap();
+    assert!(refused.len() > 5);
+    for metadata in refused {
+        assert!(has_number_out_of_range(metadata), "{metadata}");
+    }
 }
 
 #[test]

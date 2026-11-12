@@ -5,7 +5,7 @@
  */
 
 import { embeddedKey, effectiveNotAfter, keysEndpoint, signatureIsWithinKeyWindow, keyExpiredAt, type PlayerKey } from './keys.js';
-import { serializeCanonical } from '../../../core/src/canonical.js';
+import { hasNumberOutOfRange, serializeCanonical } from '../../../core/src/canonical.js';
 
 const _cachedKeys: Record<string, any> = {};
 let _keysFetchPromise: Promise<void> | null = null;
@@ -175,6 +175,9 @@ export async function verifyMetadataSignature(metadata: any, origin?: string): P
       console.error('[OimPlayer::Security] Public key not found for version:', metadata.key_version);
       return false;
     }
+
+    // BINARY_SPEC 5.1 rule 3: such a number has no canonical form to verify.
+    if (hasNumberOutOfRange(metadata)) return false;
 
     const canonicalBytes = serializeCanonical(metadata);
 

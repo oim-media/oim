@@ -100,6 +100,8 @@ bool? verifyMetadataSignature(Map<String, dynamic> metadata, {List<OimPublicKey>
     return false;
   }
 
+  if (hasNumberOutOfRange(metadata)) return false;
+
   try {
     var valid = _verifyEcdsa(key, serializeCanonical(metadata), sig);
     // Files published before `creator_user_id` was excluded kept it in the signed bytes.

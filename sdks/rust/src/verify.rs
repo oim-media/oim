@@ -14,7 +14,7 @@ use p256::ecdsa::signature::Verifier;
 use p256::ecdsa::{Signature, VerifyingKey};
 use serde_json::Value;
 
-use crate::canonical::{canonical_json, legacy_canonical_json};
+use crate::canonical::{canonical_json, has_number_out_of_range, legacy_canonical_json};
 use crate::keys::{CLOCK_SKEW_SECS, PublicKey, embedded_key};
 use crate::{Extraction, ReeditPermission, reedit_permission};
 
@@ -90,6 +90,9 @@ pub fn verify(extraction: &Extraction, now: SystemTime) -> SecurityStatus {
 // shortcut: the key's `notAfter` (signing window) is not checked, since no key
 // declares one; add it with `signed_at` parsing when a key gets one.
 fn signature_is_valid(meta: &Value, key: &PublicKey, signature: &str) -> bool {
+    if has_number_out_of_range(meta) {
+        return false;
+    }
     let clean: String = signature.chars().filter(|c| !c.is_whitespace()).collect();
     let Ok(bytes) = URL_SAFE_ANY_PAD.decode(clean.replace('+', "-").replace('/', "_")) else {
         return false;

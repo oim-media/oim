@@ -11,7 +11,7 @@ mod keys;
 mod reedit;
 mod verify;
 
-pub use canonical::canonical_json;
+pub use canonical::{canonical_json, has_number_out_of_range};
 pub use content::{DEFAULT_LANGUAGE, resolve_content};
 pub use error::OimError;
 pub use extract::{Extraction, extract};

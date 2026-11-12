@@ -78,6 +78,27 @@ fn write_value(out: &mut String, v: &Value, normalize: bool) {
 /// Integers JavaScript holds exactly; beyond it a JSON integer becomes the nearest double.
 const MAX_SAFE_INTEGER: u64 = 1 << 53;
 
+/// Largest magnitude a signed number may have (2^53 - 1): every JSON parser reads it exactly.
+const MAX_CANONICAL_NUMBER: u64 = (1 << 53) - 1;
+
+/// Whether the metadata carries, at any depth, a number with no canonical form.
+/// Beyond 2^53 - 1 parsers disagree on the value they read, so such a file's
+/// signature is invalid (BINARY_SPEC 5.1 rule 3).
+pub fn has_number_out_of_range(value: &Value) -> bool {
+    match value {
+        Value::Number(n) => {
+            if let Some(i) = n.as_i64().map(i64::unsigned_abs).or(n.as_u64()) {
+                return i > MAX_CANONICAL_NUMBER;
+            }
+            n.as_f64()
+                .is_none_or(|x| !x.is_finite() || x.abs() > MAX_CANONICAL_NUMBER as f64)
+        }
+        Value::Array(items) => items.iter().any(has_number_out_of_range),
+        Value::Object(map) => map.values().any(has_number_out_of_range),
+        _ => false,
+    }
+}
+
 /// JavaScript prints numbers with `Number.prototype.toString`; rule 3 rounds
 /// non-integers with `toFixed(6)` first.
 fn format_number(n: &Number, normalize: bool) -> String {

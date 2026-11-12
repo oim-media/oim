@@ -12,6 +12,19 @@ const Set<String> _excludedRootKeys = {
   'creator_user_id',
 };
 
+/// Largest magnitude a signed number may have (2^53 - 1): every JSON parser reads it exactly.
+const int maxCanonicalNumber = 9007199254740991;
+
+/// Whether [value] carries, at any depth, a number with no canonical form.
+/// Beyond 2^53 - 1 parsers disagree on the value they read, so such a file's
+/// signature is invalid (BINARY_SPEC 5.1 rule 3).
+bool hasNumberOutOfRange(dynamic value) {
+  if (value is num) return !value.isFinite || value.abs() > maxCanonicalNumber;
+  if (value is List) return value.any(hasNumberOutOfRange);
+  if (value is Map) return value.values.any(hasNumberOutOfRange);
+  return false;
+}
+
 /// The same rules as `serializeCanonical` in `@oim-media/core` (canonical.ts):
 /// root exclusion, numeric normalization, key ordering by Unicode code point,
 /// compact output, non-ASCII emitted raw, UTF-8.

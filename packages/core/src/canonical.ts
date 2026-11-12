@@ -14,12 +14,31 @@
  * 1. Deserialized base metadata object.
  * 2. Strict exclusion at the root of: 'signature', 'key_version', 'timestamp', 'creator_user_id'.
  * 3. Numeric normalization: decimals with a null fractional part become integers (2.0 -> 2);
- *    the rest is rounded to at most 6 decimals.
+ *    the rest is rounded to at most 6 decimals. A number that is not finite or lies
+ *    beyond +/-(2^53 - 1) has no canonical form: see hasNumberOutOfRange.
  * 4. Recursive lexical key ordering by Unicode code point (codePointAt).
  * 5. Compact serialization without spaces between separators (',', ':').
  * 6. Non-ASCII characters emitted directly in UTF-8 without escaping (no \uXXXX).
  * 7. Native UTF-8 encoding.
  */
+
+/** Largest magnitude a signed number may have: every JSON parser reads it exactly. */
+export const MAX_CANONICAL_NUMBER = Number.MAX_SAFE_INTEGER;
+
+/**
+ * Whether the metadata carries, at any depth, a number with no canonical form.
+ * Beyond 2^53 - 1 parsers disagree on the value they read, so signers refuse
+ * such metadata and verifiers report its signature as invalid.
+ */
+export function hasNumberOutOfRange(value: unknown): boolean {
+  if (typeof value === 'number') {
+    return !Number.isFinite(value) || Math.abs(value) > MAX_CANONICAL_NUMBER;
+  }
+  if (value !== null && typeof value === 'object') {
+    return Object.values(value).some(hasNumberOutOfRange);
+  }
+  return false;
+}
 
 const EXCLUDED_ROOT_KEYS = new Set([
   'signature',

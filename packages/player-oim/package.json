@@ -1,6 +1,6 @@
 {
   "name": "@oim-media/player-oim",
-  "version": "1.27.8",
+  "version": "1.27.9",
   "description": "Web player for OIM interactive images: a framework-free <oim-player> element that verifies the signature and composes each layer.",
   "keywords": [
     "oim",
@@ -22,7 +22,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@oim-media/core": "workspace:1.27.8",
+    "@oim-media/core": "workspace:1.27.9",
     "lottie-web": "^5.12.2"
   },
   "devDependencies": {

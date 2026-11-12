@@ -4,6 +4,12 @@
 contract version. The full history, for all packages, is in the repository's
 [CHANGELOG.md](https://github.com/oim-media/oim/blob/main/CHANGELOG.md).
 
+## 1.27.9
+
+- A number in the metadata beyond +/-(2^53 - 1) has no canonical form: the signature of
+  such a file is reported as invalid, the same as in the web player and the Rust crate.
+  `hasNumberOutOfRange` is exported.
+
 ## 1.27.8
 
 - Shadows, effects and a rectangle's stroke scale with the canvas; the stroke

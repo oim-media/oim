@@ -116,7 +116,7 @@ describe("viewer-desktop playerBridge & UI", () => {
   it("builds technical specs summary using @oim-media/core permissionOf", () => {
     const specs = buildSpecsSummary(
       {
-        oim: "1.27.8",
+        oim: "1.27.9",
         reedit: "sealed",
         palettes: {
           dark: { primary: "#111111" },
@@ -137,7 +137,7 @@ describe("viewer-desktop playerBridge & UI", () => {
     expect(specs.fileName).toBe("poster.oim.png");
     expect(specs.fileSizeFormatted).toBe(formatFileSize(512 * 1024));
     expect(specs.dimensionsLabel).toBe("1200 × 800 px");
-    expect(specs.schemaVersion).toBe("1.27.8");
+    expect(specs.schemaVersion).toBe("1.27.9");
     expect(specs.slotsCount).toBe(3);
     expect(specs.slotTypes).toEqual({ text: 2, lottie: 1 });
     expect(specs.reeditPolicy).toBe("sealed");
@@ -214,7 +214,7 @@ describe("viewer-desktop playerBridge & UI", () => {
     // Contextual controls in Inspector & Bottom HUD
     const specs = buildSpecsSummary(
       {
-        oim: "1.27.8",
+        oim: "1.27.9",
         lang: ["es", "en"],
         reedit: "public",
         palettes: {

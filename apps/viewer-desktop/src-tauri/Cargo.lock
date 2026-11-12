@@ -2477,7 +2477,7 @@ dependencies = [
 
 [[package]]
 name = "oim-viewer"
-version = "1.27.8"
+version = "1.27.9"
 dependencies = [
  "reqwest",
  "serde",

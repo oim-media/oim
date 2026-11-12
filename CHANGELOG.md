@@ -3,7 +3,7 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
-## Unreleased
+## 1.27.9
 
 - Rust crate: a signed decimal with many digits (for example `1.0000004999999999`) could be
   read one bit off and the file reported as tampered. `serde_json` now parses with

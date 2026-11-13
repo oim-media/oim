@@ -1536,7 +1536,9 @@ export class LegacyRenderer {
         isText: slotType === 'text',
         isParallaxGroup: !!(slot.isParallaxGroup || style.isParallaxGroup || slot.is_parallax_group),
         hasFilterOrShadow: !!(style.filter || style.boxShadow || style.textShadow),
-        hasKeyframes: Array.isArray(style.animation?.keyframes) && style.animation.keyframes.length >= 2,
+        hasKeyframes: v2Own
+          ? !!v2Own.animations?.some(isTimeline)
+          : Array.isArray(style.animation?.keyframes) && style.animation.keyframes.length >= 2,
       });
       // Resolve slot width and height based on design proportions
       const origW = self.metadata?.canvas_width || self.metadata?.canvasWidth || (self.metadata?.canvas ? self.metadata.canvas.natural_width : 800);
@@ -2303,8 +2305,39 @@ export class LegacyRenderer {
         loopWrap.style.overflow = 'visible';
       }
 
-      if (style.animation && !self.disableAnimations) {
-        const anim = style.animation;
+      // One reading for both contracts: the 2.0 layer's animations, or the 1.x
+      // `animation` object when the file has no 2.0 layer.
+      const v2Timeline = v2Own?.animations?.find(isTimeline);
+      const v2Loop = v2Own?.animations?.find((a) => a.on === 'loop' && a.preset);
+      const v2Hover = v2Own?.animations?.find((a) => a.on === 'hover' && a.preset);
+      const seconds = (ms: number | undefined) => (ms ? +(ms / 1000).toFixed(6) : 0);
+      const animSource = v2Own
+        ? (v2Timeline || v2Loop || v2Hover
+            ? {
+                frames: v2Timeline ? tracksToWaapi(v2Timeline.tracks!) : undefined,
+                duration: v2Timeline ? seconds(v2Timeline.duration) : 0,
+                trigger: v2Timeline?.on === 'action' ? 'action' : undefined,
+                loop: v2Loop?.preset,
+                loopDuration: seconds(v2Loop?.duration),
+                loopDelay: seconds(v2Loop?.delay),
+                hover: v2Hover?.preset,
+              }
+            : undefined)
+        : style.animation
+          ? {
+              frames: Array.isArray(style.animation.keyframes) && style.animation.keyframes.length >= 2 && (style.animation.duration || 8) > 0
+                ? keyframesToWaapi(style.animation.keyframes, style.animation.duration || 8)
+                : undefined,
+              duration: style.animation.duration || 8,
+              trigger: style.animation.trigger,
+              loop: style.animation.loop,
+              loopDuration: style.animation.duration,
+              loopDelay: style.animation.delay,
+              hover: style.animation.hover,
+            }
+          : undefined;
+      if (animSource && !self.disableAnimations) {
+        const anim = animSource;
         
         // Structured keyframes: the new path. It runs on loopWrap,
         // NEVER on slotEl: the .oim-slot transform is the positioning anchor
@@ -2313,10 +2346,10 @@ export class LegacyRenderer {
         //
         // loopWrap's opacity multiplies on its own with slotEl's (which carries the entry fade-in
         // and the shape's base opacity) by DOM composition, so there is no conflict to sequence.
-        if (Array.isArray(anim.keyframes) && anim.keyframes.length >= 2 && typeof loopWrap.animate === 'function') {
-          const animDuration = anim.duration || 8;
-          if (animDuration > 0) {
-            const frames = keyframesToWaapi(anim.keyframes, animDuration);
+        if (anim.frames && typeof loopWrap.animate === 'function') {
+          const animDuration = anim.duration;
+          {
+            const frames = anim.frames;
             // `trigger: "action"` waits for a `play` action: one run, resting
             // on the first keyframe until then.
             const onAction = anim.trigger === 'action';
@@ -2347,11 +2380,11 @@ export class LegacyRenderer {
         // never wrote it; only the catalogue classes remain.
         if (anim.loop && anim.loop !== 'none' && anim.loop !== 'custom') {
           loopWrap.classList.add('oim-loop-' + anim.loop);
-          if (anim.duration) {
-            loopWrap.style.setProperty('--oim-loop-duration', anim.duration + 's');
+          if (anim.loopDuration) {
+            loopWrap.style.setProperty('--oim-loop-duration', anim.loopDuration + 's');
           }
-          if (anim.delay) {
-            loopWrap.style.setProperty('--oim-loop-delay', anim.delay + 's');
+          if (anim.loopDelay) {
+            loopWrap.style.setProperty('--oim-loop-delay', anim.loopDelay + 's');
           }
         }
 
@@ -3386,6 +3419,59 @@ export class LegacyRenderer {
  * The offsets are in px of design space: the player's overlay IS design space already and
  * scales as one unit, so they scale on their own.
  */
+/** A 2.0 animation that is a timeline of the layer itself: looping, or waiting for a `play`. */
+function isTimeline(a: { on: string; tracks?: { property: string }[] }): boolean {
+  return (a.on === 'loop' || a.on === 'action') && !!a.tracks && a.tracks.some((t) => TIMELINE_REST[t.property] !== undefined);
+}
+
+const TIMELINE_REST: Record<string, number> = { x: 0, y: 0, rotation: 0, scale: 1, opacity: 1, blur: 0 };
+const IN_TRANSFORM = ['x', 'y', 'rotation', 'scale'];
+
+type TrackLike = { property: string; keyframes: { t: number; v: number; e?: unknown }[] };
+
+/** A track's value at a time: its keyframe there, else a straight line between its neighbours. */
+function trackAt(track: TrackLike | undefined, t: number, rest: number): number {
+  if (!track) return rest;
+  const k = track.keyframes;
+  const exact = k.find((p) => p.t === t);
+  if (exact) return exact.v;
+  const next = k.findIndex((p) => p.t > t);
+  if (next <= 0) return next === 0 ? k[0].v : k[k.length - 1].v;
+  const a = k[next - 1], b = k[next];
+  return a.v + ((b.v - a.v) * (t - a.t)) / (b.t - a.t);
+}
+
+/**
+ * 2.0 tracks as the keyframes the Web Animations API runs: position, rotation
+ * and scale share one `transform`, written at every time one of them has a
+ * keyframe; opacity and blur only where their own track names them, so the
+ * browser interpolates across the frames that are silent.
+ */
+export function tracksToWaapi(tracks: TrackLike[]): Keyframe[] {
+  const by = (property: string) => tracks.find((t) => t.property === property);
+  const moves = IN_TRANSFORM.some((p) => by(p));
+  const times = new Map<number, any>();
+  for (const track of tracks) {
+    if (TIMELINE_REST[track.property] === undefined) continue;
+    for (const point of track.keyframes) {
+      let frame = times.get(point.t);
+      if (!frame) times.set(point.t, (frame = { offset: point.t }));
+      if (point.e !== undefined) frame.easing = easingToCss(point.e as never, 'linear');
+      if (track.property === 'opacity') frame.opacity = point.v;
+      else if (track.property === 'blur') frame.filter = point.v > 0 ? 'blur(' + point.v + 'px)' : 'none';
+      else frame.moves = true;
+    }
+  }
+  return [...times.values()].sort((a, b) => a.offset - b.offset).map(function (frame) {
+    const { moves: own, ...rest } = frame;
+    if (moves && own) {
+      const v = (p: string) => trackAt(by(p), frame.offset, TIMELINE_REST[p]);
+      rest.transform = 'translate(' + v('x') + 'px, ' + v('y') + 'px) rotate(' + v('rotation') + 'deg) scale(' + v('scale') + ')';
+    }
+    return rest;
+  });
+}
+
 export function keyframesToWaapi(keyframes: any[], duration: number): Keyframe[] {
   return keyframes.map(function (kf) {
     const x = kf.x || 0;

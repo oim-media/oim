@@ -42,9 +42,12 @@ function mount() {
       style: {
         animation: {
           duration: 2,
+          // The format's own keyframes (`t` in seconds, `o` opacity). The fixture
+          // used the browser's shape (`offset`, `opacity`), which the format never
+          // had and a 2.0 reading rightly drops.
           keyframes: [
-            { offset: 0, opacity: 1 },
-            { offset: 1, opacity: 0.2 },
+            { t: 0, o: 1 },
+            { t: 2, o: 0.2 },
           ],
         },
       },

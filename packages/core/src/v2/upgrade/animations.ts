@@ -28,22 +28,35 @@ const KEYFRAME_PROPERTIES: [letter: string, property: Property, rest: number][] 
   ["b", "blur", 0],
 ];
 
+/** What 1.x wrote into one `transform`: a frame that left one out drew it at rest. */
+const IN_TRANSFORM = new Set<Property>(["x", "y", "scale", "rotation"]);
+
 /**
  * 1.x keyframes carry every property at once, in seconds. Each property that
- * ever leaves its rest value becomes a track, with time from 0 to 1.
+ * ever leaves its rest value becomes a track, with time from 0 to 1. Position,
+ * scale and rotation take every frame (at rest where the frame is silent, as
+ * 1.x drew it); opacity and blur take only the frames that name them.
  */
 function tracksOf(keyframes: unknown[], duration: number): Track[] {
   const frames = keyframes.map(asObject).filter((f): f is V1Object => !!f && finite(f.t) !== undefined);
+  // 1.x ran a timeline only from two keyframes up.
+  if (frames.length < 2) return [];
   const tracks: Track[] = [];
   for (const [letter, property, rest] of KEYFRAME_PROPERTIES) {
-    const own = frames.filter((f) => finite(f[letter]) !== undefined);
-    if (!own.some((f) => f[letter] !== rest)) continue;
+    const named = frames.filter((f) => finite(f[letter]) !== undefined);
+    if (!named.some((f) => f[letter] !== rest)) continue;
+    const own = IN_TRANSFORM.has(property) ? frames : named;
     const points = own.map((f) => {
-      const point: Track["keyframes"][number] = { t: Math.min(1, Math.max(0, (f.t as number) / duration)), v: f[letter] as number };
+      const point: Track["keyframes"][number] = { t: Math.min(1, Math.max(0, (f.t as number) / duration)), v: finite(f[letter]) ?? rest };
       if (f.e !== undefined) point.e = f.e as never;
       return point;
     });
-    if (points.length === 1) points.push({ t: 1, v: points[0].v });
+    // A lone opacity or blur keyframe: the browser ran to it from the layer's own value, and back.
+    if (points.length === 1) {
+      const at = points[0].t;
+      if (at > 0) points.unshift({ t: 0, v: rest });
+      if (at < 1) points.push({ t: 1, v: rest });
+    }
     tracks.push({ property, keyframes: points });
   }
   return tracks;
@@ -85,14 +98,17 @@ export function convertAnimations(ctx: UpgradeContext, slot: V1Slot, layer: Draf
 
   const animation = asObject(ctx.take(style, "animation"));
   if (animation) {
-    const seconds = finite(animation.duration) ?? 1;
+    const said = finite(animation.duration);
     const delay = finite(animation.delay);
-    const timing = { duration: seconds * 1000, ...(delay ? { delay: delay * 1000 } : {}) };
-    const tracks = Array.isArray(animation.keyframes) ? tracksOf(animation.keyframes, seconds) : [];
+    // A timeline with no duration of its own ran for 8 seconds, and never waited:
+    // the delay was the named loop's alone.
+    const seconds = said || 8;
+    const tracks = Array.isArray(animation.keyframes) && seconds > 0 ? tracksOf(animation.keyframes, seconds) : [];
     // Keyframes loop for ever unless an action starts them, which is how every player runs them.
-    if (tracks.length > 0) animations.push({ on: animation.trigger === "action" ? "action" : "loop", tracks, ...timing });
+    if (tracks.length > 0) animations.push({ on: animation.trigger === "action" ? "action" : "loop", tracks, duration: seconds * 1000 });
     if (typeof animation.loop === "string" && animation.loop !== "none" && animation.loop !== "custom") {
-      animations.push({ on: "loop", preset: animation.loop, ...timing });
+      // No duration of its own: the preset decides it (0).
+      animations.push({ on: "loop", preset: animation.loop, duration: said && said > 0 ? said * 1000 : 0, ...(delay && delay > 0 ? { delay: delay * 1000 } : {}) });
     }
     if (typeof animation.hover === "string" && animation.hover !== "none" && animation.hover !== "custom") {
       animations.push({ on: "hover", preset: animation.hover, duration: 200 });

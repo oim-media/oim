@@ -259,8 +259,31 @@ describe("animations, motion and interactions", () => {
     expect(layer({ animation: { duration: 2, keyframes: [{ t: 0, o: 1, s: 1 }, { t: 2, o: 1, s: 1 }] } })).not.toHaveProperty("animations");
   });
 
-  it("a trigger of action plays once when something starts it; a delay is in milliseconds", () => {
-    expect(layer({ animation: { duration: 1, delay: 0.5, trigger: "action", keyframes: [{ t: 0, s: 1 }, { t: 1, s: 2 }] } }).animations?.[0]).toMatchObject({ on: "action", delay: 500 });
+  // Ruling (13 Nov): what the 1.x player ran wins. A timeline never waited (the
+  // delay was the named loop's alone), ran 8 seconds when it said no duration,
+  // needed two keyframes, and drew position, scale and rotation at rest on a
+  // frame that left them out.
+  it("a trigger of action plays once when something starts it; the delay belongs to the named loop", () => {
+    const anims = layer({ animation: { duration: 1, delay: 0.5, trigger: "action", loop: "pulse", keyframes: [{ t: 0, s: 1 }, { t: 1, s: 2 }] } }).animations;
+    expect(anims?.[0]).toMatchObject({ on: "action", duration: 1000 });
+    expect(anims?.[0]).not.toHaveProperty("delay");
+    expect(anims?.[1]).toEqual({ on: "loop", preset: "pulse", duration: 1000, delay: 500 });
+  });
+
+  it("a timeline as 1.x ran it: 8 seconds unsaid, two keyframes at least, silent frames at rest", () => {
+    expect(layer({ animation: { keyframes: [{ t: 0, x: 10 }, { t: 4 }, { t: 8, x: 10, o: 0.5 }] } }).animations).toEqual([
+      {
+        on: "loop",
+        duration: 8000,
+        tracks: [
+          // A lone opacity keyframe: from the layer's own value to it.
+          { property: "opacity", keyframes: [{ t: 0, v: 1 }, { t: 1, v: 0.5 }] },
+          { property: "x", keyframes: [{ t: 0, v: 10 }, { t: 0.5, v: 0 }, { t: 1, v: 10 }] },
+        ],
+      },
+    ]);
+    expect(layer({ animation: { duration: 2, keyframes: [{ t: 0, x: 10 }] } })).not.toHaveProperty("animations");
+    expect(layer({ animation: { loop: "pulse" } }).animations).toEqual([{ on: "loop", preset: "pulse", duration: 0 }]);
   });
 
   it("the named loop and hover presets", () => {

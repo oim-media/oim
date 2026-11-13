@@ -318,10 +318,34 @@ describe("animations, motion and interactions", () => {
     ]);
   });
 
+  // Ruling (13 Nov): what the 1.x player drew wins. It trimmed only the SVG it
+  // drew itself, with a stroke width; a trim with no duration was drawn still,
+  // and the stroke grew from its start.
+  const icon = { content: '<svg viewBox="0 0 10 10"><path d="M0 0h10"/></svg>' };
   it("the drawing of a stroke is a track over trimEnd", () => {
-    expect(layer({ trimStart: 0, trimEnd: 100, trimDuration: 2.2 }).animations).toEqual([
+    expect(layer({ strokeWidth: 2, trimStart: 0, trimEnd: 100, trimDuration: 2.2 }, "svg", icon).animations).toEqual([
       { on: "load", duration: 2200, tracks: [{ property: "trimEnd", keyframes: [{ t: 0, v: 0 }, { t: 1, v: 1 }] }] },
     ]);
+  });
+
+  it("a still trim has no duration, and its start stays put", () => {
+    expect(layer({ strokeWidth: 2, trimStart: 25, trimEnd: 75 }, "svg", icon).animations).toEqual([
+      {
+        on: "load",
+        duration: 0,
+        tracks: [
+          { property: "trimEnd", keyframes: [{ t: 0, v: 0.25 }, { t: 1, v: 0.75 }] },
+          { property: "trimStart", keyframes: [{ t: 0, v: 0.25 }, { t: 1, v: 0.25 }] },
+        ],
+      },
+    ]);
+    expect(valid({ strokeWidth: 2, trimStart: 25, trimEnd: 75 }, "svg", icon)).toEqual([]);
+  });
+
+  it("a trim 1.x never drew is not written", () => {
+    expect(layer({ strokeWidth: 2, trimStart: 0, trimEnd: 100 }, "svg", icon)).not.toHaveProperty("animations");
+    expect(layer({ trimDuration: 2 }, "svg", icon)).not.toHaveProperty("animations");
+    expect(layer({ strokeWidth: 2, trimDuration: 2 })).not.toHaveProperty("animations");
   });
 
   it("a state that changes the look is an animation; the scale was a percentage", () => {

@@ -997,7 +997,11 @@ export class LegacyRenderer {
       // Background layer slots (editor's dynamic pattern) must paint BEHIND the
       // rest regardless of their position in the slots array.
       slotEl.style.zIndex = isBackgroundSlot ? '0' : '1';
-      (slotEl as any)._oimReveal = style.reveal;
+      // How it enters and leaves: the 2.0 layer's `enter` animation, or the 1.x reveal.
+      const v2Enter = v2Own?.animations?.find((a) => a.on === 'enter' && a.preset);
+      (slotEl as any)._oimReveal = v2Own
+        ? (v2Enter ? { effect: v2Enter.preset, duration: v2Enter.duration, easing: v2Enter.easing } : undefined)
+        : style.reveal;
       // A layer with no interaction of its own lets the pointer through: a
       // text above a card, or a full-canvas group revealed by a click, used to
       // swallow the hover or click of the layer behind it. A CSS rule
@@ -1409,9 +1413,21 @@ export class LegacyRenderer {
       // `trimDuration` goes in the condition on purpose: an icon with
       // trimStart 0 and trimEnd 100 trims nothing, but IS animated, and it is the
       // most common case: drawing the whole icon from start to finish.
-      if (hasHtmlOrSvg && (style.trimStart || (style.trimEnd != null && style.trimEnd < 100) || style.trimDuration)) {
-        if (style.trimDuration) ensureTrimKeyframes(self.host.shadowRoot);
-        applyTrimToSvgPaths(hoverWrap, style);
+      // The 2.0 trim: a load animation over `trimEnd`, its start in `trimStart`.
+      const v2Trim = v2Own?.animations?.find((a) => a.on === 'load' && a.tracks?.some((t) => t.property === 'trimEnd'));
+      const trimOf = (property: string, at: number) => {
+        const k = v2Trim?.tracks?.find((t) => t.property === property)?.keyframes;
+        return k ? +(k[at ? k.length - 1 : 0].v * 100).toFixed(6) : undefined;
+      };
+      const trimStyle = v2Own
+        ? (v2Trim
+            // upgrade already asked for a stroke width; any truthy one lets the trim through.
+            ? { strokeWidth: 1, trimStart: trimOf('trimStart', 0) ?? trimOf('trimEnd', 0), trimEnd: trimOf('trimEnd', 1), trimDuration: +(v2Trim.duration / 1000).toFixed(6) }
+            : undefined)
+        : (style.trimStart || (style.trimEnd != null && style.trimEnd < 100) || style.trimDuration ? style : undefined);
+      if (hasHtmlOrSvg && trimStyle) {
+        if (trimStyle.trimDuration) ensureTrimKeyframes(self.host.shadowRoot);
+        applyTrimToSvgPaths(hoverWrap, trimStyle);
       }
       
       // A text's typography comes from its 2.0 layer; what it leaves out keeps the defaults.

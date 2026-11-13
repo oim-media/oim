@@ -154,11 +154,25 @@ export function convertAnimations(ctx: UpgradeContext, slot: V1Slot, layer: Draf
   const trimStart = finite(ctx.take(style, "trimStart"));
   const trimEnd = finite(ctx.take(style, "trimEnd"));
   const trimDuration = finite(ctx.take(style, "trimDuration"));
-  if (layer.type === "shape" && trimDuration) {
+  // 1.x trimmed only markup it drew itself (an SVG, or HTML) that had a stroke
+  // width, and only when the trim hid something or was animated.
+  const start = trimStart ?? 0;
+  const end = trimEnd ?? 100;
+  const seconds = Math.max(0, trimDuration ?? 0);
+  const content = raw.content;
+  const texts = typeof content === "string" ? [content] : Object.values(asObject(content) ?? {});
+  const drawn = slot.type !== "image" && texts.some((t) => typeof t === "string" && /(<|&lt;)svg|<span|<div|<a|<img/i.test(t));
+  if (layer.type === "shape" && drawn && style.strokeWidth && !(start <= 0 && end >= 100 && seconds <= 0)) {
+    const from = start / 100;
     animations.push({
       on: "load",
-      duration: trimDuration * 1000,
-      tracks: [{ property: "trimEnd", keyframes: [{ t: 0, v: (trimStart ?? 0) / 100 }, { t: 1, v: (trimEnd ?? 100) / 100 }] }],
+      // No duration: the stroke is simply drawn trimmed.
+      duration: seconds * 1000,
+      tracks: [
+        { property: "trimEnd", keyframes: [{ t: 0, v: from }, { t: 1, v: end / 100 }] },
+        // The stroke grows from its start, which stays where it is.
+        ...(start > 0 ? [{ property: "trimStart" as const, keyframes: [{ t: 0, v: from }, { t: 1, v: from }] }] : []),
+      ],
     });
   }
 

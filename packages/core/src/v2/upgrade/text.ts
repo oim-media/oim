@@ -40,8 +40,6 @@ const TYPOGRAPHY_KEYS = [
 
 export function convertText(ctx: UpgradeContext, slot: V1Slot, layer: DraftLayer): void {
   const { raw, style } = slot;
-  // `verticalAlign` was declared and never written by the editor.
-  ctx.retire(style, "verticalAlign");
   const align = ctx.take(style, "textAlign") ?? ctx.take(raw, "align");
   ctx.take(raw, "align");
 

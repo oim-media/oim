@@ -13,10 +13,10 @@ const DEFAULT_CANVAS = 800;
 
 // A converted document is not a signed one: it is signed again as 2.0, so the
 // signature of the 1.x bytes and everything that travelled with it is dropped.
-const TRANSPORT_KEYS = ["signature", "key_version", "signed_at", "timestamp", "image_hash", "image_hash_alg"];
+export const TRANSPORT_KEYS = ["signature", "key_version", "signed_at", "timestamp", "image_hash", "image_hash_alg"];
 
 // Root keys with no place in 2.0: superseded, never read, or about the video format.
-const RETIRED_ROOT_KEYS = [
+export const RETIRED_ROOT_KEYS = [
   "version",
   "min_player",
   "image",

@@ -14,6 +14,7 @@ import { convertAnimations } from "./upgrade/animations.js";
 import { convertBox } from "./upgrade/box.js";
 import { canvasEffects, convertEffects } from "./upgrade/effects.js";
 import { convertGeometry } from "./upgrade/geometry.js";
+import { RETIRED_STYLE_KEYS } from "./upgrade/keys.js";
 import { convertMask } from "./upgrade/mask.js";
 import { canvasFills, convertPaints } from "./upgrade/paints.js";
 import { asObject, createContext, type DraftLayer, type UpgradeContext, type V1Object, type V1Slot } from "./upgrade/context.js";
@@ -72,6 +73,7 @@ function readSlot(ctx: UpgradeContext, value: unknown, index: number): V1Slot {
   // `s` was a size nobody wrote; `zone_id` pointed at zones no file declares.
   ctx.retire(raw, "s");
   ctx.retire(raw, "zone_id");
+  for (const key of RETIRED_STYLE_KEYS) ctx.retire(style, key);
   if (raw.id === undefined) raw.id = `layer-${index + 1}`;
   const type = typeof raw.type === "string" ? raw.type : "text";
   return { raw, style, type };

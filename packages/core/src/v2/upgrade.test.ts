@@ -168,6 +168,13 @@ describe("upgrade: root, tree and box", () => {
     expect(parsed.success ? [] : parsed.error.issues).toEqual([]);
   });
 
+  it("does not modify its input, even when it has to rename aliases and invent an id", () => {
+    const input = { oim: "1.20.0", reedicion: "sellado", slots: [{ type: "geo", p: [10, 20], st: { width: 10, height: 10, groupId: "g" }, c: { es: "" } }] };
+    const before = JSON.parse(JSON.stringify(input));
+    upgrade(input);
+    expect(input).toEqual(before);
+  });
+
   it("never throws on something that is not a document", () => {
     for (const input of [null, 3, "x", [], {}]) {
       expect(() => upgrade(input), String(input)).not.toThrow();

@@ -11,6 +11,7 @@ schema/             oim.schema.json and ovm.schema.json: JSON Schema, generated 
 keys.json           Public keys every player embeds (kid, jwk and key dates). Public parts only.
 marks-cases.json    Known-answer cases for text marks, shared with the backend's validator tests.
 canonical-cases.json  Known-answer case for the canonical form, checked by the TypeScript, Rust and Dart implementations.
+schema/oim2.schema.json  Draft of the 2.0 document, generated from @oim-media/core/v2. Not the published format.
 vectors/            37 signed .oim files, each with <name>.expected.json.
 tools/              Read-only checks: contract-summary.mjs, canonical-check.mjs, style-usage.mjs.
 ```
@@ -267,6 +268,17 @@ overrides all of them.
 
 A 1.20.0 file read by an earlier player is shown with each layer's fixed
 colours. Nothing breaks.
+
+## The 2.0 draft
+
+`schema/oim2.schema.json` is the next version of the document, still a draft: no player reads it and
+it can change. `@oim-media/core/v2` exports `upgrade`, which reads any 1.x document as 2.0, and the
+conformance gate checks that every vector upgrades to a valid 2.0 document with no key left behind.
+
+```
+node tools/upgrade-report.mjs --vectors   # the same check, as a report
+node tools/upgrade-report.mjs <folder>    # over any other folder of .oim files
+```
 
 ## Conformance vectors
 

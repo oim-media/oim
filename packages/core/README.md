@@ -84,6 +84,31 @@ embedded keys (see [`@oim-media/spec`](../spec/README.md#embedded-player-keys)).
 - `OIM_BACKEND_URL_DEFAULT`, `OIM_ENDPOINTS`, `OIM_PACKAGE_FIELDS`,
   `resolveBackendUrl(override?)`, `oimEndpoint(name, backendUrl?)`.
 
+## The 2.0 draft (`@oim-media/core/v2`)
+
+An experimental entry for the next version of the document. The published format is still the one
+above; no player reads 2.0 yet and its shape can change.
+
+2.0 keeps what a file can express and reorganises how it is written: five layer types (`text`,
+`shape`, `image`, `lottie`, `group`) instead of fifteen, and one block per idea (`fills`, `strokes`,
+`effects`, `text`, `geometry`, `mask`, `animations`, `interactions`) that is the same in every layer
+that admits it. An absent field is its default.
+
+- `documentSchema`, `layerSchema` and the schema of each block: the 2.0 document, in Zod.
+- `LAYER_BLOCKS` and `admits(type, block)`: which block each layer type admits.
+- `upgrade(v1)`: reads a 1.x document as 2.0. It returns `{ document, retired, unhandled }`.
+  `retired` lists the 1.x keys dropped on purpose; `unhandled` lists the ones nobody converted, and
+  is empty for every conformance vector. It is pure and does not sign: verify a 1.x file with its own
+  bytes first.
+- `isV2(input)`: whether a document is already 2.0.
+
+```ts
+import { upgrade } from "@oim-media/core/v2";
+
+const { document, unhandled } = upgrade(metadata);
+if (unhandled.length > 0) console.warn("not carried to 2.0:", unhandled);
+```
+
 ## Examples
 
 Read a file and check what it needs:

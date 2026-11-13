@@ -64,21 +64,29 @@ function tracksOf(keyframes: unknown[], duration: number): Track[] {
 
 const TEXT_TARGET: Record<string, "words" | "lines"> = { "rise-words": "words", "reveal-mask": "lines" };
 
-/** A hover or press state that changes how the layer looks. */
-function stateAnimation(state: V1Object, on: "hover" | "press"): Animation | undefined {
+/**
+ * The look a layer takes under the pointer. Each track runs from the layer's
+ * own value to the state's, which 1.x set outright (it did not add to it).
+ * Only hover: 1.x never drew the look of `active`.
+ */
+function hoverLook(ctx: UpgradeContext, state: V1Object, layer: DraftLayer): Animation | undefined {
   const tracks: Track[] = [];
+  const to = (property: Property, own: number, target: number) => {
+    if (target !== own) tracks.push({ property, keyframes: [{ t: 0, v: own }, { t: 1, v: target }] });
+  };
   const scale = finite(state.scale);
   // 1.x wrote the scale as a percentage; a value of 10 or less is an old multiplier.
-  if (scale !== undefined) {
-    const factor = scale > 10 ? scale / 100 : scale;
-    if (factor !== 1) tracks.push({ property: "scale", keyframes: [{ t: 0, v: 1 }, { t: 1, v: factor }] });
-  }
+  if (scale !== undefined) to("scale", 1, scale > 10 ? scale / 100 : scale);
   const rotation = finite(state.rotation);
-  if (rotation) tracks.push({ property: "rotation", keyframes: [{ t: 0, v: 0 }, { t: 1, v: rotation }] });
+  if (rotation !== undefined) to("rotation", layer.box.rotation ?? 0, rotation);
   const opacity = finite(state.opacity);
-  if (opacity !== undefined && opacity !== 100) tracks.push({ property: "opacity", keyframes: [{ t: 0, v: 1 }, { t: 1, v: opacity / 100 }] });
+  if (opacity !== undefined) to("opacity", layer.opacity ?? 1, opacity / 100);
+  // No track can carry a colour.
+  if (state.color) ctx.note("style.states.hover.color: a hover colour is not carried to 2.0");
   if (tracks.length === 0) return undefined;
-  return { on, tracks, duration: finite(state.transitionDuration) ?? 200 };
+  // In milliseconds, as the editor wrote it (the 1.x player read it as seconds).
+  // None of its own: the player's transition decides (0).
+  return { on: "hover", tracks, duration: Math.max(0, finite(state.transitionDuration) ?? 0) };
 }
 
 const ACTIONS = new Set(["show", "hide", "toggle", "setText", "play"]);
@@ -172,11 +180,15 @@ export function convertAnimations(ctx: UpgradeContext, slot: V1Slot, layer: Draf
     }
   }
 
-  const states = asObject(ctx.take(style, "states")) ?? {};
+  // The slot's own states won over the style's, and counted only on a layer marked interactive.
+  const ownStates = asObject(ctx.take(raw, "states"));
+  const states = ownStates ?? asObject(ctx.take(style, "states")) ?? {};
+  const interactive = raw.isInteractive === true || style.isInteractive === true;
+  ctx.take(raw, "isInteractive");
   for (const [name, on] of [["hover", "hover"], ["active", "press"]] as const) {
     const state = asObject(states[name]);
     if (!state) continue;
-    const look = stateAnimation(state, on);
+    const look = interactive && on === "hover" ? hoverLook(ctx, state, layer) : undefined;
     if (look) animations.push(look);
     const acts = stateInteraction(state, on);
     if (acts) interactions.push(acts);

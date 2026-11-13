@@ -2444,6 +2444,26 @@ export class LegacyRenderer {
             style: style as any
           }, slot.id);
 
+      // The hover look comes from the 2.0 layer; the actions are still read from 1.x.
+      const v2HoverLook = v2Own?.animations?.find((a) => a.on === 'hover' && a.tracks);
+      const hoverTarget = (property: string) => {
+        const k = v2HoverLook?.tracks?.find((t) => t.property === property)?.keyframes;
+        return k ? k[k.length - 1].v : undefined;
+      };
+      const boundStates = v2Own && slotStates
+        ? {
+            hover: {
+              scale: hoverTarget('scale'),
+              rotation: hoverTarget('rotation'),
+              opacity: hoverTarget('opacity') === undefined ? undefined : +(hoverTarget('opacity')! * 100).toFixed(6),
+              // Milliseconds in 2.0; the stylesheet takes seconds.
+              transitionDuration: v2HoverLook && v2HoverLook.duration > 0 ? +(v2HoverLook.duration / 1000).toFixed(6) : undefined,
+              actions: slotStates.hover?.actions,
+            },
+            active: slotStates.active,
+          }
+        : slotStates;
+
       if (isInteractive && slotStates) {
         const baseVisibility: Record<string, boolean> = {};
         const baseText: Record<string, string> = {};
@@ -2589,7 +2609,7 @@ export class LegacyRenderer {
 
         bindStates(
           slotEl,
-          slotStates,
+          boundStates,
           function (el, styles) {
             self.queueUpdate(el, styles);
           },

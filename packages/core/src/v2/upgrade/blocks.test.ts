@@ -351,12 +351,35 @@ describe("animations, motion and interactions", () => {
     expect(layer({ strokeWidth: 2, trimStart: 25, trimDuration: 2 }).geometry).not.toHaveProperty("trim");
   });
 
-  it("a state that changes the look is an animation; the scale was a percentage", () => {
-    expect(layer({ states: { hover: { scale: 105, transitionDuration: 200 } } }).animations).toEqual([
+  // Ruling (13 Nov): what the 1.x player drew wins. A hover look counted only
+  // on a layer marked interactive, set its values outright, and `active` never
+  // had a look. Decision (13 Nov): the transition is in milliseconds, as the
+  // editor writes it; the 1.x player read it as seconds.
+  it("a hover look is an animation from the layer's own values; the scale was a percentage", () => {
+    const on = { isInteractive: true };
+    expect(layer({ ...on, states: { hover: { scale: 105, transitionDuration: 200 } } }).animations).toEqual([
       { on: "hover", duration: 200, tracks: [{ property: "scale", keyframes: [{ t: 0, v: 1 }, { t: 1, v: 1.05 }] }] },
     ]);
-    expect(layer({ states: { hover: { scale: 1.05 } } }).animations?.[0].tracks?.[0].keyframes[1].v).toBe(1.05);
-    expect(layer({ states: { active: { opacity: 50, rotation: 10 } } }).animations?.[0]).toMatchObject({ on: "press", tracks: [{ property: "rotation" }, { property: "opacity", keyframes: [{ t: 0, v: 1 }, { t: 1, v: 0.5 }] }] });
+    expect(layer({ ...on, states: { hover: { scale: 1.05 } } }).animations).toEqual([
+      { on: "hover", duration: 0, tracks: [{ property: "scale", keyframes: [{ t: 0, v: 1 }, { t: 1, v: 1.05 }] }] },
+    ]);
+    expect(layer({ ...on, rotation: 30, opacity: 80, states: { hover: { rotation: 0, opacity: 50 } } }).animations?.[0].tracks).toEqual([
+      { property: "rotation", keyframes: [{ t: 0, v: 30 }, { t: 1, v: 0 }] },
+      { property: "opacity", keyframes: [{ t: 0, v: 0.8 }, { t: 1, v: 0.5 }] },
+    ]);
+  });
+
+  it("the slot's own states win over the style's", () => {
+    const both = layer({ isInteractive: true, states: { hover: { scale: 105 } } }, "geo", { slot: { states: { hover: { scale: 120 } } } });
+    expect(both.animations?.[0].tracks?.[0].keyframes[1].v).toBe(1.2);
+  });
+
+  it("a look 1.x never drew is not written", () => {
+    expect(layer({ states: { hover: { scale: 105 } } })).not.toHaveProperty("animations");
+    expect(layer({ isInteractive: true, states: { active: { opacity: 50, rotation: 10 } } })).not.toHaveProperty("animations");
+    expect(layer({ isInteractive: true, opacity: 50, states: { hover: { opacity: 50, scale: 100 } } })).not.toHaveProperty("animations");
+    expect(layer({ states: { hover: { scale: 105 } } }, "geo", { slot: { isInteractive: true } }).animations).toHaveLength(1);
+    expect(run({ isInteractive: true, states: { hover: { color: "#f00", scale: 105 } } }).unhandled).toEqual(["style.states.hover.color: a hover colour is not carried to 2.0"]);
   });
 
   it("a state that acts on other layers is an interaction, not an animation", () => {

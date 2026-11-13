@@ -95,6 +95,14 @@ describe("fills", () => {
     expect(layer({ fillColorRole: "surface" }).fills).toEqual([{ kind: "color", value: { var: "surface" } }]);
   });
 
+  it("colorRole is the role of fillColor when fillColorRole is absent, as 1.x painted it", () => {
+    expect(layer({ fillColor: "#18181B", colorRole: "on-surface" }, "text").fills).toEqual([{ kind: "color", value: { var: "on-surface", fallback: "#18181B" } }]);
+  });
+
+  it("`color`, retired in 1.5.0, paints nothing", () => {
+    expect(layer({ color: "#ff0000" }, "text")).not.toHaveProperty("fills");
+  });
+
   it("an unknown role with no palette defining it keeps only the literal", () => {
     expect(layer({ fillColor: "#112233", fillColorRole: "brand" }).fills).toEqual([{ kind: "color", value: "#112233" }]);
   });

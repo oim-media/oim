@@ -102,8 +102,13 @@ function fillOf(ctx: UpgradeContext, slot: V1Slot): Paint | undefined {
   const backgroundType = ctx.take(style, "backgroundType");
   // Everything is taken even when it does not win: 1.x writes the fields of
   // every kind of fill and only `fillType` says which one counts.
-  const color = colorOf(ctx, style, "fillColor", "fillColorRole");
-  const legacyColor = colorOf(ctx, style, "color", "colorRole");
+  // 1.x painted fillColor under `fillColorRole || colorRole`; `color` itself was
+  // retired in 1.5.0 and paints nothing, so it is only taken.
+  const roleKey = typeof style.fillColorRole === "string" && style.fillColorRole ? "fillColorRole" : "colorRole";
+  const color = colorOf(ctx, style, "fillColor", roleKey);
+  ctx.take(style, "fillColorRole");
+  ctx.take(style, "colorRole");
+  ctx.take(style, "color");
   const gradient = gradientOf(ctx, style, "fillGradient", "style");
   const image = imageOf(ctx, style);
   const cssAnimation = style.cssAnimation;
@@ -117,8 +122,7 @@ function fillOf(ctx: UpgradeContext, slot: V1Slot): Paint | undefined {
   if (pattern && typeof cssAnimation === "string" && /^background-animation-/.test(cssAnimation)) ctx.take(style, "cssAnimation");
 
   const solid = (): Paint | undefined => {
-    const value = color ?? legacyColor;
-    return value === undefined ? undefined : { kind: "color", value };
+    return color === undefined ? undefined : { kind: "color", value: color };
   };
   const kind = typeof fillType === "string" ? fillType : typeof backgroundType === "string" ? backgroundType : "color";
   if (kind === "none" || kind === "transparent") return undefined;

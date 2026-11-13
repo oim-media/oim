@@ -1065,7 +1065,12 @@ export class LegacyRenderer {
       }
 
       let textFill: Record<string, string> | null = null;
-      if (slotType === 'text' && style.fillType && style.fillType !== 'none') {
+      const v2TextFills = slotType === 'text' ? v2Layers.get(String(slot.id))?.fills : undefined;
+      const v2TextFill = v2TextFills?.length === 1 ? v2TextFills[0] : undefined;
+      if (v2TextFill) {
+        const css = paintCss(v2TextFill, { colors: v2Colors, isText: true, width: slot.width_px || baseWidth, height: slot.height_px || baseHeight });
+        textFill = Object.keys(css).length > 0 ? (css as Record<string, string>) : null;
+      } else if (slotType === 'text' && style.fillType && style.fillType !== 'none') {
         textFill = getFillCss({
           type: 'text',
           width: slot.width_px || baseWidth,
@@ -1417,7 +1422,9 @@ export class LegacyRenderer {
         // being read, so a new text from the editor (`fillColor` with no
         // `fillType`) came out signed without a colour. A fill with a mask
         // (gradient, pattern) overrides it afterwards with `color: transparent`.
-        const resolvedTextColor = resolveCssColor(style.fillColorRole || style.colorRole, style.fillColor);
+        const resolvedTextColor = v2TextFill
+          ? ('kind' in v2TextFill && v2TextFill.kind === 'color' ? v2Colors.css(v2TextFill.value) : '')
+          : resolveCssColor(style.fillColorRole || style.colorRole, style.fillColor);
         if (resolvedTextColor) {
           slotEl.style.setProperty('color', resolvedTextColor);
         }

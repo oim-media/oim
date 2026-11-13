@@ -129,15 +129,17 @@ describe("upgrade: root, tree and box", () => {
     expect(first(v1([{ id: "a", position: [0, 0] }])).type).toBe("text");
   });
 
-  it("reads the short aliases and the Spanish permission before converting", () => {
+  // Ruling (13 Nov): the player stopped reading the short aliases in 1.12.0, so
+  // they are retired, not revived. The Spanish permission is still read.
+  it("retires the short aliases and reads the Spanish permission", () => {
     const legacy = {
       oim: "1.20.0",
       reedicion: "sellado",
       canvas: { natural_width: 1000, natural_height: 500 },
-      slots: [{ id: "a", type: "geo", p: [10, 20], st: { width: "50.0cqw", height: "10.0cqw" } }],
+      slots: [{ id: "a", type: "geo", position: [0, 0], p: [10, 20], st: { width: "50.0cqw", height: "10.0cqw" } }],
     };
     const result = upgrade(legacy);
-    expect(result.document.layers[0].box).toEqual({ x: 100, y: 75, width: 500, height: 100 });
+    expect(result.document.layers[0].box).toMatchObject({ width: 100, height: 100 });
     expect(result.document.reedit).toBe("sealed");
     expect(result.unhandled).toEqual([]);
   });

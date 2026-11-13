@@ -52,22 +52,15 @@ export function isV2(input: unknown): boolean {
   return typeof version === "string" && /^2\./.test(version);
 }
 
-// Short aliases retired in 1.12.0 and still present in old files.
-const SLOT_ALIASES: [alias: string, key: string][] = [
-  ["p", "position"],
-  ["st", "style"],
-  ["c", "content"],
-  ["t", "tracking_data"],
-];
+// Short aliases retired in 1.12.0. The player has not read them since, so a
+// file that still carries them was painted without them: they are retired here too.
+const SLOT_ALIASES = ["p", "st", "c", "t"];
 
 function readSlot(ctx: UpgradeContext, value: unknown, index: number): V1Slot {
   const raw: V1Object = { ...(asObject(value) ?? {}) };
-  for (const [alias, key] of SLOT_ALIASES) {
-    if (raw[key] === undefined && raw[alias] !== undefined) raw[key] = raw[alias];
-    delete raw[alias];
-  }
   const style: V1Object = { ...(asObject(raw.style) ?? {}) };
   ctx.register(raw, "slot");
+  for (const alias of SLOT_ALIASES) if (alias in raw) ctx.retire(raw, alias);
   ctx.register(style, "style");
   ctx.take(raw, "style");
   // `s` was a size nobody wrote; `zone_id` pointed at zones no file declares.

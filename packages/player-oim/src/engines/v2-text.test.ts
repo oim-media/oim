@@ -60,6 +60,20 @@ describe("a text paints from its 2.0 layer", () => {
     expect(written.find(([p]) => p === "border")).toBeUndefined();
   });
 
+  it("its typography, per language", async () => {
+    const el = await render({ fontFamily: "Inter", fontWeight: 400 }, (l) => {
+      l.text.font = { family: "Lora", size: { value: 40, modes: { de: 32 } }, weight: 700, italic: true };
+      l.text.lineHeight = 1.5;
+      l.text.transform = "uppercase";
+    });
+    expect(el.style.fontSize).toBe("40px");
+    expect(el.style.fontFamily).toContain("Lora");
+    expect(el.style.fontWeight).toBe("700");
+    expect(el.style.fontStyle).toBe("italic");
+    expect(el.style.lineHeight).toBe("1.5");
+    expect(el.style.textTransform).toBe("uppercase");
+  });
+
   it("its gradient, clipped to the glyphs", async () => {
     const el = await render(
       { fillType: "gradient", fillGradient: "linear-gradient(90deg, #ff0000 0%, #0000ff 100%)" },

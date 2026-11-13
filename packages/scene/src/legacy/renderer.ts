@@ -15,7 +15,7 @@ import { dropCapStyle, splitDropCap } from '../../../core/src/drop-cap.js';
 import { layerTextureMask } from '../../../core/src/effects/texture-mask.js';
 import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entranceClips, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
 import { loadLottie } from './lottie-loader.js';
-import { v2LayersOf, anchorShift, paintColors } from './v2-layers.js';
+import { v2LayersOf, anchorShift, paintColors, typographyCss } from './v2-layers.js';
 import { paintCss } from '../../../core/src/v2/paint-css.js';
 import { sanitizeHtml, sanitizeFontFamily, isSandboxImageSrc } from './sanitize.js';
 import {
@@ -1386,13 +1386,17 @@ export class LegacyRenderer {
         applyTrimToSvgPaths(hoverWrap, style);
       }
       
-      const fontSize: string = localized.size;
+      // A text's typography comes from its 2.0 layer; what it leaves out keeps the defaults.
+      const v2Typo = slotType === 'text' ? typographyCss(v2Layers.get(String(slot.id)), self.lang) : undefined;
+      const lineHeightSource = v2Typo ? { lineHeight: v2Layers.get(String(slot.id))?.text?.lineHeight } : style;
+      const fontSize: string = v2Typo?.fontSize ?? localized.size;
+      const fontFamily = v2Typo ? v2Typo.fontFamily : style.fontFamily;
       // Only layers that paint text need a font. serializeSlots writes
       // fontFamily "Inter" on EVERY layer, images included, so without this
       // any .oim with an image asked Google for Inter when opened.
       const paintsText = isArtisticText || (!isImageSlot && !isSvg && slotType !== 'lottie' && text.trim() !== '');
-      if (style.fontFamily && paintsText) {
-        const safeFontFamily = sanitizeFontFamily(style.fontFamily);
+      if (fontFamily && paintsText) {
+        const safeFontFamily = sanitizeFontFamily(fontFamily);
         // Sandbox: the editor ships the fonts inside the file. A family that
         // did not travel falls back to whatever the viewer has installed; it is
         // never fetched, because a request to a font host reveals who is looking.
@@ -1405,11 +1409,16 @@ export class LegacyRenderer {
       else if (textAlign === 'right') alignItems = 'flex-end';
       else alignItems = 'center';
  
-      slotEl.style.maxWidth = maxWidth;
+      slotEl.style.maxWidth = v2Typo?.maxWidth ?? maxWidth;
       slotEl.style.fontSize = fontSize;
       // Unitless: it is inherited as a factor, so a child with a different font size
       // computes ITS line height and does not drag the parent's along.
-      slotEl.style.lineHeight = String(resolveLineHeight(style));
+      slotEl.style.lineHeight = String(resolveLineHeight(lineHeightSource));
+      if (v2Typo) {
+        for (const key of ['fontWeight', 'fontStyle', 'letterSpacing', 'textTransform', 'textDecoration'] as const) {
+          if (v2Typo[key]) (slotEl.style as any)[key] = v2Typo[key];
+        }
+      }
 
       if (slotType === 'svg' || isSvg) {
         const vectorColor = resolveCssColor(style.strokeColorRole || style.fillColorRole, style.strokeColor);
@@ -1476,7 +1485,7 @@ export class LegacyRenderer {
           // hoverWrap bears the mask fill, matching origin/main's background box
           // exactly. `important` because `.oim-slot` declares `padding` with
           // `!important`, and a stylesheet rule beats a plain inline style.
-          const inkPad = inkMargin(resolveLineHeight(style));
+          const inkPad = inkMargin(resolveLineHeight(lineHeightSource));
           if (inkPad > 0) {
             slotEl.style.setProperty('padding-top', inkPad + 'em', 'important');
             slotEl.style.setProperty('padding-bottom', inkPad + 'em', 'important');
@@ -1484,7 +1493,7 @@ export class LegacyRenderer {
         } else {
           Object.assign(slotEl.style, textFill);
           if (isMaskFill) {
-            const inkPad = inkMargin(resolveLineHeight(style));
+            const inkPad = inkMargin(resolveLineHeight(lineHeightSource));
             if (inkPad > 0) {
               slotEl.style.setProperty('padding-top', inkPad + 'em', 'important');
               slotEl.style.setProperty('padding-bottom', inkPad + 'em', 'important');
@@ -2028,7 +2037,7 @@ export class LegacyRenderer {
                 // Same margin as a clipped fill: without it the descenders of a
                 // tight line height (a «p» at line height 1) were left unfilled
                 // while the text stroke still drew them.
-                const texInk = inkMargin(resolveLineHeight(style));
+                const texInk = inkMargin(resolveLineHeight(lineHeightSource));
                 if (texInk > 0) {
                   slotEl.style.setProperty('padding-top', texInk + 'em', 'important');
                   slotEl.style.setProperty('padding-bottom', texInk + 'em', 'important');
@@ -2159,6 +2168,9 @@ export class LegacyRenderer {
             key === 'fontSize' || key === 'fontSizes' ||
             key === 'rotation' || key === 'animation' || key === 'objectFit' ||
             key === 'lineHeight' || key === 'fontFamily') return;
+        // The 2.0 typography is already on the element.
+        if (v2Typo && (key === 'fontWeight' || key === 'fontStyle' || key === 'letterSpacing' ||
+            key === 'textTransform' || key === 'textDecoration')) return;
         if (key === 'position' || key === 'zIndex' || key === 'top' || key === 'left' ||
             key === 'right' || key === 'bottom' || key === 'display') return;
         let val = style[key];
@@ -3231,8 +3243,9 @@ export class LegacyRenderer {
 
         // EFFECTIVE values: localizedEntries already applied the background's precedence.
         const e = localizedEntries(slot, self.lang);
-        el.style.fontSize = e.size;
-        el.style.maxWidth = e.maxWidthValue;
+        const typo = slot.type === 'text' ? typographyCss(v2LayersOf(self.metadata).get(String(slot.id)), self.lang) : undefined;
+        el.style.fontSize = typo?.fontSize ?? e.size;
+        el.style.maxWidth = typo?.maxWidth ?? e.maxWidthValue;
       });
     }
     if (changes.content.size > 0) {

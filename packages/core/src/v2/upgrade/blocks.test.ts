@@ -39,11 +39,9 @@ describe("text", () => {
     expect(layer({ fontWeight: "700" }, "text").text?.font).toEqual({ weight: 700 });
   });
 
-  it("the undeclared bold, italic and underline flags", () => {
-    const text = layer({ bold: true, italic: true, underline: true }, "text").text;
-    expect(text?.font).toEqual({ weight: 700, italic: true });
-    expect(text?.decoration).toBe("underline");
-    expect(layer({ bold: false, italic: false, underline: false }, "text").text).toEqual({ content: {} });
+  // Ruling (13 Nov): retired in 1.5.0, the player ignores them, so they carry nothing.
+  it("the retired bold, italic and underline flags paint nothing", () => {
+    expect(layer({ bold: true, italic: true, underline: true }, "text").text).toEqual({ content: {} });
   });
 
   it("alignment comes from textAlign or the layer's align; left is the default", () => {
@@ -53,9 +51,15 @@ describe("text", () => {
   });
 
   it("spacing, transform, decoration and width: only what differs from the default", () => {
-    expect(layer({ lineHeight: 1.3, letterSpacing: 2, textTransform: "uppercase", textDecoration: "none", maxWidth: "50.0cqw" }, "text").text).toEqual({
+    expect(layer({ lineHeight: 1.3, letterSpacing: "2px", textTransform: "uppercase", textDecoration: "none", maxWidth: "50.0cqw" }, "text").text).toEqual({
       content: {}, lineHeight: 1.3, letterSpacing: 2, transform: "uppercase", maxWidth: 500,
     });
+  });
+
+  // Ruling (13 Nov): a bare number was invalid CSS in 1.x and painted no spacing
+  // (golden background-pattern-order), so it carries none into 2.0.
+  it("a letterSpacing with no unit painted nothing, and carries nothing", () => {
+    expect(layer({ letterSpacing: 24 }, "text").text).not.toHaveProperty("letterSpacing");
   });
 
   it("a size per language becomes an exception by mode; the main language is the value", () => {

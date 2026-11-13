@@ -59,12 +59,13 @@ export function convertText(ctx: UpgradeContext, slot: V1Slot, layer: DraftLayer
   const size = sized(ctx, style, "fontSize", "fontSizes");
   if (size !== undefined) font.size = size;
   const weight = ctx.take(style, "fontWeight");
-  const bold = ctx.take(style, "bold") === true;
+  // bold, italic and underline were retired in 1.5.0 and the player ignores them.
+  ctx.take(style, "bold");
   if (typeof weight === "number" || (typeof weight === "string" && weight)) {
     if (Number(weight) !== 400) font.weight = Number.isFinite(Number(weight)) ? Number(weight) : weight;
-  } else if (bold) font.weight = 700;
+  }
   const fontStyle = ctx.take(style, "fontStyle");
-  if (fontStyle === "italic" || fontStyle === "oblique" || ctx.take(style, "italic") === true) font.italic = true;
+  if (fontStyle === "italic" || fontStyle === "oblique") font.italic = true;
   ctx.take(style, "italic");
   if (Object.keys(font).length > 0) text.font = font;
 
@@ -72,14 +73,15 @@ export function convertText(ctx: UpgradeContext, slot: V1Slot, layer: DraftLayer
 
   const lineHeight = ctx.take(style, "lineHeight");
   if (typeof lineHeight === "number" || (typeof lineHeight === "string" && lineHeight)) text.lineHeight = lineHeight;
-  const spacing = ctx.take(style, "letterSpacing");
-  if (typeof spacing === "number" && spacing !== 0) text.letterSpacing = spacing;
+  // 1.x passed letterSpacing to CSS as it came: a bare number was invalid CSS and
+  // painted nothing (golden background-pattern-order); a length with its unit did.
+  const spacing = typeof style.letterSpacing === "string" ? toCanvasUnits(ctx.take(style, "letterSpacing"), ctx.canvas.width) : (ctx.take(style, "letterSpacing"), undefined);
+  if (spacing !== undefined && spacing !== 0) text.letterSpacing = spacing;
   const transform = ctx.take(style, "textTransform");
   if (transform === "uppercase" || transform === "lowercase" || transform === "capitalize") text.transform = transform;
   const decoration = ctx.take(style, "textDecoration");
-  const underline = ctx.take(style, "underline") === true;
+  ctx.take(style, "underline");
   if (typeof decoration === "string" && decoration && decoration !== "none") text.decoration = decoration;
-  else if (underline) text.decoration = "underline";
   const maxWidth = sized(ctx, style, "maxWidth", "maxWidths");
   if (maxWidth !== undefined) text.maxWidth = maxWidth;
 

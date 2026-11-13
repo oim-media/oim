@@ -100,6 +100,22 @@ importers:
 
   packages/player-ovm: {}
 
+  packages/scene:
+    dependencies:
+      '@oim-media/core':
+        specifier: workspace:1.27.9
+        version: link:../core
+    devDependencies:
+      happy-dom:
+        specifier: ^21.0.4
+        version: 21.0.4
+      typescript:
+        specifier: ~6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.0
+        version: 4.1.12(@types/node@25.9.9)(happy-dom@21.0.4)(jsdom@31.0.0)(vite@8.3.6(@types/node@25.9.9))
+
   packages/spec:
     devDependencies:
       playwright:

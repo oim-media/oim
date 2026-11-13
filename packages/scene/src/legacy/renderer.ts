@@ -1866,7 +1866,14 @@ export class LegacyRenderer {
         // Placed from the 2.0 box: the same pixels as the 1.x anchor above,
         // which only the infinite duplicate still uses.
         const box = duplicatedForInfinite ? undefined : v2Layers.get(String(slot.id))?.box;
-        if (box) {
+        if (box && box.width !== undefined && box.height !== undefined) {
+          // The painted element is not always exactly the box (max-width, text
+          // metrics), so it is pinned at the same point 1.x pinned, inside the box.
+          const share = transformX === '0%' ? 0 : transformX === '-100%' ? 1 : 0.5;
+          slotEl.style.left = (box.x + box.width * share).toFixed(2) + 'px';
+          slotEl.style.top = (box.y + box.height / 2).toFixed(2) + 'px';
+          slotEl.style.setProperty('--oim-ty', transformY);
+        } else if (box) {
           [transformX] = anchorShift(box);
           const [, shiftY] = anchorShift(box);
           slotEl.style.left = box.x.toFixed(2) + 'px';

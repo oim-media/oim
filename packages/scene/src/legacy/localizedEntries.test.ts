@@ -102,7 +102,7 @@ import { fileURLToPath } from "node:url";
 
 describe("the engine cannot have its own copy of the rule", () => {
   const source = readFileSync(
-    fileURLToPath(new URL("../engines/ImageEngine.ts", import.meta.url)),
+    require("node:path").join(__dirname, "../../../player-oim/src/engines/ImageEngine.ts"),
     "utf8"
   );
 

@@ -20,7 +20,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 import ImageEngine from "./ImageEngine";
-import { ParallaxController } from "../render/ParallaxController";
+import { ParallaxController } from "../../../scene/src/legacy/ParallaxController";
 
 function mount(attrs: Record<string, string> = {}) {
   const host = document.createElement("div");

@@ -7,7 +7,7 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { TRACK_CLASS, CSS_PARALLAX, ensureParallaxKeyframes } from "../../../core/src/parallaxCss.js";
-import { ParallaxController } from "../render/ParallaxController";
+import { ParallaxController } from "../../../scene/src/legacy/ParallaxController";
 import { ImageEngine } from "./ImageEngine";
 
 describe("Parallax Render & Controller Engine (Tarea 2)", () => {

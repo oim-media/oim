@@ -9,7 +9,7 @@
 
 import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine.js";
-import { getStylesText } from "../render/styles.js";
+import { getStylesText } from "../../../scene/src/legacy/styles.js";
 
 function mount(slots: any[]) {
   const host = document.createElement("div");

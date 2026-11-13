@@ -5,16 +5,16 @@
  */
 
 import { OIMRegistry } from '../render/registry.js';
-import { setFlag } from '../render/attrs.js';
-import { playerString } from '../render/strings.js';
-import { getDeviceProfile, type DeviceProfile } from '../render/device-tier.js';
+import { setFlag } from '../../../scene/src/legacy/attrs.js';
+import { playerString } from '../../../scene/src/legacy/strings.js';
+import { getDeviceProfile, type DeviceProfile } from '../../../scene/src/legacy/device-tier.js';
 import { fileCache, type VerifyResult, type VerifiedFile } from '../render/file-cache.js';
-import { injectStyles } from '../render/styles.js';
-import { renderMarkedText, plainOf, type Marks } from '../render/marked-text.js';
+import { injectStyles } from '../../../scene/src/legacy/styles.js';
+import { renderMarkedText, plainOf, type Marks } from '../../../scene/src/legacy/marked-text.js';
 import { dropCapStyle, splitDropCap } from '../../../core/src/drop-cap.js';
 import { layerTextureMask } from '../../../core/src/effects/texture-mask.js';
 import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entranceClips, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
-import { loadLottie } from '../render/lottie-loader.js';
+import { loadLottie } from '../../../scene/src/legacy/lottie-loader.js';
 import { normalizeRawSlots } from '../render/normalize-raw-slots.js';
 import { sanitizeHtml, sanitizeFontFamily } from '../render/security.js';
 import { verifyInWorker, type WorkerReply } from '../render/verify-worker.js';
@@ -34,22 +34,22 @@ import {
   DUOTONE_COLORS,
   type CompositionNode,
   type Slot as CompositionSlot
-} from '../render/layerComposition.js';
+} from '../../../scene/src/legacy/layerComposition.js';
 import {
   buildWaveKeyframesCss,
   waveCharAnimationDelay,
   WAVE_PERIOD_SECONDS,
   WAVE_KEYFRAMES_NAME,
-} from '../render/waveText.js';
+} from '../../../scene/src/legacy/waveText.js';
 import { calculateGlitchState, glitchLayers } from '../../../core/src/glitch.js';
 import { easingToCss, revealFrames, revealTiming } from '../../../core/src/reveal.js';
-import { calculateTypewriterState } from '../render/typewriterText.js';
+import { calculateTypewriterState } from '../../../scene/src/legacy/typewriterText.js';
 import { getFillCss, patternLayerCss, shapeMaskCss, svgSilhouetteMaskCss } from '../../../core/src/fill.js';
-import { paintPattern } from '../render/patternPaint.js';
+import { paintPattern } from '../../../scene/src/legacy/patternPaint.js';
 import { resolveCssColor, resolvePalette, DYNAMIC_COLOR_ROLES } from '../../../core/src/dynamic-colors.js';
 import { nextWheelZoom, MIN_ZOOM, MAX_ZOOM } from '../render/wheelZoom.js';
-import { applyTrimToSvgPaths, ensureTrimKeyframes } from '../render/trimPath.js';
-import { ParallaxController } from '../render/ParallaxController.js';
+import { applyTrimToSvgPaths, ensureTrimKeyframes } from '../../../scene/src/legacy/trimPath.js';
+import { ParallaxController } from '../../../scene/src/legacy/ParallaxController.js';
 import { oversizeScale } from '../../../core/src/oversize.js';
 import { shapeDrawing } from '../../../core/src/geoShapes.js';
 import { frameSilhouette } from '../../../core/src/frame-silhouette.js';
@@ -57,21 +57,21 @@ import { mediaFilterCss } from '../../../core/src/media-filters.js';
 import { buildSvgNoiseFilter, buildLayerGrainFilter, GRAIN_LAYER_TYPES } from '../../../core/src/generative/proceduralNoise.js';
 import { TEXTURE_CATALOG, type TexturePreset } from '../../../core/src/effects/index.js';
 import { infiniteLayerPlan, TRACK_CLASS, LEGACY_TRACK_CLASS, ensureParallaxKeyframes, type InfiniteLayer } from '../../../core/src/parallaxCss.js';
-import { localizedEntries, isImageContent, compareLangs } from '../render/localizedEntries.js';
-import { a11yNodes, artworkLabel } from '../render/a11y.js';
-import { dropShadowCss, shadowColorCss, shadowFollowsGlyphs } from '../render/shadow.js';
+import { localizedEntries, isImageContent, compareLangs } from '../../../scene/src/legacy/localizedEntries.js';
+import { a11yNodes, artworkLabel } from '../../../scene/src/legacy/a11y.js';
+import { dropShadowCss, shadowColorCss, shadowFollowsGlyphs } from '../../../scene/src/legacy/shadow.js';
 import { cropCss } from '../../../core/src/crop.js';
-import { mountImageFill } from '../render/image-fill.js';
+import { mountImageFill } from '../../../scene/src/legacy/image-fill.js';
 import { flipScale } from '../../../core/src/flip.js';
-import { isGroup, childrenByGroup, wrapperStyle } from '../render/groups.js';
+import { isGroup, childrenByGroup, wrapperStyle } from '../../../scene/src/legacy/groups.js';
 import { resolveLineHeight, inkMargin } from '../../../core/src/typography.js';
 import { resolveDimensionToCss, resolveNumericDimension } from '../../../core/src/dimensions.js';
 import { slotClipping } from '../../../core/src/clipping.js';
 import { whatTheReaderCannotDo, describeMissing, CONTRACT_VERSION, PLAYER_CAPABILITIES } from '../../../core/src/compatibility.js';
 import { bindStates, resolveActions, applyMinHitArea, readInteraction, type ActionRunner, type RegisterOutsideTap } from './states.js';
-import { resolveMode } from '../render/modes.js';
-import { buildArtisticTextModelFromSlot, generateArtisticTextSvgString } from '../render/artisticText.js';
-import { readEmbeddedFonts, registerEmbeddedFonts, embeddedFontFamily } from '../render/embeddedFonts.js';
+import { resolveMode } from '../../../scene/src/legacy/modes.js';
+import { buildArtisticTextModelFromSlot, generateArtisticTextSvgString } from '../../../scene/src/legacy/artisticText.js';
+import { readEmbeddedFonts, registerEmbeddedFonts, embeddedFontFamily } from '../../../scene/src/legacy/embeddedFonts.js';
 
 /**
  * Replaces the content of `hoverWrap` with one <span> per character, each

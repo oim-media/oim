@@ -12,7 +12,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 import ImageEngine from "./ImageEngine";
-import { readingOrder, a11yNodes, artworkLabel } from "../render/a11y";
+import { readingOrder, a11yNodes, artworkLabel } from "../../../scene/src/legacy/a11y";
 
 function mount(slots: any[], extra: any = {}) {
   const host = document.createElement("div");

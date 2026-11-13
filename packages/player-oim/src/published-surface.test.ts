@@ -60,7 +60,7 @@ describe("published surface: index.d.ts matches the runtime", () => {
     expect(ctorStart).toBeGreaterThan(-1);
     const ctor = engine.slice(ctorStart, engine.indexOf("\n  }\n", ctorStart));
     const fromEngine = keysRead(ctor, /\boptions\.(\w+)/g);
-    const fromModes = keysRead(read("./render/modes.ts"), /\boptions\.(\w+)/g);
+    const fromModes = keysRead(read("../../scene/src/legacy/modes.ts"), /\boptions\.(\w+)/g);
 
     const usedKeys = new Set([...fromElement, ...fromEngine, ...fromModes]);
     expect([...usedKeys].sort()).toEqual([...declaredKeys].sort());

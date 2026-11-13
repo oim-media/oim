@@ -15,7 +15,7 @@ import { dropCapStyle, splitDropCap } from '../../../core/src/drop-cap.js';
 import { layerTextureMask } from '../../../core/src/effects/texture-mask.js';
 import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entranceClips, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
 import { loadLottie } from './lottie-loader.js';
-import { v2LayersOf, anchorShift, paintColors, typographyCss } from './v2-layers.js';
+import { v2LayersOf, anchorShift, paintColors, typographyCss, filterStyle } from './v2-layers.js';
 import { paintCss } from '../../../core/src/v2/paint-css.js';
 import { sanitizeHtml, sanitizeFontFamily, isSandboxImageSrc } from './sanitize.js';
 import {
@@ -788,6 +788,13 @@ export class LegacyRenderer {
 
     const slotPromises = slots.map(async (slot: any) => {
       const slotType = slot.type;
+      const v2Own = v2Layers.get(String(slot.id));
+      // The 1.x style with its filters replaced by the 2.0 image fill's.
+      const v2FillStyle = () => {
+        if (!v2Own) return slot.style || {};
+        const paint = v2Own.fills?.find((p: any) => p && p.kind === 'image') as { filters?: Record<string, unknown> } | undefined;
+        return { ...(slot.style || {}), ...filterStyle(paint?.filters) };
+      };
       if (onlyIds && !onlyIds.has(String(slot.id))) return null;
       // Short aliases (st, p, t, c) retired in 1.12.0: one name per concept,
       // one reading of a file (no writer ever emitted them).
@@ -1146,7 +1153,9 @@ export class LegacyRenderer {
         imgEl.style.pointerEvents = 'none';
         // Contract 1.18.0: only an image layer's picture takes the filter; a
         // non-image slot whose content is a data:image must not get it.
-        imgEl.style.filter = slot.type === 'image' ? (mediaFilterCss(style) ?? '') : '';
+        imgEl.style.filter = slot.type === 'image'
+          ? (mediaFilterCss(v2Own ? filterStyle(v2Own.image?.filters as Record<string, unknown> | undefined) : style) ?? '')
+          : '';
         
         loopWrap.style.width = '100%';
         loopWrap.style.height = '100%';
@@ -1723,7 +1732,7 @@ export class LegacyRenderer {
         slotEl.appendChild(svg);
         if (imageFill) {
           const d = silhouette.d ?? 'M ' + silhouette.points!.split(' ').join(' L ') + ' Z';
-          mountImageFill(slotEl, style, { d, viewBox: silhouette.viewBox }, fillImageSrc);
+          mountImageFill(slotEl, v2FillStyle(), { d, viewBox: silhouette.viewBox }, fillImageSrc);
         }
 
         // The colour goes on the <path>, not on the container, or the whole box would show
@@ -1758,7 +1767,7 @@ export class LegacyRenderer {
         const radio = parseFloat(String(style.borderRadius)) || 0;
         const cajaW = slot.width_px || baseWidth;
         const cajaH = slot.height_px || baseHeight;
-        mountImageFill(slotEl, style, {
+        mountImageFill(slotEl, v2FillStyle(), {
           d: '',
           viewBox: '0 0 1 1',
           rect: { rx: Math.min(Math.max(radio / cajaW, 0), 0.5), ry: Math.min(Math.max(radio / cajaH, 0), 0.5) },
@@ -2152,8 +2161,9 @@ export class LegacyRenderer {
       }
 
       if (slotType === 'filter') {
-        const filterCss = getFilterCss(slot);
-        const filterValue = style.filterPreset === 'duotone'
+        const backdrop = v2Own?.effects?.find((fx) => fx.kind === 'backdrop') as Record<string, unknown> | undefined;
+        const filterCss = v2Own ? mediaFilterCss(filterStyle(backdrop)) : getFilterCss(slot);
+        const filterValue = (v2Own ? backdrop?.preset : style.filterPreset) === 'duotone'
           ? 'url(#' + getDuotoneFilterId(slot) + ')'
           : filterCss;
         if (filterValue) {

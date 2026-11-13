@@ -104,9 +104,15 @@ describe("effects", () => {
     expect(filled).not.toHaveProperty("effects");
   });
 
-  it("filters that change nothing are dropped; on a layer with no image they filter the layer itself", () => {
+  // Ruling (13 Nov): what the 1.x player painted wins. It filtered only an
+  // image, an image fill and what is behind a filter layer, and only with a
+  // preset its table knew; the filter layer was also read by `fp`.
+  it("filters that change nothing, or that 1.x never painted, are dropped", () => {
     expect(layer({ filterPreset: "none", filterBrightness: 100 })).not.toHaveProperty("effects");
-    expect(layer({ filterBlur: 3, filterSaturate: 140 }).effects).toEqual([{ kind: "filter", blur: 3, saturate: 1.4 }]);
+    expect(layer({ filterBlur: 3, filterSaturate: 140 })).not.toHaveProperty("effects");
+    expect(layer({ filterPreset: "bogus" }, "filter").effects).toEqual([{ kind: "backdrop" }]);
+    expect(layer({ fp: "sepia" }, "filter").effects).toEqual([{ kind: "backdrop", preset: "sepia" }]);
+    expect(layer({ filterPreset: "duotone" }, "filter").effects).toEqual([{ kind: "backdrop", preset: "duotone" }]);
   });
 
   it("an image layer keeps its filters in the image", () => {

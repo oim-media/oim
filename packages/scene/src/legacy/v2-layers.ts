@@ -84,3 +84,21 @@ export function typographyCss(layer: Layer | undefined, lang: string): Record<st
   if (text.decoration) css.textDecoration = text.decoration;
   return css;
 }
+
+/**
+ * A 2.0 filter set as the 1.x style fields, so the one function all three
+ * renderers share (`mediaFilterCss`) still writes the CSS. Every key is
+ * present, so spreading it over a 1.x style replaces that style's filters.
+ */
+export function filterStyle(filters: Record<string, unknown> | undefined): Record<string, unknown> {
+  const f = filters ?? {};
+  const percent = (v: unknown) => (typeof v === 'number' ? +(v * 100).toFixed(6) : undefined);
+  return {
+    filterPreset: f.preset,
+    filterBlur: f.blur,
+    filterBrightness: percent(f.brightness),
+    filterContrast: percent(f.contrast),
+    filterSaturate: percent(f.saturate),
+    filterHueRotate: f.hueRotate,
+  };
+}

@@ -10,6 +10,7 @@
 import type { Effect } from "../schema.js";
 import { asObject, type DraftLayer, type UpgradeContext, type V1Object, type V1Slot } from "./context.js";
 import { colorOf } from "./paints.js";
+import { FILTER_PRESET_CSS } from "../../media-filters.js";
 
 const finite = (value: unknown): number | undefined =>
   typeof value === "number" && Number.isFinite(value) ? value : undefined;
@@ -21,8 +22,11 @@ type Filters = { preset?: string; blur?: number; brightness?: number; contrast?:
  * the image layer and the image fill. 1.x percentages become factors; a value
  * that changes nothing is not written.
  */
-export function takeFilters(ctx: UpgradeContext, style: V1Object): Filters | undefined {
-  const preset = ctx.take(style, "filterPreset");
+export function takeFilters(ctx: UpgradeContext, style: V1Object, backdrop = false): Filters | undefined {
+  // `fp` is the short name the filter layer was also read by.
+  const named = ctx.take(style, "filterPreset");
+  const short = ctx.take(style, "fp");
+  const preset = backdrop ? named || short : named;
   const blur = finite(ctx.take(style, "filterBlur"));
   const brightness = finite(ctx.take(style, "filterBrightness"));
   const contrast = finite(ctx.take(style, "filterContrast"));
@@ -30,7 +34,8 @@ export function takeFilters(ctx: UpgradeContext, style: V1Object): Filters | und
   const hueRotate = finite(ctx.take(style, "filterHueRotate"));
 
   const filters: Filters = {};
-  if (typeof preset === "string" && preset && preset !== "none") filters.preset = preset;
+  // Only a preset the 1.x table knew was painted; duotone, only behind a filter layer.
+  if (typeof preset === "string" && (Object.hasOwn(FILTER_PRESET_CSS, preset) || (backdrop && preset === "duotone"))) filters.preset = preset;
   if (blur) filters.blur = blur;
   if (brightness !== undefined && brightness !== 100) filters.brightness = brightness / 100;
   if (contrast !== undefined && contrast !== 100) filters.contrast = contrast / 100;
@@ -144,14 +149,13 @@ export function convertEffects(ctx: UpgradeContext, slot: V1Slot, layer: DraftLa
 
   // On a filter layer the colour filters act on what is behind it. On an
   // image, or a shape filled with one, they belong to the image. On anything
-  // else they filter the layer itself.
-  const filters = takeFilters(ctx, style);
+  // else 1.x painted nothing, so nothing is written.
+  const filters = takeFilters(ctx, style, slot.type === "filter");
   if (slot.type === "filter") effects.push({ kind: "backdrop", ...filters });
   else if (filters) {
     const paint = layer.fills?.find((p) => "kind" in p && p.kind === "image");
     if (layer.image) layer.image.filters = filters;
     else if (paint && "kind" in paint && paint.kind === "image") paint.filters = filters;
-    else effects.push({ kind: "filter", ...filters });
   }
 
   const grain = ctx.take(style, "grain") === true;

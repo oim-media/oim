@@ -24,7 +24,8 @@ import {
 } from "../schema.js";
 import { LAYER_BLOCKS, type Block, type LayerType } from "./layer-blocks.js";
 
-export const DOCUMENT_VERSION = "2.0.0-draft.1";
+export { DOCUMENT_VERSION } from "./version.js";
+import { DOCUMENT_VERSION } from "./version.js";
 
 const id = z.string().min(1).max(128);
 const unit = z.number().min(0).max(1);

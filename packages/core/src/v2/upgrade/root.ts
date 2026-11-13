@@ -5,7 +5,8 @@
  */
 
 import { permissionOf } from "../../reeditPermission.js";
-import { DOCUMENT_VERSION, type OimDocument } from "../schema.js";
+import type { OimDocument } from "../schema.js";
+import { DOCUMENT_VERSION } from "../version.js";
 import { asObject, type UpgradeContext, type V1Object } from "./context.js";
 
 /** Fallback when a 1.x file declares no canvas: the base the core has always assumed. */

@@ -39,24 +39,35 @@ export function takeFilters(ctx: UpgradeContext, style: V1Object): Filters | und
   return Object.keys(filters).length > 0 ? filters : undefined;
 }
 
-function listedEffect(ctx: UpgradeContext, value: unknown): Effect | undefined {
+/** Where a listed effect takes what the 1.x player filled in when it was missing. */
+type ListDefaults = { shadowRole?: unknown; glowRole?: unknown; glyphsInSvg?: boolean };
+
+function listedEffect(ctx: UpgradeContext, value: unknown, defaults: ListDefaults = {}): Effect | undefined {
   const fx = asObject(value);
   if (!fx || fx.enabled === false) return undefined;
-  const color = typeof fx.colorRole === "string" && ctx.hasRole(fx.colorRole)
-    ? typeof fx.color === "string" && fx.color ? { var: fx.colorRole, fallback: fx.color } : { var: fx.colorRole }
-    : fx.color;
-  const tint = typeof color === "string" || asObject(color) ? { color: color as never } : {};
+  const tintOf = (fallbackColor: string | undefined, fallbackRole: unknown) => {
+    const role = fx.colorRole || fallbackRole;
+    const literal = typeof fx.color === "string" && fx.color ? fx.color : fallbackColor;
+    const color = typeof role === "string" && ctx.hasRole(role) ? (literal ? { var: role, fallback: literal } : { var: role }) : literal;
+    return color === undefined ? {} : { color: color as never };
+  };
+  const tint = tintOf(undefined, undefined);
   switch (fx.type) {
     case "drop-shadow": {
-      const shadow: Extract<Effect, { kind: "shadow" }> = { kind: "shadow", ...tint };
+      // An artistic text is an SVG: the text-shadow 1.x gave it painted nothing.
+      if (defaults.glyphsInSvg) return undefined;
+      // 1.x drew a listed shadow 4px down, 12px soft and translucent black when unsaid.
+      const shadow: Extract<Effect, { kind: "shadow" }> = { kind: "shadow", y: 4, blur: 12, ...tintOf("rgba(0, 0, 0, 0.35)", defaults.shadowRole) };
       for (const key of ["x", "y", "blur", "spread"] as const) {
         const n = finite(fx[key]);
         if (n !== undefined) shadow[key] = key === "blur" ? Math.max(0, n) : n;
       }
+      if (!shadow.x) delete shadow.x;
       return shadow;
     }
     case "glow": {
-      const glow: Extract<Effect, { kind: "glow" }> = { kind: "glow", radius: finite(fx.radius) ?? 16, ...tint };
+      if (defaults.glyphsInSvg) return undefined;
+      const glow: Extract<Effect, { kind: "glow" }> = { kind: "glow", radius: finite(fx.radius) || 16, ...tintOf("#f59e0b", defaults.glowRole) };
       const intensity = finite(fx.intensity);
       if (intensity !== undefined) glow.intensity = intensity;
       return glow;
@@ -84,16 +95,28 @@ function listedEffect(ctx: UpgradeContext, value: unknown): Effect | undefined {
   }
 }
 
-function listedEffects(ctx: UpgradeContext, value: unknown): Effect[] {
-  return Array.isArray(value) ? value.map((fx) => listedEffect(ctx, fx)).filter((fx): fx is Effect => !!fx) : [];
+function listedEffects(ctx: UpgradeContext, value: unknown, defaults?: ListDefaults): Effect[] {
+  return Array.isArray(value) ? value.map((fx) => listedEffect(ctx, fx, defaults)).filter((fx): fx is Effect => !!fx) : [];
 }
 
 export function convertEffects(ctx: UpgradeContext, slot: V1Slot, layer: DraftLayer): void {
   const { style } = slot;
   const effects: Effect[] = [];
 
+  // What the 1.x player painted, in its order: the neon first; then, when the
+  // layer has an effects list, that list alone; otherwise blur, grain, shadow.
+  const named = ctx.take(style, "effect");
+  const namedColor = colorOf(ctx, style, "effectColor", "effectColorRole");
+  const namedRadius = finite(ctx.take(style, "effectRadius"));
+  // Only the neon was ever drawn; the named "shadow" painted nothing.
+  if (named === "neon") effects.push({ kind: "glow", radius: namedRadius ?? 16, color: namedColor ?? "#f59e0b" });
+
+  const list = ctx.take(style, "effects");
+  const hasList = Array.isArray(list) && list.length > 0;
+
   // The six shadow fields travel on every layer; only `shadowEnabled` says they count.
-  const enabled = ctx.take(style, "shadowEnabled") === true;
+  const enabled = ctx.take(style, "shadowEnabled") === true && !hasList;
+  let enabledShadow: Effect | undefined;
   const shadowColor = colorOf(ctx, style, "shadowColor", "shadowColorRole");
   const blur = finite(ctx.take(style, "shadowBlur"));
   const x = finite(ctx.take(style, "shadowOffsetX"));
@@ -106,20 +129,18 @@ export function convertEffects(ctx: UpgradeContext, slot: V1Slot, layer: DraftLa
     if (blur) shadow.blur = blur;
     if (shadowColor !== undefined) shadow.color = shadowColor;
     if (opacity !== undefined && opacity < 100) shadow.opacity = Math.max(0, opacity) / 100;
-    effects.push(shadow);
+    enabledShadow = shadow;
   }
 
-  effects.push(...listedEffects(ctx, ctx.take(style, "effects")));
-
-  const named = ctx.take(style, "effect");
-  const namedColor = colorOf(ctx, style, "effectColor", "effectColorRole");
-  const namedRadius = finite(ctx.take(style, "effectRadius"));
-  const tint = namedColor === undefined ? {} : { color: namedColor };
-  if (named === "neon") effects.push({ kind: "glow", radius: namedRadius ?? 16, ...tint });
-  else if (named === "shadow") effects.push({ kind: "shadow", ...(namedRadius ? { blur: namedRadius } : {}), ...tint });
-
-  const layerBlur = finite(ctx.take(style, "layerBlur"));
-  if (layerBlur) effects.push({ kind: "blur", radius: layerBlur });
+  const legacyBlur = finite(ctx.take(style, "layerBlur")) ?? finite(ctx.take(style, "blur"));
+  ctx.take(style, "blur");
+  if (hasList) {
+    effects.push(...listedEffects(ctx, list, {
+      shadowRole: style.shadowColorRole,
+      glowRole: style.effectColorRole,
+      glyphsInSvg: slot.type === "artistic-text",
+    }));
+  } else if (legacyBlur && legacyBlur > 0) effects.push({ kind: "blur", radius: legacyBlur });
 
   // On a filter layer the colour filters act on what is behind it. On an
   // image, or a shape filled with one, they belong to the image. On anything
@@ -137,13 +158,14 @@ export function convertEffects(ctx: UpgradeContext, slot: V1Slot, layer: DraftLa
   const intensity = finite(ctx.take(style, "grainIntensity"));
   const size = finite(ctx.take(style, "grainSize"));
   const blend = ctx.take(style, "grainBlend");
-  if (grain) {
+  if (grain && !hasList) {
     const fx: Extract<Effect, { kind: "grain" }> = { kind: "grain" };
     if (intensity !== undefined) fx.intensity = intensity;
     if (size !== undefined) fx.size = size;
     if (typeof blend === "string") fx.blend = blend;
     effects.push(fx);
   }
+  if (enabledShadow) effects.push(enabledShadow);
 
   if (effects.length > 0) layer.effects = effects;
 }

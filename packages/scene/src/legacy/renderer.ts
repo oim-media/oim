@@ -980,7 +980,8 @@ export class LegacyRenderer {
       }
 
       // Visual layer effects (neon glow)
-      if (style.effect === 'neon') {
+      // A 2.0 layer carries the neon as its first glow, painted with the other effects.
+      if (style.effect === 'neon' && !v2Layers.has(String(slot.id))) {
         const neonColor = resolveCssColor(style.effectColorRole, style.effectColor || '#f59e0b');
         const r = typeof style.effectRadius === 'number' ? style.effectRadius : 16;
         slotEl.style.filter = 'drop-shadow(0 0 ' + (r * 0.4) + 'px ' + neonColor + ') drop-shadow(0 0 ' + r + 'px ' + neonColor + ')';
@@ -1991,8 +1992,98 @@ export class LegacyRenderer {
       }
       // style.blendMode retired in 1.12.0: it never showed here (each slot is
       // isolated) nor in the editor; readers draw the layer as normal.
-      // Unified effects stack
-      if (Array.isArray(style.effects) && style.effects.length > 0) {
+      const applyTexture = (eff: any) => {
+        const texDef = TEXTURE_CATALOG[eff.preset as TexturePreset];
+        if (texDef) {
+          if (slotType === 'text' || slotType === 'artistic-text') {
+            const scale = eff.scale || 1.0;
+            const w = texDef.tileWidth * scale;
+            const h = texDef.tileHeight * scale;
+            const baseColor = style.fillColor || style.color || '#18181b';
+            const blend = eff.blend || texDef.defaultBlend || 'overlay';
+            if (style.fillType === 'gradient' && style.fillGradient) {
+              slotEl.style.backgroundImage = 'url("' + texDef.getDataUri(eff.color, eff.intensity) + '"), ' + style.fillGradient;
+              slotEl.style.backgroundRepeat = 'repeat, no-repeat';
+              slotEl.style.backgroundSize = w + 'px ' + h + 'px, 100% 100%';
+              slotEl.style.backgroundBlendMode = blend + ', normal';
+            } else {
+              slotEl.style.backgroundImage = 'url("' + texDef.getDataUri(eff.color, eff.intensity) + '"), linear-gradient(' + baseColor + ', ' + baseColor + ')';
+              slotEl.style.backgroundRepeat = 'repeat, no-repeat';
+              slotEl.style.backgroundSize = w + 'px ' + h + 'px, 100% 100%';
+              slotEl.style.backgroundBlendMode = blend;
+            }
+            slotEl.style.webkitBackgroundClip = 'text';
+            (slotEl.style as any).backgroundClip = 'text';
+            (slotEl.style as any).webkitTextFillColor = 'transparent';
+            slotEl.style.color = 'transparent';
+            // Same margin as a clipped fill: without it the descenders of a
+            // tight line height (a «p» at line height 1) were left unfilled
+            // while the text stroke still drew them.
+            const texInk = inkMargin(resolveLineHeight(lineHeightSource));
+            if (texInk > 0) {
+              slotEl.style.setProperty('padding-top', texInk + 'em', 'important');
+              slotEl.style.setProperty('padding-bottom', texInk + 'em', 'important');
+            }
+          } else {
+            const overlay = document.createElement('div');
+            overlay.className = 'oim-effect-texture';
+            overlay.style.position = 'absolute';
+            overlay.style.inset = '0';
+            overlay.style.pointerEvents = 'none';
+            overlay.style.borderRadius = 'inherit';
+            overlay.style.mixBlendMode = eff.blend || texDef.defaultBlend || 'overlay';
+            const opacityVal = (eff.intensity !== undefined ? eff.intensity : texDef.defaultIntensity) / 100;
+            overlay.style.opacity = String(opacityVal);
+            const scale = eff.scale || 1.0;
+            const w = texDef.tileWidth * scale;
+            const h = texDef.tileHeight * scale;
+            overlay.style.backgroundImage = `url("${texDef.getDataUri(eff.color, eff.intensity)}")`;
+            overlay.style.backgroundRepeat = 'repeat';
+            overlay.style.backgroundSize = `${w}px ${h}px`;
+            overlay.style.zIndex = '1';
+            // On the layer's own pixels, not its box (@oim-media/core layerTextureMask):
+            // an SVG with a transparent background came out as a coloured square.
+            const mask = layerTextureMask({ type: slotType, svg: isSvg ? text : undefined, image: isImageSlot ? text.trim() : undefined, fit: style.objectFit });
+            if (mask) {
+              const ms = overlay.style as CSSStyleDeclaration & { webkitMaskImage?: string; webkitMaskSize?: string; webkitMaskRepeat?: string; webkitMaskPosition?: string };
+              ms.maskImage = ms.webkitMaskImage = mask.image;
+              ms.maskSize = ms.webkitMaskSize = mask.size;
+              ms.maskRepeat = ms.webkitMaskRepeat = 'no-repeat';
+              ms.maskPosition = ms.webkitMaskPosition = 'center';
+            }
+            slotEl.appendChild(overlay);
+          }
+        }
+      };
+      const addFilter = (part: string) => { slotEl.style.filter = (slotEl.style.filter ? slotEl.style.filter + ' ' : '') + part; };
+      const addTextShadow = (part: string) => { slotEl.style.textShadow = slotEl.style.textShadow ? slotEl.style.textShadow + ', ' + part : part; };
+      const v2Effects = v2Layers.get(String(slot.id))?.effects;
+      if (v2Layers.has(String(slot.id))) {
+        // 2.0: the layer's effects, in their order. Glyph shadows on a text; on
+        // anything else (an artistic text is an SVG) they follow the silhouette.
+        for (const fx of v2Effects ?? []) {
+          if (fx.kind === 'blur') addFilter('blur(' + fx.radius + 'px)');
+          else if (fx.kind === 'glow') {
+            const c = v2Colors.css(fx.color) || '#f59e0b';
+            const r = fx.radius;
+            if (slotType === 'text') addTextShadow('0px 0px ' + (r * 0.4) + 'px ' + c + ', 0px 0px ' + r + 'px ' + c);
+            else addFilter('drop-shadow(0px 0px ' + (r * 0.4) + 'px ' + c + ') drop-shadow(0px 0px ' + r + 'px ' + c + ')');
+          } else if (fx.kind === 'shadow') {
+            const bound = fx.color && typeof fx.color === 'object' ? fx.color as { var: string; fallback?: string } : undefined;
+            const c = fx.opacity !== undefined
+              ? shadowColorCss({ shadowColor: bound ? bound.fallback : fx.color as string, shadowOpacity: fx.opacity * 100, shadowColorRole: bound?.var })
+              : v2Colors.css(fx.color ?? '#000000') || '#000000';
+            const part = (fx.x || 0) + 'px ' + (fx.y || 0) + 'px ' + (fx.blur || 0) + 'px ' + c;
+            if (slotType === 'text') addTextShadow(part);
+            else addFilter('drop-shadow(' + part + ')');
+          } else if (fx.kind === 'grain') {
+            if (!(GRAIN_LAYER_TYPES as readonly string[]).includes(slotType)) continue;
+            const grainId = 'oim-grain-' + String(slot.id).replace(/[^A-Za-z0-9_-]/g, '_');
+            self._defineLayerGrain(grainId, { grainIntensity: fx.intensity, grainSize: fx.size, grainBlend: fx.blend });
+            addFilter('url(#' + grainId + ')');
+          } else if (fx.kind === 'texture') applyTexture({ ...fx, color: fx.color === undefined ? undefined : v2Literal(fx.color) });
+        }
+      } else if (Array.isArray(style.effects) && style.effects.length > 0) {
         for (const eff of style.effects) {
           if (!eff || eff.enabled === false) continue;
           if (eff.type === 'blur') {
@@ -2023,67 +2114,7 @@ export class LegacyRenderer {
               slotEl.style.filter = (slotEl.style.filter ? slotEl.style.filter + ' ' : '') + 'drop-shadow(0px 0px ' + (r * 0.4) + 'px ' + c + ') drop-shadow(0px 0px ' + r + 'px ' + c + ')';
             }
           } else if (eff.type === 'texture') {
-            const texDef = TEXTURE_CATALOG[eff.preset as TexturePreset];
-            if (texDef) {
-              if (slotType === 'text' || slotType === 'artistic-text') {
-                const scale = eff.scale || 1.0;
-                const w = texDef.tileWidth * scale;
-                const h = texDef.tileHeight * scale;
-                const baseColor = style.fillColor || style.color || '#18181b';
-                const blend = eff.blend || texDef.defaultBlend || 'overlay';
-                if (style.fillType === 'gradient' && style.fillGradient) {
-                  slotEl.style.backgroundImage = 'url("' + texDef.getDataUri(eff.color, eff.intensity) + '"), ' + style.fillGradient;
-                  slotEl.style.backgroundRepeat = 'repeat, no-repeat';
-                  slotEl.style.backgroundSize = w + 'px ' + h + 'px, 100% 100%';
-                  slotEl.style.backgroundBlendMode = blend + ', normal';
-                } else {
-                  slotEl.style.backgroundImage = 'url("' + texDef.getDataUri(eff.color, eff.intensity) + '"), linear-gradient(' + baseColor + ', ' + baseColor + ')';
-                  slotEl.style.backgroundRepeat = 'repeat, no-repeat';
-                  slotEl.style.backgroundSize = w + 'px ' + h + 'px, 100% 100%';
-                  slotEl.style.backgroundBlendMode = blend;
-                }
-                slotEl.style.webkitBackgroundClip = 'text';
-                (slotEl.style as any).backgroundClip = 'text';
-                (slotEl.style as any).webkitTextFillColor = 'transparent';
-                slotEl.style.color = 'transparent';
-                // Same margin as a clipped fill: without it the descenders of a
-                // tight line height (a «p» at line height 1) were left unfilled
-                // while the text stroke still drew them.
-                const texInk = inkMargin(resolveLineHeight(lineHeightSource));
-                if (texInk > 0) {
-                  slotEl.style.setProperty('padding-top', texInk + 'em', 'important');
-                  slotEl.style.setProperty('padding-bottom', texInk + 'em', 'important');
-                }
-              } else {
-                const overlay = document.createElement('div');
-                overlay.className = 'oim-effect-texture';
-                overlay.style.position = 'absolute';
-                overlay.style.inset = '0';
-                overlay.style.pointerEvents = 'none';
-                overlay.style.borderRadius = 'inherit';
-                overlay.style.mixBlendMode = eff.blend || texDef.defaultBlend || 'overlay';
-                const opacityVal = (eff.intensity !== undefined ? eff.intensity : texDef.defaultIntensity) / 100;
-                overlay.style.opacity = String(opacityVal);
-                const scale = eff.scale || 1.0;
-                const w = texDef.tileWidth * scale;
-                const h = texDef.tileHeight * scale;
-                overlay.style.backgroundImage = `url("${texDef.getDataUri(eff.color, eff.intensity)}")`;
-                overlay.style.backgroundRepeat = 'repeat';
-                overlay.style.backgroundSize = `${w}px ${h}px`;
-                overlay.style.zIndex = '1';
-                // On the layer's own pixels, not its box (@oim-media/core layerTextureMask):
-                // an SVG with a transparent background came out as a coloured square.
-                const mask = layerTextureMask({ type: slotType, svg: isSvg ? text : undefined, image: isImageSlot ? text.trim() : undefined, fit: style.objectFit });
-                if (mask) {
-                  const ms = overlay.style as CSSStyleDeclaration & { webkitMaskImage?: string; webkitMaskSize?: string; webkitMaskRepeat?: string; webkitMaskPosition?: string };
-                  ms.maskImage = ms.webkitMaskImage = mask.image;
-                  ms.maskSize = ms.webkitMaskSize = mask.size;
-                  ms.maskRepeat = ms.webkitMaskRepeat = 'no-repeat';
-                  ms.maskPosition = ms.webkitMaskPosition = 'center';
-                }
-                slotEl.appendChild(overlay);
-              }
-            }
+            applyTexture(eff);
           }
         }
       } else {

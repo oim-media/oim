@@ -243,18 +243,24 @@ const pathEntry = z
   })
   .strict();
 
+// How much of the outline is drawn, as shares of its length. It is the value at
+// rest: the `trimStart` and `trimEnd` tracks animate towards it, and a reader
+// that runs no animation still draws the stroke trimmed.
+const trim = z.object({ start: unit.optional(), end: unit.optional() }).strict();
+
 export const geometrySchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("rect") }).strict(),
-  z.object({ kind: z.literal("ellipse") }).strict(),
-  z.object({ kind: z.literal("line") }).strict(),
-  z.object({ kind: z.literal("polygon"), sides: z.number().int().min(3).max(64) }).strict(),
-  z.object({ kind: z.literal("star"), points: z.number().int().min(3).max(64), inner: unit.optional() }).strict(),
-  z.object({ kind: z.literal("preset"), name: z.string().min(1).max(64) }).strict(),
+  z.object({ kind: z.literal("rect"), trim: trim.optional() }).strict(),
+  z.object({ kind: z.literal("ellipse"), trim: trim.optional() }).strict(),
+  z.object({ kind: z.literal("line"), trim: trim.optional() }).strict(),
+  z.object({ kind: z.literal("polygon"), sides: z.number().int().min(3).max(64), trim: trim.optional() }).strict(),
+  z.object({ kind: z.literal("star"), points: z.number().int().min(3).max(64), inner: unit.optional(), trim: trim.optional() }).strict(),
+  z.object({ kind: z.literal("preset"), name: z.string().min(1).max(64), trim: trim.optional() }).strict(),
   z
     .object({
       kind: z.literal("paths"),
       viewBox: z.array(z.number()).length(4),
       paths: z.array(pathEntry).min(1).max(2000),
+      trim: trim.optional(),
     })
     .strict(),
 ]);

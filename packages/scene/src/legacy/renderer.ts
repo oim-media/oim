@@ -1413,16 +1413,14 @@ export class LegacyRenderer {
       // `trimDuration` goes in the condition on purpose: an icon with
       // trimStart 0 and trimEnd 100 trims nothing, but IS animated, and it is the
       // most common case: drawing the whole icon from start to finish.
-      // The 2.0 trim: a load animation over `trimEnd`, its start in `trimStart`.
-      const v2Trim = v2Own?.animations?.find((a) => a.on === 'load' && a.tracks?.some((t) => t.property === 'trimEnd'));
-      const trimOf = (property: string, at: number) => {
-        const k = v2Trim?.tracks?.find((t) => t.property === property)?.keyframes;
-        return k ? +(k[at ? k.length - 1 : 0].v * 100).toFixed(6) : undefined;
-      };
+      // The 2.0 trim: at rest in the geometry, drawn over time by a load animation over `trimEnd`.
+      const v2Trim = (v2Own?.geometry as { trim?: { start?: number; end?: number } } | undefined)?.trim;
+      const v2TrimAnim = v2Own?.animations?.find((a) => a.on === 'load' && a.tracks?.some((t) => t.property === 'trimEnd'));
+      const percent = (share: number) => +(share * 100).toFixed(6);
       const trimStyle = v2Own
-        ? (v2Trim
+        ? (v2Trim || v2TrimAnim
             // upgrade already asked for a stroke width; any truthy one lets the trim through.
-            ? { strokeWidth: 1, trimStart: trimOf('trimStart', 0) ?? trimOf('trimEnd', 0), trimEnd: trimOf('trimEnd', 1), trimDuration: +(v2Trim.duration / 1000).toFixed(6) }
+            ? { strokeWidth: 1, trimStart: percent(v2Trim?.start ?? 0), trimEnd: percent(v2Trim?.end ?? 1), trimDuration: v2TrimAnim ? +(v2TrimAnim.duration / 1000).toFixed(6) : 0 }
             : undefined)
         : (style.trimStart || (style.trimEnd != null && style.trimEnd < 100) || style.trimDuration ? style : undefined);
       if (hasHtmlOrSvg && trimStyle) {

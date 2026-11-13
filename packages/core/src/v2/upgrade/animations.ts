@@ -156,24 +156,20 @@ export function convertAnimations(ctx: UpgradeContext, slot: V1Slot, layer: Draf
   const trimDuration = finite(ctx.take(style, "trimDuration"));
   // 1.x trimmed only markup it drew itself (an SVG, or HTML) that had a stroke
   // width, and only when the trim hid something or was animated.
-  const start = trimStart ?? 0;
-  const end = trimEnd ?? 100;
+  const share = (percent: number) => Math.min(1, Math.max(0, percent / 100));
+  const start = share(trimStart ?? 0);
+  const end = share(trimEnd ?? 100);
   const seconds = Math.max(0, trimDuration ?? 0);
   const content = raw.content;
   const texts = typeof content === "string" ? [content] : Object.values(asObject(content) ?? {});
   const drawn = slot.type !== "image" && texts.some((t) => typeof t === "string" && /(<|&lt;)svg|<span|<div|<a|<img/i.test(t));
-  if (layer.type === "shape" && drawn && style.strokeWidth && !(start <= 0 && end >= 100 && seconds <= 0)) {
-    const from = start / 100;
-    animations.push({
-      on: "load",
-      // No duration: the stroke is simply drawn trimmed.
-      duration: seconds * 1000,
-      tracks: [
-        { property: "trimEnd", keyframes: [{ t: 0, v: from }, { t: 1, v: end / 100 }] },
-        // The stroke grows from its start, which stays where it is.
-        ...(start > 0 ? [{ property: "trimStart" as const, keyframes: [{ t: 0, v: from }, { t: 1, v: from }] }] : []),
-      ],
-    });
+  if (layer.type === "shape" && layer.geometry && drawn && style.strokeWidth) {
+    // The trim at rest lives in the geometry: it is drawn even where nothing animates.
+    if (start > 0 || end < 1) layer.geometry.trim = { ...(start > 0 ? { start } : {}), ...(end < 1 ? { end } : {}) };
+    // Drawn over time: the stroke grows from its start to its end at rest.
+    if (seconds > 0) {
+      animations.push({ on: "load", duration: seconds * 1000, tracks: [{ property: "trimEnd", keyframes: [{ t: 0, v: start }, { t: 1, v: end }] }] });
+    }
   }
 
   const states = asObject(ctx.take(style, "states")) ?? {};

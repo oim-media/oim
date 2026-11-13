@@ -319,8 +319,8 @@ describe("animations, motion and interactions", () => {
   });
 
   // Ruling (13 Nov): what the 1.x player drew wins. It trimmed only the SVG it
-  // drew itself, with a stroke width; a trim with no duration was drawn still,
-  // and the stroke grew from its start.
+  // drew itself, with a stroke width; a trim with no duration was drawn still.
+  // Contract (13 Nov): the trim at rest is `geometry.trim`.
   const icon = { content: '<svg viewBox="0 0 10 10"><path d="M0 0h10"/></svg>' };
   it("the drawing of a stroke is a track over trimEnd", () => {
     expect(layer({ strokeWidth: 2, trimStart: 0, trimEnd: 100, trimDuration: 2.2 }, "svg", icon).animations).toEqual([
@@ -328,24 +328,27 @@ describe("animations, motion and interactions", () => {
     ]);
   });
 
-  it("a still trim has no duration, and its start stays put", () => {
-    expect(layer({ strokeWidth: 2, trimStart: 25, trimEnd: 75 }, "svg", icon).animations).toEqual([
-      {
-        on: "load",
-        duration: 0,
-        tracks: [
-          { property: "trimEnd", keyframes: [{ t: 0, v: 0.25 }, { t: 1, v: 0.75 }] },
-          { property: "trimStart", keyframes: [{ t: 0, v: 0.25 }, { t: 1, v: 0.25 }] },
-        ],
-      },
-    ]);
+  it("a still trim rests in the geometry, with no animation", () => {
+    const still = layer({ strokeWidth: 2, trimStart: 25, trimEnd: 75 }, "svg", icon);
+    expect(still.geometry?.trim).toEqual({ start: 0.25, end: 0.75 });
+    expect(still).not.toHaveProperty("animations");
     expect(valid({ strokeWidth: 2, trimStart: 25, trimEnd: 75 }, "svg", icon)).toEqual([]);
   });
 
+  it("a trim drawn over time grows from its start to its end at rest", () => {
+    const drawn = layer({ strokeWidth: 2, trimStart: 25, trimDuration: 2 }, "svg", icon);
+    expect(drawn.geometry?.trim).toEqual({ start: 0.25 });
+    expect(drawn.animations).toEqual([{ on: "load", duration: 2000, tracks: [{ property: "trimEnd", keyframes: [{ t: 0, v: 0.25 }, { t: 1, v: 1 }] }] }]);
+  });
+
   it("a trim 1.x never drew is not written", () => {
-    expect(layer({ strokeWidth: 2, trimStart: 0, trimEnd: 100 }, "svg", icon)).not.toHaveProperty("animations");
-    expect(layer({ trimDuration: 2 }, "svg", icon)).not.toHaveProperty("animations");
-    expect(layer({ strokeWidth: 2, trimDuration: 2 })).not.toHaveProperty("animations");
+    const whole = layer({ strokeWidth: 2, trimStart: 0, trimEnd: 100 }, "svg", icon);
+    expect(whole).not.toHaveProperty("animations");
+    expect(whole.geometry).not.toHaveProperty("trim");
+    const noWidth = layer({ trimStart: 25, trimDuration: 2 }, "svg", icon);
+    expect(noWidth).not.toHaveProperty("animations");
+    expect(noWidth.geometry).not.toHaveProperty("trim");
+    expect(layer({ strokeWidth: 2, trimStart: 25, trimDuration: 2 }).geometry).not.toHaveProperty("trim");
   });
 
   it("a state that changes the look is an animation; the scale was a percentage", () => {

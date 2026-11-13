@@ -60,32 +60,26 @@ describe("how a layer enters comes from its 2.0 layer", () => {
 });
 
 describe("a stroke's trim comes from its 2.0 layer", () => {
-  it("drawn over time, from its start", async () => {
-    const el = await render(icon({ trimStart: 0, trimEnd: 100, trimDuration: 9 }), (l) => {
-      l.animations = [{
-        on: "load",
-        duration: 2000,
-        tracks: [
-          { property: "trimEnd", keyframes: [{ t: 0, v: 0.25 }, { t: 1, v: 0.75 }] },
-          { property: "trimStart", keyframes: [{ t: 0, v: 0.25 }, { t: 1, v: 0.25 }] },
-        ],
-      }];
-    });
+  it("at rest, from the geometry, with nothing animated", async () => {
+    const el = await render(icon({ trimDuration: 9 }), (l) => { delete l.animations; l.geometry.trim = { start: 0.25, end: 0.75 }; });
     const path = el.querySelector("path") as unknown as HTMLElement;
     expect(path.style.strokeDasharray).toBe("50 100");
     expect(path.style.strokeDashoffset).toBe("-25");
-    expect(path.style.animation).toContain("2s");
-  });
-
-  it("still when it has no duration", async () => {
-    const el = await render(icon({ trimDuration: 9 }), (l) => { l.animations[0].duration = 0; l.animations[0].tracks[0].keyframes[1].v = 0.5; });
-    const path = el.querySelector("path") as unknown as HTMLElement;
-    expect(path.style.strokeDasharray).toBe("50 100");
     expect(path.style.animation).toBe("");
   });
 
+  it("drawn over time, for as long as its load animation says", async () => {
+    const el = await render(icon({ trimStart: 0, trimEnd: 100, trimDuration: 9 }), (l) => {
+      l.geometry.trim = { end: 0.5 };
+      l.animations[0].duration = 2000;
+    });
+    const path = el.querySelector("path") as unknown as HTMLElement;
+    expect(path.style.strokeDasharray).toBe("50 100");
+    expect(path.style.animation).toContain("2s");
+  });
+
   it("none in 2.0, nothing trimmed, whatever 1.x said", async () => {
-    const el = await render(icon({ trimStart: 25, trimEnd: 75 }), (l) => { delete l.animations; });
+    const el = await render(icon({ trimStart: 25, trimEnd: 75 }), (l) => { delete l.geometry.trim; });
     expect((el.querySelector("path") as unknown as HTMLElement).style.strokeDasharray).toBe("");
   });
 });

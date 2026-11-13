@@ -120,15 +120,15 @@ export function convertEffects(ctx: UpgradeContext, slot: V1Slot, layer: DraftLa
   if (layerBlur) effects.push({ kind: "blur", radius: layerBlur });
 
   // On a filter layer the colour filters act on what is behind it. On an
-  // image, or a shape filled with one, they belong to the image (see takeFilters
-  // in the image and fill converters, which run before this one).
+  // image, or a shape filled with one, they belong to the image. On anything
+  // else they filter the layer itself.
   const filters = takeFilters(ctx, style);
   if (slot.type === "filter") effects.push({ kind: "backdrop", ...filters });
   else if (filters) {
     const paint = layer.fills?.find((p) => "kind" in p && p.kind === "image");
     if (layer.image) layer.image.filters = filters;
     else if (paint && "kind" in paint && paint.kind === "image") paint.filters = filters;
-    else ctx.note("style.filter*: colour filters on a layer with no image");
+    else effects.push({ kind: "filter", ...filters });
   }
 
   const grain = ctx.take(style, "grain") === true;

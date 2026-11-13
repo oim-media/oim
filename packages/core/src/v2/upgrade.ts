@@ -10,12 +10,17 @@
 
 import { normalizeLegacyKeys } from "../legacyKeys.js";
 import type { OimDocument } from "./schema.js";
+import { convertAnimations } from "./upgrade/animations.js";
 import { convertBox } from "./upgrade/box.js";
 import { canvasEffects, convertEffects } from "./upgrade/effects.js";
+import { convertGeometry } from "./upgrade/geometry.js";
+import { convertMask } from "./upgrade/mask.js";
 import { canvasFills, convertPaints } from "./upgrade/paints.js";
 import { asObject, createContext, type DraftLayer, type UpgradeContext, type V1Object, type V1Slot } from "./upgrade/context.js";
 import { canvasOf, convertRoot, languagesOf, rolesOf } from "./upgrade/root.js";
+import { convertText } from "./upgrade/text.js";
 import { buildTree, TYPE_OF } from "./upgrade/tree.js";
+import { convertVariables } from "./upgrade/variables.js";
 
 export type UpgradeResult = {
   document: OimDocument;
@@ -28,7 +33,18 @@ export type UpgradeResult = {
 export type Converter = (ctx: UpgradeContext, slot: V1Slot, layer: DraftLayer) => void;
 
 /** One converter per block, in the order they run. */
-const CONVERTERS: Converter[] = [convertBox, convertPaints, convertEffects];
+// Order matters twice: the image block must exist before the effects decide
+// where the colour filters go, and the mask runs last because it replaces the
+// geometry, fill and stroke of the layer that takes that role.
+const CONVERTERS: Converter[] = [
+  convertBox,
+  convertText,
+  convertPaints,
+  convertGeometry,
+  convertEffects,
+  convertAnimations,
+  convertMask,
+];
 
 export function isV2(input: unknown): boolean {
   const version = asObject(input)?.oim;
@@ -109,6 +125,9 @@ export function upgrade(input: unknown): UpgradeResult {
   });
 
   document.layers = buildTree(ctx, slots, layers);
+
+  const variables = convertVariables(ctx, meta, document.languages);
+  if (variables) document.variables = variables;
 
   const background = canvasFills(ctx, meta);
   if (background.length > 0) document.canvas = { ...document.canvas, fills: background };

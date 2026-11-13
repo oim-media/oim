@@ -1566,12 +1566,6 @@
                 "crop": {
                   "$ref": "#/$defs/__schema16"
                 },
-                "flipX": {
-                  "type": "boolean"
-                },
-                "flipY": {
-                  "type": "boolean"
-                },
                 "filters": {
                   "$ref": "#/$defs/__schema17"
                 }
@@ -1793,6 +1787,12 @@
         },
         "rotation": {
           "type": "number"
+        },
+        "flipX": {
+          "type": "boolean"
+        },
+        "flipY": {
+          "type": "boolean"
         }
       },
       "required": [
@@ -1997,6 +1997,37 @@
           "properties": {
             "kind": {
               "type": "string",
+              "const": "filter"
+            },
+            "preset": {
+              "$ref": "#/$defs/__schema18"
+            },
+            "blur": {
+              "$ref": "#/$defs/__schema19"
+            },
+            "brightness": {
+              "$ref": "#/$defs/__schema20"
+            },
+            "contrast": {
+              "$ref": "#/$defs/__schema21"
+            },
+            "saturate": {
+              "$ref": "#/$defs/__schema22"
+            },
+            "hueRotate": {
+              "$ref": "#/$defs/__schema23"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
               "const": "grain"
             },
             "intensity": {
@@ -2125,7 +2156,8 @@
         "loop",
         "enter",
         "hover",
-        "press"
+        "press",
+        "action"
       ]
     },
     "__schema47": {
@@ -2506,7 +2538,8 @@
         "loop",
         "enter",
         "hover",
-        "press"
+        "press",
+        "action"
       ]
     },
     "__schema66": {
@@ -2575,6 +2608,20 @@
         "strokeWidth": {
           "type": "number",
           "minimum": 0
+        },
+        "cap": {
+          "type": "string",
+          "enum": [
+            "round",
+            "square"
+          ]
+        },
+        "join": {
+          "type": "string",
+          "enum": [
+            "round",
+            "bevel"
+          ]
         },
         "opacity": {
           "$ref": "#/$defs/__schema10"

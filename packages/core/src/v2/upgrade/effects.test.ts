@@ -86,9 +86,15 @@ describe("effects", () => {
     expect(filled).not.toHaveProperty("effects");
   });
 
-  it("filters that change nothing are dropped, and real ones with no image are reported", () => {
-    expect(upgrade(doc({ filterPreset: "none", filterBrightness: 100 })).unhandled).toEqual([]);
-    expect(upgrade(doc({ filterPreset: "sepia" })).unhandled).toEqual(["style.filter*: colour filters on a layer with no image"]);
+  it("filters that change nothing are dropped; on a layer with no image they filter the layer itself", () => {
+    expect(layer({ filterPreset: "none", filterBrightness: 100 })).not.toHaveProperty("effects");
+    expect(layer({ filterBlur: 3, filterSaturate: 140 }).effects).toEqual([{ kind: "filter", blur: 3, saturate: 1.4 }]);
+  });
+
+  it("an image layer keeps its filters in the image", () => {
+    const image = layer({ filterPreset: "grayscale" }, "image");
+    expect(image.image).toEqual({ src: "oim:base", filters: { preset: "grayscale" } });
+    expect(image).not.toHaveProperty("effects");
   });
 
   it("grain per layer", () => {

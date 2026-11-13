@@ -158,7 +158,9 @@ export const effectSchema = z.discriminatedUnion("kind", [
     .strict(),
   z.object({ kind: z.literal("glow"), radius: z.number().min(0), color: color.optional(), intensity: z.number().optional() }).strict(),
   z.object({ kind: z.literal("blur"), radius: z.number().min(0) }).strict(),
+  // `backdrop` filters what is behind the layer; `filter`, the layer itself.
   z.object({ kind: z.literal("backdrop") }).extend(imageFiltersSchema.shape).strict(),
+  z.object({ kind: z.literal("filter") }).extend(imageFiltersSchema.shape).strict(),
   z
     .object({
       kind: z.literal("grain"),
@@ -228,6 +230,8 @@ const pathEntry = z
     fill: z.string().max(128).optional(),
     stroke: z.string().max(128).optional(),
     strokeWidth: z.number().min(0).optional(),
+    cap: z.enum(["round", "square"]).optional(),
+    join: z.enum(["round", "bevel"]).optional(),
     opacity: unit.optional(),
     transform: z.array(z.number()).length(6).optional(),
   })
@@ -253,11 +257,10 @@ const corners = z.union([z.number().min(0), z.array(z.number().min(0)).length(4)
 
 export const imageSchema = z
   .object({
+    // "oim:base" is the PNG of the file itself.
     src: z.string().min(1),
     fit: fit.optional(),
     crop: crop.optional(),
-    flipX: z.boolean().optional(),
-    flipY: z.boolean().optional(),
     filters: imageFiltersSchema.optional(),
   })
   .strict();
@@ -288,7 +291,7 @@ const track = z
 function animationFor(targets: readonly [string, ...string[]]) {
   return z
     .object({
-      on: z.enum(["load", "loop", "enter", "hover", "press"]),
+      on: z.enum(["load", "loop", "enter", "hover", "press", "action"]),
       target: z.enum(targets).optional(),
       preset: z.string().min(1).max(64).optional(),
       params: z.record(z.string(), z.unknown()).optional(),
@@ -341,7 +344,15 @@ const a11y = z.object({ alt: z.record(z.string(), z.string()).optional(), decora
 // --- layer ------------------------------------------------------------------
 
 const boxSchema = z
-  .object({ x: z.number(), y: z.number(), width: z.number().min(0), height: z.number().min(0), rotation: z.number().optional() })
+  .object({
+    x: z.number(),
+    y: z.number(),
+    width: z.number().min(0),
+    height: z.number().min(0),
+    rotation: z.number().optional(),
+    flipX: z.boolean().optional(),
+    flipY: z.boolean().optional(),
+  })
   .strict();
 
 const BLEND = ["multiply", "screen", "overlay", "darken", "lighten", "color-dodge", "color-burn", "difference"] as const;

@@ -40,9 +40,7 @@ function splitTopLevel(text: string): string[] | null {
       parts.push(text.slice(start, i).trim());
       start = i + 1;
     }
-    if (depth < 0) return null;
   }
-  if (depth !== 0) return null;
   parts.push(text.slice(start).trim());
   return parts;
 }

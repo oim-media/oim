@@ -149,10 +149,13 @@ describe("lottie ships apart from the player", () => {
 
   // A budget, not a target: each raise is a deliberate decision recorded in
   // the commit that makes it. Last raise: 59 KB for reveal and play (1.22.0).
-  it.skipIf(!hasBundle)("the player fits in 59 KB gzip", async () => {
+  // Temporary 70 KB while the 2.0 migration carries `upgrade` inside the player.
+  // The 2.0 player reads only 2.0 files (1.x stays on /player/v1/), so upgrade
+  // leaves the bundle at the end of phase 3 and the budget returns to 59 KB.
+  it.skipIf(!hasBundle)("the player fits in 70 KB gzip", async () => {
     const { gzipSync } = await import("node:zlib");
     const kb = gzipSync(readFileSync(BUNDLE)).length / 1024;
-    expect(Math.round(kb)).toBeLessThanOrEqual(59);
+    expect(Math.round(kb)).toBeLessThanOrEqual(70);
   });
 
   it.skipIf(!hasBundle)("the lottie file sits next to both player paths", () => {

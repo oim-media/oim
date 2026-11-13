@@ -15,6 +15,7 @@ import { dropCapStyle, splitDropCap } from '../../../core/src/drop-cap.js';
 import { layerTextureMask } from '../../../core/src/effects/texture-mask.js';
 import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entranceClips, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
 import { loadLottie } from './lottie-loader.js';
+import { v2LayersOf, anchorShift } from './v2-layers.js';
 import { sanitizeHtml, sanitizeFontFamily, isSandboxImageSrc } from './sanitize.js';
 import {
   computeLayerComposition,
@@ -777,6 +778,9 @@ export class LegacyRenderer {
     // any element because it decides whether the group comes to exist in the DOM:
     // a group without children is not painted, as is the case today.
     const groupChildren = childrenByGroup(slots);
+
+    // The 2.0 reading of this file; the blocks already migrated are painted from it.
+    const v2Layers = v2LayersOf(self.metadata);
 
     const slotPromises = slots.map(async (slot: any) => {
       const slotType = slot.type;
@@ -1854,12 +1858,23 @@ export class LegacyRenderer {
         const transformY = '-50%';
  
         slotEl.style.position = 'absolute';
-        slotEl.style.left = leftPx + 'px';
-        slotEl.style.top = topPx + 'px';
-        
+        // Placed from the 2.0 box: the same pixels as the 1.x anchor above,
+        // which only the infinite duplicate still uses.
+        const box = duplicatedForInfinite ? undefined : v2Layers.get(String(slot.id))?.box;
+        if (box) {
+          [transformX] = anchorShift(box);
+          const [, shiftY] = anchorShift(box);
+          slotEl.style.left = box.x.toFixed(2) + 'px';
+          slotEl.style.top = box.y.toFixed(2) + 'px';
+          slotEl.style.setProperty('--oim-ty', shiftY);
+        } else {
+          slotEl.style.left = leftPx + 'px';
+          slotEl.style.top = topPx + 'px';
+        }
+
         const rotationDeg = style.rotation || 0;
         slotEl.style.setProperty('--oim-tx', transformX);
-        slotEl.style.setProperty('--oim-ty', transformY);
+        if (!box) slotEl.style.setProperty('--oim-ty', transformY);
         slotEl.style.setProperty('--oim-rot', rotationDeg + 'deg');
 
         // The box already resolved in canvas pixels. It is kept because the

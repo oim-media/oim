@@ -45,7 +45,8 @@ describe("upgrade: root, tree and box", () => {
   });
 
   it("box: percent positions and cqw lengths become canvas units", () => {
-    expect(first(v1([slot()])).box).toEqual({ x: 100, y: 100, width: 500, height: 100 });
+    // Painted 100 tall (cqw of the width) and centred on half of 10% of the height: 75.
+    expect(first(v1([slot()])).box).toEqual({ x: 100, y: 75, width: 500, height: 100 });
   });
 
   it.each([
@@ -62,8 +63,8 @@ describe("upgrade: root, tree and box", () => {
     expect(layer.box).toEqual({ x: 100, y: 100, width: 300, height: 40 });
   });
 
-  it("a layer with no size at all gets a zero box, not NaN", () => {
-    expect(first(v1([{ id: "a", type: "geo" }])).box).toEqual({ x: 0, y: 0, width: 0, height: 0 });
+  it("a layer with no size at all gets the player's 10cqw box, not NaN", () => {
+    expect(first(v1([{ id: "a", type: "geo" }])).box).toEqual({ x: 0, y: -50, width: 100, height: 100 });
   });
 
   it("defaults are omitted", () => {
@@ -136,7 +137,7 @@ describe("upgrade: root, tree and box", () => {
       slots: [{ id: "a", type: "geo", p: [10, 20], st: { width: "50.0cqw", height: "10.0cqw" } }],
     };
     const result = upgrade(legacy);
-    expect(result.document.layers[0].box).toEqual({ x: 100, y: 100, width: 500, height: 100 });
+    expect(result.document.layers[0].box).toEqual({ x: 100, y: 75, width: 500, height: 100 });
     expect(result.document.reedit).toBe("sealed");
     expect(result.unhandled).toEqual([]);
   });

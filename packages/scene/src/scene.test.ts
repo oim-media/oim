@@ -58,6 +58,22 @@ describe("mount", () => {
     expect(mount(host, doc([shape()])).elementOf("a")!.style.transform).toBe("");
   });
 
+  it("a text with no size fits its content and is placed by its anchor", () => {
+    const text = { id: "t", type: "text", box: { x: 500, y: 250, anchor: "center" }, text: { content: { es: "Hola" } } } as Layer;
+    const el = mount(document.createElement("div"), doc([text])).elementOf("t")!;
+    expect([el.style.left, el.style.top, el.style.width, el.style.height]).toEqual(["50%", "50%", "", ""]);
+    expect(el.style.transform).toBe("translate(-50%, -50%)");
+  });
+
+  it.each([
+    ["top-left", ""],
+    ["right", "translate(-100%, -50%)"],
+    ["bottom", "translate(-50%, -100%)"],
+  ])("anchor %s moves the box by %s", (anchor, transform) => {
+    const box = { x: 0, y: 0, width: 10, height: 10, anchor } as Layer["box"];
+    expect(mount(document.createElement("div"), doc([shape({ box })])).elementOf("a")!.style.transform).toBe(transform);
+  });
+
   it("elementOf an unknown id is null", () => {
     expect(mount(document.createElement("div"), doc([shape()])).elementOf("nope")).toBeNull();
   });

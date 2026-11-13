@@ -344,17 +344,24 @@ const a11y = z.object({ alt: z.record(z.string(), z.string()).optional(), decora
 
 // --- layer ------------------------------------------------------------------
 
+/** Which point of the box sits at `x, y`. Absent is the top-left corner. */
+export const ANCHORS = ["top-left", "top", "top-right", "left", "center", "right", "bottom-left", "bottom", "bottom-right"] as const;
+
 const boxSchema = z
   .object({
     x: z.number(),
     y: z.number(),
     width: z.number().min(0),
     height: z.number().min(0),
+    anchor: z.enum(ANCHORS).optional(),
     rotation: z.number().optional(),
     flipX: z.boolean().optional(),
     flipY: z.boolean().optional(),
   })
   .strict();
+
+// A text may leave its size out: it then fits its content, grown from its anchor.
+const textBoxSchema = boxSchema.extend({ width: z.number().min(0).optional(), height: z.number().min(0).optional() }).strict();
 
 const BLEND = ["multiply", "screen", "overlay", "darken", "lighten", "color-dodge", "color-burn", "difference"] as const;
 
@@ -390,7 +397,7 @@ function layerOf<T extends LayerType>(type: T, own: Record<string, z.ZodType> = 
       id,
       type: z.literal(type),
       name: z.string().max(256).optional(),
-      box: boxSchema,
+      box: type === "text" ? textBoxSchema : boxSchema,
       opacity: unit.optional(),
       visible: z.boolean().optional(),
       blend: z.enum(BLEND).optional(),
@@ -488,7 +495,7 @@ export type Mask = z.infer<typeof maskSchema>;
 export type Animation = z.infer<typeof animationSchema>;
 export type Motion = z.infer<typeof motionSchema>;
 export type Interaction = z.infer<typeof interactionSchema>;
-export type Box = z.infer<typeof boxSchema>;
+export type Box = z.infer<typeof textBoxSchema>;
 export type Variables = z.infer<typeof variablesSchema>;
 
 export type Layer = {

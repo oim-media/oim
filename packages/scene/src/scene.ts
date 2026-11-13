@@ -45,7 +45,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     el.style.position = "absolute";
     applyBox(el, layer.box, frame);
     entries.set(layer.id, { el, layer });
-    for (const child of layer.children ?? []) paint(child, el, layer.box);
+    for (const child of layer.children ?? []) paint(child, el, layer.box as Frame); // only groups have children, and a group is always sized
     parent.appendChild(el);
   };
   const canvas: Frame = { x: 0, y: 0, width, height };

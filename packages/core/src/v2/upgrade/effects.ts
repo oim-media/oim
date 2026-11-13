@@ -42,7 +42,9 @@ export function takeFilters(ctx: UpgradeContext, style: V1Object): Filters | und
 function listedEffect(ctx: UpgradeContext, value: unknown): Effect | undefined {
   const fx = asObject(value);
   if (!fx || fx.enabled === false) return undefined;
-  const color = typeof fx.colorRole === "string" && ctx.hasRole(fx.colorRole) ? { var: fx.colorRole } : fx.color;
+  const color = typeof fx.colorRole === "string" && ctx.hasRole(fx.colorRole)
+    ? typeof fx.color === "string" && fx.color ? { var: fx.colorRole, fallback: fx.color } : { var: fx.colorRole }
+    : fx.color;
   const tint = typeof color === "string" || asObject(color) ? { color: color as never } : {};
   switch (fx.type) {
     case "drop-shadow": {

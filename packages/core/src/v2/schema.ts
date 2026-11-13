@@ -33,10 +33,15 @@ const extensions = z.record(z.string(), z.unknown());
 
 // --- values -----------------------------------------------------------------
 
-const binding = z.object({ var: z.string().min(1).max(64) }).strict();
+const varName = z.string().min(1).max(64);
 
-/** A literal, a binding to a variable, or a literal with per-mode exceptions. */
+/**
+ * A literal, a binding to a variable, or a literal with per-mode exceptions.
+ * A binding may carry a `fallback`: what is painted when nobody (the document's
+ * variables or the host page) gives the variable a value.
+ */
 export function scalar<T extends z.ZodType>(literal: T) {
+  const binding = z.object({ var: varName, fallback: literal.optional() }).strict();
   return z.union([literal, binding, z.object({ value: literal, modes: z.record(z.string(), literal) }).strict()]);
 }
 

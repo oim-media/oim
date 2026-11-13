@@ -12,20 +12,20 @@ import type { Paint, Stroke } from "../schema.js";
 import { asObject, type DraftLayer, type UpgradeContext, type V1Object, type V1Slot } from "./context.js";
 import { parseCssGradient } from "./gradient.js";
 
-type ColorValue = string | { var: string };
+type ColorValue = string | { var: string; fallback?: string };
 
 const isColor = (value: unknown): value is string =>
   typeof value === "string" && value !== "" && value !== "transparent" && value !== "none";
 
 /**
- * A colour and its palette role. The role wins when the document has palettes
- * that define it; without palettes a binding would point at nothing, so the
- * literal is kept.
+ * A colour and its role. A known role (a palette's, or one of the dynamic roles
+ * a host page can set) becomes a binding that keeps the literal as its fallback,
+ * which is what 1.x painted: `var(--oim-color-<role>, <literal>)`.
  */
 export function colorOf(ctx: UpgradeContext, owner: V1Object, key: string, roleKey?: string): ColorValue | undefined {
   const literal = ctx.take(owner, key);
   const role = roleKey ? ctx.take(owner, roleKey) : undefined;
-  if (typeof role === "string" && ctx.hasRole(role)) return { var: role };
+  if (typeof role === "string" && ctx.hasRole(role)) return isColor(literal) ? { var: role, fallback: literal } : { var: role };
   return isColor(literal) ? literal : undefined;
 }
 

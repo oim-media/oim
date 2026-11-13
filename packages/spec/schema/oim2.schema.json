@@ -464,7 +464,19 @@
           "$ref": "#/$defs/__schema7"
         },
         {
-          "$ref": "#/$defs/__schema8"
+          "type": "object",
+          "properties": {
+            "var": {
+              "$ref": "#/$defs/__schema8"
+            },
+            "fallback": {
+              "$ref": "#/$defs/__schema7"
+            }
+          },
+          "required": [
+            "var"
+          ],
+          "additionalProperties": false
         },
         {
           "type": "object",
@@ -496,18 +508,9 @@
       "pattern": "^(?:(?:#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|(?:rgb|rgba|hsl|hsla)\\(\\s*[0-9a-zA-Z.,%/\\s+-]*\\)|(?:transparent|currentColor|currentcolor|none|inherit))|var\\(\\s*--[A-Za-z0-9_-]+\\s*\\)|var\\(\\s*--[A-Za-z0-9_-]+\\s*,\\s*(?:(?:#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|(?:rgb|rgba|hsl|hsla)\\(\\s*[0-9a-zA-Z.,%/\\s+-]*\\)|(?:transparent|currentColor|currentcolor|none|inherit))|var\\(\\s*--[A-Za-z0-9_-]+\\s*\\))\\s*\\)|var\\(\\s*--[A-Za-z0-9_-]+\\s*,\\s*(?:(?:#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|(?:rgb|rgba|hsl|hsla)\\(\\s*[0-9a-zA-Z.,%/\\s+-]*\\)|(?:transparent|currentColor|currentcolor|none|inherit))|var\\(\\s*--[A-Za-z0-9_-]+\\s*\\)|var\\(\\s*--[A-Za-z0-9_-]+\\s*,\\s*(?:(?:#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|(?:rgb|rgba|hsl|hsla)\\(\\s*[0-9a-zA-Z.,%/\\s+-]*\\)|(?:transparent|currentColor|currentcolor|none|inherit))|var\\(\\s*--[A-Za-z0-9_-]+\\s*\\))\\s*\\))\\s*\\))$"
     },
     "__schema8": {
-      "type": "object",
-      "properties": {
-        "var": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 64
-        }
-      },
-      "required": [
-        "var"
-      ],
-      "additionalProperties": false
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
     },
     "__schema9": {
       "$ref": "#/$defs/__schema10"
@@ -1880,7 +1883,19 @@
           "$ref": "#/$defs/__schema48"
         },
         {
-          "$ref": "#/$defs/__schema8"
+          "type": "object",
+          "properties": {
+            "var": {
+              "$ref": "#/$defs/__schema8"
+            },
+            "fallback": {
+              "$ref": "#/$defs/__schema48"
+            }
+          },
+          "required": [
+            "var"
+          ],
+          "additionalProperties": false
         },
         {
           "type": "object",

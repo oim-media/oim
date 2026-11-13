@@ -35,10 +35,12 @@ export function v2LayersOf(metadata: object): Map<string, Layer> {
  * palette's value, since an image cannot hold a `var()`.
  */
 export function paintColors(metadata: { palettes?: Record<string, Record<string, string>>; defaultPalette?: string }): PaintColors {
-  const isVar = (v: unknown): v is { var: string } => !!v && typeof v === 'object' && typeof (v as { var?: unknown }).var === 'string';
+  const isVar = (v: unknown): v is { var: string; fallback?: string } => !!v && typeof v === 'object' && typeof (v as { var?: unknown }).var === 'string';
   return {
-    css: (v) => (isVar(v) ? resolveCssColor(v.var) : typeof v === 'string' ? resolveCssColor(null, v) : '') || undefined,
-    literal: (v) => (isVar(v) ? (resolvePalette(metadata)?.colors as Record<string, string> | undefined)?.[v.var] : typeof v === 'string' ? resolveCssColor(null, v) : '') || undefined,
+    css: (v) => (isVar(v) ? resolveCssColor(v.var, v.fallback) : typeof v === 'string' ? resolveCssColor(null, v) : '') || undefined,
+    literal: (v) => (isVar(v)
+      ? (resolvePalette(metadata)?.colors as Record<string, string> | undefined)?.[v.var] ?? resolveCssColor(null, v.fallback)
+      : typeof v === 'string' ? resolveCssColor(null, v) : '') || undefined,
   };
 }
 

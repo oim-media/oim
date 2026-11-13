@@ -87,10 +87,16 @@ describe("fills", () => {
     expect(layer({ fillType: "generative", fillGenerative: generative }).fills).toEqual([{ kind: "generative", generative }]);
   });
 
-  it("a role binds only when the document has a palette that defines it", () => {
-    expect(layer({ fillColor: "#112233", fillColorRole: "accent" }, "geo", palettes).fills).toEqual([{ kind: "color", value: { var: "accent" } }]);
-    expect(layer({ fillColor: "#112233", fillColorRole: "accent" }).fills).toEqual([{ kind: "color", value: "#112233" }]);
-    expect(layer({ fillColor: "#112233", fillColorRole: "surface" }, "geo", palettes).fills).toEqual([{ kind: "color", value: "#112233" }]);
+  // Ruling (13 Nov): a role binds with its literal as fallback, palettes or not,
+  // because a host page can set the dynamic roles; 1.x painted var(--oim-color-<role>, literal).
+  it("a known role binds and keeps its literal as the fallback", () => {
+    expect(layer({ fillColor: "#112233", fillColorRole: "accent" }, "geo", palettes).fills).toEqual([{ kind: "color", value: { var: "accent", fallback: "#112233" } }]);
+    expect(layer({ fillColor: "#112233", fillColorRole: "surface" }).fills).toEqual([{ kind: "color", value: { var: "surface", fallback: "#112233" } }]);
+    expect(layer({ fillColorRole: "surface" }).fills).toEqual([{ kind: "color", value: { var: "surface" } }]);
+  });
+
+  it("an unknown role with no palette defining it keeps only the literal", () => {
+    expect(layer({ fillColor: "#112233", fillColorRole: "brand" }).fills).toEqual([{ kind: "color", value: "#112233" }]);
   });
 
   it("the colour of a text is its fill", () => {

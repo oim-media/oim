@@ -1604,10 +1604,14 @@ export class LegacyRenderer {
       // 
       const hasVector = slotType === 'svg' || isSvg || !!style.svgRawXml
         || (isGeoLike && (!!shapeDrawing(style.geoShape) || !!style.svgPath));
-      const resolvedStrokeColor = resolveCssColor(style.strokeColorRole, style.strokeColor);
-      if (resolvedStrokeColor && style.strokeWidth && !isWindowMask && !hasVector) {
-        const borderStyle = style.strokeStyle || 'solid';
-        slotEl.style.setProperty('border', `${style.strokeWidth}px ${borderStyle} ${resolvedStrokeColor}`);
+      // The outline is the first 2.0 stroke with no `align` (outer and inner strokes
+      // are drawn elsewhere). Without one, the 1.x fields still decide.
+      const v2Stroke = v2Layers.get(String(slot.id))?.strokes?.find((s) => !s.align && 'kind' in s.paint && s.paint.kind === 'color' && typeof s.width === 'number');
+      const outline = v2Stroke
+        ? { color: v2Colors.css((v2Stroke.paint as { value: unknown }).value) || '', width: v2Stroke.width as number, style: v2Stroke.style }
+        : { color: resolveCssColor(style.strokeColorRole, style.strokeColor), width: style.strokeWidth, style: style.strokeStyle };
+      if (outline.color && outline.width && !isWindowMask && !hasVector) {
+        slotEl.style.setProperty('border', `${outline.width}px ${outline.style || 'solid'} ${outline.color}`);
       }
       // Non-rectangular shapes are drawn with SVG, as in the editor.
       //
@@ -1664,10 +1668,10 @@ export class LegacyRenderer {
         // was visible in the editor and published invisible. The line, by contrast,
         // uses `strokeWidth ?? 0` in the editor, so it is left as it was.
         const isScribble = style.geoShape === 'scribble';
-        const strokeThickness = style.strokeWidth && style.strokeWidth > 0
+        const strokeThickness = v2Stroke ? outline.width : style.strokeWidth && style.strokeWidth > 0
           ? style.strokeWidth
           : (isScribble ? 2 : 0);
-        const strokeColor = (style.strokeColor || style.strokeColorRole)
+        const strokeColor = v2Stroke ? outline.color : (style.strokeColor || style.strokeColorRole)
           ? resolveCssColor(style.strokeColorRole, style.strokeColor || '#000000')
           : (isScribble ? (resolveCssColor(style.fillColorRole, style.fillColor) || '#2563EB') : '');
         if (strokeThickness && strokeColor) {
@@ -1679,8 +1683,8 @@ export class LegacyRenderer {
           figure.setAttribute('vector-effect', 'non-scaling-stroke');
           figure.setAttribute('stroke-linejoin', 'round');
           figure.setAttribute('stroke-linecap', 'round');
-          if (style.strokeStyle === 'dashed') figure.setAttribute('stroke-dasharray', '6,4');
-          else if (style.strokeStyle === 'dotted') figure.setAttribute('stroke-dasharray', '2,3');
+          if (outline.style === 'dashed') figure.setAttribute('stroke-dasharray', '6,4');
+          else if (outline.style === 'dotted') figure.setAttribute('stroke-dasharray', '2,3');
         }
         svg.appendChild(figure);
         slotEl.appendChild(svg);

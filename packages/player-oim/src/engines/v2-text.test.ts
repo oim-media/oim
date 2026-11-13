@@ -80,6 +80,15 @@ describe("a text paints from its 2.0 layer", () => {
     expect(el.style.alignItems).toBe("flex-end");
   });
 
+  it("its highlight and drop cap", async () => {
+    const el = await render({}, (l) => {
+      l.text.highlight = { enabled: true, color: "#00ff00" };
+      l.text.dropCap = { enabled: true, lines: 2 };
+    });
+    expect(el.outerHTML).toContain("#00ff00");
+    expect(el.outerHTML).toMatch(/>H</);
+  });
+
   it("its gradient, clipped to the glyphs", async () => {
     const el = await render(
       { fillType: "gradient", fillGradient: "linear-gradient(90deg, #ff0000 0%, #0000ff 100%)" },

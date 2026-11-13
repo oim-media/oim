@@ -130,7 +130,7 @@ function fillOf(ctx: UpgradeContext, slot: V1Slot): Paint | undefined {
   if (kind === "image") return image ?? solid();
   if (kind === "pattern") return pattern ?? solid();
   if (kind === "generative") return generative ? { kind: "generative", generative: generative as never } : solid();
-  if (slot.type === "text" && typeof textGradient === "string" && TEXT_GRADIENT_PRESETS.has(textGradient) && textGradient !== "linear") {
+  if ((slot.type === "text" || slot.type === "artistic-text") && typeof textGradient === "string" && TEXT_GRADIENT_PRESETS.has(textGradient) && textGradient !== "linear") {
     return { kind: "gradient", preset: textGradient };
   }
   return solid();

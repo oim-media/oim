@@ -67,7 +67,7 @@ import { slotClipping } from '../../../core/src/clipping.js';
 import { whatTheReaderCannotDo, describeMissing, CONTRACT_VERSION, PLAYER_CAPABILITIES } from '../../../core/src/compatibility.js';
 import { bindStates, resolveActions, applyMinHitArea, readInteraction, type ActionRunner, type RegisterOutsideTap } from './states.js';
 import { resolveMode } from './modes.js';
-import { buildArtisticTextModelFromSlot, generateArtisticTextSvgString } from './artisticText.js';
+import { buildArtisticTextModelFromSlot, buildArtisticTextModelFromLayer, generateArtisticTextSvgString } from './artisticText.js';
 import { readEmbeddedFonts, registerEmbeddedFonts, embeddedFontFamily } from './embeddedFonts.js';
 
 /**
@@ -783,6 +783,8 @@ export class LegacyRenderer {
     // The 2.0 reading of this file; the blocks already migrated are painted from it.
     const v2Layers = v2LayersOf(self.metadata);
     const v2Colors = paintColors(self.metadata);
+    // What an SVG attribute can hold: the literal 1.x painted (a role's fallback first).
+    const v2Literal = (v: unknown) => (v && typeof v === 'object' && typeof (v as any).fallback === 'string' ? v2Colors.literal((v as any).fallback) : v2Colors.literal(v));
 
     const slotPromises = slots.map(async (slot: any) => {
       const slotType = slot.type;
@@ -1205,7 +1207,10 @@ export class LegacyRenderer {
         hoverWrap.style.justifyContent = 'center';
         hoverWrap.style.pointerEvents = 'none';
 
-        const model = buildArtisticTextModelFromSlot(slot, self.lang, baseWidth);
+        const v2Artistic = v2Layers.get(String(slot.id));
+        const model = v2Artistic?.text?.artistic
+          ? buildArtisticTextModelFromLayer(v2Artistic, self.lang, v2Literal)
+          : buildArtisticTextModelFromSlot(slot, self.lang, baseWidth);
         // The SVG appends ", sans-serif" itself; the embedded name goes first.
         const embeddedArtistic = embeddedFontFamily(model.fontFamily, self.embeddedFontFamilies);
         if (embeddedArtistic) model.fontFamily = embeddedArtistic.replace(/, sans-serif$/, '');
@@ -1254,10 +1259,13 @@ export class LegacyRenderer {
         }
 
         const animType = style.textAnimationType;
-        applyTextHighlight(textTarget, (style as any).textHighlight);
+        // Highlight, marks and drop cap come from the 2.0 text block when there is one.
+        const v2TextBlock = slotType === 'text' ? v2Layers.get(String(slot.id))?.text : undefined;
+        const textBlock: any = v2TextBlock ?? { highlight: style.textHighlight, marks: style.marks, dropCap: style.dropCap };
+        applyTextHighlight(textTarget, textBlock.highlight);
         // Text marks (contract 1.11.0): what cannot hold marks (animations,
         // the drop cap) gets the plain text, never the tags.
-        const marks = (style as any).marks;
+        const marks = textBlock.marks;
         const plain = plainOf(text, marks);
 
         if (animType === 'wave-chars' && !self.disableAnimations) {
@@ -1275,7 +1283,7 @@ export class LegacyRenderer {
           self._bornPausedIfNeeded(self._textAnimations, applyTypewriterText(textTarget, plain, style.textAnimationSpeed, style.textAnimationDelay, (style as any).typewriterCursor));
         } else if (animType?.startsWith('glitch-') && !self.disableAnimations) {
           self._bornPausedIfNeeded(self._textAnimations, applyGlitchText(textTarget, plain, animType as any, style.textAnimationSpeed, style.textAnimationDelay, (style as any).textAnimationIntensity));
-        } else if (!applyDropCap(textTarget, text, (style as any).dropCap, marks)) {
+        } else if (!applyDropCap(textTarget, text, textBlock.dropCap, marks)) {
           renderMarkedText(textTarget, text, marks);
         }
       }

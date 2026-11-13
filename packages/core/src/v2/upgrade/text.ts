@@ -75,7 +75,10 @@ export function convertText(ctx: UpgradeContext, slot: V1Slot, layer: DraftLayer
   if (typeof lineHeight === "number" || (typeof lineHeight === "string" && lineHeight)) text.lineHeight = lineHeight;
   // 1.x passed letterSpacing to CSS as it came: a bare number was invalid CSS and
   // painted nothing (golden background-pattern-order); a length with its unit did.
-  const spacing = typeof style.letterSpacing === "string" ? toCanvasUnits(ctx.take(style, "letterSpacing"), ctx.canvas.width) : (ctx.take(style, "letterSpacing"), undefined);
+  // Artistic text drew its own SVG, where a bare number was a length.
+  const rawSpacing = ctx.take(style, "letterSpacing");
+  const spacing = typeof rawSpacing === "string" ? toCanvasUnits(rawSpacing, ctx.canvas.width)
+    : typeof rawSpacing === "number" && slot.type === "artistic-text" ? rawSpacing : undefined;
   if (spacing !== undefined && spacing !== 0) text.letterSpacing = spacing;
   const transform = ctx.take(style, "textTransform");
   if (transform === "uppercase" || transform === "lowercase" || transform === "capitalize") text.transform = transform;
@@ -99,8 +102,10 @@ export function convertText(ctx: UpgradeContext, slot: V1Slot, layer: DraftLayer
   if (typeof preset === "string" && preset) artistic.preset = preset;
   const curveType = ctx.take(style, "curveType");
   const curveAmount = ctx.take(style, "curveAmount");
-  if ((curveType === "arc" || curveType === "wave" || curveType === "arch") && typeof curveAmount === "number" && curveAmount !== 0) {
-    artistic.curve = { type: curveType, amount: curveAmount };
+  // 1.x drew an arc when the type was missing.
+  const curve = curveType ?? "arc";
+  if ((curve === "arc" || curve === "wave" || curve === "arch") && typeof curveAmount === "number" && curveAmount !== 0) {
+    artistic.curve = { type: curve, amount: curveAmount };
   }
   const depth = ctx.take(style, "extrusionDepth");
   const angle = ctx.take(style, "extrusionAngle");

@@ -90,6 +90,18 @@ export const patternSchema = z
   })
   .strict();
 
+/** A drawn texture over the canvas: lines or dots, with their own colour. */
+export const textureSchema = z
+  .object({
+    type: z.string().min(1).max(32),
+    color: color.optional(),
+    angle: z.number().optional(),
+    crossed: z.boolean().optional(),
+    thickness: z.number().min(0).optional(),
+    size: z.number().min(0).optional(),
+  })
+  .strict();
+
 const paintOpacity = { opacity: unit.optional() };
 export const paintSchema = z.union([
   z.object({ kind: z.literal("color"), value: color, ...paintOpacity }).strict(),
@@ -116,6 +128,7 @@ export const paintSchema = z.union([
     .strict(),
   z.object({ kind: z.literal("pattern"), pattern: patternSchema, ...paintOpacity }).strict(),
   z.object({ kind: z.literal("generative"), generative: generativeFillSchema, ...paintOpacity }).strict(),
+  z.object({ kind: z.literal("texture"), texture: textureSchema, ...paintOpacity }).strict(),
   z.object({ ref: id }).strict(),
 ]);
 
@@ -155,7 +168,17 @@ export const effectSchema = z.discriminatedUnion("kind", [
       color: color.optional(),
     })
     .strict(),
-  z.object({ kind: z.literal("color-grade"), params: z.record(z.string(), z.unknown()) }).strict(),
+  z.object({ kind: z.literal("color-grade"), preset: z.string().min(1).max(64), intensity: z.number().min(0).max(100).optional() }).strict(),
+  z
+    .object({
+      kind: z.literal("texture"),
+      preset: z.string().min(1).max(64),
+      intensity: z.number().min(0).max(100).optional(),
+      blend: z.string().max(32).optional(),
+      scale: z.number().optional(),
+      color: color.optional(),
+    })
+    .strict(),
 ]);
 
 // --- text -------------------------------------------------------------------
@@ -298,10 +321,18 @@ export const motionSchema = z.object({ parallax: parallaxSchema.optional(), scen
 export const interactionSchema = z
   .object({
     on: z.enum(["press", "hover"]),
-    action: z.literal("toggle"),
-    show: z.array(id).max(150).optional(),
-    hide: z.array(id).max(150).optional(),
-    transition: z.number().min(0).optional(),
+    actions: z
+      .array(
+        z
+          .object({
+            type: z.enum(["show", "hide", "toggle", "setText", "play"]),
+            target: id,
+            value: z.string().max(10000).optional(),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(64),
   })
   .strict();
 
@@ -329,7 +360,7 @@ function blockShape(type: LayerType): Record<string, z.ZodType> {
     text: textSchema,
     image: imageSchema,
     a11y,
-    interaction: interactionSchema,
+    interactions: z.array(interactionSchema).max(8),
     children: z.array(z.lazy(() => layerSchema)).max(150),
   };
   // What a type cannot exist without is required; every other block is optional.
@@ -403,7 +434,10 @@ export const documentSchema = z
     name: z.string().max(256).optional(),
     // What the whole work shows, per language, for screen readers.
     description: z.record(z.string(), z.string().max(1000)).optional(),
-    canvas: z.object({ width: z.number().positive(), height: z.number().positive() }).strict(),
+    // `fills` is the background of the canvas: the same paints a layer uses.
+    canvas: z
+      .object({ width: z.number().positive(), height: z.number().positive(), fills: z.array(paintSchema).max(8).optional() })
+      .strict(),
     languages: z.array(z.string().min(1).max(16)).min(1).max(64),
     variables: variablesSchema.optional(),
     resources: z.record(z.string(), paintSchema).optional(),
@@ -466,7 +500,7 @@ export type Layer = {
   text?: TextBlock;
   image?: ImageBlock;
   a11y?: { alt?: Record<string, string>; decorative?: boolean };
-  interaction?: Interaction;
+  interactions?: Interaction[];
   lottie?: { src?: string; loop?: boolean };
   children?: Layer[];
 };

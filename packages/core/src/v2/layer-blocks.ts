@@ -23,17 +23,17 @@ export const BLOCKS = [
   "text",
   "image",
   "a11y",
-  "interaction",
+  "interactions",
   "children",
 ] as const;
 export type Block = (typeof BLOCKS)[number];
 
 export const LAYER_BLOCKS: Record<LayerType, readonly Block[]> = {
-  text: ["fills", "strokes", "effects", "animations", "motion", "mask", "text", "interaction"],
-  shape: ["fills", "strokes", "effects", "animations", "motion", "mask", "geometry", "corners", "a11y", "interaction"],
-  image: ["strokes", "effects", "animations", "motion", "mask", "corners", "image", "a11y", "interaction"],
+  text: ["fills", "strokes", "effects", "animations", "motion", "mask", "text", "interactions"],
+  shape: ["fills", "strokes", "effects", "animations", "motion", "mask", "geometry", "corners", "a11y", "interactions"],
+  image: ["strokes", "effects", "animations", "motion", "mask", "corners", "image", "a11y", "interactions"],
   lottie: ["effects", "animations", "motion"],
-  group: ["effects", "animations", "motion", "interaction", "children"],
+  group: ["effects", "animations", "motion", "interactions", "children"],
 };
 
 export function admits(type: LayerType, block: Block): boolean {

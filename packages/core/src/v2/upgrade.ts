@@ -11,8 +11,10 @@
 import { normalizeLegacyKeys } from "../legacyKeys.js";
 import type { OimDocument } from "./schema.js";
 import { convertBox } from "./upgrade/box.js";
+import { canvasEffects, convertEffects } from "./upgrade/effects.js";
+import { canvasFills, convertPaints } from "./upgrade/paints.js";
 import { asObject, createContext, type DraftLayer, type UpgradeContext, type V1Object, type V1Slot } from "./upgrade/context.js";
-import { canvasOf, convertRoot, languagesOf } from "./upgrade/root.js";
+import { canvasOf, convertRoot, languagesOf, rolesOf } from "./upgrade/root.js";
 import { buildTree, TYPE_OF } from "./upgrade/tree.js";
 
 export type UpgradeResult = {
@@ -26,7 +28,7 @@ export type UpgradeResult = {
 export type Converter = (ctx: UpgradeContext, slot: V1Slot, layer: DraftLayer) => void;
 
 /** One converter per block, in the order they run. */
-const CONVERTERS: Converter[] = [convertBox];
+const CONVERTERS: Converter[] = [convertBox, convertPaints, convertEffects];
 
 export function isV2(input: unknown): boolean {
   const version = asObject(input)?.oim;
@@ -95,7 +97,7 @@ export function upgrade(input: unknown): UpgradeResult {
   if (isV2(input)) return { document: input as OimDocument, retired: [], unhandled: [] };
 
   const meta: V1Object = normalizeLegacyKeys(asObject(input) ?? {});
-  const ctx = createContext(canvasOf(meta), languagesOf(meta)[0]);
+  const ctx = createContext(canvasOf(meta), languagesOf(meta)[0], rolesOf(meta));
   ctx.register(meta, "root");
 
   const { document, slots: rawSlots } = convertRoot(ctx, meta);
@@ -107,6 +109,21 @@ export function upgrade(input: unknown): UpgradeResult {
   });
 
   document.layers = buildTree(ctx, slots, layers);
+
+  const background = canvasFills(ctx, meta);
+  if (background.length > 0) document.canvas = { ...document.canvas, fills: background };
+
+  // Effects over the whole canvas become one last layer that covers it.
+  const overall = canvasEffects(ctx, meta);
+  if (overall.length > 0) {
+    document.layers.push({
+      id: "__canvas-effects",
+      type: "shape",
+      box: { x: 0, y: 0, width: ctx.canvas.width, height: ctx.canvas.height },
+      geometry: { kind: "rect" },
+      effects: overall,
+    });
+  }
   document.layers.forEach(completeLayer);
 
   return { document, ...ctx.finish() };

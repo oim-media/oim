@@ -21,7 +21,7 @@ describe("which block each layer type admits", () => {
       text: "text",
       image: "image",
       a11y: "shape image",
-      interaction: "text shape image group",
+      interactions: "text shape image group",
       children: "group",
     };
     for (const block of BLOCKS) {

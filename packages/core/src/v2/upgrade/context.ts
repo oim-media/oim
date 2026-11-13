@@ -20,6 +20,8 @@ export type UpgradeContext = {
   canvas: { width: number; height: number };
   /** The main language: the one a bare string of content belongs to. */
   language: string;
+  /** Whether the document's palettes define this colour role. */
+  hasRole(role: string): boolean;
   /** Lets `finish` see this object. `label` prefixes its keys in the reports. */
   register(owner: V1Object, label: string): void;
   /** Reads a key AND marks it as converted. */
@@ -31,7 +33,11 @@ export type UpgradeContext = {
   finish(): { retired: string[]; unhandled: string[] };
 };
 
-export function createContext(canvas: { width: number; height: number }, language: string): UpgradeContext {
+export function createContext(
+  canvas: { width: number; height: number },
+  language: string,
+  roles: ReadonlySet<string> = new Set(),
+): UpgradeContext {
   const labels = new Map<V1Object, string>();
   const taken = new Map<V1Object, Set<string>>();
   const retired = new Set<string>();
@@ -46,6 +52,7 @@ export function createContext(canvas: { width: number; height: number }, languag
   return {
     canvas,
     language,
+    hasRole: (role) => roles.has(role),
     register(owner, label) {
       labels.set(owner, label);
     },

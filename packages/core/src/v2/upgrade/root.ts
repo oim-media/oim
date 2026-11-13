@@ -47,6 +47,15 @@ export function languagesOf(meta: V1Object): string[] {
   return ["es"];
 }
 
+/** Every colour role some palette of the document defines. */
+export function rolesOf(meta: V1Object): Set<string> {
+  const roles = new Set<string>();
+  for (const palette of Object.values(asObject(meta.palettes) ?? {})) {
+    for (const role of Object.keys(asObject(palette) ?? {})) roles.add(role);
+  }
+  return roles;
+}
+
 /** The 2.0 document without its layers, and the 1.x list the layers come from. */
 export function convertRoot(ctx: UpgradeContext, meta: V1Object): { document: OimDocument; slots: unknown[] } {
   const document: OimDocument = {

@@ -2150,11 +2150,11 @@ export class LegacyRenderer {
       // animation (which temporarily forces opacity to 1 while entering) can
       // settle on the shape's real target opacity instead of always landing
       // on fully opaque.
-      const targetOpacity = style.opacity !== undefined ? Math.max(0, Math.min(100, style.opacity)) / 100 : 1;
+      const targetOpacity = v2Own ? v2Own.opacity ?? 1 : style.opacity !== undefined ? Math.max(0, Math.min(100, style.opacity)) / 100 : 1;
       slotEl.dataset.oimOpacity = String(targetOpacity);
       slotEl.style.setProperty('--oim-target-opacity', String(targetOpacity));
 
-      if (style.isVisible === false || slot.isVisible === false) {
+      if (v2Own ? v2Own.visible === false : style.isVisible === false || slot.isVisible === false) {
         slotEl.style.display = 'none';
         slotEl.style.opacity = '0';
         slotEl.style.pointerEvents = 'none';

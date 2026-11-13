@@ -111,7 +111,9 @@ export function convertBox(ctx: UpgradeContext, slot: V1Slot, layer: DraftLayer)
   const opacity = finite(ctx.take(style, "opacity"));
   if (opacity !== undefined && opacity < 100) layer.opacity = Math.max(0, opacity) / 100;
 
-  if (ctx.take(style, "isVisible") === false) layer.visible = false;
+  // 1.x hid the layer when either the style or the slot itself said so.
+  const hiddenSlot = ctx.take(raw, "isVisible") === false;
+  if (ctx.take(style, "isVisible") === false || hiddenSlot) layer.visible = false;
 
   const blend = ctx.take(style, "blendMode");
   if (typeof blend === "string" && BLEND_MODES.has(blend)) layer.blend = blend as DraftLayer["blend"];

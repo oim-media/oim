@@ -81,3 +81,13 @@ describe("upgrade: the box the player painted", () => {
     expect(documentSchema.safeParse(doc({ ...text, box: { x: 0, y: 0, anchor: "middle" } })).success).toBe(false);
   });
 });
+
+describe("visibility", () => {
+  // Ruling (13 Nov): the 1.x player also hid a layer by the slot's own isVisible.
+  it("a slot hidden at its top level stays hidden", async () => {
+    const { upgrade } = await import("../upgrade.js");
+    const out = upgrade({ oim: "1.27.9", canvas: { natural_width: 100, natural_height: 100 }, slots: [{ id: "a", type: "geo", isVisible: false, position: [0, 0], style: { width: 10, height: 10 } }] });
+    expect(out.document.layers[0].visible).toBe(false);
+    expect(out.unhandled).toEqual([]);
+  });
+});

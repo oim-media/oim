@@ -138,6 +138,15 @@ describe("strokes", () => {
     ]);
   });
 
+  // Ruling (13 Nov): on a text the strokes are the letters' outline; the box
+  // border 1.x drew for strokeColor on a text has no 2.0 meaning and is dropped.
+  it("a text stroke is black by default, under strokeColorRole when it has no role of its own", () => {
+    expect(layer({ textStrokeWidth: 2 }, "text").strokes).toEqual([{ paint: { kind: "color", value: "#000000" }, width: 2 }]);
+    expect(layer({ textStrokeWidth: 2, textStrokeColor: "#111111", strokeColorRole: "outline" }, "text").strokes)
+      .toEqual([{ paint: { kind: "color", value: { var: "outline", fallback: "#111111" } }, width: 2 }]);
+    expect(layer({ strokeColor: "#0000ff", strokeWidth: 3 }, "text")).not.toHaveProperty("strokes");
+  });
+
   // Ruling (13 Nov): 1.x never painted these without a border-style (golden
   // strokes-and-borders), so they become a stroke only when one makes them visible.
   it("borderColor and borderWidth paint nothing without a visible borderStyle", () => {

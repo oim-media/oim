@@ -151,6 +151,17 @@ function strokeOf(
   return { paint: { kind: "color", value: color }, width, ...extra };
 }
 
+/** 1.x painted a text stroke black when it had no colour, under `textStrokeColorRole || strokeColorRole`. */
+function textStrokeOf(ctx: UpgradeContext, style: V1Object): Stroke | undefined {
+  const roleKey = typeof style.textStrokeColorRole === "string" && style.textStrokeColorRole ? "textStrokeColorRole" : "strokeColorRole";
+  const width = style.textStrokeWidth;
+  const color = colorOf(ctx, style, "textStrokeColor", roleKey);
+  ctx.take(style, "textStrokeColorRole");
+  ctx.take(style, "textStrokeWidth");
+  if (typeof width !== "number" || !(width > 0)) return undefined;
+  return { paint: { kind: "color", value: color ?? "#000000" }, width };
+}
+
 export function convertPaints(ctx: UpgradeContext, slot: V1Slot, layer: DraftLayer): void {
   const { style } = slot;
 
@@ -164,13 +175,19 @@ export function convertPaints(ctx: UpgradeContext, slot: V1Slot, layer: DraftLay
   const borderStyle = ctx.take(style, "borderStyle");
   const border = strokeOf(ctx, style, "borderColor", "borderWidth",
     borderStyle === "dashed" || borderStyle === "dotted" ? { style: borderStyle } : {});
-  const strokes = [
-    strokeOf(ctx, style, "strokeColor", "strokeWidth", dashed, "strokeColorRole"),
+  const outline = strokeOf(ctx, style, "strokeColor", "strokeWidth", dashed, "strokeColorRole");
+  const glyphs = textStrokeOf(ctx, style);
+  // On a text the stroke is the outline of the letters. The box border 1.x drew
+  // when a text carried strokeColor has no 2.0 meaning and is dropped.
+  const outer = strokeOf(ctx, style, "outerStrokeColor", "outerStrokeWidth", { align: "outside" });
+  const inner = strokeOf(ctx, style, "innerStrokeColor", "innerStrokeWidth", { align: "inside" });
+  const strokes = (layer.type === "text" ? [glyphs, outer, inner] : [
+    outline,
     borderStyle === "solid" || borderStyle === "dashed" || borderStyle === "dotted" ? border : undefined,
-    strokeOf(ctx, style, "textStrokeColor", "textStrokeWidth", {}, "textStrokeColorRole"),
-    strokeOf(ctx, style, "outerStrokeColor", "outerStrokeWidth", { align: "outside" }),
-    strokeOf(ctx, style, "innerStrokeColor", "innerStrokeWidth", { align: "inside" }),
-  ].filter((s): s is Stroke => s !== undefined);
+    glyphs,
+    outer,
+    inner,
+  ]).filter((s): s is Stroke => s !== undefined);
   if (strokes.length > 0 && admits(layer.type, "strokes")) layer.strokes = strokes;
 }
 

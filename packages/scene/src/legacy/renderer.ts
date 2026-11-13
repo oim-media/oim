@@ -1613,8 +1613,12 @@ export class LegacyRenderer {
         || (isGeoLike && (!!shapeDrawing(style.geoShape) || !!style.svgPath));
       // The outline is the first 2.0 stroke with no `align` (outer and inner strokes
       // are drawn elsewhere). Without one, the 1.x fields still decide.
-      const v2Stroke = v2Layers.get(String(slot.id))?.strokes?.find((s) => !s.align && 'kind' in s.paint && s.paint.kind === 'color' && typeof s.width === 'number');
-      const outline = v2Stroke
+      // A text's 2.0 strokes are its letters' outline (below), never a box border.
+      const v2Layer = v2Layers.get(String(slot.id));
+      const v2Stroke = v2Layer?.strokes?.find((s) => !s.align && 'kind' in s.paint && s.paint.kind === 'color' && typeof s.width === 'number');
+      const outline = v2Layer?.type === 'text'
+        ? { color: '', width: 0, style: undefined }
+        : v2Stroke
         ? { color: v2Colors.css((v2Stroke.paint as { value: unknown }).value) || '', width: v2Stroke.width as number, style: v2Stroke.style }
         : { color: resolveCssColor(style.strokeColorRole, style.strokeColor), width: style.strokeWidth, style: style.strokeStyle };
       if (outline.color && outline.width && !isWindowMask && !hasVector) {
@@ -1950,9 +1954,18 @@ export class LegacyRenderer {
       // file carries `fontWeight`/`fontStyle`/`textDecoration`, which are CSS
       // already and go through the pass-through. The `bold`/`italic`/
       // `underline` shortcuts were retired and are ignored.
-      if (style.textStrokeWidth) {
-        const resolvedTextStroke = resolveCssColor(style.textStrokeColorRole || style.strokeColorRole, style.textStrokeColor || '#000000');
-        slotEl.style.setProperty('-webkit-text-stroke', style.textStrokeWidth + 'px ' + resolvedTextStroke);
+      const glyphStroke = v2Layers.get(String(slot.id))?.type === 'text'
+        ? (() => {
+            const s = v2Layers.get(String(slot.id))?.strokes?.[0];
+            return s && 'kind' in s.paint && s.paint.kind === 'color' && typeof s.width === 'number'
+              ? { width: s.width, color: v2Colors.css(s.paint.value) || '' }
+              : undefined;
+          })()
+        : style.textStrokeWidth
+          ? { width: style.textStrokeWidth, color: resolveCssColor(style.textStrokeColorRole || style.strokeColorRole, style.textStrokeColor || '#000000') }
+          : undefined;
+      if (glyphStroke) {
+        slotEl.style.setProperty('-webkit-text-stroke', glyphStroke.width + 'px ' + glyphStroke.color);
         slotEl.style.setProperty('paint-order', 'stroke fill');
       }
       // style.blendMode retired in 1.12.0: it never showed here (each slot is

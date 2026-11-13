@@ -8,7 +8,7 @@
  */
 
 // Phase 3, text: what a text paints comes from its 2.0 layer.
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import ImageEngine from "./ImageEngine";
 import { v2LayersOf } from "../../../scene/src/legacy/v2-layers.js";
 
@@ -33,6 +33,31 @@ describe("a text paints from its 2.0 layer", () => {
   it("its colour", async () => {
     const el = await render({ fillColor: "#ff0000" }, (l) => { l.fills[0].value = "#00ff00"; });
     expect(el.style.getPropertyValue("color")).toBe("#00ff00");
+  });
+
+  it("its letters' outline, and no box border", async () => {
+    // happy-dom drops -webkit-text-stroke when reading it back: what is checked is what the engine writes.
+    const written: [string, string][] = [];
+    const create = document.createElement.bind(document);
+    vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
+      const el = create(tag);
+      const put = el.style.setProperty.bind(el.style);
+      el.style.setProperty = (prop: string, val: string, prio?: string) => {
+        written.push([prop, val]);
+        return put(prop, val, prio);
+      };
+      return el;
+    });
+    try {
+      await render({ textStrokeWidth: 2, textStrokeColor: "#ff0000", strokeColor: "#0000ff", strokeWidth: 3 }, (l) => {
+        l.strokes[0].paint.value = "#00ff00";
+        l.strokes[0].width = 4;
+      });
+    } finally {
+      vi.restoreAllMocks();
+    }
+    expect(written).toContainEqual(["-webkit-text-stroke", "4px #00ff00"]);
+    expect(written.find(([p]) => p === "border")).toBeUndefined();
   });
 
   it("its gradient, clipped to the glyphs", async () => {

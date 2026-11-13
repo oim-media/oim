@@ -958,7 +958,11 @@ export class LegacyRenderer {
       }
 
       const maxWidth = localized.maxWidthValue;
-      const textAlign = style.textAlign || slot.align || 'left';
+      // A 2.0 text aligns by its text block; any other 2.0 layer is placed by its box alone.
+      const v2Align = v2Layers.get(String(slot.id));
+      const textAlign = v2Align
+        ? (v2Align.type === 'text' ? v2Align.text?.align ?? 'left' : 'left')
+        : style.textAlign || slot.align || 'left';
       let alignItems = 'center';
       if (textAlign === 'left') alignItems = 'flex-start';
       else if (textAlign === 'right') alignItems = 'flex-end';

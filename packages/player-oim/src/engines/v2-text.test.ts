@@ -74,6 +74,12 @@ describe("a text paints from its 2.0 layer", () => {
     expect(el.style.textTransform).toBe("uppercase");
   });
 
+  it("its alignment (where it is pinned is the box anchor's job)", async () => {
+    const el = await render({ textAlign: "left" }, (l) => { l.text.align = "right"; });
+    expect(el.style.textAlign).toBe("right");
+    expect(el.style.alignItems).toBe("flex-end");
+  });
+
   it("its gradient, clipped to the glyphs", async () => {
     const el = await render(
       { fillType: "gradient", fillGradient: "linear-gradient(90deg, #ff0000 0%, #0000ff 100%)" },

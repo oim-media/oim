@@ -130,8 +130,11 @@ describe("strokes", () => {
     ]);
   });
 
-  it("the undeclared borderColor and borderWidth are a stroke too", () => {
-    expect(layer({ borderColor: "#111111", borderWidth: 4 }).strokes).toEqual([{ paint: { kind: "color", value: "#111111" }, width: 4 }]);
+  // Ruling (13 Nov): 1.x never painted these without a border-style (golden
+  // strokes-and-borders), so they become a stroke only when one makes them visible.
+  it("borderColor and borderWidth paint nothing without a visible borderStyle", () => {
+    expect(layer({ borderColor: "#111111", borderWidth: 4 })).not.toHaveProperty("strokes");
+    expect(layer({ borderColor: "#111111", borderWidth: 4, borderStyle: "dashed" }).strokes).toEqual([{ paint: { kind: "color", value: "#111111" }, width: 4, style: "dashed" }]);
   });
 });
 

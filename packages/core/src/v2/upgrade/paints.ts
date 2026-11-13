@@ -155,9 +155,14 @@ export function convertPaints(ctx: UpgradeContext, slot: V1Slot, layer: DraftLay
 
   const strokeStyle = ctx.take(style, "strokeStyle");
   const dashed = strokeStyle === "dashed" || strokeStyle === "dotted" ? { style: strokeStyle as Stroke["style"] } : {};
+  // 1.x passed borderColor and borderWidth to CSS without a border-style, so
+  // they painted nothing unless the file also carried a visible borderStyle.
+  const borderStyle = ctx.take(style, "borderStyle");
+  const border = strokeOf(ctx, style, "borderColor", "borderWidth",
+    borderStyle === "dashed" || borderStyle === "dotted" ? { style: borderStyle } : {});
   const strokes = [
     strokeOf(ctx, style, "strokeColor", "strokeWidth", dashed, "strokeColorRole"),
-    strokeOf(ctx, style, "borderColor", "borderWidth"),
+    borderStyle === "solid" || borderStyle === "dashed" || borderStyle === "dotted" ? border : undefined,
     strokeOf(ctx, style, "textStrokeColor", "textStrokeWidth", {}, "textStrokeColorRole"),
     strokeOf(ctx, style, "outerStrokeColor", "outerStrokeWidth", { align: "outside" }),
     strokeOf(ctx, style, "innerStrokeColor", "innerStrokeWidth", { align: "inside" }),

@@ -25,6 +25,10 @@
       "types": "./dist/api.d.ts",
       "default": "./dist/api.js"
     },
+    "./v2": {
+      "types": "./dist/v2/index.d.ts",
+      "default": "./dist/v2/index.js"
+    },
     "./generative": {
       "types": "./dist/generative/index.d.ts",
       "default": "./dist/generative/index.js"

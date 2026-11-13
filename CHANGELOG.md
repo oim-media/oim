@@ -3,6 +3,14 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## Unreleased
+
+- Core: experimental `@oim-media/core/v2` entry with the draft of the 2.0 document and
+  `upgrade(v1)`, which reads a 1.x document as 2.0 and reports any key it could not carry. The
+  published format and the root exports do not change.
+- Spec: `schema/oim2.schema.json`, generated from that draft, and `tools/upgrade-report.mjs`. The
+  conformance gate also checks that every vector upgrades to valid 2.0 with nothing left behind.
+
 ## 1.27.9
 
 - Rust crate: a signed decimal with many digits (for example `1.0000004999999999`) could be

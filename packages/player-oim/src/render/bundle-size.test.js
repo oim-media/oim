@@ -59,7 +59,9 @@ function fontList(dir) {
   return output;
 }
 
-const FUENTES = fontList(SRC).map((path) => ({ path, text: readFileSync(path, "utf8") }));
+// The painting half lives in @oim-media/scene and is bundled into the player.
+const SCENE_SRC = join(__dirname, "..", "..", "..", "scene", "src");
+const FUENTES = [...fontList(SRC), ...fontList(SCENE_SRC)].map((path) => ({ path, text: readFileSync(path, "utf8") }));
 
 describe("where the weight can creep in", () => {
   it("there are fonts to review", () => {

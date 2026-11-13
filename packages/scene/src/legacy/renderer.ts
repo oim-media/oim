@@ -15,7 +15,8 @@ import { dropCapStyle, splitDropCap } from '../../../core/src/drop-cap.js';
 import { layerTextureMask } from '../../../core/src/effects/texture-mask.js';
 import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entranceClips, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
 import { loadLottie } from './lottie-loader.js';
-import { v2LayersOf, anchorShift } from './v2-layers.js';
+import { v2LayersOf, anchorShift, paintColors } from './v2-layers.js';
+import { paintCss } from '../../../core/src/v2/paint-css.js';
 import { sanitizeHtml, sanitizeFontFamily, isSandboxImageSrc } from './sanitize.js';
 import {
   computeLayerComposition,
@@ -781,6 +782,7 @@ export class LegacyRenderer {
 
     // The 2.0 reading of this file; the blocks already migrated are painted from it.
     const v2Layers = v2LayersOf(self.metadata);
+    const v2Colors = paintColors(self.metadata);
 
     const slotPromises = slots.map(async (slot: any) => {
       const slotType = slot.type;
@@ -1736,8 +1738,11 @@ export class LegacyRenderer {
         fillLayer.style.height = '100%';
         fillLayer.style.pointerEvents = 'none';
         fillLayer.style.borderRadius = 'inherit';
+        const v2Fills = v2Layers.get(String(slot.id))?.fills;
         const fillCss: Record<string, string> = {
-          ...getFillCss({
+          ...(v2Fills?.length === 1
+            ? paintCss(v2Fills[0], { colors: v2Colors, width: slot.width_px || baseWidth, height: slot.height_px || baseHeight })
+            : getFillCss({
             type: slotType,
             width: slot.width_px || baseWidth,
             height: slot.height_px || baseHeight,
@@ -1756,7 +1761,7 @@ export class LegacyRenderer {
             fillPatternSizes: style.fillPatternSizes,
             fillPatternCounts: style.fillPatternCounts,
             fillPatternDispersions: style.fillPatternDispersions,
-          }),
+          })),
           ...(isVectorFill ? svgSilhouetteMaskCss(text) : shapeMaskCss(style.geoShape, style)),
         };
         // The drawing goes above the fill: a positioned sibling paints over a
@@ -2092,7 +2097,10 @@ export class LegacyRenderer {
           fillPatternScale: style.fillPatternScale,
         };
 
-        const containerCss = getFillCss(containerShape);
+        const v2Fills = v2Layers.get(String(slot.id))?.fills;
+        const containerCss = v2Fills?.length === 1
+          ? paintCss(v2Fills[0], { colors: v2Colors, width: slotW, height: slotH })
+          : getFillCss(containerShape);
         Object.assign(slotEl.style, containerCss);
       }
 

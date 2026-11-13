@@ -1268,7 +1268,13 @@ export class LegacyRenderer {
           textTarget = textContainer;
         }
 
-        const animType = style.textAnimationType;
+        // The text animation: the 2.0 layer's preset on load, or the 1.x fields without a 2.0 layer.
+        const v2TextAnim = v2Own?.animations?.find((a) => a.on === 'load' && a.preset);
+        const v2TextParams = (v2TextAnim?.params ?? {}) as { speed?: number; intensity?: number; cursor?: boolean };
+        const textAnim: { type?: string; speed?: number; delay?: number; cursor?: boolean; intensity?: number } = v2Own
+          ? { type: v2TextAnim?.preset, speed: v2TextParams.speed, delay: v2TextAnim?.delay ? +(v2TextAnim.delay / 1000).toFixed(6) : undefined, cursor: v2TextParams.cursor, intensity: v2TextParams.intensity }
+          : { type: style.textAnimationType, speed: style.textAnimationSpeed, delay: style.textAnimationDelay, cursor: (style as any).typewriterCursor, intensity: (style as any).textAnimationIntensity };
+        const animType = textAnim.type as any;
         // Highlight, marks and drop cap come from the 2.0 text block when there is one.
         const v2TextBlock = slotType === 'text' ? v2Layers.get(String(slot.id))?.text : undefined;
         const textBlock: any = v2TextBlock ?? { highlight: style.textHighlight, marks: style.marks, dropCap: style.dropCap };
@@ -1283,16 +1289,16 @@ export class LegacyRenderer {
           applyWaveText(
             textTarget,
             plain,
-            typeof style.textAnimationSpeed === 'number' ? style.textAnimationSpeed : 0.05,
-            typeof style.textAnimationDelay === 'number' ? style.textAnimationDelay : 0
+            typeof textAnim.speed === 'number' ? textAnim.speed : 0.05,
+            typeof textAnim.delay === 'number' ? textAnim.delay : 0
           );
         } else if (isEntranceEffect(animType) && !self.disableAnimations) {
           ensureEntranceKeyframes(self.host.shadowRoot, animType);
-          applyEntranceText(textTarget, plain, animType, style.textAnimationSpeed, style.textAnimationDelay);
+          applyEntranceText(textTarget, plain, animType, textAnim.speed, textAnim.delay);
         } else if (animType === 'typewriter' && !self.disableAnimations) {
-          self._bornPausedIfNeeded(self._textAnimations, applyTypewriterText(textTarget, plain, style.textAnimationSpeed, style.textAnimationDelay, (style as any).typewriterCursor));
+          self._bornPausedIfNeeded(self._textAnimations, applyTypewriterText(textTarget, plain, textAnim.speed, textAnim.delay, textAnim.cursor));
         } else if (animType?.startsWith('glitch-') && !self.disableAnimations) {
-          self._bornPausedIfNeeded(self._textAnimations, applyGlitchText(textTarget, plain, animType as any, style.textAnimationSpeed, style.textAnimationDelay, (style as any).textAnimationIntensity));
+          self._bornPausedIfNeeded(self._textAnimations, applyGlitchText(textTarget, plain, animType as any, textAnim.speed, textAnim.delay, textAnim.intensity));
         } else if (!applyDropCap(textTarget, text, textBlock.dropCap, marks)) {
           renderMarkedText(textTarget, text, marks);
         }

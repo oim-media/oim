@@ -128,7 +128,8 @@ export function convertAnimations(ctx: UpgradeContext, slot: V1Slot, layer: Draf
     const params: Record<string, unknown> = {};
     if (speed !== undefined) params.speed = speed;
     if (intensity !== undefined) params.intensity = intensity;
-    if (cursor === true) params.cursor = true;
+    // The typewriter drew its cursor unless told not to: a `false` must survive.
+    if (typeof cursor === "boolean") params.cursor = cursor;
     animations.push({
       on: "load",
       target: TEXT_TARGET[textType] ?? "chars",

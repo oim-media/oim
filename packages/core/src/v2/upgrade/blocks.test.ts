@@ -305,6 +305,8 @@ describe("animations, motion and interactions", () => {
     ]);
     expect(layer({ textAnimationType: "rise-words", textAnimationDelay: 2 }, "text").animations?.[0]).toMatchObject({ target: "words", delay: 2000 });
     expect(layer({ textAnimationType: "typewriter", typewriterCursor: true, textAnimationIntensity: 50 }, "text").animations?.[0].params).toEqual({ intensity: 50, cursor: true });
+    // Ruling (13 Nov): the 1.x typewriter drew its cursor unless told not to.
+    expect(layer({ textAnimationType: "typewriter", typewriterCursor: false }, "text").animations?.[0].params).toEqual({ cursor: false });
     expect(layer({ textAnimationType: "none" }, "text")).not.toHaveProperty("animations");
     expect(layer({ textAnimationType: "fade-chars" }, "geo")).not.toHaveProperty("animations");
     expect(valid({ textAnimationType: "fade-chars" }, "text")).toEqual([]);

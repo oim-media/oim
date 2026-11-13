@@ -351,6 +351,8 @@ function layerOf<T extends LayerType>(type: T, own: Record<string, z.ZodType> = 
       opacity: unit.optional(),
       visible: z.boolean().optional(),
       blend: z.enum(BLEND).optional(),
+      // Shown only in these languages; absent means every language.
+      languages: z.array(z.string().min(1).max(16)).min(1).max(64).optional(),
       extensions: extensions.optional(),
       ...blockShape(type),
       ...own,
@@ -399,6 +401,8 @@ export const documentSchema = z
     oim: z.string().regex(/^2\.\d+\.\d+(-[\w.]+)?$/),
     id: z.string().max(128).optional(),
     name: z.string().max(256).optional(),
+    // What the whole work shows, per language, for screen readers.
+    description: z.record(z.string(), z.string().max(1000)).optional(),
     canvas: z.object({ width: z.number().positive(), height: z.number().positive() }).strict(),
     languages: z.array(z.string().min(1).max(16)).min(1).max(64),
     variables: variablesSchema.optional(),
@@ -449,6 +453,7 @@ export type Layer = {
   opacity?: number;
   visible?: boolean;
   blend?: (typeof BLEND)[number];
+  languages?: string[];
   extensions?: Record<string, unknown>;
   fills?: Paint[];
   strokes?: Stroke[];

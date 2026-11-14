@@ -221,3 +221,21 @@ describe("1.x shapes whose fill the player read through fallbacks", () => {
     expect(layer({ svgPath: "M 0 0 L 10 10 Z", fillColor: "#00ff00" }).fills).toBeUndefined();
   });
 });
+
+describe("1.x patterns", () => {
+  const pattern = (style: object, type?: string, root?: object) => (layer(style, type, root).fills?.[0] as any)?.pattern;
+  it("a raw SVG tile keeps the colours it is recoloured with, without a preset", () => {
+    expect(pattern({ backgroundType: "pattern", fillPatternColor: "#ff0000" })).toEqual({ colors: ["#ff0000"] });
+  });
+  it("a pattern layer with no fillType is a pattern", () => {
+    expect(pattern({ fillPatternType: "dots" }, "pattern")).toEqual({ preset: "dots" });
+  });
+  it("the role of the single colour tints the first of the list", () => {
+    expect(pattern({ fillType: "pattern", fillPatternType: "dots", fillPatternColor: "#a3e635", fillPatternColorRole: "accent", fillPatternColors: ["#a3e635", "#38bdf8"] }, "geo", palettes).colors)
+      .toEqual([{ var: "accent", fallback: "#a3e635" }, "#38bdf8"]);
+  });
+  it("a canvas tile keeps its cover fit and moves at 8 s when given only a direction", () => {
+    expect(pattern({ backgroundType: "pattern", backgroundPatternType: "dots", backgroundFit: "cover", backgroundPatternDirection: "left" }))
+      .toMatchObject({ fit: "cover", motion: { direction: "left", period: 8 } });
+  });
+});

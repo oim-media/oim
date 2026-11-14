@@ -18,7 +18,7 @@ import { loadLottie } from './lottie-loader.js';
 import { ensureUpgrade } from './upgrade-entry.js';
 import { geometryOutline } from '../../../core/src/v2/geometry-outline.js';
 import { v2LayersOf, anchorShift, paintColors, typographyCss, filterStyle, maskStyle, imageSrc } from './v2-layers.js';
-import { paintCss } from '../../../core/src/v2/paint-css.js';
+import { paintCss, patternStyle } from '../../../core/src/v2/paint-css.js';
 import { sanitizeHtml, sanitizeFontFamily, isSandboxImageSrc } from './sanitize.js';
 import {
   computeLayerComposition,
@@ -995,16 +995,21 @@ export class LegacyRenderer {
       if (!isInteractiveSlot && !(hasOwnInteraction && !self.disableActions)) {
         slotEl.setAttribute('data-oim-passthrough', '');
       }
+      // The layer's 2.0 pattern, in the fields the tile painters read.
+      const layerFill = v2Own.fills?.[0] as any;
+      const layerPattern = layerFill?.kind === 'pattern' ? layerFill.pattern : undefined;
+      const patternFields: Record<string, any> = layerPattern ? patternStyle(layerPattern, v2Colors) : {};
       if (isBackgroundSlot) {
         slotEl.style.pointerEvents = 'none';
 
         // 1:1 with the editor: the pattern is a repeating SVG tile
         // (160px * scale in design px) animated via background-position.
         const tileSvg = style.svgRawXml || (isSvg ? text : '');
-        if (tileSvg || style.backgroundPatternType || style.backgroundPatternSvgs) {
-          paintPattern(slotEl, style, tileSvg);
+        if (tileSvg || layerPattern) {
+          paintPattern(slotEl, patternFields, tileSvg);
 
-          const fitMode = resolveBackgroundFit(style);
+          // shortcut: a raw SVG background still reads its 1.x fit; goes with the SVG migration.
+          const fitMode = layerPattern ? (layerPattern.fit === 'cover' ? 'cover' : 'tile') : resolveBackgroundFit(style);
           if (fitMode === 'cover') {
             slotEl.style.backgroundSize = 'cover';
             slotEl.style.backgroundRepeat = 'no-repeat';
@@ -1013,19 +1018,17 @@ export class LegacyRenderer {
             slotEl.style.setProperty('--oim-pat-repeat', 'no-repeat');
             slotEl.style.setProperty('--oim-pat-pos', 'center');
           } else {
-            const patternScale = parseFloat(style.backgroundPatternScale) || 1;
+            const patternScale = layerPattern?.scale || 1;
             const tileCqw = (160 * patternScale / baseWidth) * 100;
             slotEl.style.backgroundSize = tileCqw.toFixed(4) + 'cqw ' + tileCqw.toFixed(4) + 'cqw';
             slotEl.style.backgroundRepeat = 'repeat';
             slotEl.style.setProperty('--oim-bg-tile', tileCqw.toFixed(4) + 'cqw');
           }
 
-          let bgAnimation = style.cssAnimation;
-          if (!bgAnimation && (style.backgroundPatternSpeed || style.backgroundPatternDirection)) {
-            const dir = style.backgroundPatternDirection || 'right';
-            const speed = style.backgroundPatternSpeed || 8;
-            bgAnimation = `background-animation-${dir} ${speed}s linear infinite`;
-          }
+          const motion = layerPattern?.motion;
+          const bgAnimation = motion
+            ? `background-animation-${motion.direction} ${motion.period || 8}s linear infinite`
+            : layerPattern ? undefined : style.cssAnimation;
           if (!self.disableAnimations && typeof bgAnimation === 'string' && bgAnimation.indexOf('background-animation-') === 0) {
             slotEl.style.animation = bgAnimation;
           }
@@ -1041,7 +1044,8 @@ export class LegacyRenderer {
       // position and size. The player does not compute this CSS on its own: the
       // only thing it does is apply it exactly as `patternLayerCss` returns it.
       if (slotType === 'pattern') {
-        const patternCss = patternLayerCss(style);
+        const outline = geometryOutline(v2Own.type === 'shape' ? v2Own.geometry : undefined);
+        const patternCss = patternLayerCss({ ...patternFields, geoShape: outline.round ? 'circle' : outline.preset } as any);
         for (const [prop, value] of Object.entries(patternCss)) {
           if (prop.startsWith('--')) {
             slotEl.style.setProperty(prop, value);
@@ -1049,8 +1053,8 @@ export class LegacyRenderer {
             (slotEl.style as any)[prop] = value;
           }
         }
-        if (style.fillPatternColorRole || style.fillPatternBgColorRole) {
-          paintPattern(slotEl, style, '');
+        if (patternFields.fillPatternColorRole || patternFields.fillPatternBgColorRole) {
+          paintPattern(slotEl, patternFields, '');
         }
       }
 
@@ -1581,9 +1585,8 @@ export class LegacyRenderer {
       // A photo that is actually painted covers the slot.
       const hasComplexFill = isVectorFill || ((slotType === 'geo' || slotType === 'shape') && !isWindowMask && (
         imageSrcSafe || fillKind === 'gradient' || fillKind === 'generative'
-        // A background pattern is painted by `paintPattern` below, with live palette roles.
-        // shortcut: still reads the 1.x keys; goes when the pattern block moves to 2.0.
-        || (fillKind === 'pattern' && !style.backgroundPatternType && !style.backgroundPatternSvgs)
+        // A background pattern is painted by `paintPattern` above, with live palette roles.
+        || (fillKind === 'pattern' && !isBackgroundSlot)
       ));
       // The colour under a photo (fills[1]): painted when the photo is refused or fails.
       const underFill = v2Own.fills?.[1] as any;

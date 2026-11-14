@@ -46,10 +46,13 @@ function patternOf(ctx: UpgradeContext, owner: V1Object, prefix: string, cssAnim
   // The canvas wrote the singular, the layer the plural: the same list.
   const counts = numbers(ctx.take(owner, `${prefix}Counts`)) ?? numbers(ctx.take(owner, `${prefix}Count`));
   const dispersions = numbers(ctx.take(owner, `${prefix}Dispersions`)) ?? numbers(ctx.take(owner, `${prefix}Dispersion`));
-  if (typeof preset !== "string" || !preset) return undefined;
+  const colors: NonNullable<typeof single>[] = Array.isArray(list) ? list.filter(isColor) : [];
+  // A raw SVG tile carries no preset: only the colours it is recoloured with.
+  if ((typeof preset !== "string" || !preset) && single === undefined && bg === undefined && colors.length === 0) return undefined;
 
-  const pattern: Extract<Paint, { kind: "pattern" }>["pattern"] = { preset };
-  const colors = Array.isArray(list) ? list.filter(isColor) : [];
+  const pattern: Extract<Paint, { kind: "pattern" }>["pattern"] = typeof preset === "string" && preset ? { preset } : {};
+  // The first colour of the list is the one the role tints.
+  if (colors.length > 0 && single !== undefined && typeof single === "object") colors[0] = single;
   if (colors.length > 0) pattern.colors = colors;
   else if (single !== undefined) pattern.colors = [single];
   if (bg !== undefined) pattern.bg = bg;
@@ -63,7 +66,8 @@ function patternOf(ctx: UpgradeContext, owner: V1Object, prefix: string, cssAnim
   // background, as a CSS animation string. Either one is enough.
   const css = typeof cssAnimation === "string" ? /^background-animation-([a-z-]+)\s+([\d.]+)s\b/.exec(cssAnimation) : null;
   const way = typeof direction === "string" && direction !== "none" ? direction : css?.[1];
-  const period = typeof speed === "number" && speed > 0 ? speed : css ? Number(css[2]) : undefined;
+  // The canvas moved a direction given without a speed at 8 s a cycle.
+  const period = typeof speed === "number" && speed > 0 ? speed : css ? Number(css[2]) : prefix === "backgroundPattern" && way ? 8 : undefined;
   if (way && MOTION.has(way) && period) pattern.motion = { direction: way as never, period };
   return { kind: "pattern", pattern };
 }
@@ -115,16 +119,18 @@ function fillOf(ctx: UpgradeContext, slot: V1Slot): Paint | Paint[] | undefined 
   const fillPattern = patternOf(ctx, style, "fillPattern", cssAnimation);
   const backgroundPattern = patternOf(ctx, style, "backgroundPattern", cssAnimation);
   const generative = asObject(ctx.take(style, "fillGenerative")) ?? asObject(ctx.take(style, "backgroundGenerative"));
-  ctx.take(style, "backgroundFit");
+  const backgroundFit = ctx.take(style, "backgroundFit");
   const textGradient = ctx.take(style, "textGradientType");
 
+  // A background tile could be stretched over the canvas instead of repeated.
+  if (backgroundPattern && backgroundFit === "cover" && "pattern" in backgroundPattern) backgroundPattern.pattern.fit = "cover";
   const pattern = fillPattern ?? backgroundPattern;
   if (pattern && typeof cssAnimation === "string" && /^background-animation-/.test(cssAnimation)) ctx.take(style, "cssAnimation");
 
   const solid = (): Paint | undefined => {
     return color === undefined ? undefined : { kind: "color", value: color };
   };
-  const kind = typeof fillType === "string" ? fillType : typeof backgroundType === "string" ? backgroundType : "color";
+  const kind = typeof fillType === "string" ? fillType : typeof backgroundType === "string" ? backgroundType : slot.type === "pattern" ? "pattern" : "color";
   if (kind === "none" || kind === "transparent") return undefined;
   if (kind === "gradient") return gradient ?? solid();
   // 1.x kept fillColor under the photo: it shows when the photo does not load.

@@ -31,6 +31,33 @@ export type PaintTarget = {
   resources?: Record<string, Paint>;
 };
 
+type PatternPaint = Extract<Paint, { kind: "pattern" }>["pattern"];
+const roleOf = (c: unknown) => (c && typeof c === "object" && typeof (c as { var?: unknown }).var === "string" ? (c as { var: string }).var : undefined);
+const rawOf = (c: unknown, colors: PaintColors) => (roleOf(c) ? colors.literal((c as { fallback?: unknown }).fallback) : colors.literal(c));
+
+/**
+ * A 2.0 pattern in the `fillPattern*` fields the 1.x tile painters read, with
+ * each colour's role kept beside its literal so the tint can stay a live CSS variable.
+ */
+export function patternStyle(p: PatternPaint, colors: PaintColors): Record<string, unknown> {
+  const list = (p.colors ?? []).map((c) => rawOf(c, colors)).filter((c): c is string => !!c);
+  return {
+    fillPatternType: p.preset,
+    fillPatternColor: list[0],
+    fillPatternColorRole: roleOf(p.colors?.[0]),
+    fillPatternColors: list.length > 1 ? list : undefined,
+    fillPatternBgColor: rawOf(p.bg, colors),
+    fillPatternBgColorRole: roleOf(p.bg),
+    fillPatternScale: p.scale,
+    fillPatternSizes: p.sizes,
+    fillPatternCounts: p.counts,
+    fillPatternDispersions: p.dispersions,
+    fillPatternSvgs: p.svgs,
+    fillPatternDirection: p.motion?.direction,
+    fillPatternSpeed: p.motion?.period,
+  };
+}
+
 const pct = (at: number) => `${+(at * 100).toFixed(4)}%`;
 
 export function gradientCss(gradient: Gradient | { type: Gradient["type"]; angle?: number; stops: { color: unknown; at?: number }[] }, colors: PaintColors): string | undefined {
@@ -84,22 +111,17 @@ export function paintCss(paint: Paint, target: PaintTarget, depth = 0): CSSPrope
     }
     case "pattern": {
       const p = paint.pattern;
+      // Baked into an image: every colour is the one the active palette gives.
       const list = (p.colors ?? []).map((c) => colors.literal(c)).filter((c): c is string => !!c);
       const css = getFillCss({
+        ...patternStyle(p, colors),
         type: isText ? "text" : "shape",
         fillType: "pattern",
         fillPatternType: p.preset ?? "clouds",
         fillPatternColor: list[0],
         fillPatternColors: list.length > 1 ? list : undefined,
         fillPatternBgColor: colors.literal(p.bg),
-        fillPatternScale: p.scale,
-        fillPatternSizes: p.sizes,
-        fillPatternCounts: p.counts,
-        fillPatternDispersions: p.dispersions,
-        fillPatternSvgs: p.svgs,
-        fillPatternDirection: p.motion?.direction,
-        fillPatternSpeed: p.motion?.period,
-      });
+      } as never);
       return withOpacity(css, paint.opacity);
     }
     case "generative": {

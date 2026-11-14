@@ -76,3 +76,13 @@ describe("paintCss", () => {
     expect(paintCss({ kind: "image", src: "data:image/png;base64,x" }, { colors })).toEqual({});
   });
 });
+
+describe("patternStyle", () => {
+  it("keeps each colour's role beside its literal", async () => {
+    const { patternStyle } = await import("./paint-css.js");
+    const colors = { css: (v: unknown) => String(v), literal: (v: unknown) => (typeof v === "string" ? v : "#palette") };
+    expect(patternStyle({ preset: "dots", colors: [{ var: "accent", fallback: "#a3e635" } as never], bg: "#000" }, colors)).toMatchObject({
+      fillPatternType: "dots", fillPatternColor: "#a3e635", fillPatternColorRole: "accent", fillPatternBgColor: "#000", fillPatternBgColorRole: undefined,
+    });
+  });
+});

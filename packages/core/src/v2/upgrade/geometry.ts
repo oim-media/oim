@@ -11,7 +11,7 @@ import { admits } from "../layer-blocks.js";
 import type { Geometry } from "../schema.js";
 import { toCanvasUnits } from "./box.js";
 import { asObject, type DraftLayer, type UpgradeContext, type V1Object, type V1Slot } from "./context.js";
-import { svgToPaths, type PathEntry } from "./svg-paths.js";
+import { drawsMarkup, svgToPaths, type PathEntry } from "./svg-paths.js";
 
 /** The 1.x name of a figure and the 2.0 geometry that has its own kind. */
 const BASIC: Record<string, Geometry> = {
@@ -81,7 +81,7 @@ function shapeGeometry(ctx: UpgradeContext, slot: V1Slot, media: string | undefi
     const fromLayers = pathsFromLayers(ctx, layers, viewBox);
     if (fromLayers) return fromLayers;
   }
-  const xml = typeof rawXml === "string" && rawXml ? rawXml : slot.type === "svg" ? media : undefined;
+  const xml = typeof rawXml === "string" && rawXml ? rawXml : drawsMarkup(slot) ? media : undefined;
   if (xml) {
     const parsed = svgToPaths(xml);
     if (parsed.ok) return { kind: "paths", ...parsed.value };
@@ -122,6 +122,12 @@ export function convertGeometry(ctx: UpgradeContext, slot: V1Slot, layer: DraftL
   const media = layer.type === "text" ? undefined : mediaOf(ctx, slot);
 
   if (layer.type === "shape") layer.geometry = shapeGeometry(ctx, slot, media);
+  // 1.x painted an SVG layer's fillColor into every figure of its drawing, fill="none"
+  // included: each path's fill becomes the layer's fill.
+  const first = layer.fills?.[0];
+  if (drawsMarkup(slot) && layer.geometry?.kind === "paths" && first && "kind" in first && first.kind === "color") {
+    for (const path of layer.geometry.paths) path.fill = "currentColor";
+  }
   else for (const key of ["geoShape", "geoType", "svgPath", "customBlobPath", "svgViewBox", "svgRawXml", "svgLayers"]) ctx.take(style, key);
 
   const corners = cornersOf(ctx, style);

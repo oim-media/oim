@@ -239,3 +239,30 @@ describe("1.x patterns", () => {
       .toMatchObject({ fit: "cover", motion: { direction: "left", period: 8 } });
   });
 });
+
+describe("1.x SVG layers", () => {
+  const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14"/></svg>';
+  const svgLayer = (style: object, type = "svg") =>
+    upgrade({ oim: "1.27.9", canvas: { natural_width: 1000, natural_height: 1000 }, slots: [{ id: "a", type, position: [0, 0], content: { es: ICON }, style: { width: 10, height: 10, ...style } }] } as never).document.layers[0] as any;
+
+  it("strokeColor tints the drawing at any width: a colour-only stroke", () => {
+    expect(svgLayer({ strokeColor: "#2563EB", strokeWidth: 2 }).strokes).toEqual([{ paint: { kind: "color", value: "#2563EB" }, width: 0 }]);
+  });
+  it("an old icon created as geo is a drawing too", () => {
+    const l = svgLayer({ strokeColor: "#2563EB" }, "geo");
+    expect(l.geometry.kind).toBe("paths");
+    expect(l.strokes?.[0].width).toBe(0);
+  });
+  it("fillColor paints every figure: each fill links to the layer", () => {
+    expect(svgLayer({ fillColor: "#00ff00" }).geometry.paths.map((p: any) => p.fill)).toEqual(["currentColor"]);
+    expect(svgLayer({ fillColor: "transparent" }).geometry.paths[0].fill).toBeUndefined();
+  });
+  it("an svg layer whose drawing is in svgRawXml is tinted too", () => {
+    const l = upgrade({ oim: "1.27.9", canvas: { natural_width: 1000, natural_height: 1000 }, slots: [{ id: "a", type: "svg", position: [0, 0], style: { width: 10, height: 10, strokeColor: "#2563EB", svgRawXml: ICON } }] } as never).document.layers[0] as any;
+    expect(l.strokes).toEqual([{ paint: { kind: "color", value: "#2563EB" }, width: 0 }]);
+  });
+  it("a percentage length is of the viewBox", () => {
+    const l = upgrade({ oim: "1.27.9", canvas: { natural_width: 1000, natural_height: 1000 }, slots: [{ id: "a", type: "geo", position: [0, 0], style: { width: 10, height: 10, svgRawXml: '<svg width="160" height="80"><rect width="100%" height="50%" fill="#000"/></svg>' } }] } as never).document.layers[0] as any;
+    expect(l.geometry.paths[0].d).toBe("M0 0H160V40H0Z");
+  });
+});

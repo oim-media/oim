@@ -17,7 +17,7 @@ import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entr
 import { loadLottie } from './lottie-loader.js';
 import { ensureUpgrade } from './upgrade-entry.js';
 import { geometryOutline } from '../../../core/src/v2/geometry-outline.js';
-import { v2LayersOf, anchorShift, paintColors, typographyCss, filterStyle, maskStyle, imageSrc } from './v2-layers.js';
+import { v2LayersOf, anchorShift, paintColors, typographyCss, filterStyle, maskStyle, imageSrc, drawingSvg, drawingLink } from './v2-layers.js';
 import { paintCss, patternStyle } from '../../../core/src/v2/paint-css.js';
 import { sanitizeHtml, sanitizeFontFamily, isSandboxImageSrc } from './sanitize.js';
 import {
@@ -51,7 +51,7 @@ import { mediaFilterCss } from '../../../core/src/media-filters.js';
 import { buildSvgNoiseFilter, buildLayerGrainFilter, GRAIN_LAYER_TYPES } from '../../../core/src/generative/proceduralNoise.js';
 import { TEXTURE_CATALOG, type TexturePreset } from '../../../core/src/effects/index.js';
 import { infiniteLayerPlan, TRACK_CLASS, LEGACY_TRACK_CLASS, ensureParallaxKeyframes, type InfiniteLayer } from '../../../core/src/parallaxCss.js';
-import { localizedEntries, isImageContent, compareLangs, resolveContent } from './localizedEntries.js';
+import { localizedEntries, isImageContent, compareLangs, resolveContent, isBackground } from './localizedEntries.js';
 import { a11yNodes, artworkLabel } from './a11y.js';
 import { shadowColorCss } from './shadow.js';
 import { cropCss } from '../../../core/src/crop.js';
@@ -827,8 +827,11 @@ export class LegacyRenderer {
       const v2Words = v2Own.type === 'text' ? v2Own.text?.content : undefined;
       // A 2.0 image reads its picture from the layer, per language.
       const v2Image = slotType === 'image' ? v2Own.image : undefined;
+      // A 2.0 drawing (paths that paint themselves) is drawn from its geometry: the file carries no SVG markup.
+      const v2Drawing = v2Own.type === 'shape' && v2Own.geometry?.kind === 'paths' && !geometryOutline(v2Own.geometry).path ? v2Own.geometry : undefined;
       let rawText = v2Words ? resolveContent(v2Words, self.lang)
         : v2Image ? imageSrc(v2Image.src as never, self.lang)
+        : v2Drawing && !isBackground(slot) ? drawingSvg(v2Drawing, drawingLink(v2Own, v2Colors.css))
         : localized.content;
       // Pure geometric shapes and filter layers carry no text content but
       // still render from their style (fillColor, geoShape, width/height, backdropFilter).
@@ -883,87 +886,11 @@ export class LegacyRenderer {
             .replace(/&quot;/g, '"')
             .replace(/&#39;/g, "'");
         }
-        isSvg = /<svg/i.test(text);
+        isSvg = !!v2Drawing && !isBackground(slot);
       }
 
-      const hasHtmlOrSvg = !isImageSlot && (isSvg || /<span|<div|<a|<img/i.test(text));
+      const hasHtmlOrSvg = !isImageSlot && (isSvg || /<svg|<span|<div|<a|<img/i.test(text));
       text = text.replace(/\\n/g, '\n');
-
-      if (isSvg) {
-        try {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(text, 'text/html');
-          const svgElements = doc.querySelectorAll('svg');
-          svgElements.forEach(function (svgEl) {
-            // Force the SVG to fill its slot via the viewBox instead of its
-            // intrinsic pixel width/height. Keeping an explicit width like
-            // "541.52" would render at intrinsic size and get clipped by the
-            // slot's overflow:hidden (only a corner shows). The viewBox +
-            // preserveAspectRatio drive proportional scaling, 1:1 with the editor.
-            if (!svgEl.getAttribute('viewBox')) {
-              const w0 = svgEl.getAttribute('width');
-              const h0 = svgEl.getAttribute('height');
-              if (w0 && h0) svgEl.setAttribute('viewBox', '0 0 ' + parseFloat(w0) + ' ' + parseFloat(h0));
-            }
-            svgEl.setAttribute('width', '100%');
-            svgEl.setAttribute('height', '100%');
-            if (!svgEl.getAttribute('preserveAspectRatio')) {
-              svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-            }
-            const resolvedStroke = resolveCssColor(style.strokeColorRole, style.strokeColor);
-            const resolvedFill = resolveCssColor(style.fillColorRole, style.fillColor);
-            if (resolvedStroke) {
-              svgEl.style.color = resolvedStroke;
-            }
-            // With `setProperty`, not by concatenating the `style` attribute. That colour
-            // comes from the .oim and the schema does NOT validate it, so pasted into the
-            // attribute the browser parses it as a list of declarations: a `strokeColor` of
-            // "red; background-image: url(https://…)" let a request to a third party
-            // through when a foreign file was opened. The CSSOM rejects the whole value if
-            // it is not a valid colour -- checked in the browser.
-            // Via the attribute it injects; via CSSOM it does not.
-            //
-            // The `color` assignment above was already safe; this line overwrote it and
-            // reintroduced the hole.
-            svgEl.style.setProperty('display', 'block');
-            svgEl.style.setProperty('width', '100%');
-            svgEl.style.setProperty('height', '100%');
-            
-            const shapes = svgEl.querySelectorAll('path, circle, rect, polygon, polyline, ellipse, line');
-            shapes.forEach(function (shape) {
-              const fill = shape.getAttribute('fill');
-              const stroke = shape.getAttribute('stroke');
-
-              // CSSOM, not the attribute: a role colour is a var(), which SVG
-              // attributes do not take (the icon kept its fixed colour).
-              if (resolvedStroke && (stroke === 'currentColor' || stroke === '')) {
-                (shape as SVGElement).style.setProperty('stroke', resolvedStroke);
-              } else if (stroke && (stroke === 'currentColor' || stroke === '')) {
-                shape.setAttribute('stroke', 'currentColor');
-              }
-
-              if (resolvedFill && resolvedFill !== 'transparent') {
-                (shape as SVGElement).style.setProperty('fill', resolvedFill);
-              } else if (fill && (fill === 'currentColor' || fill === '')) {
-                if (resolvedStroke) {
-                  (shape as SVGElement).style.setProperty('fill', resolvedStroke);
-                } else {
-                  shape.setAttribute('fill', 'currentColor');
-                }
-              }
-
-              // NOTE: never force `vector-effect: non-scaling-stroke`. SVGs whose
-              // artwork is drawn with thick viewBox-unit strokes (e.g. the OIM
-              // logo, stroke-width 120 in a 541 viewBox) would render the stroke
-              // at raw screen px and blot out the whole slot. Letting strokes
-              // scale with the shape matches the editor 1:1.
-            });
-          });
-          text = doc.body.innerHTML.replace(/\\n/g, '\n');
-        } catch (e) {
-          console.warn('[OimPlayer] Failed to parse SVG, using raw text:', e);
-        }
-      }
 
       // A 2.0 text aligns by its text block; any other 2.0 layer is placed by its box alone.
       const textAlign = v2Own.type === 'text' ? v2Own.text?.align ?? 'left' : 'left';
@@ -1004,7 +931,8 @@ export class LegacyRenderer {
 
         // 1:1 with the editor: the pattern is a repeating SVG tile
         // (160px * scale in design px) animated via background-position.
-        const tileSvg = style.svgRawXml || (isSvg ? text : '');
+        // Baked into a tile: the drawing's colours are the literals the active palette gives.
+        const tileSvg = v2Drawing ? drawingSvg(v2Drawing, drawingLink(v2Own, v2Colors.literal), true) : '';
         if (tileSvg || layerPattern) {
           paintPattern(slotEl, patternFields, tileSvg);
 
@@ -1434,12 +1362,7 @@ export class LegacyRenderer {
         }
       }
 
-      if (slotType === 'svg' || isSvg) {
-        const vectorColor = resolveCssColor(style.strokeColorRole || style.fillColorRole, style.strokeColor);
-        if (vectorColor) {
-          slotEl.style.setProperty('color', vectorColor);
-        }
-      } else if (slotType === 'text' && (style.fillColor || style.fillColorRole || style.colorRole)) {
+      if (slotType === 'text' && (style.fillColor || style.fillColorRole || style.colorRole)) {
         // In a text, `fillColor` IS the letter (contract 1.5.0: `color` was
         // removed and the compiler converts it to `fillColor`). Here `style.color` was
         // being read, so a new text from the editor (`fillColor` with no

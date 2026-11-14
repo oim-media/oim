@@ -11,6 +11,7 @@ import { admits } from "../layer-blocks.js";
 import type { Paint, Stroke } from "../schema.js";
 import { asObject, type DraftLayer, type UpgradeContext, type V1Object, type V1Slot } from "./context.js";
 import { parseCssGradient } from "./gradient.js";
+import { drawsMarkup } from "./svg-paths.js";
 
 export type ColorValue = string | { var: string; fallback?: string };
 
@@ -188,7 +189,13 @@ export function convertPaints(ctx: UpgradeContext, slot: V1Slot, layer: DraftLay
   const borderStyle = ctx.take(style, "borderStyle");
   const border = strokeOf(ctx, style, "borderColor", "borderWidth",
     borderStyle === "dashed" || borderStyle === "dotted" ? { style: borderStyle } : {});
-  let outline = strokeOf(ctx, style, "strokeColor", "strokeWidth", dashed, "strokeColorRole");
+  // An SVG layer: 1.x tinted every `currentColor` of the drawing with strokeColor, at any
+  // width. In 2.0 a path's `currentColor` stroke is the layer's first stroke.
+  const markup = drawsMarkup(slot);
+  const tint = markup ? colorOf(ctx, style, "strokeColor", "strokeColorRole") : undefined;
+  if (markup) ctx.take(style, "strokeWidth");
+  let outline: Stroke | undefined = tint !== undefined ? { paint: { kind: "color", value: tint }, width: 0 }
+    : strokeOf(ctx, style, "strokeColor", "strokeWidth", dashed, "strokeColorRole");
   // The scribble is an open stroke with no fill: 1.x gave it a stroke of its own when it had
   // none, 2 px wide and in its stroke colour, else its fill colour, else blue.
   if (!outline && style.geoShape === "scribble") {

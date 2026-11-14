@@ -7,7 +7,7 @@
 // The bridge of the migration: the renderer still walks the 1.x slots, and
 // reads from the 2.0 layer of each one the blocks already moved to 2.0.
 import { upgrade } from './upgrade-entry.js';
-import type { Box, Layer } from '../../../core/src/v2/schema.js';
+import type { Box, Geometry, Layer } from '../../../core/src/v2/schema.js';
 import type { PaintColors } from '../../../core/src/v2/paint-css.js';
 import { resolveCssColor, resolvePalette } from '../../../core/src/dynamic-colors.js';
 import { resolveByLang } from './localizedEntries.js';
@@ -145,4 +145,61 @@ export function maskStyle(layer: Layer): Record<string, unknown> {
 export function imageSrc(src: string | { value: string; modes?: Record<string, string> }, lang: string): string {
   const pick = typeof src === 'string' ? src : resolveByLang(src.modes ?? {}, lang) ?? src.value;
   return pick === 'oim:base' ? '' : pick;
+}
+
+type Paths = Extract<Geometry, { kind: 'paths' }>;
+
+// A path's colour comes from the file unvalidated: nothing that could end the declaration
+// or load a resource reaches a style, whatever the CSSOM of the host does with it.
+const safeColor = (c: string | undefined) => (c && !/[;{}<>"]|url\(|expression\(/i.test(c) ? c : undefined);
+
+/**
+ * A 2.0 drawing as SVG markup. A path's `currentColor` is the layer's colour: as a
+ * fill its first fill, else its first stroke; as a stroke the other way round.
+ * Colours go through CSSOM: a role is a var(), and an invalid value is dropped,
+ * not injected into the markup.
+ */
+export function drawingSvg(geometry: Paths, link: { fill?: string; stroke?: string }, tile = false): string {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', geometry.viewBox.join(' '));
+  // A tile is an image: it needs its own size, and literal colours the pattern recolouring can find.
+  svg.setAttribute('width', tile ? String(geometry.viewBox[2]) : '100%');
+  svg.setAttribute('height', tile ? String(geometry.viewBox[3]) : '100%');
+  if (tile) svg.setAttribute('xmlns', NS);
+  else {
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    svg.style.setProperty('display', 'block');
+  }
+  for (const p of geometry.paths) {
+    const el = document.createElementNS(NS, 'path');
+    el.setAttribute('d', p.d);
+    const fill = safeColor(p.fill === 'currentColor' ? link.fill ?? 'currentColor' : p.fill);
+    const stroke = safeColor(p.stroke === 'currentColor' ? link.stroke ?? 'currentColor' : p.stroke);
+    if (tile) {
+      // Inside a data URI an attribute cannot reach the page.
+      el.setAttribute('fill', fill ?? 'none');
+      if (stroke) el.setAttribute('stroke', stroke);
+    } else {
+      el.setAttribute('fill', 'none');
+      if (fill) el.style.setProperty('fill', fill);
+      if (stroke) el.style.setProperty('stroke', stroke);
+    }
+    if (p.strokeWidth !== undefined) el.setAttribute('stroke-width', String(p.strokeWidth));
+    if (p.fillRule) el.setAttribute('fill-rule', p.fillRule);
+    if (p.cap) el.setAttribute('stroke-linecap', p.cap);
+    if (p.join) el.setAttribute('stroke-linejoin', p.join);
+    if (p.opacity !== undefined) el.setAttribute('opacity', String(p.opacity));
+    if (p.transform) el.setAttribute('transform', `matrix(${p.transform.join(' ')})`);
+    svg.appendChild(el);
+  }
+  return svg.outerHTML;
+}
+
+/** The colour a drawing's `currentColor` takes, as CSS or as a literal for a baked tile. */
+export function drawingLink(layer: Layer, color: (v: unknown) => string | undefined): { fill?: string; stroke?: string } {
+  const flat = (paint: unknown) => (paint && typeof paint === 'object' && (paint as { kind?: unknown }).kind === 'color' ? color((paint as { value: unknown }).value) : undefined);
+  const fill = flat(layer.fills?.[0]);
+  const stroke = flat(layer.strokes?.[0]?.paint);
+  return { fill: fill ?? stroke, stroke: stroke ?? fill };
 }

@@ -59,7 +59,9 @@ function fontList(dir) {
   return output;
 }
 
-const FUENTES = fontList(SRC).map((path) => ({ path, text: readFileSync(path, "utf8") }));
+// The painting half lives in @oim-media/scene and is bundled into the player.
+const SCENE_SRC = join(__dirname, "..", "..", "..", "scene", "src");
+const FUENTES = [...fontList(SRC), ...fontList(SCENE_SRC)].map((path) => ({ path, text: readFileSync(path, "utf8") }));
 
 describe("where the weight can creep in", () => {
   it("there are fonts to review", () => {
@@ -147,6 +149,8 @@ describe("lottie ships apart from the player", () => {
 
   // A budget, not a target: each raise is a deliberate decision recorded in
   // the commit that makes it. Last raise: 59 KB for reveal and play (1.22.0).
+  // Back to 59 KB once the renderer painted only from 2.0 (`upgrade` lives in
+  // its own file, vendor/oim-upgrade-*.js, 12.6 KB).
   it.skipIf(!hasBundle)("the player fits in 59 KB gzip", async () => {
     const { gzipSync } = await import("node:zlib");
     const kb = gzipSync(readFileSync(BUNDLE)).length / 1024;

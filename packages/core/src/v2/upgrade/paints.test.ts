@@ -87,10 +87,24 @@ describe("fills", () => {
     expect(layer({ fillType: "generative", fillGenerative: generative }).fills).toEqual([{ kind: "generative", generative }]);
   });
 
-  it("a role binds only when the document has a palette that defines it", () => {
-    expect(layer({ fillColor: "#112233", fillColorRole: "accent" }, "geo", palettes).fills).toEqual([{ kind: "color", value: { var: "accent" } }]);
-    expect(layer({ fillColor: "#112233", fillColorRole: "accent" }).fills).toEqual([{ kind: "color", value: "#112233" }]);
-    expect(layer({ fillColor: "#112233", fillColorRole: "surface" }, "geo", palettes).fills).toEqual([{ kind: "color", value: "#112233" }]);
+  // Ruling (13 Nov): a role binds with its literal as fallback, palettes or not,
+  // because a host page can set the dynamic roles; 1.x painted var(--oim-color-<role>, literal).
+  it("a known role binds and keeps its literal as the fallback", () => {
+    expect(layer({ fillColor: "#112233", fillColorRole: "accent" }, "geo", palettes).fills).toEqual([{ kind: "color", value: { var: "accent", fallback: "#112233" } }]);
+    expect(layer({ fillColor: "#112233", fillColorRole: "surface" }).fills).toEqual([{ kind: "color", value: { var: "surface", fallback: "#112233" } }]);
+    expect(layer({ fillColorRole: "surface" }).fills).toEqual([{ kind: "color", value: { var: "surface" } }]);
+  });
+
+  it("colorRole is the role of fillColor when fillColorRole is absent, as 1.x painted it", () => {
+    expect(layer({ fillColor: "#18181B", colorRole: "on-surface" }, "text").fills).toEqual([{ kind: "color", value: { var: "on-surface", fallback: "#18181B" } }]);
+  });
+
+  it("`color`, retired in 1.5.0, paints nothing", () => {
+    expect(layer({ color: "#ff0000" }, "text")).not.toHaveProperty("fills");
+  });
+
+  it("an unknown role with no palette defining it keeps only the literal", () => {
+    expect(layer({ fillColor: "#112233", fillColorRole: "brand" }).fills).toEqual([{ kind: "color", value: "#112233" }]);
   });
 
   it("the colour of a text is its fill", () => {
@@ -124,8 +138,20 @@ describe("strokes", () => {
     ]);
   });
 
-  it("the undeclared borderColor and borderWidth are a stroke too", () => {
-    expect(layer({ borderColor: "#111111", borderWidth: 4 }).strokes).toEqual([{ paint: { kind: "color", value: "#111111" }, width: 4 }]);
+  // Ruling (13 Nov): on a text the strokes are the letters' outline; the box
+  // border 1.x drew for strokeColor on a text has no 2.0 meaning and is dropped.
+  it("a text stroke is black by default, under strokeColorRole when it has no role of its own", () => {
+    expect(layer({ textStrokeWidth: 2 }, "text").strokes).toEqual([{ paint: { kind: "color", value: "#000000" }, width: 2 }]);
+    expect(layer({ textStrokeWidth: 2, textStrokeColor: "#111111", strokeColorRole: "outline" }, "text").strokes)
+      .toEqual([{ paint: { kind: "color", value: { var: "outline", fallback: "#111111" } }, width: 2 }]);
+    expect(layer({ strokeColor: "#0000ff", strokeWidth: 3 }, "text")).not.toHaveProperty("strokes");
+  });
+
+  // Ruling (13 Nov): 1.x never painted these without a border-style (golden
+  // strokes-and-borders), so they become a stroke only when one makes them visible.
+  it("borderColor and borderWidth paint nothing without a visible borderStyle", () => {
+    expect(layer({ borderColor: "#111111", borderWidth: 4 })).not.toHaveProperty("strokes");
+    expect(layer({ borderColor: "#111111", borderWidth: 4, borderStyle: "dashed" }).strokes).toEqual([{ paint: { kind: "color", value: "#111111" }, width: 4, style: "dashed" }]);
   });
 });
 
@@ -172,5 +198,71 @@ describe("the background of the canvas", () => {
 
   it("no background at all leaves the canvas as it was", () => {
     expect(canvas({}).document.canvas).toEqual({ width: 1000, height: 1000 });
+  });
+});
+
+describe("1.x shapes whose fill the player read through fallbacks", () => {
+  const IMG = "data:image/png;base64,iVBORw0KGgo=";
+  it("a photo keeps its fillColor under it, for when it does not load", () => {
+    expect(layer({ fillType: "image", fillImage: IMG, fillColor: "#ff0000" }).fills).toEqual([
+      expect.objectContaining({ kind: "image", src: IMG }),
+      { kind: "color", value: "#ff0000" },
+    ]);
+    expect(layer({ fillType: "image", fillImage: IMG }).fills).toHaveLength(1);
+  });
+
+  it("a scribble with no stroke gets 2 px in its fill colour, and no fill", () => {
+    const l = layer({ geoShape: "scribble", fillColor: "#00ff00", customBlobPath: "M 0 0 L 10 10" });
+    expect(l.fills).toBeUndefined();
+    expect(l.strokes?.[0]).toMatchObject({ width: 2, paint: { kind: "color", value: "#00ff00" } });
+  });
+
+  it("a custom path takes no colour fill", () => {
+    expect(layer({ svgPath: "M 0 0 L 10 10 Z", fillColor: "#00ff00" }).fills).toBeUndefined();
+  });
+});
+
+describe("1.x patterns", () => {
+  const pattern = (style: object, type?: string, root?: object) => (layer(style, type, root).fills?.[0] as any)?.pattern;
+  it("a raw SVG tile keeps the colours it is recoloured with, without a preset", () => {
+    expect(pattern({ backgroundType: "pattern", fillPatternColor: "#ff0000" })).toEqual({ colors: ["#ff0000"] });
+  });
+  it("a pattern layer with no fillType is a pattern", () => {
+    expect(pattern({ fillPatternType: "dots" }, "pattern")).toEqual({ preset: "dots" });
+  });
+  it("the role of the single colour tints the first of the list", () => {
+    expect(pattern({ fillType: "pattern", fillPatternType: "dots", fillPatternColor: "#a3e635", fillPatternColorRole: "accent", fillPatternColors: ["#a3e635", "#38bdf8"] }, "geo", palettes).colors)
+      .toEqual([{ var: "accent", fallback: "#a3e635" }, "#38bdf8"]);
+  });
+  it("a canvas tile keeps its cover fit and moves at 8 s when given only a direction", () => {
+    expect(pattern({ backgroundType: "pattern", backgroundPatternType: "dots", backgroundFit: "cover", backgroundPatternDirection: "left" }))
+      .toMatchObject({ fit: "cover", motion: { direction: "left", period: 8 } });
+  });
+});
+
+describe("1.x SVG layers", () => {
+  const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14"/></svg>';
+  const svgLayer = (style: object, type = "svg") =>
+    upgrade({ oim: "1.27.9", canvas: { natural_width: 1000, natural_height: 1000 }, slots: [{ id: "a", type, position: [0, 0], content: { es: ICON }, style: { width: 10, height: 10, ...style } }] } as never).document.layers[0] as any;
+
+  it("strokeColor tints the drawing at any width: a colour-only stroke", () => {
+    expect(svgLayer({ strokeColor: "#2563EB", strokeWidth: 2 }).strokes).toEqual([{ paint: { kind: "color", value: "#2563EB" }, width: 0 }]);
+  });
+  it("an old icon created as geo is a drawing too", () => {
+    const l = svgLayer({ strokeColor: "#2563EB" }, "geo");
+    expect(l.geometry.kind).toBe("paths");
+    expect(l.strokes?.[0].width).toBe(0);
+  });
+  it("fillColor paints every figure: each fill links to the layer", () => {
+    expect(svgLayer({ fillColor: "#00ff00" }).geometry.paths.map((p: any) => p.fill)).toEqual(["currentColor"]);
+    expect(svgLayer({ fillColor: "transparent" }).geometry.paths[0].fill).toBeUndefined();
+  });
+  it("an svg layer whose drawing is in svgRawXml is tinted too", () => {
+    const l = upgrade({ oim: "1.27.9", canvas: { natural_width: 1000, natural_height: 1000 }, slots: [{ id: "a", type: "svg", position: [0, 0], style: { width: 10, height: 10, strokeColor: "#2563EB", svgRawXml: ICON } }] } as never).document.layers[0] as any;
+    expect(l.strokes).toEqual([{ paint: { kind: "color", value: "#2563EB" }, width: 0 }]);
+  });
+  it("a percentage length is of the viewBox", () => {
+    const l = upgrade({ oim: "1.27.9", canvas: { natural_width: 1000, natural_height: 1000 }, slots: [{ id: "a", type: "geo", position: [0, 0], style: { width: 10, height: 10, svgRawXml: '<svg width="160" height="80"><rect width="100%" height="50%" fill="#000"/></svg>' } }] } as never).document.layers[0] as any;
+    expect(l.geometry.paths[0].d).toBe("M0 0H160V40H0Z");
   });
 });

@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { v2LayersOf } from "../../../scene/src/legacy/v2-layers.js";
 import { describe, it, expect, beforeEach } from "vitest";
 import ImageEngine from "./ImageEngine";
 
@@ -69,47 +70,5 @@ describe("renderSlots parcial", () => {
     await m2.renderSlots({ onlyIds: new Set(["titulo"]) });
     // The composition is computed over the whole stack: a node cannot be patched.
     expect(h2.shadowRoot!.querySelector('[data-slot-id="pie"]')).not.toBe(pieAntes);
-  });
-});
-
-describe("the parallax controller survives a partial render", () => {
-  const conParallax = () => ([
-    { id: "titulo", type: "text", content: { es: "Hola", en: "Hello" }, position: [50, 20], style: {},
-      parallax: { enabled: true, depth: 0.5, mode: "mouse", axis: "both" } },
-    { id: "pie", type: "text", content: { es: "Igual", en: "Igual" }, position: [50, 80], style: {} },
-  ]);
-
-  it("re-points the rebuilt layer to the new node", async () => {
-    // Without this the controller would keep moving the old node, already detached,
-    // and the new layer would stay still without anything giving it away.
-    const { host, motor } = mount(conParallax());
-    await motor.renderSlots();
-
-    const ctrl: any = motor._parallaxController;
-    expect(ctrl).toBeTruthy();
-
-    await motor.renderSlots({ onlyIds: new Set(["titulo"]) });
-
-    const nuevo = host.shadowRoot!.querySelector('[data-slot-id="titulo"]');
-    const item = ctrl.items.find((i: any) => i.id === "titulo");
-    expect(item.element).toBe(nuevo);
-    expect(item.element.isConnected).toBe(true);
-  });
-
-  it("a full render destroys the previous controller", async () => {
-    // Each render created a new one and left the old one running: a mousemove
-    // listener and an rAF loop, forever.
-    const { motor } = mount(conParallax());
-    await motor.renderSlots();
-
-    const first: any = motor._parallaxController;
-    let destruido = 0;
-    const originalDestroy = first.destroy.bind(first);
-    first.destroy = () => { destruido++; originalDestroy(); };
-
-    await motor.renderSlots();
-
-    expect(destruido).toBe(1);
-    expect(motor._parallaxController).not.toBe(first);
   });
 });

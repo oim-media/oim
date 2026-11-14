@@ -9,7 +9,7 @@
 
 import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine.js";
-import { getStylesText } from "../render/styles.js";
+import { getStylesText } from "../../../scene/src/legacy/styles.js";
 
 function mount(slots: any[]) {
   const host = document.createElement("div");
@@ -215,16 +215,18 @@ describe("pattern color roles in ImageEngine", () => {
     // The mask keeps the background out: only the shapes are opaque.
     expect(decodedBg).toContain('fill="transparent"');
     expect(decodedBg).not.toContain("#18181b");
-    // Preserves the exact 4 dots coordinates and circles
-    expect(decodedBg).toContain('translate(20, 20)');
-    expect(decodedBg).toContain('translate(60, 20)');
-    expect(decodedBg).toContain('translate(100, 20)');
-    expect(decodedBg).toContain('translate(140, 20)');
-    expect(decodedBg).toContain('cx="12" cy="12" r="6"');
+    // Preserves the exact 4 dots coordinates and circles.
+    // Decision (13 Nov): 2.0 keeps the SVG as normalised paths, so the circle is an arc path
+    // and the group's translate a matrix; the coordinates are the same.
+    expect(decodedBg).toContain('matrix(1 0 0 1 20 20)');
+    expect(decodedBg).toContain('matrix(1 0 0 1 60 20)');
+    expect(decodedBg).toContain('matrix(1 0 0 1 100 20)');
+    expect(decodedBg).toContain('matrix(1 0 0 1 140 20)');
+    expect(decodedBg).toContain('d="M6 12A6 6 0 1 0 18 12A6 6 0 1 0 6 12Z"');
   });
 
   it("tints the role colour of a multi-colour pattern in CSS and bakes only the fixed ones", async () => {
-    const rawSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><rect width="100%" height="100%" fill="#18181b"/><g transform="translate(20, 20)" fill="#a3e635"><circle cx="12" cy="12" r="6"/></g><circle fill="#38bdf8"/></svg>';
+    const rawSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><rect width="100%" height="100%" fill="#18181b"/><g transform="translate(20, 20)" fill="#a3e635"><circle cx="12" cy="12" r="6"/></g><circle cx="40" cy="40" r="4" fill="#38bdf8"/></svg>';
     const slot = {
       id: "background-pattern-slot",
       type: "geo",
@@ -248,7 +250,8 @@ describe("pattern color roles in ImageEngine", () => {
     expect(slotEl.classList.contains("oim-pat-dyn")).toBe(true);
     expect(slotEl.style.getPropertyValue("--oim-pat-fg")).toContain("var(--oim-color-secondary");
     const mask = decodeURIComponent(slotEl.style.getPropertyValue("--oim-pat-mask"));
-    expect(mask).toContain('translate(20, 20)');
+    // Decision (13 Nov): normalised paths, the translate is a matrix.
+    expect(mask).toContain('matrix(1 0 0 1 20 20)');
     expect(mask).not.toContain('#38bdf8');
     const baked = decodeURIComponent(slotEl.style.backgroundImage);
     expect(baked).toContain('#38bdf8');

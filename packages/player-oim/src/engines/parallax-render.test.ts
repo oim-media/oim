@@ -5,9 +5,9 @@
  */
 
 // @vitest-environment happy-dom
+import { v2LayersOf } from "../../../scene/src/legacy/v2-layers.js";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { TRACK_CLASS, CSS_PARALLAX, ensureParallaxKeyframes } from "../../../core/src/parallaxCss.js";
-import { ParallaxController } from "../render/ParallaxController";
 import { ImageEngine } from "./ImageEngine";
 
 describe("Parallax Render & Controller Engine (Tarea 2)", () => {
@@ -38,27 +38,7 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
     expect(shadowRoot.querySelectorAll("style")).toHaveLength(1);
   });
 
-  it("ParallaxController neither uses nor references dataset.parallaxOffset in its loop", () => {
-    const container = document.createElement("div");
-    const slotEl = document.createElement("div");
-    container.appendChild(slotEl);
-    document.body.appendChild(container);
-
-    const controller = new ParallaxController(container);
-    controller.registerSlot({
-      id: "slot-1",
-      element: slotEl,
-      depth: 0.5,
-      mode: "mouse",
-      axis: "both",
-    });
-
-    expect(slotEl.dataset.parallaxOffset).toBeUndefined();
-    controller.destroy();
-    document.body.removeChild(container);
-  });
-
-  it("normalizes style.parallax on entering the engine and mounts an infinite track with 2 copies", async () => {
+  it("mounts an infinite track with 2 copies", async () => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");
     shadowRoot.appendChild(engine._overlay);
@@ -87,9 +67,8 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
 
     await engine.renderSlots();
 
-    // Check that s.parallax was normalized
-    expect(engine.metadata.slots[0].parallax).toBeDefined();
-    expect(engine.metadata.slots[0].parallax.enabled).toBe(true);
+    // Decision (13 Nov): the loop comes from the 2.0 layer's motion; the engine no longer
+    // copies style.parallax onto the slot, so only the track it mounts is checked.
 
     // Check that the slot contains the track
     const slotEl = engine._overlay.querySelector('[data-slot-id="sky"]') as HTMLElement;
@@ -155,35 +134,7 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
     expect(slotEl.classList.contains(TRACK_CLASS)).toBe(false);
   });
 
-  it("a slot with isParallaxGroup has overflow: hidden to clip the loop", async () => {
-    const engine = new ImageEngine(hostEl);
-    engine._overlay = document.createElement("div");
-    shadowRoot.appendChild(engine._overlay);
-
-    engine.metadata = {
-      canvas_width: 800,
-      canvas_height: 600,
-      slots: [
-        {
-          id: "grupo-parallax",
-          type: "container",
-          isParallaxGroup: true,
-          style: {
-            width: "800px",
-            height: "600px",
-            filter: "brightness(1)", // would normally set overflow visible if this were not a group
-          },
-        },
-      ],
-    };
-
-    await engine.renderSlots();
-
-    const slotEl = engine._overlay.querySelector('[data-slot-id="grupo-parallax"]') as HTMLElement;
-    expect(slotEl).not.toBeNull();
-    expect(slotEl.style.overflow).toBe("hidden");
-  });
-
+  // Ruling (13 Nov): the isParallaxGroup flag is retired; a group clips when a child loops (below).
   it("a group with children that have parallax has overflow: hidden", async () => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");
@@ -448,96 +399,6 @@ describe("a geo circular shape is drawn round", () => {
     expect(arc, "the circle was not drawn").toBeTruthy();
     expect(arc!.getAttribute("d"), "not an arc of radius 45").toContain("A 45,45");
     expect(sunItem.style.borderRadius, "the circle no longer uses border-radius").not.toBe("50%");
-  });
-});
-
-describe("the oversizing reaches the node", () => {
-  it("a layer pinned to the edge receives `--oim-scale`", async () => {
-    const host = document.createElement("div");
-    (host as any).attachShadow({ mode: "open" });
-    document.body.appendChild(host);
-    const motor: any = new ImageEngine(host as any);
-    motor._viewport = document.createElement("div");
-    host.shadowRoot!.appendChild(motor._viewport);
-    motor._overlay = document.createElement("div");
-    motor._viewport.appendChild(motor._overlay);
-    motor.metadata = {
-      // `canvasWidth`/`canvasHeight` and not `width`/`height`: the engine does NOT read
-      // those last ones and would fall back to the 1080x1920 default, so the layer
-      // would stop touching the edge and the test would measure something else.
-      canvasWidth: 800, canvasHeight: 600,
-      slots: [
-        { id: "horizonte", type: "geo", align: "left",
-          position: [0, 0.75], width_px: 800, height_px: 150,
-          content: { es: "" },
-          style: { geoShape: "rect", fillColor: "#333", fillType: "color" },
-          parallax: { enabled: true, depth: 0.6, mode: "mouse", axis: "both" } },
-        { id: "luna", type: "geo", align: "left",
-          position: [0.75, 0.1], width_px: 100, height_px: 100,
-          content: { es: "" },
-          style: { geoShape: "circle", fillColor: "#eee", fillType: "color" },
-          parallax: { enabled: true, depth: 0.2, mode: "mouse", axis: "both" } },
-      ],
-    };
-    await motor.renderSlots();
-    const horizonte = host.shadowRoot!.querySelector('[data-slot-id="horizonte"]') as HTMLElement;
-    const luna = host.shadowRoot!.querySelector('[data-slot-id="luna"]') as HTMLElement;
-    expect(horizonte.style.getPropertyValue("--oim-scale")).toBe("1.24");
-    // The moon is loose: enlarging it would change the design for no reason.
-    expect(luna.style.getPropertyValue("--oim-scale")).toBe("");
-  });
-});
-
-describe("a layer with an infinite loop is not oversized", () => {
-  it("the track already covers the canvas; enlarging it would distort it", async () => {
-    // Seen by eye before any test caught it: the player mounted the track
-    // whenever speed was non-zero, ignoring the mode, so a layer with
-    // `mode: mouse` AND `infinite.enabled` got BOTH. The editor mounts only
-    // the track.
-    const host = document.createElement("div");
-    const shadow = (host as any).attachShadow({ mode: "open" });
-    document.body.appendChild(host);
-    const motor: any = new ImageEngine(host as any);
-    motor._overlay = document.createElement("div");
-    shadow.appendChild(motor._overlay);
-    motor.metadata = {
-      canvasWidth: 800, canvasHeight: 600,
-      slots: [{
-        id: "sky", type: "geo", align: "left",
-        position: [0, 0.75], width_px: 800, height_px: 150,
-        content: { es: "" },
-        style: { geoShape: "rect", fillColor: "#333", fillType: "color" },
-        parallax: { enabled: true, depth: 0.6, mode: "mouse", axis: "both",
-                    infinite: { enabled: true, speedPxSec: 20 } },
-      }],
-    };
-    await motor.renderSlots();
-    const el = shadow.querySelector('[data-slot-id="sky"]') as HTMLElement;
-    expect(el.querySelector(`.${TRACK_CLASS}`), "I did not mount the track: the test measures nothing").toBeTruthy();
-    expect(el.style.getPropertyValue("--oim-scale")).toBe("");
-  });
-
-  it("and the SAME layer without a loop IS oversized", async () => {
-    const host = document.createElement("div");
-    const shadow = (host as any).attachShadow({ mode: "open" });
-    document.body.appendChild(host);
-    const motor: any = new ImageEngine(host as any);
-    motor._overlay = document.createElement("div");
-    shadow.appendChild(motor._overlay);
-    motor.metadata = {
-      canvasWidth: 800, canvasHeight: 600,
-      slots: [{
-        id: "sky", type: "geo", align: "left",
-        position: [0, 0.75], width_px: 800, height_px: 150,
-        content: { es: "" },
-        style: { geoShape: "rect", fillColor: "#333", fillType: "color" },
-        parallax: { enabled: true, depth: 0.6, mode: "mouse", axis: "both",
-                    infinite: { enabled: false } },
-      }],
-    };
-    await motor.renderSlots();
-    const el = shadow.querySelector('[data-slot-id="sky"]') as HTMLElement;
-    expect(el.style.getPropertyValue("--oim-scale")).toBe("1.24");
   });
 });
 

@@ -11,21 +11,22 @@ import { admits } from "../layer-blocks.js";
 import type { Paint, Stroke } from "../schema.js";
 import { asObject, type DraftLayer, type UpgradeContext, type V1Object, type V1Slot } from "./context.js";
 import { parseCssGradient } from "./gradient.js";
+import { drawsMarkup } from "./svg-paths.js";
 
-type ColorValue = string | { var: string };
+export type ColorValue = string | { var: string; fallback?: string };
 
-const isColor = (value: unknown): value is string =>
+export const isColor = (value: unknown): value is string =>
   typeof value === "string" && value !== "" && value !== "transparent" && value !== "none";
 
 /**
- * A colour and its palette role. The role wins when the document has palettes
- * that define it; without palettes a binding would point at nothing, so the
- * literal is kept.
+ * A colour and its role. A known role (a palette's, or one of the dynamic roles
+ * a host page can set) becomes a binding that keeps the literal as its fallback,
+ * which is what 1.x painted: `var(--oim-color-<role>, <literal>)`.
  */
 export function colorOf(ctx: UpgradeContext, owner: V1Object, key: string, roleKey?: string): ColorValue | undefined {
   const literal = ctx.take(owner, key);
   const role = roleKey ? ctx.take(owner, roleKey) : undefined;
-  if (typeof role === "string" && ctx.hasRole(role)) return { var: role };
+  if (typeof role === "string" && ctx.hasRole(role)) return isColor(literal) ? { var: role, fallback: literal } : { var: role };
   return isColor(literal) ? literal : undefined;
 }
 
@@ -46,10 +47,13 @@ function patternOf(ctx: UpgradeContext, owner: V1Object, prefix: string, cssAnim
   // The canvas wrote the singular, the layer the plural: the same list.
   const counts = numbers(ctx.take(owner, `${prefix}Counts`)) ?? numbers(ctx.take(owner, `${prefix}Count`));
   const dispersions = numbers(ctx.take(owner, `${prefix}Dispersions`)) ?? numbers(ctx.take(owner, `${prefix}Dispersion`));
-  if (typeof preset !== "string" || !preset) return undefined;
+  const colors: NonNullable<typeof single>[] = Array.isArray(list) ? list.filter(isColor) : [];
+  // A raw SVG tile carries no preset: only the colours it is recoloured with.
+  if ((typeof preset !== "string" || !preset) && single === undefined && bg === undefined && colors.length === 0) return undefined;
 
-  const pattern: Extract<Paint, { kind: "pattern" }>["pattern"] = { preset };
-  const colors = Array.isArray(list) ? list.filter(isColor) : [];
+  const pattern: Extract<Paint, { kind: "pattern" }>["pattern"] = typeof preset === "string" && preset ? { preset } : {};
+  // The first colour of the list is the one the role tints.
+  if (colors.length > 0 && single !== undefined && typeof single === "object") colors[0] = single;
   if (colors.length > 0) pattern.colors = colors;
   else if (single !== undefined) pattern.colors = [single];
   if (bg !== undefined) pattern.bg = bg;
@@ -63,7 +67,8 @@ function patternOf(ctx: UpgradeContext, owner: V1Object, prefix: string, cssAnim
   // background, as a CSS animation string. Either one is enough.
   const css = typeof cssAnimation === "string" ? /^background-animation-([a-z-]+)\s+([\d.]+)s\b/.exec(cssAnimation) : null;
   const way = typeof direction === "string" && direction !== "none" ? direction : css?.[1];
-  const period = typeof speed === "number" && speed > 0 ? speed : css ? Number(css[2]) : undefined;
+  // The canvas moved a direction given without a speed at 8 s a cycle.
+  const period = typeof speed === "number" && speed > 0 ? speed : css ? Number(css[2]) : prefix === "backgroundPattern" && way ? 8 : undefined;
   if (way && MOTION.has(way) && period) pattern.motion = { direction: way as never, period };
   return { kind: "pattern", pattern };
 }
@@ -96,37 +101,44 @@ function imageOf(ctx: UpgradeContext, style: V1Object): Paint | undefined {
 
 const TEXT_GRADIENT_PRESETS = new Set(["metallic-chrome", "sunset-gold", "neon-glow", "linear"]);
 
-function fillOf(ctx: UpgradeContext, slot: V1Slot): Paint | undefined {
+function fillOf(ctx: UpgradeContext, slot: V1Slot): Paint | Paint[] | undefined {
   const { style } = slot;
   const fillType = ctx.take(style, "fillType");
   const backgroundType = ctx.take(style, "backgroundType");
   // Everything is taken even when it does not win: 1.x writes the fields of
   // every kind of fill and only `fillType` says which one counts.
-  const color = colorOf(ctx, style, "fillColor", "fillColorRole");
-  const legacyColor = colorOf(ctx, style, "color", "colorRole");
+  // 1.x painted fillColor under `fillColorRole || colorRole`; `color` itself was
+  // retired in 1.5.0 and paints nothing, so it is only taken.
+  const roleKey = typeof style.fillColorRole === "string" && style.fillColorRole ? "fillColorRole" : "colorRole";
+  const color = colorOf(ctx, style, "fillColor", roleKey);
+  ctx.take(style, "fillColorRole");
+  ctx.take(style, "colorRole");
+  ctx.take(style, "color");
   const gradient = gradientOf(ctx, style, "fillGradient", "style");
   const image = imageOf(ctx, style);
   const cssAnimation = style.cssAnimation;
   const fillPattern = patternOf(ctx, style, "fillPattern", cssAnimation);
   const backgroundPattern = patternOf(ctx, style, "backgroundPattern", cssAnimation);
   const generative = asObject(ctx.take(style, "fillGenerative")) ?? asObject(ctx.take(style, "backgroundGenerative"));
-  ctx.take(style, "backgroundFit");
+  const backgroundFit = ctx.take(style, "backgroundFit");
   const textGradient = ctx.take(style, "textGradientType");
 
+  // A background tile could be stretched over the canvas instead of repeated.
+  if (backgroundPattern && backgroundFit === "cover" && "pattern" in backgroundPattern) backgroundPattern.pattern.fit = "cover";
   const pattern = fillPattern ?? backgroundPattern;
   if (pattern && typeof cssAnimation === "string" && /^background-animation-/.test(cssAnimation)) ctx.take(style, "cssAnimation");
 
   const solid = (): Paint | undefined => {
-    const value = color ?? legacyColor;
-    return value === undefined ? undefined : { kind: "color", value };
+    return color === undefined ? undefined : { kind: "color", value: color };
   };
-  const kind = typeof fillType === "string" ? fillType : typeof backgroundType === "string" ? backgroundType : "color";
+  const kind = typeof fillType === "string" ? fillType : typeof backgroundType === "string" ? backgroundType : slot.type === "pattern" ? "pattern" : "color";
   if (kind === "none" || kind === "transparent") return undefined;
   if (kind === "gradient") return gradient ?? solid();
-  if (kind === "image") return image ?? solid();
+  // 1.x kept fillColor under the photo: it shows when the photo does not load.
+  if (kind === "image") return image ? (color === undefined ? image : [image, solid()!]) : solid();
   if (kind === "pattern") return pattern ?? solid();
   if (kind === "generative") return generative ? { kind: "generative", generative: generative as never } : solid();
-  if (slot.type === "text" && typeof textGradient === "string" && TEXT_GRADIENT_PRESETS.has(textGradient) && textGradient !== "linear") {
+  if ((slot.type === "text" || slot.type === "artistic-text") && typeof textGradient === "string" && TEXT_GRADIENT_PRESETS.has(textGradient) && textGradient !== "linear") {
     return { kind: "gradient", preset: textGradient };
   }
   return solid();
@@ -147,21 +159,62 @@ function strokeOf(
   return { paint: { kind: "color", value: color }, width, ...extra };
 }
 
+/** 1.x painted a text stroke black when it had no colour, under `textStrokeColorRole || strokeColorRole`. */
+function textStrokeOf(ctx: UpgradeContext, style: V1Object): Stroke | undefined {
+  const roleKey = typeof style.textStrokeColorRole === "string" && style.textStrokeColorRole ? "textStrokeColorRole" : "strokeColorRole";
+  const width = style.textStrokeWidth;
+  const color = colorOf(ctx, style, "textStrokeColor", roleKey);
+  ctx.take(style, "textStrokeColorRole");
+  ctx.take(style, "textStrokeWidth");
+  if (typeof width !== "number" || !(width > 0)) return undefined;
+  return { paint: { kind: "color", value: color ?? "#000000" }, width };
+}
+
 export function convertPaints(ctx: UpgradeContext, slot: V1Slot, layer: DraftLayer): void {
   const { style } = slot;
 
-  const fill = fillOf(ctx, slot);
-  if (fill && admits(layer.type, "fills")) layer.fills = [fill];
+  const fills = fillOf(ctx, slot);
+  const fill = Array.isArray(fills) ? fills[0] : fills;
+  // 1.x painted no colour inside a custom path (only a photo, a gradient or a
+  // pattern) nor inside the scribble, an open stroke.
+  const shape = style.geoShape;
+  const customPath = typeof style.svgPath === "string" && style.svgPath !== "" && (shape === undefined || shape === "custom");
+  const colourless = slot.type === "geo" && (customPath || shape === "scribble") && !!fill && "kind" in fill && fill.kind === "color";
+  if (fill && !colourless && admits(layer.type, "fills")) layer.fills = Array.isArray(fills) ? fills : [fill];
 
   const strokeStyle = ctx.take(style, "strokeStyle");
   const dashed = strokeStyle === "dashed" || strokeStyle === "dotted" ? { style: strokeStyle as Stroke["style"] } : {};
-  const strokes = [
-    strokeOf(ctx, style, "strokeColor", "strokeWidth", dashed, "strokeColorRole"),
-    strokeOf(ctx, style, "borderColor", "borderWidth"),
-    strokeOf(ctx, style, "textStrokeColor", "textStrokeWidth", {}, "textStrokeColorRole"),
-    strokeOf(ctx, style, "outerStrokeColor", "outerStrokeWidth", { align: "outside" }),
-    strokeOf(ctx, style, "innerStrokeColor", "innerStrokeWidth", { align: "inside" }),
-  ].filter((s): s is Stroke => s !== undefined);
+  // 1.x passed borderColor and borderWidth to CSS without a border-style, so
+  // they painted nothing unless the file also carried a visible borderStyle.
+  const borderStyle = ctx.take(style, "borderStyle");
+  const border = strokeOf(ctx, style, "borderColor", "borderWidth",
+    borderStyle === "dashed" || borderStyle === "dotted" ? { style: borderStyle } : {});
+  // An SVG layer: 1.x tinted every `currentColor` of the drawing with strokeColor, at any
+  // width. In 2.0 a path's `currentColor` stroke is the layer's first stroke.
+  const markup = drawsMarkup(slot);
+  const tint = markup ? colorOf(ctx, style, "strokeColor", "strokeColorRole") : undefined;
+  if (markup) ctx.take(style, "strokeWidth");
+  let outline: Stroke | undefined = tint !== undefined ? { paint: { kind: "color", value: tint }, width: 0 }
+    : strokeOf(ctx, style, "strokeColor", "strokeWidth", dashed, "strokeColorRole");
+  // The scribble is an open stroke with no fill: 1.x gave it a stroke of its own when it had
+  // none, 2 px wide and in its stroke colour, else its fill colour, else blue.
+  if (!outline && style.geoShape === "scribble") {
+    const width = typeof style.strokeWidth === "number" && style.strokeWidth > 0 ? style.strokeWidth : 2;
+    const color = colorOf(ctx, style, "strokeColor", "strokeColorRole") ?? colorOf(ctx, style, "fillColor", "fillColorRole") ?? "#2563EB";
+    outline = { paint: { kind: "color", value: color }, width, ...dashed };
+  }
+  const glyphs = textStrokeOf(ctx, style);
+  // On a text the stroke is the outline of the letters. The box border 1.x drew
+  // when a text carried strokeColor has no 2.0 meaning and is dropped.
+  const outer = strokeOf(ctx, style, "outerStrokeColor", "outerStrokeWidth", { align: "outside" });
+  const inner = strokeOf(ctx, style, "innerStrokeColor", "innerStrokeWidth", { align: "inside" });
+  const strokes = (layer.type === "text" ? [glyphs, outer, inner] : [
+    outline,
+    borderStyle === "solid" || borderStyle === "dashed" || borderStyle === "dotted" ? border : undefined,
+    glyphs,
+    outer,
+    inner,
+  ]).filter((s): s is Stroke => s !== undefined);
   if (strokes.length > 0 && admits(layer.type, "strokes")) layer.strokes = strokes;
 }
 

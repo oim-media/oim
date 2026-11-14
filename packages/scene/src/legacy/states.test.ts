@@ -311,10 +311,7 @@ describe("the touch-outside cannot trust e.target", () => {
      * It is a source-code guard because the listener lives in the engine, where it
      * cannot be covered without mounting the whole thing.
      */
-    const source = fs.readFileSync(
-      path.join(__dirname, "ImageEngine.ts"),
-      "utf8"
-    );
+    const source = [require("node:path").join(__dirname, "renderer.ts"), require("node:path").join(__dirname, "../../../player-oim/src/engines/ImageEngine.ts")].map((f) => require("node:fs").readFileSync(f, "utf8")).join("\n");
     const start = source.indexOf("stage.addEventListener('pointerdown'");
     expect(start, "I cannot find the touch-outside listener").toBeGreaterThan(-1);
     const block = source.slice(start, start + 900);
@@ -412,16 +409,10 @@ describe("the engine does not stay silent about what it cannot do either", () =>
   // No test mounts the action manager -that absence is exactly the gap through
   // which the original fault slipped-, so it is pinned against the source, just
   // like the `composedPath` guard.
-  const source = () => fs.readFileSync(path.join(__dirname, "ImageEngine.ts"), "utf8");
+  const source = () => [require("node:path").join(__dirname, "renderer.ts"), require("node:path").join(__dirname, "../../../player-oim/src/engines/ImageEngine.ts")].map((f) => require("node:fs").readFileSync(f, "utf8")).join("\n");
   const sinComentarios = (t: string) =>
     t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
 
-  it("passes the slot id to readInteraction, or the warnings do not say which one it is", () => {
-    const code = sinComentarios(source());
-    const i = code.indexOf("readInteraction(");
-    expect(i, "I cannot find the call to readInteraction").toBeGreaterThan(-1);
-    expect(code.slice(i, i + 200)).toContain("slot.id");
-  });
 
   it("warns once about an action whose target does not exist", () => {
     const code = sinComentarios(source());

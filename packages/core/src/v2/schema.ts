@@ -17,14 +17,14 @@ import {
   embeddedFontSchema,
   generativeFillSchema,
   keyframeEasingSchema,
-  parallaxSchema,
   textHighlightSchema,
   textMarkSchema,
   textRunsSchema,
 } from "../schema.js";
 import { LAYER_BLOCKS, type Block, type LayerType } from "./layer-blocks.js";
 
-export const DOCUMENT_VERSION = "2.0.0-draft.1";
+export { DOCUMENT_VERSION } from "./version.js";
+import { DOCUMENT_VERSION } from "./version.js";
 
 const id = z.string().min(1).max(128);
 const unit = z.number().min(0).max(1);
@@ -32,10 +32,15 @@ const extensions = z.record(z.string(), z.unknown());
 
 // --- values -----------------------------------------------------------------
 
-const binding = z.object({ var: z.string().min(1).max(64) }).strict();
+const varName = z.string().min(1).max(64);
 
-/** A literal, a binding to a variable, or a literal with per-mode exceptions. */
+/**
+ * A literal, a binding to a variable, or a literal with per-mode exceptions.
+ * A binding may carry a `fallback`: what is painted when nobody (the document's
+ * variables or the host page) gives the variable a value.
+ */
 export function scalar<T extends z.ZodType>(literal: T) {
+  const binding = z.object({ var: varName, fallback: literal.optional() }).strict();
   return z.union([literal, binding, z.object({ value: literal, modes: z.record(z.string(), literal) }).strict()]);
 }
 
@@ -237,18 +242,24 @@ const pathEntry = z
   })
   .strict();
 
+// How much of the outline is drawn, as shares of its length. It is the value at
+// rest: the `trimStart` and `trimEnd` tracks animate towards it, and a reader
+// that runs no animation still draws the stroke trimmed.
+const trim = z.object({ start: unit.optional(), end: unit.optional() }).strict();
+
 export const geometrySchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("rect") }).strict(),
-  z.object({ kind: z.literal("ellipse") }).strict(),
-  z.object({ kind: z.literal("line") }).strict(),
-  z.object({ kind: z.literal("polygon"), sides: z.number().int().min(3).max(64) }).strict(),
-  z.object({ kind: z.literal("star"), points: z.number().int().min(3).max(64), inner: unit.optional() }).strict(),
-  z.object({ kind: z.literal("preset"), name: z.string().min(1).max(64) }).strict(),
+  z.object({ kind: z.literal("rect"), trim: trim.optional() }).strict(),
+  z.object({ kind: z.literal("ellipse"), trim: trim.optional() }).strict(),
+  z.object({ kind: z.literal("line"), trim: trim.optional() }).strict(),
+  z.object({ kind: z.literal("polygon"), sides: z.number().int().min(3).max(64), trim: trim.optional() }).strict(),
+  z.object({ kind: z.literal("star"), points: z.number().int().min(3).max(64), inner: unit.optional(), trim: trim.optional() }).strict(),
+  z.object({ kind: z.literal("preset"), name: z.string().min(1).max(64), trim: trim.optional() }).strict(),
   z
     .object({
       kind: z.literal("paths"),
       viewBox: z.array(z.number()).length(4),
       paths: z.array(pathEntry).min(1).max(2000),
+      trim: trim.optional(),
     })
     .strict(),
 ]);
@@ -257,8 +268,9 @@ const corners = z.union([z.number().min(0), z.array(z.number().min(0)).length(4)
 
 export const imageSchema = z
   .object({
-    // "oim:base" is the PNG of the file itself.
-    src: z.string().min(1),
+    // "oim:base" is the PNG of the file itself. A language can have its own
+    // picture; an empty one means that language shows none.
+    src: z.union([z.string().min(1), z.object({ value: z.string().min(1), modes: z.record(z.string(), z.string()) }).strict()]),
     fit: fit.optional(),
     crop: crop.optional(),
     filters: imageFiltersSchema.optional(),
@@ -308,18 +320,19 @@ function animationFor(targets: readonly [string, ...string[]]) {
 export const animationSchema = animationFor(["layer", "chars", "words", "lines"]);
 const layerOnlyAnimation = animationFor(["layer"]);
 
-const sceneLoop = z
+// A layer that scrolls forever, like a background repeating sideways. It is
+// the only motion 2.0 keeps: the parallax that followed the pointer is retired.
+const loop = z
   .object({
+    speedPxSec: z.number().min(-500).max(500),
     direction: z.enum(["left_to_right", "right_to_left"]).optional(),
-    speedPxSec: z.number().optional(),
+    // Every other copy mirrored, so the seam does not show. On unless said.
     mirror: z.boolean().optional(),
     pauseOnHover: z.boolean().optional(),
-    depth: z.number().optional(),
-    off: z.boolean().optional(),
   })
   .strict();
 
-export const motionSchema = z.object({ parallax: parallaxSchema.optional(), sceneLoop: sceneLoop.optional() }).strict();
+export const motionSchema = z.object({ loop: loop.optional() }).strict();
 
 export const interactionSchema = z
   .object({
@@ -343,12 +356,18 @@ const a11y = z.object({ alt: z.record(z.string(), z.string()).optional(), decora
 
 // --- layer ------------------------------------------------------------------
 
+/** Which point of the box sits at `x, y`. Absent is the top-left corner. */
+export const ANCHORS = ["top-left", "top", "top-right", "left", "center", "right", "bottom-left", "bottom", "bottom-right"] as const;
+
 const boxSchema = z
   .object({
     x: z.number(),
     y: z.number(),
-    width: z.number().min(0),
-    height: z.number().min(0),
+    // Left out, the layer fits its content, grown from its anchor. A width alone
+    // is a reference width (what an endless loop measures its copies by).
+    width: z.number().min(0).optional(),
+    height: z.number().min(0).optional(),
+    anchor: z.enum(ANCHORS).optional(),
     rotation: z.number().optional(),
     flipX: z.boolean().optional(),
     flipY: z.boolean().optional(),

@@ -16,7 +16,7 @@
   "main": "./dist/esm/index.js",
   "types": "./src/index.d.ts",
   "scripts": {
-    "build": "vite build && vite build --mode esm && node ../../tools/third-party-notices.mjs @oim-media/player-oim dist",
+    "build": "vite build && vite build --mode upgrade && vite build --mode esm && node ../../tools/third-party-notices.mjs @oim-media/player-oim dist",
     "dev": "vite build --watch",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"

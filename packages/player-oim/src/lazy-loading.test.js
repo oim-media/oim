@@ -127,7 +127,7 @@ describe("the activity state contract", () => {
   });
 
   it("disconnecting it leaves no mousemove listener on window", async () => {
-    // The ParallaxController adds one to `window` in its constructor and only
+    // The retired pointer-parallax controller added one to `window` in its constructor and only
     // removes it in `destroy()`. Measured in the browser: 12 players, 1 visible,
     // 12 live listeners.
     window.IntersectionObserver = OBSERVER;

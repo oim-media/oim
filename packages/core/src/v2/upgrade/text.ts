@@ -59,12 +59,13 @@ export function convertText(ctx: UpgradeContext, slot: V1Slot, layer: DraftLayer
   const size = sized(ctx, style, "fontSize", "fontSizes");
   if (size !== undefined) font.size = size;
   const weight = ctx.take(style, "fontWeight");
-  const bold = ctx.take(style, "bold") === true;
+  // bold, italic and underline were retired in 1.5.0 and the player ignores them.
+  ctx.take(style, "bold");
   if (typeof weight === "number" || (typeof weight === "string" && weight)) {
     if (Number(weight) !== 400) font.weight = Number.isFinite(Number(weight)) ? Number(weight) : weight;
-  } else if (bold) font.weight = 700;
+  }
   const fontStyle = ctx.take(style, "fontStyle");
-  if (fontStyle === "italic" || fontStyle === "oblique" || ctx.take(style, "italic") === true) font.italic = true;
+  if (fontStyle === "italic" || fontStyle === "oblique") font.italic = true;
   ctx.take(style, "italic");
   if (Object.keys(font).length > 0) text.font = font;
 
@@ -72,14 +73,18 @@ export function convertText(ctx: UpgradeContext, slot: V1Slot, layer: DraftLayer
 
   const lineHeight = ctx.take(style, "lineHeight");
   if (typeof lineHeight === "number" || (typeof lineHeight === "string" && lineHeight)) text.lineHeight = lineHeight;
-  const spacing = ctx.take(style, "letterSpacing");
-  if (typeof spacing === "number" && spacing !== 0) text.letterSpacing = spacing;
+  // 1.x passed letterSpacing to CSS as it came: a bare number was invalid CSS and
+  // painted nothing (golden background-pattern-order); a length with its unit did.
+  // Artistic text drew its own SVG, where a bare number was a length.
+  const rawSpacing = ctx.take(style, "letterSpacing");
+  const spacing = typeof rawSpacing === "string" ? toCanvasUnits(rawSpacing, ctx.canvas.width)
+    : typeof rawSpacing === "number" && slot.type === "artistic-text" ? rawSpacing : undefined;
+  if (spacing !== undefined && spacing !== 0) text.letterSpacing = spacing;
   const transform = ctx.take(style, "textTransform");
   if (transform === "uppercase" || transform === "lowercase" || transform === "capitalize") text.transform = transform;
   const decoration = ctx.take(style, "textDecoration");
-  const underline = ctx.take(style, "underline") === true;
+  ctx.take(style, "underline");
   if (typeof decoration === "string" && decoration && decoration !== "none") text.decoration = decoration;
-  else if (underline) text.decoration = "underline";
   const maxWidth = sized(ctx, style, "maxWidth", "maxWidths");
   if (maxWidth !== undefined) text.maxWidth = maxWidth;
 
@@ -97,8 +102,10 @@ export function convertText(ctx: UpgradeContext, slot: V1Slot, layer: DraftLayer
   if (typeof preset === "string" && preset) artistic.preset = preset;
   const curveType = ctx.take(style, "curveType");
   const curveAmount = ctx.take(style, "curveAmount");
-  if ((curveType === "arc" || curveType === "wave" || curveType === "arch") && typeof curveAmount === "number" && curveAmount !== 0) {
-    artistic.curve = { type: curveType, amount: curveAmount };
+  // 1.x drew an arc when the type was missing.
+  const curve = curveType ?? "arc";
+  if ((curve === "arc" || curve === "wave" || curve === "arch") && typeof curveAmount === "number" && curveAmount !== 0) {
+    artistic.curve = { type: curve, amount: curveAmount };
   }
   const depth = ctx.take(style, "extrusionDepth");
   const angle = ctx.take(style, "extrusionAngle");

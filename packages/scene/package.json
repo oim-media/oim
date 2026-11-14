@@ -1,0 +1,40 @@
+{
+  "name": "@oim-media/scene",
+  "version": "2.0.0-draft.1",
+  "private": true,
+  "description": "Scene renderer for OIM 2.0: paints a validated 2.0 document into the DOM. No network, no signatures, no editing tools.",
+  "author": "Xue Studios LLC",
+  "homepage": "https://oim.media",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@oim-media/core": "workspace:1.27.9",
+    "lottie-web": "5.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.9",
+    "happy-dom": "^21.0.4",
+    "typescript": "~6.0.3",
+    "vitest": "^5.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oim-media/oim.git",
+    "directory": "packages/scene"
+  }
+}

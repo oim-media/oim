@@ -11,7 +11,7 @@ import { admits } from "../layer-blocks.js";
 import type { Geometry } from "../schema.js";
 import { toCanvasUnits } from "./box.js";
 import { asObject, type DraftLayer, type UpgradeContext, type V1Object, type V1Slot } from "./context.js";
-import { svgToPaths, type PathEntry } from "./svg-paths.js";
+import { drawsMarkup, svgToPaths, type PathEntry } from "./svg-paths.js";
 
 /** The 1.x name of a figure and the 2.0 geometry that has its own kind. */
 const BASIC: Record<string, Geometry> = {
@@ -32,6 +32,18 @@ export function mediaOf(ctx: UpgradeContext, slot: V1Slot): string | undefined {
   const map = asObject(content) ?? {};
   const value = map["*"] ?? map[ctx.language] ?? Object.values(map).find((v) => typeof v === "string" && v !== "");
   return typeof value === "string" && value !== "" ? value : undefined;
+}
+
+/**
+ * A picture with per-language exceptions. 1.x kept the principal under "*" and
+ * gave a language its own key, final even when empty.
+ */
+function imageSource(slot: V1Slot, value: string): string | { value: string; modes: Record<string, string> } {
+  const map = asObject(slot.raw.content);
+  if (!map || typeof map["*"] !== "string" || value === "oim:base") return value;
+  const modes: Record<string, string> = {};
+  for (const [language, own] of Object.entries(map)) if (language !== "*" && typeof own === "string" && own !== value) modes[language] = own;
+  return Object.keys(modes).length > 0 ? { value, modes } : value;
 }
 
 function pathsFromLayers(ctx: UpgradeContext, layers: unknown[], viewBox: number[]): Geometry | undefined {
@@ -55,7 +67,8 @@ function pathsFromLayers(ctx: UpgradeContext, layers: unknown[], viewBox: number
 
 function shapeGeometry(ctx: UpgradeContext, slot: V1Slot, media: string | undefined): Geometry {
   const { style } = slot;
-  const name = ctx.take(style, "geoShape") ?? ctx.take(style, "geoType");
+  // Ruling (13 Nov): the 1.x player drew only `geoShape`; a `geoType` alone painted the box.
+  const name = ctx.take(style, "geoShape");
   ctx.take(style, "geoType");
   const path = ctx.take(style, "svgPath");
   const blob = ctx.take(style, "customBlobPath");
@@ -68,7 +81,7 @@ function shapeGeometry(ctx: UpgradeContext, slot: V1Slot, media: string | undefi
     const fromLayers = pathsFromLayers(ctx, layers, viewBox);
     if (fromLayers) return fromLayers;
   }
-  const xml = typeof rawXml === "string" && rawXml ? rawXml : slot.type === "svg" ? media : undefined;
+  const xml = typeof rawXml === "string" && rawXml ? rawXml : drawsMarkup(slot) ? media : undefined;
   if (xml) {
     const parsed = svgToPaths(xml);
     if (parsed.ok) return { kind: "paths", ...parsed.value };
@@ -76,7 +89,10 @@ function shapeGeometry(ctx: UpgradeContext, slot: V1Slot, media: string | undefi
     return { kind: "rect" };
   }
   const d = typeof path === "string" && path ? path : typeof blob === "string" && blob ? blob : undefined;
-  if (d && (name === undefined || name === "custom" || name === "blob")) return { kind: "paths", viewBox, paths: [{ d }] };
+  // The blob and the scribble draw their own path (1.x: customBlobPath first, then svgPath for the blob).
+  if (name === "scribble" && typeof blob === "string" && blob) return { kind: "paths", viewBox: [0, 0, 100, 100], paths: [{ d: blob }] };
+  if (name === "blob" && typeof blob === "string" && blob) return { kind: "paths", viewBox: [0, 0, 100, 100], paths: [{ d: blob }] };
+  if (d && (name === undefined || name === "custom" || name === "blob")) return { kind: "paths", viewBox: name === "blob" ? [0, 0, 100, 100] : viewBox, paths: [{ d }] };
   if (typeof name === "string" && name) return BASIC[name] ?? { kind: "preset", name };
   return { kind: "rect" };
 }
@@ -106,6 +122,12 @@ export function convertGeometry(ctx: UpgradeContext, slot: V1Slot, layer: DraftL
   const media = layer.type === "text" ? undefined : mediaOf(ctx, slot);
 
   if (layer.type === "shape") layer.geometry = shapeGeometry(ctx, slot, media);
+  // 1.x painted an SVG layer's fillColor into every figure of its drawing, fill="none"
+  // included: each path's fill becomes the layer's fill.
+  const first = layer.fills?.[0];
+  if (drawsMarkup(slot) && layer.geometry?.kind === "paths" && first && "kind" in first && first.kind === "color") {
+    for (const path of layer.geometry.paths) path.fill = "currentColor";
+  }
   else for (const key of ["geoShape", "geoType", "svgPath", "customBlobPath", "svgViewBox", "svgRawXml", "svgLayers"]) ctx.take(style, key);
 
   const corners = cornersOf(ctx, style);
@@ -115,7 +137,7 @@ export function convertGeometry(ctx: UpgradeContext, slot: V1Slot, layer: DraftL
   const crop = asObject(ctx.take(style, "imageCrop"));
   if (layer.type === "image") {
     // An image layer with no source of its own was baked into the PNG of the file.
-    layer.image = { src: media ?? "oim:base" };
+    layer.image = { src: imageSource(slot, media ?? "oim:base") };
     if (typeof fit === "string" && fit !== "cover") layer.image.fit = fit as never;
     if (crop) layer.image.crop = crop as never;
   }

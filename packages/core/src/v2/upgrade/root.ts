@@ -5,7 +5,8 @@
  */
 
 import { permissionOf } from "../../reeditPermission.js";
-import { DOCUMENT_VERSION, type OimDocument } from "../schema.js";
+import type { OimDocument } from "../schema.js";
+import { DOCUMENT_VERSION } from "../version.js";
 import { asObject, type UpgradeContext, type V1Object } from "./context.js";
 
 /** Fallback when a 1.x file declares no canvas: the base the core has always assumed. */
@@ -31,8 +32,11 @@ export const RETIRED_ROOT_KEYS = [
 export function canvasOf(meta: V1Object): { width: number; height: number } {
   const canvas = asObject(meta.canvas) ?? {};
   const positive = (value: unknown) => (typeof value === "number" && value > 0 ? value : undefined);
-  const width = positive(canvas.natural_width) ?? positive(canvas.width) ?? DEFAULT_CANVAS;
-  const height = positive(canvas.natural_height) ?? positive(canvas.height) ?? width;
+  // The player's own chain: the top-level sizes first, then the canvas object.
+  const width = positive(meta.artboardWidth) ?? positive(meta.canvasWidth) ?? positive(meta.canvas_width)
+    ?? positive(canvas.natural_width) ?? positive(canvas.width) ?? DEFAULT_CANVAS;
+  const height = positive(meta.artboardHeight) ?? positive(meta.canvasHeight) ?? positive(meta.canvas_height)
+    ?? positive(canvas.natural_height) ?? positive(canvas.height) ?? width;
   return { width, height };
 }
 

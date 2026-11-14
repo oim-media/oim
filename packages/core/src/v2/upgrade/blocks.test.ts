@@ -39,11 +39,9 @@ describe("text", () => {
     expect(layer({ fontWeight: "700" }, "text").text?.font).toEqual({ weight: 700 });
   });
 
-  it("the undeclared bold, italic and underline flags", () => {
-    const text = layer({ bold: true, italic: true, underline: true }, "text").text;
-    expect(text?.font).toEqual({ weight: 700, italic: true });
-    expect(text?.decoration).toBe("underline");
-    expect(layer({ bold: false, italic: false, underline: false }, "text").text).toEqual({ content: {} });
+  // Ruling (13 Nov): retired in 1.5.0, the player ignores them, so they carry nothing.
+  it("the retired bold, italic and underline flags paint nothing", () => {
+    expect(layer({ bold: true, italic: true, underline: true }, "text").text).toEqual({ content: {} });
   });
 
   it("alignment comes from textAlign or the layer's align; left is the default", () => {
@@ -53,9 +51,15 @@ describe("text", () => {
   });
 
   it("spacing, transform, decoration and width: only what differs from the default", () => {
-    expect(layer({ lineHeight: 1.3, letterSpacing: 2, textTransform: "uppercase", textDecoration: "none", maxWidth: "50.0cqw" }, "text").text).toEqual({
+    expect(layer({ lineHeight: 1.3, letterSpacing: "2px", textTransform: "uppercase", textDecoration: "none", maxWidth: "50.0cqw" }, "text").text).toEqual({
       content: {}, lineHeight: 1.3, letterSpacing: 2, transform: "uppercase", maxWidth: 500,
     });
+  });
+
+  // Ruling (13 Nov): a bare number was invalid CSS in 1.x and painted no spacing
+  // (golden background-pattern-order), so it carries none into 2.0.
+  it("a letterSpacing with no unit painted nothing, and carries nothing", () => {
+    expect(layer({ letterSpacing: 24 }, "text").text).not.toHaveProperty("letterSpacing");
   });
 
   it("a size per language becomes an exception by mode; the main language is the value", () => {
@@ -164,7 +168,8 @@ describe("geometry, corners and images", () => {
     expect(layer({ geoShape: "circle" }).geometry).toEqual({ kind: "ellipse" });
     expect(layer({ geoShape: "line" }).geometry).toEqual({ kind: "line" });
     expect(layer({ geoShape: "star" }).geometry).toEqual({ kind: "preset", name: "star" });
-    expect(layer({ geoType: "triangle" }).geometry).toEqual({ kind: "preset", name: "triangle" });
+    // Ruling (13 Nov): the 1.x player ignored geoType and painted the box.
+    expect(layer({ geoType: "triangle" }).geometry).not.toEqual({ kind: "preset", name: "triangle" });
     expect(layer({}).geometry).toEqual({ kind: "rect" });
   });
 
@@ -255,8 +260,31 @@ describe("animations, motion and interactions", () => {
     expect(layer({ animation: { duration: 2, keyframes: [{ t: 0, o: 1, s: 1 }, { t: 2, o: 1, s: 1 }] } })).not.toHaveProperty("animations");
   });
 
-  it("a trigger of action plays once when something starts it; a delay is in milliseconds", () => {
-    expect(layer({ animation: { duration: 1, delay: 0.5, trigger: "action", keyframes: [{ t: 0, s: 1 }, { t: 1, s: 2 }] } }).animations?.[0]).toMatchObject({ on: "action", delay: 500 });
+  // Ruling (13 Nov): what the 1.x player ran wins. A timeline never waited (the
+  // delay was the named loop's alone), ran 8 seconds when it said no duration,
+  // needed two keyframes, and drew position, scale and rotation at rest on a
+  // frame that left them out.
+  it("a trigger of action plays once when something starts it; the delay belongs to the named loop", () => {
+    const anims = layer({ animation: { duration: 1, delay: 0.5, trigger: "action", loop: "pulse", keyframes: [{ t: 0, s: 1 }, { t: 1, s: 2 }] } }).animations;
+    expect(anims?.[0]).toMatchObject({ on: "action", duration: 1000 });
+    expect(anims?.[0]).not.toHaveProperty("delay");
+    expect(anims?.[1]).toEqual({ on: "loop", preset: "pulse", duration: 1000, delay: 500 });
+  });
+
+  it("a timeline as 1.x ran it: 8 seconds unsaid, two keyframes at least, silent frames at rest", () => {
+    expect(layer({ animation: { keyframes: [{ t: 0, x: 10 }, { t: 4 }, { t: 8, x: 10, o: 0.5 }] } }).animations).toEqual([
+      {
+        on: "loop",
+        duration: 8000,
+        tracks: [
+          // A lone opacity keyframe: from the layer's own value to it.
+          { property: "opacity", keyframes: [{ t: 0, v: 1 }, { t: 1, v: 0.5 }] },
+          { property: "x", keyframes: [{ t: 0, v: 10 }, { t: 0.5, v: 0 }, { t: 1, v: 10 }] },
+        ],
+      },
+    ]);
+    expect(layer({ animation: { duration: 2, keyframes: [{ t: 0, x: 10 }] } })).not.toHaveProperty("animations");
+    expect(layer({ animation: { loop: "pulse" } }).animations).toEqual([{ on: "loop", preset: "pulse", duration: 0 }]);
   });
 
   it("the named loop and hover presets", () => {
@@ -278,6 +306,8 @@ describe("animations, motion and interactions", () => {
     ]);
     expect(layer({ textAnimationType: "rise-words", textAnimationDelay: 2 }, "text").animations?.[0]).toMatchObject({ target: "words", delay: 2000 });
     expect(layer({ textAnimationType: "typewriter", typewriterCursor: true, textAnimationIntensity: 50 }, "text").animations?.[0].params).toEqual({ intensity: 50, cursor: true });
+    // Ruling (13 Nov): the 1.x typewriter drew its cursor unless told not to.
+    expect(layer({ textAnimationType: "typewriter", typewriterCursor: false }, "text").animations?.[0].params).toEqual({ cursor: false });
     expect(layer({ textAnimationType: "none" }, "text")).not.toHaveProperty("animations");
     expect(layer({ textAnimationType: "fade-chars" }, "geo")).not.toHaveProperty("animations");
     expect(valid({ textAnimationType: "fade-chars" }, "text")).toEqual([]);
@@ -289,18 +319,74 @@ describe("animations, motion and interactions", () => {
     ]);
   });
 
+  // Ruling (13 Nov): what the 1.x player drew wins. It trimmed only the SVG it
+  // drew itself, with a stroke width; a trim with no duration was drawn still.
+  // Contract (13 Nov): the trim at rest is `geometry.trim`.
+  const icon = { content: '<svg viewBox="0 0 10 10"><path d="M0 0h10"/></svg>' };
   it("the drawing of a stroke is a track over trimEnd", () => {
-    expect(layer({ trimStart: 0, trimEnd: 100, trimDuration: 2.2 }).animations).toEqual([
+    expect(layer({ strokeWidth: 2, trimStart: 0, trimEnd: 100, trimDuration: 2.2 }, "svg", icon).animations).toEqual([
       { on: "load", duration: 2200, tracks: [{ property: "trimEnd", keyframes: [{ t: 0, v: 0 }, { t: 1, v: 1 }] }] },
     ]);
   });
 
-  it("a state that changes the look is an animation; the scale was a percentage", () => {
-    expect(layer({ states: { hover: { scale: 105, transitionDuration: 200 } } }).animations).toEqual([
+  it("a still trim rests in the geometry, with no animation", () => {
+    const still = layer({ strokeWidth: 2, trimStart: 25, trimEnd: 75 }, "svg", icon);
+    expect(still.geometry?.trim).toEqual({ start: 0.25, end: 0.75 });
+    expect(still).not.toHaveProperty("animations");
+    expect(valid({ strokeWidth: 2, trimStart: 25, trimEnd: 75 }, "svg", icon)).toEqual([]);
+  });
+
+  it("a trim drawn over time grows from its start to its end at rest", () => {
+    const drawn = layer({ strokeWidth: 2, trimStart: 25, trimDuration: 2 }, "svg", icon);
+    expect(drawn.geometry?.trim).toEqual({ start: 0.25 });
+    expect(drawn.animations).toEqual([{ on: "load", duration: 2000, tracks: [{ property: "trimEnd", keyframes: [{ t: 0, v: 0.25 }, { t: 1, v: 1 }] }] }]);
+  });
+
+  it("a trim 1.x never drew is not written", () => {
+    const whole = layer({ strokeWidth: 2, trimStart: 0, trimEnd: 100 }, "svg", icon);
+    expect(whole).not.toHaveProperty("animations");
+    expect(whole.geometry).not.toHaveProperty("trim");
+    const noWidth = layer({ trimStart: 25, trimDuration: 2 }, "svg", icon);
+    expect(noWidth).not.toHaveProperty("animations");
+    expect(noWidth.geometry).not.toHaveProperty("trim");
+    expect(layer({ strokeWidth: 2, trimStart: 25, trimDuration: 2 }).geometry).not.toHaveProperty("trim");
+  });
+
+  // Ruling (13 Nov): what the 1.x player drew wins. A hover look counted only
+  // on a layer marked interactive, set its values outright, and `active` never
+  // had a look. Decision (13 Nov): the transition is in milliseconds, as the
+  // editor writes it; the 1.x player read it as seconds.
+  it("a hover look is an animation from the layer's own values; the scale was a percentage", () => {
+    const on = { isInteractive: true };
+    expect(layer({ ...on, states: { hover: { scale: 105, transitionDuration: 200 } } }).animations).toEqual([
       { on: "hover", duration: 200, tracks: [{ property: "scale", keyframes: [{ t: 0, v: 1 }, { t: 1, v: 1.05 }] }] },
     ]);
-    expect(layer({ states: { hover: { scale: 1.05 } } }).animations?.[0].tracks?.[0].keyframes[1].v).toBe(1.05);
-    expect(layer({ states: { active: { opacity: 50, rotation: 10 } } }).animations?.[0]).toMatchObject({ on: "press", tracks: [{ property: "rotation" }, { property: "opacity", keyframes: [{ t: 0, v: 1 }, { t: 1, v: 0.5 }] }] });
+    expect(layer({ ...on, states: { hover: { scale: 1.05 } } }).animations).toEqual([
+      { on: "hover", duration: 0, tracks: [{ property: "scale", keyframes: [{ t: 0, v: 1 }, { t: 1, v: 1.05 }] }] },
+    ]);
+    expect(layer({ ...on, rotation: 30, opacity: 80, states: { hover: { rotation: 0, opacity: 50 } } }).animations?.[0].tracks).toEqual([
+      { property: "rotation", keyframes: [{ t: 0, v: 30 }, { t: 1, v: 0 }] },
+      { property: "opacity", keyframes: [{ t: 0, v: 0.8 }, { t: 1, v: 0.5 }] },
+    ]);
+  });
+
+  it("the slot's own states win over the style's", () => {
+    const both = layer({ isInteractive: true, states: { hover: { scale: 105 } } }, "geo", { slot: { states: { hover: { scale: 120 } } } });
+    expect(both.animations?.[0].tracks?.[0].keyframes[1].v).toBe(1.2);
+  });
+
+  it("a look 1.x never drew is not written", () => {
+    expect(layer({ states: { hover: { scale: 105 } } })).not.toHaveProperty("animations");
+    expect(layer({ isInteractive: true, states: { active: { opacity: 50, rotation: 10 } } })).not.toHaveProperty("animations");
+    expect(layer({ isInteractive: true, opacity: 50, states: { hover: { opacity: 50, scale: 100 } } })).not.toHaveProperty("animations");
+    expect(layer({ states: { hover: { scale: 105 } } }, "geo", { slot: { isInteractive: true } }).animations).toHaveLength(1);
+    expect(run({ isInteractive: true, states: { hover: { color: "#f00", scale: 105 } } }).unhandled).toEqual(["style.states.hover.color: a hover colour is not carried to 2.0"]);
+  });
+
+  // Ruling (13 Nov): what the 1.x player ran wins: a state's actions only on a layer marked interactive.
+  it("actions on a layer not marked interactive are not carried", () => {
+    expect(layer({ states: { active: { actions: [{ target: "g1", type: "toggle" }] } } })).not.toHaveProperty("interactions");
+    expect(layer({ states: { active: { actions: [{ target: "g1", type: "toggle" }] } } }, "geo", { slot: { isInteractive: true } }).interactions).toHaveLength(1);
   });
 
   it("a state that acts on other layers is an interaction, not an animation", () => {
@@ -315,29 +401,75 @@ describe("animations, motion and interactions", () => {
     ]);
   });
 
-  it("parallax and scene loop are motion, wherever 1.x wrote them", () => {
-    const parallax = { enabled: true, depth: 0.2, mode: "infinite_horizontal", axis: "x_only" };
-    expect(layer({}, "image", { slot: { parallax } }).motion).toEqual({ parallax });
-    expect(layer({ parallax }, "image").motion).toEqual({ parallax });
-    expect(layer({ parallax: { enabled: false, depth: 1 } }, "image")).not.toHaveProperty("motion");
-    expect(layer({ sceneLoop: { direction: "left_to_right", speedPxSec: 3 }, loopDepth: 0.2 }, "group").motion).toEqual({
-      sceneLoop: { direction: "left_to_right", speedPxSec: 3, depth: 0.2 },
-    });
+  // Decision (13 Nov): 2.0 keeps only the endless scroll; the pointer parallax is retired.
+  it("an endless scroll is the layer's loop, wherever 1.x wrote it", () => {
+    const parallax = { enabled: true, mode: "infinite_horizontal", infinite: { enabled: true, speed_px_sec: 35, direction: "left_to_right", seamless_tile: false } };
+    const loop = { speedPxSec: 35, direction: "left_to_right", mirror: false };
+    expect(layer({}, "image", { slot: { parallax } }).motion).toEqual({ loop });
+    expect(layer({ parallax }, "image").motion).toEqual({ loop });
+    expect(layer({ parallax: { enabled: true, mode: "infinite_horizontal" } }, "image").motion).toEqual({ loop: { speedPxSec: 20 } });
     expect(valid({ parallax }, "image")).toEqual([]);
+  });
+
+  it("a scroll that does not move, and the pointer parallax, are not carried", () => {
+    expect(layer({ parallax: { enabled: false, mode: "infinite_horizontal" } }, "image")).not.toHaveProperty("motion");
+    expect(layer({ parallax: { enabled: true, mode: "infinite_horizontal", infinite: { enabled: false, speed_px_sec: 35 } } }, "image")).not.toHaveProperty("motion");
+    expect(layer({ parallax: { enabled: true, depth: 0.8, mode: "mouse" } }, "image")).not.toHaveProperty("motion");
+    const pointer = run({ parallax: { enabled: true, depth: 0.8, mode: "mouse" } });
+    expect(pointer.unhandled).toEqual([]);
+    expect(pointer.retired.some((key) => key.endsWith(".parallax"))).toBe(true);
+    expect(layer({ sceneLoop: { speedPxSec: 3 }, loopDepth: 0.2 }, "group")).not.toHaveProperty("motion");
+  });
+});
+
+describe("the picture of an image", () => {
+  const img = (content: object) => upgrade({ oim: "1.27.9", languages: ["es", "en"], canvas: { natural_width: 100, natural_height: 100 }, slots: [{ id: "a", type: "image", position: [0, 0], content, style: { width: 10, height: 10 } }] }).document.layers[0].image;
+
+  it("a language with its own picture is an exception; an empty one shows none", () => {
+    expect(img({ "*": "data:image/png;base64,AA", en: "data:image/png;base64,BB", fr: "" })?.src).toEqual({
+      value: "data:image/png;base64,AA",
+      modes: { en: "data:image/png;base64,BB", fr: "" },
+    });
+  });
+
+  it("one picture for every language stays a plain source", () => {
+    expect(img({ "*": "data:image/png;base64,AA", en: "data:image/png;base64,AA" })?.src).toBe("data:image/png;base64,AA");
+    expect(img({})?.src).toBe("oim:base");
   });
 });
 
 describe("mask and the merged layer types", () => {
+  // Ruling (13 Nov): what the 1.x player drew wins. It never drew an inverted
+  // mask; it covered the canvas unless told "container"; a cutout only clips;
+  // and a window painted its frame and outline with its own default colours.
   it("a mask is a shape that takes the role, with its own figure, fill and stroke", () => {
-    const mask = layer({ maskMode: "cutout", maskInvert: true, maskFeather: 12, maskCoverage: "canvas", maskShape: "circle", maskBgColor: "#000", maskStrokeColor: "#fff", maskStrokeWidth: 2 }, "mask");
-    expect(mask).toMatchObject({
+    const window = layer({ maskFeather: 12, maskCoverage: "container", maskShape: "circle", maskBgColor: "#000", maskStrokeColor: "#fff", maskStrokeWidth: 2 }, "mask");
+    expect(window).toMatchObject({
       type: "shape",
-      mask: { mode: "cutout", invert: true, feather: 12, scope: "canvas" },
+      mask: { feather: 12, scope: "group" },
       geometry: { kind: "ellipse" },
       fills: [{ kind: "color", value: "#000" }],
       strokes: [{ paint: { kind: "color", value: "#fff" }, width: 2 }],
     });
+    const cutout = layer({ maskMode: "cutout", maskInvert: true, maskCoverage: "canvas", maskShape: "star", maskBgColor: "#000", maskStrokeWidth: 2 }, "mask");
+    expect(cutout.mask).toEqual({ mode: "cutout" });
+    expect(cutout).not.toHaveProperty("fills");
+    expect(cutout).not.toHaveProperty("strokes");
     expect(valid({ maskMode: "window", maskShape: "star" }, "mask")).toEqual([]);
+  });
+
+  it("a window with no colours of its own takes the player's", () => {
+    const bare = layer({ maskStrokeWidth: 3 }, "mask");
+    expect(bare.fills).toEqual([{ kind: "color", value: "#38BDF8" }]);
+    expect(bare.strokes).toEqual([{ paint: { kind: "color", value: "#FFFFFF" }, width: 3 }]);
+    expect(bare.geometry).toEqual({ kind: "ellipse" });
+    expect(layer({ fillColorRole: "primary", maskBgColor: "#123456" }, "mask").fills).toEqual([{ kind: "color", value: { var: "primary", fallback: "#123456" } }]);
+  });
+
+  it("a named shape wins over a drawn path, and a path draws only alone or as custom", () => {
+    expect(layer({ maskShape: "rectangle", maskSvgPath: "M0 0Z" }, "mask").geometry).toEqual({ kind: "rect" });
+    expect(layer({ maskShape: "custom", maskSvgPath: "M0 0Z" }, "mask").geometry).toMatchObject({ kind: "paths", paths: [{ d: "M0 0Z" }] });
+    expect(layer({ maskSvgPath: "M0 0Z" }, "mask").geometry).toMatchObject({ kind: "paths" });
   });
 
   it("the default mask of 1.x is the empty block", () => {

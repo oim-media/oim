@@ -3,7 +3,7 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
-## Unreleased
+## 1.27.10
 
 - Core: experimental `@oim-media/core/v2` entry with the draft of the 2.0 document and
   `upgrade(v1)`, which reads a 1.x document as 2.0 and reports any key it could not carry. The

@@ -4,6 +4,10 @@
 contract version. The full history, for all packages, is in the repository's
 [CHANGELOG.md](https://github.com/oim-media/oim/blob/main/CHANGELOG.md).
 
+## 1.27.10
+
+- A hover `transitionDuration` is read in milliseconds, as the contract says (200 ms lasted 200 s).
+
 ## 1.27.9
 
 - A number in the metadata beyond +/-(2^53 - 1) has no canonical form: the signature of

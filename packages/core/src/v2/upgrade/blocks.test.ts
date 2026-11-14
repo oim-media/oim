@@ -179,6 +179,11 @@ describe("geometry, corners and images", () => {
     });
   });
 
+  // Only the canvas background tiles its raw SVG: an icon with fillColor transparent paints no fill (flyer_cafe cup).
+  it("an SVG icon with a transparent fill is no pattern", () => {
+    expect(layer({ svgRawXml: '<svg viewBox="0 0 24 24"><path d="M3 10h14"/></svg>', fillColor: "transparent" }, "svg")).not.toHaveProperty("fills");
+  });
+
   it("an SVG layer becomes paths, from svgRawXml or from its content", () => {
     const xml = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M8 1a2 2 0 0 1 2 2"/></svg>';
     const expected = { kind: "paths", viewBox: [0, 0, 24, 24], paths: [{ d: "M8 1a2 2 0 0 1 2 2", fill: "currentColor" }] };
@@ -205,6 +210,13 @@ describe("geometry, corners and images", () => {
     expect(layer({ borderRadius: "2.5cqw" }).corners).toBe(25);
     expect(layer({ borderRadius: "0.0cqw" })).not.toHaveProperty("corners");
     expect(layer({ borderRadius: 10, borderRadiusTL: 0, borderRadiusBR: 30 }).corners).toEqual([0, 10, 30, 10]);
+    // A hollow text: 1.x painted only its stroke, so the letter stays transparent (flyer_drop «07»).
+    const hollow = upgrade({ oim: "1.27.9", slots: [{ id: "t", type: "text", position: [0, 0], content: { es: "07" }, style: { fillColor: "transparent", textStrokeColor: "#090a0f", textStrokeWidth: 4 } }] }).document.layers[0];
+    expect(hollow.fills).toEqual([{ kind: "color", value: "transparent" }]);
+    // The CSS shorthand, as the editor writes per-side corners (asymmetric-borders vector).
+    expect(layer({ borderRadius: "10px 25px 50px 0px" }).corners).toEqual([10, 25, 50, 0]);
+    expect(layer({ borderRadius: "10px 20px" }).corners).toEqual([10, 20, 10, 20]);
+    expect(layer({ borderRadius: "10px 20px 30px" }).corners).toEqual([10, 20, 30, 20]);
     expect(layer({ borderRadius: 10 }, "text")).not.toHaveProperty("corners");
   });
 

@@ -1362,15 +1362,13 @@ export class LegacyRenderer {
         }
       }
 
-      if (slotType === 'text' && (style.fillColor || style.fillColorRole || style.colorRole)) {
+      if (slotType === 'text' && v2TextFill) {
         // In a text, `fillColor` IS the letter (contract 1.5.0: `color` was
         // removed and the compiler converts it to `fillColor`). Here `style.color` was
         // being read, so a new text from the editor (`fillColor` with no
         // `fillType`) came out signed without a colour. A fill with a mask
         // (gradient, pattern) overrides it afterwards with `color: transparent`.
-        const resolvedTextColor = v2TextFill
-          ? ('kind' in v2TextFill && v2TextFill.kind === 'color' ? v2Colors.css(v2TextFill.value) : '')
-          : resolveCssColor(style.fillColorRole || style.colorRole, style.fillColor);
+        const resolvedTextColor = 'kind' in v2TextFill && v2TextFill.kind === 'color' ? v2Colors.css(v2TextFill.value) : '';
         if (resolvedTextColor) {
           slotEl.style.setProperty('color', resolvedTextColor);
         }
@@ -1451,7 +1449,8 @@ export class LegacyRenderer {
         isText: slotType === 'text',
         // A loop clips to its own box (the window its track runs through), and so does a group whose child loops.
         isParallaxGroup: !!v2Own.motion?.loop || !!groupChildren.get(slot.id)?.some((cid) => v2Layers.get(String(cid))?.motion?.loop),
-        hasFilterOrShadow: !!(style.filter || style.boxShadow || style.textShadow),
+        // Only raw CSS in a 1.x style (filter, box-shadow) left a slot unclipped; 2.0 carries none.
+        hasFilterOrShadow: false,
         hasKeyframes: !!v2Own.animations?.some(isTimeline),
       });
       // Resolve slot width and height based on design proportions
@@ -1620,9 +1619,6 @@ export class LegacyRenderer {
       } else if (isGeoLike && !isWindowMask) {
         if (shapeOutline.round) {
           slotEl.style.borderRadius = '50%';
-          // And the generic loop further down must not overwrite it with the file's
-          // `borderRadius` (`buildRawSlots` ALWAYS writes 0): the circle ended up square.
-          delete style.borderRadius;
         }
       }
 
@@ -1793,10 +1789,13 @@ export class LegacyRenderer {
             const scale = eff.scale || 1.0;
             const w = texDef.tileWidth * scale;
             const h = texDef.tileHeight * scale;
-            const baseColor = style.fillColor || style.color || '#18181b';
+            // Under the grain: the layer's colour, or its gradient.
+            const under = v2Own.fills?.[0] as any;
+            const baseColor = (under?.kind === 'color' && v2Colors.css(under.value)) || '#18181b';
+            const underGradient = under?.kind === 'gradient' ? paintCss(under, { colors: v2Colors }).backgroundImage : undefined;
             const blend = eff.blend || texDef.defaultBlend || 'overlay';
-            if (style.fillType === 'gradient' && style.fillGradient) {
-              slotEl.style.backgroundImage = 'url("' + texDef.getDataUri(eff.color, eff.intensity) + '"), ' + style.fillGradient;
+            if (underGradient) {
+              slotEl.style.backgroundImage = 'url("' + texDef.getDataUri(eff.color, eff.intensity) + '"), ' + underGradient;
               slotEl.style.backgroundRepeat = 'repeat, no-repeat';
               slotEl.style.backgroundSize = w + 'px ' + h + 'px, 100% 100%';
               slotEl.style.backgroundBlendMode = blend + ', normal';
@@ -1914,48 +1913,12 @@ export class LegacyRenderer {
         Object.assign(slotEl.style, containerCss);
       }
 
-      Object.keys(style).forEach(function (key) {
-        // `bold`, `italic`, `underline` and `color` were retired in contract
-        // 1.5.0. They stay listed so a file that still carries them does not
-        // leak them into the pass-through as CSS.
-        if (key === 'bold' || key === 'italic' || key === 'underline' ||
-            key === 'textStrokeWidth' || key === 'textStrokeColor' || key === 'textStrokeColorRole' ||
-            key === 'fillColor' || key === 'fillColorRole' ||
-            key === 'strokeColor' || key === 'strokeColorRole' ||
-            key === 'color' || key === 'colorRole' ||
-            key === 'maskBgColor' || key === 'maskBgColorRole' ||
-            key === 'maskStrokeColor' || key === 'maskStrokeColorRole' ||
-            key === 'blendMode' || key === 'blur' || key === 'opacity' ||
-            key === 'shadowEnabled' || key === 'shadowColor' || key === 'shadowBlur' ||
-            key === 'shadowOffsetX' || key === 'shadowOffsetY' || key === 'shadowOpacity' ||
-            key === 'filterPreset' || key === 'filterBlur' || key === 'filterBrightness' ||
-            key === 'filterContrast' || key === 'filterSaturate' || key === 'filterHueRotate' ||
-            key === 'isMaskLayer') return;
-        // `lineHeight` comes from the raw dump and goes through `resolveLineHeight`: the
-        // file's value arrived here unvalidated, so a `0` collapsed the lines and a `99`
-        // covered the rest of the document.
-        if (key === 'maxWidth' || key === 'maxWidths' || key === 'textAlign' ||
-            key === 'fontSize' || key === 'fontSizes' ||
-            key === 'rotation' || key === 'animation' || key === 'objectFit' ||
-            key === 'lineHeight' || key === 'fontFamily') return;
-        // The 2.0 typography is already on the element.
-        if (v2Typo && (key === 'fontWeight' || key === 'fontStyle' || key === 'letterSpacing' ||
-            key === 'textTransform' || key === 'textDecoration')) return;
-        // The size and the place come from the 2.0 box.
-        if (key === 'width' || key === 'height') return;
-        if (key === 'position' || key === 'zIndex' || key === 'top' || key === 'left' ||
-            key === 'right' || key === 'bottom' || key === 'display') return;
-        let val = style[key];
-        if (val === undefined || val === null || val === '') return;
-
-        if (key === 'width' || key === 'height' || key === 'padding' || key === 'letterSpacing' || key === 'borderRadius' || key === 'borderWidth' || key === 'textShadow' || key === 'boxShadow' || key === 'outline' || key === '-webkit-text-stroke' || key === 'webkit-text-stroke') {
-          val = scaleValue(val);
-        }
-
-        if (/\d(vw|vh|rem)/.test(String(val))) return;
-        const cssKey = key.replace(/[A-Z]/g, function (m) { return '-' + m.toLowerCase(); });
-        slotEl.style.setProperty(cssKey, val);
-      });
+      // The box's corners (2.0 `corners`, canvas units). 1.x dumped the rest of `style` here
+      // as raw CSS; 2.0 files carry none, and every declared key has its own block.
+      const corners = v2Own.corners;
+      if (corners !== undefined && !shapeOutline.round) {
+        slotEl.style.borderRadius = (Array.isArray(corners) ? corners : [corners]).map((c) => c + 'px').join(' ');
+      }
 
       // And it is APPLIED here, with `style` already dumped, so nothing overwrites it.
       if (wrapper) {

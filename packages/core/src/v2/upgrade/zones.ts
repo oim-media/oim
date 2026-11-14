@@ -13,7 +13,7 @@ import { toCanvasUnits } from "./box.js";
 import { asObject, type DraftLayer, type UpgradeContext, type V1Object } from "./context.js";
 import { isColor } from "./paints.js";
 
-const FLOW_KEYS = ["display", "flexDirection", "justifyContent", "alignItems", "gap", "padding"];
+export const FLOW_KEYS = ["display", "flexDirection", "justifyContent", "alignItems", "gap", "padding"];
 
 const percent = (value: unknown, of: number): number => (typeof value === "number" && Number.isFinite(value) ? (value / 100) * of : 0);
 

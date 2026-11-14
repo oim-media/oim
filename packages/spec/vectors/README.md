@@ -54,6 +54,8 @@ initial 20-vector matrix plus every capability added since contract 1.10.0:
 | 35 | `background-pattern-order` | A pattern background listed last still paints under every layer; pattern tile size; unitless `letterSpacing` on centred text |
 | 36 | `shape-shadows` | Hard shadows on a circle and on a circular photo frame: the shadow follows the shape, not its box |
 | 37 | `artistic-text` | Artistic text (4.6): a curved 3D title with shaded extrusion, outer and inner strokes and a gradient, and a two-line word, drawn with the embedded Inter subset |
+| 38 | `zone-group` | A 1.x zone becomes a 2.0 group: background, corners and backdrop blur kept; its layers keep their own x/y, the flex flow is retired (Decision 14 Nov) |
+| 39 | `mask-window` | A window mask: a circle cut out of a dark cover with a white outline |
 
 ## How to use it from another language
 

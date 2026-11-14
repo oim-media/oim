@@ -152,10 +152,10 @@ export function maskStyle(layer: Layer): Record<string, unknown> {
   };
 }
 
-/** The picture a 2.0 image shows in one language: its own exception, else the principal. `oim:base` is the player's base picture, `baseUrl`, or none. */
-export function imageSrc(src: string | { value: string; modes?: Record<string, string> }, lang: string, baseUrl = ''): string {
+/** The picture a 2.0 image shows in one language: its own exception, else the principal; the base PNG paints none (the player shows it under the layers). */
+export function imageSrc(src: string | { value: string; modes?: Record<string, string> }, lang: string): string {
   const pick = typeof src === 'string' ? src : resolveByLang(src.modes ?? {}, lang) ?? src.value;
-  return pick === 'oim:base' ? baseUrl : pick;
+  return pick === 'oim:base' ? '' : pick;
 }
 
 type Paths = Extract<Geometry, { kind: 'paths' }>;

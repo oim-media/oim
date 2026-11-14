@@ -15,6 +15,7 @@ import { documentSchema, type Layer } from "./schema.js";
 import { upgrade } from "./upgrade.js";
 import { RETIRED_STYLE_KEYS } from "./upgrade/keys.js";
 import { RETIRED_ROOT_KEYS, TRANSPORT_KEYS } from "./upgrade/root.js";
+import { FLOW_KEYS } from "./upgrade/zones.js";
 
 const VECTORS = join(__dirname, "..", "..", "..", "spec", "vectors");
 const files = readdirSync(VECTORS).filter((f) => f.endsWith(".oim.png")).sort();
@@ -30,6 +31,8 @@ const ALLOWED_TO_RETIRE = new Set([
   "style.parallax",
   "slot.parallax",
 ]);
+// Decision (14 Nov): a zone becomes a group without its flow.
+const isRetiredZoneFlow = (key: string) => key.startsWith("zones[") && FLOW_KEYS.some((flow) => key.endsWith(`].style.${flow}`));
 
 const countLayers = (layers: Layer[]): number => layers.reduce((n, layer) => n + 1 + countLayers(layer.children ?? []), 0);
 
@@ -51,7 +54,7 @@ describe.each(files)("%s as 2.0", (file) => {
   it("leaves nothing unhandled", () => expect(result.unhandled).toEqual([]));
 
   it("only drops what 2.0 retires", () => {
-    expect(result.retired.filter((key) => !ALLOWED_TO_RETIRE.has(key))).toEqual([]);
+    expect(result.retired.filter((key) => !ALLOWED_TO_RETIRE.has(key) && !isRetiredZoneFlow(key))).toEqual([]);
   });
 
   it("is a valid 2.0 document", () => {

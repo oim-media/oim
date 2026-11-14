@@ -1,0 +1,46 @@
+{
+  "description": "1.x zone (Decision 14 Nov): becomes a 2.0 group with its background, corners and backdrop blur; its layers keep their own x/y, the flex flow is retired.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "reedit": "author_only",
+  "slots": [
+    {
+      "id": "inside",
+      "type": "container",
+      "position": [
+        15,
+        20
+      ],
+      "name": "Inside",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "10.0cqw",
+        "height": "10.0cqw",
+        "fillColor": "#1e293b"
+      }
+    },
+    {
+      "id": "outside",
+      "type": "container",
+      "position": [
+        70,
+        60
+      ],
+      "name": "Outside",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "15.0cqw",
+        "height": "15.0cqw",
+        "fillColor": "#22c55e"
+      }
+    }
+  ]
+}

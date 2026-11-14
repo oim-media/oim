@@ -12,7 +12,7 @@ this says what **result** comes out of a specific one.
 ## The Normative Vectors
 
 A reduced suite cannot tell apart an implementation that **reads the format**
-from one that **gets a simple case right by chance**. These 37 vectors cover the
+from one that **gets a simple case right by chance**. These 39 vectors cover the
 initial 20-vector matrix plus every capability added since contract 1.10.0:
 
 | # | Vector | What it covers |
@@ -54,6 +54,8 @@ initial 20-vector matrix plus every capability added since contract 1.10.0:
 | 35 | `background-pattern-order` | A pattern background listed last still paints under every layer; pattern tile size; unitless `letterSpacing` on centred text |
 | 36 | `shape-shadows` | Hard shadows on a circle and on a circular photo frame: the shadow follows the shape, not its box |
 | 37 | `artistic-text` | Artistic text (4.6): a curved 3D title with shaded extrusion, outer and inner strokes and a gradient, and a two-line word, drawn with the embedded Inter subset |
+| 38 | `zone-group` | A 1.x zone becomes a 2.0 group: background, corners and backdrop blur kept; its layers keep their own x/y, the flex flow is retired (Decision 14 Nov) |
+| 39 | `mask-window` | A window mask: a circle cut out of a dark cover with a white outline |
 
 ## How to use it from another language
 
@@ -70,7 +72,7 @@ without a look, which is a vector that no longer checks anything.
 
 ## The signature
 
-All 37 vectors are signed with the public key published in `packages/spec/keys.json`.
+All 39 vectors are signed with the public key published in `packages/spec/keys.json`.
 The signature covers the canonical serialisation
 of the metadata and the cryptographic hash of the pixels (`image_hash` over the `IDAT` chunks).
 A reader that verifies must rebuild that canonical form following the seven rules

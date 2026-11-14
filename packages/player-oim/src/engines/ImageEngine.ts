@@ -17,6 +17,7 @@ import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entr
 import { loadLottie } from '../../../scene/src/legacy/lottie-loader.js';
 import { normalizeRawSlots } from '../render/normalize-raw-slots.js';
 import { isV2 } from '../../../core/src/v2/upgrade.js';
+import { hasBaseLayer } from '../../../core/src/v2/base-layer.js';
 import { resolveRefs } from '../../../core/src/v2/resources.js';
 import { legacyView } from '../../../scene/src/legacy/legacy-view.js';
 import type { OimDocument } from '../../../core/src/v2/schema.js';
@@ -89,10 +90,16 @@ function paintable(metadata: any): any {
 }
 
 export class ImageEngine extends LegacyRenderer {
+  /** `only`: the base picture alone, no scene. `auto`: a 2.0 poster is replaced by the scene. */
+  poster: 'auto' | 'only' = 'auto';
+  // Set for a 2.0 poster (no base layer) until its scene is up: its base picture then fades out.
+  private _posterFade = false;
+
   constructor(host: HTMLElement, opts?: ImageEngineOptions) {
     super();
     const options = opts || {};
     this.host = host;
+    this.poster = options.poster === 'only' ? 'only' : 'auto';
     this.lang = host.getAttribute('lang') || 'en';
     this.showControls = host.getAttribute('show-controls') !== 'false';
     this._deviceProfile = getDeviceProfile();
@@ -389,10 +396,14 @@ export class ImageEngine extends LegacyRenderer {
    */
   async _applyVerified(v: VerifiedFile): Promise<boolean> {
     const self = this;
+    // `only` mounts no scene: the metadata is kept as it is and nothing is read from it, so no
+    // layer, font or upgrade chunk is loaded.
+    const only = this.poster === 'only';
+    this._posterFade = !only && isV2(v.metadata) && !hasBaseLayer(v.metadata);
     // Converted after the copy: the view's cache is keyed on the object the renderer keeps.
-    this.metadata = paintable(structuredClone(v.metadata));
+    this.metadata = only ? structuredClone(v.metadata) : paintable(structuredClone(v.metadata));
     // The palette is first applied before the file is read; only now are its palettes known.
-    this.applyPalette();
+    if (!only) this.applyPalette();
 
     // A PUBLIC file carries its own stamp. Showing it with the same green
     // badge as an authored file ("Signature verified") would promise too much:
@@ -409,6 +420,13 @@ export class ImageEngine extends LegacyRenderer {
       try { setFlag(this.host, 'data-oim-key-retired', 'data-oim-clave-retirada'); } catch (e) {}
       console.warn('[OimPlayer] This work was signed with a retired key. Ask the author to export it again.');
     }
+    if (only) {
+      this._viewport?.classList.add('oim-viewport--poster', 'oim-viewport--ready');
+      this.host.dispatchEvent(new CustomEvent('oim:loaded', {
+        detail: { type: 'image', metadata: this.metadata, security: this.securityStatus },
+      }));
+      return true;
+    }
     if (v.announce) {
       self._announceUnsupported(this.metadata);
     }
@@ -417,6 +435,7 @@ export class ImageEngine extends LegacyRenderer {
     // no layer asks Google for a family the file already carries.
     this.embeddedFontFamilies = await registerEmbeddedFonts(readEmbeddedFonts(this.metadata));
 
+    if (this._posterFade) this._viewport?.classList.add('oim-viewport--poster');
     this.updateViewportSize();
     this.updateScale();
     await this.renderSlots();
@@ -441,6 +460,22 @@ export class ImageEngine extends LegacyRenderer {
       detail: { type: 'image', metadata: this.metadata, security: this.securityStatus },
     }));
     return true;
+  }
+
+  /**
+   * The scene is up. A 2.0 poster's base picture fades out now (and is dropped at once under
+   * reduced motion): the scene has replaced it.
+   */
+  protected sceneReady(): void {
+    const base = this._baseImg;
+    if (!this._posterFade || !base) return;
+    this._posterFade = false;
+    if (this._prefersLessMotion()) {
+      base.style.display = 'none';
+      return;
+    }
+    base.classList.add('oim-base--faded');
+    setTimeout(() => { base.style.display = 'none'; }, 200);
   }
 
   async _executeLoad(blob: Blob, src?: string | Blob): Promise<boolean> {

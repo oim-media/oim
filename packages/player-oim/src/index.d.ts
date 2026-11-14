@@ -24,6 +24,8 @@ export interface OimPlayerOptions {
   fit?: 'contain' | 'cover';
   align?: 'center' | 'top' | 'bottom';
   placeholder?: string;
+  /** `only`: the base picture alone, no scene (gallery mode). `auto` (default): a 2.0 poster is replaced by the scene. */
+  poster?: 'auto' | 'only';
 }
 
 export type OimSecurityStatus =

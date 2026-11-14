@@ -121,6 +121,7 @@ OimPlayerElement.connectedCallback = function (this: any) {
   if (this.hasAttribute('allow-lottie')) this._oimOptions.allowLottie = this.getAttribute('allow-lottie') !== 'false';
   if (this.hasAttribute('allow-dynamic-colors')) this._oimOptions.allowDynamicColors = this.getAttribute('allow-dynamic-colors') !== 'false';
   if (this.hasAttribute('placeholder')) this._oimOptions.placeholder = this.getAttribute('placeholder');
+  if (this.hasAttribute('poster')) this._oimOptions.poster = this.getAttribute('poster');
   if (this.hasAttribute('allow-zoom')) this._oimOptions.allowZoom = this.getAttribute('allow-zoom') === 'true';
   this._syncPlaceholder();
 
@@ -344,6 +345,11 @@ OimPlayerElement.attributeChangedCallback = function (this: any, name: string, o
     if (!this._oimOptions) this._oimOptions = {};
     this._oimOptions.placeholder = newVal;
     this._syncPlaceholder();
+  } else if (name === 'poster' && oldVal !== newVal) {
+    if (!this._oimOptions) this._oimOptions = {};
+    this._oimOptions.poster = newVal;
+    // The mode is decided when the file is read, so a change of it reads the file again.
+    if (this._engine) this._initPlayer();
   } else if (name === 'palette' && oldVal !== newVal) {
     if (this._engine) this._engine.applyPalette();
   } else if (name === 'src' && oldVal !== newVal) {
@@ -469,6 +475,7 @@ OimPlayerElement._initPlayer = function (this: any) {
   // dropdown-blur: no effect; removed in 2.0.0.
   if (self.hasAttribute('dropdown-blur')) self._oimOptions.dropdownBlur = self.getAttribute('dropdown-blur') !== 'false';
   if (self.hasAttribute('placeholder')) self._oimOptions.placeholder = self.getAttribute('placeholder');
+  if (self.hasAttribute('poster')) self._oimOptions.poster = self.getAttribute('poster');
   if (self.hasAttribute('allow-lottie')) self._oimOptions.allowLottie = self.getAttribute('allow-lottie') !== 'false';
   if (self.hasAttribute('allow-zoom')) self._oimOptions.allowZoom = self.getAttribute('allow-zoom') === 'true';
 
@@ -594,7 +601,7 @@ OimPlayerElement.destroy = function (this: any) {
   }
 };
 
-const observedAttrs = ['src', 'placeholder', 'lang', 'activate-on', 'fit', 'align', 'dropdown-blur', 'allow-lottie', 'palette', 'auto-rotate-lang', 'disable-animations', 'disable-actions', 'mode', 'show-slots'];
+const observedAttrs = ['src', 'placeholder', 'poster', 'lang', 'activate-on', 'fit', 'align', 'dropdown-blur', 'allow-lottie', 'palette', 'auto-rotate-lang', 'disable-animations', 'disable-actions', 'mode', 'show-slots'];
 
 let OimPlayerClass: any;
 

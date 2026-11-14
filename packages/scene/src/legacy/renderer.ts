@@ -281,6 +281,7 @@ export interface ImageEngineOptions {
   dropdownBlur?: boolean;
   fit?: 'contain' | 'cover';
   align?: 'center' | 'top' | 'bottom';
+  poster?: 'auto' | 'only';
 }
 
 export function getTouchDistance(touches: TouchList): number {
@@ -488,6 +489,9 @@ const REVEAL_MEDIA_CAP_MS = 1200;
 export class LegacyRenderer {
   /** The viewport is the player's; the renderer asks it to resize after painting. */
   updateScale(): void {}
+
+  /** The scene is up and the viewport revealed. A player may act on it (a poster fades out). */
+  protected sceneReady(): void {}
   updateViewportSize(): void {}
   host!: HTMLElement;
   metadata: any = null;
@@ -598,6 +602,7 @@ export class LegacyRenderer {
       if (this._viewport) {
         this._viewport.classList.add('oim-viewport--ready');
       }
+      this.sceneReady();
       return;
     }
 
@@ -2415,6 +2420,7 @@ export class LegacyRenderer {
     if (self._viewport) {
       self._viewport.classList.add('oim-viewport--ready');
       self._revealed = true;
+      self.sceneReady();
     }
   }
 

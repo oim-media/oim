@@ -12,9 +12,9 @@ import type { Paint, Stroke } from "../schema.js";
 import { asObject, type DraftLayer, type UpgradeContext, type V1Object, type V1Slot } from "./context.js";
 import { parseCssGradient } from "./gradient.js";
 
-type ColorValue = string | { var: string; fallback?: string };
+export type ColorValue = string | { var: string; fallback?: string };
 
-const isColor = (value: unknown): value is string =>
+export const isColor = (value: unknown): value is string =>
   typeof value === "string" && value !== "" && value !== "transparent" && value !== "none";
 
 /**

@@ -422,16 +422,37 @@ describe("animations, motion and interactions", () => {
 });
 
 describe("mask and the merged layer types", () => {
+  // Ruling (13 Nov): what the 1.x player drew wins. It never drew an inverted
+  // mask; it covered the canvas unless told "container"; a cutout only clips;
+  // and a window painted its frame and outline with its own default colours.
   it("a mask is a shape that takes the role, with its own figure, fill and stroke", () => {
-    const mask = layer({ maskMode: "cutout", maskInvert: true, maskFeather: 12, maskCoverage: "canvas", maskShape: "circle", maskBgColor: "#000", maskStrokeColor: "#fff", maskStrokeWidth: 2 }, "mask");
-    expect(mask).toMatchObject({
+    const window = layer({ maskFeather: 12, maskCoverage: "container", maskShape: "circle", maskBgColor: "#000", maskStrokeColor: "#fff", maskStrokeWidth: 2 }, "mask");
+    expect(window).toMatchObject({
       type: "shape",
-      mask: { mode: "cutout", invert: true, feather: 12, scope: "canvas" },
+      mask: { feather: 12, scope: "group" },
       geometry: { kind: "ellipse" },
       fills: [{ kind: "color", value: "#000" }],
       strokes: [{ paint: { kind: "color", value: "#fff" }, width: 2 }],
     });
+    const cutout = layer({ maskMode: "cutout", maskInvert: true, maskCoverage: "canvas", maskShape: "star", maskBgColor: "#000", maskStrokeWidth: 2 }, "mask");
+    expect(cutout.mask).toEqual({ mode: "cutout" });
+    expect(cutout).not.toHaveProperty("fills");
+    expect(cutout).not.toHaveProperty("strokes");
     expect(valid({ maskMode: "window", maskShape: "star" }, "mask")).toEqual([]);
+  });
+
+  it("a window with no colours of its own takes the player's", () => {
+    const bare = layer({ maskStrokeWidth: 3 }, "mask");
+    expect(bare.fills).toEqual([{ kind: "color", value: "#38BDF8" }]);
+    expect(bare.strokes).toEqual([{ paint: { kind: "color", value: "#FFFFFF" }, width: 3 }]);
+    expect(bare.geometry).toEqual({ kind: "ellipse" });
+    expect(layer({ fillColorRole: "primary", maskBgColor: "#123456" }, "mask").fills).toEqual([{ kind: "color", value: { var: "primary", fallback: "#123456" } }]);
+  });
+
+  it("a named shape wins over a drawn path, and a path draws only alone or as custom", () => {
+    expect(layer({ maskShape: "rectangle", maskSvgPath: "M0 0Z" }, "mask").geometry).toEqual({ kind: "rect" });
+    expect(layer({ maskShape: "custom", maskSvgPath: "M0 0Z" }, "mask").geometry).toMatchObject({ kind: "paths", paths: [{ d: "M0 0Z" }] });
+    expect(layer({ maskSvgPath: "M0 0Z" }, "mask").geometry).toMatchObject({ kind: "paths" });
   });
 
   it("the default mask of 1.x is the empty block", () => {

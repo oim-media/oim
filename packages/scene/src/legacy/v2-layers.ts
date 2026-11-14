@@ -102,3 +102,38 @@ export function filterStyle(filters: Record<string, unknown> | undefined): Recor
     filterHueRotate: f.hueRotate,
   };
 }
+
+/**
+ * The 1.x mask fields of a 2.0 mask layer, so the mask helpers keep one input.
+ * Every field is written, absent ones as `undefined`, so nothing of 1.x shows through.
+ */
+export function maskStyle(layer: Layer): Record<string, unknown> {
+  const mask = layer.mask ?? {};
+  const geometry = layer.geometry as { kind?: string; name?: string; paths?: { d: string }[] } | undefined;
+  const named: Record<string, string> = { rect: 'rectangle', ellipse: 'circle', line: 'line' };
+  const shape = geometry?.kind === 'preset' ? geometry.name : geometry?.kind === 'paths' ? 'custom' : named[geometry?.kind ?? ''];
+  const color = (value: unknown) => (typeof value === 'string'
+    ? { role: undefined, literal: value }
+    : value && typeof value === 'object' ? { role: (value as { var?: string }).var, literal: (value as { fallback?: string }).fallback } : { role: undefined, literal: undefined });
+  const fill = layer.fills?.[0] as { kind?: string; value?: unknown } | undefined;
+  const bg = color(fill?.kind === 'color' ? fill.value : undefined);
+  const stroke = layer.strokes?.[0] as { paint?: { kind?: string; value?: unknown }; width?: number } | undefined;
+  const line = color(stroke?.paint?.kind === 'color' ? stroke.paint.value : undefined);
+  return {
+    maskMode: mask.mode === 'cutout' ? 'cutout' : 'window',
+    maskFeather: mask.feather,
+    maskCoverage: mask.scope === 'group' ? 'container' : 'canvas',
+    maskShape: shape,
+    maskSvgPath: geometry?.kind === 'paths' ? geometry.paths?.map((p) => p.d).join(' ') : undefined,
+    geoShape: undefined,
+    svgPath: undefined,
+    maskBgColor: bg.literal,
+    maskBgColorRole: bg.role,
+    fillColorRole: undefined,
+    maskStrokeColor: line.literal,
+    maskStrokeColorRole: line.role,
+    strokeColorRole: undefined,
+    maskStrokeWidth: stroke?.width,
+    cuts: (layer.extensions as { studio?: { maskCuts?: unknown } } | undefined)?.studio?.maskCuts,
+  };
+}

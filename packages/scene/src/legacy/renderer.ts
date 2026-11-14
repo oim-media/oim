@@ -15,7 +15,7 @@ import { dropCapStyle, splitDropCap } from '../../../core/src/drop-cap.js';
 import { layerTextureMask } from '../../../core/src/effects/texture-mask.js';
 import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entranceClips, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
 import { loadLottie } from './lottie-loader.js';
-import { v2LayersOf, anchorShift, paintColors, typographyCss, filterStyle } from './v2-layers.js';
+import { v2LayersOf, anchorShift, paintColors, typographyCss, filterStyle, maskStyle } from './v2-layers.js';
 import { paintCss } from '../../../core/src/v2/paint-css.js';
 import { sanitizeHtml, sanitizeFontFamily, isSandboxImageSrc } from './sanitize.js';
 import {
@@ -714,10 +714,14 @@ export class LegacyRenderer {
     const slots = this.metadata.slots || this.metadata.elements || [];
     // Parallax normalization: if it travels inside style and the root lacks it, copy it to the root.
     // A single entry point so that the whole engine and controllers read from s.parallax.
+    // A 2.0 mask is read by the same helpers as 1.x: its fields are written back once here.
+    const v2Masks = v2LayersOf(self.metadata);
     slots.forEach(function (s: any) {
       if (s && !s.parallax && s.style && s.style.parallax) {
         s.parallax = s.style.parallax;
       }
+      const v2Mask = s && s.type === 'mask' ? v2Masks.get(String(s.id)) : undefined;
+      if (v2Mask) s.style = { ...s.style, ...maskStyle(v2Mask) };
     });
     const fontPromises: Promise<void>[] = [];
     const canvasWidth = (self.metadata && (self.metadata.artboardWidth || self.metadata.canvasWidth || self.metadata.canvas_width)) || ((self.metadata && self.metadata.canvas) ? (self.metadata.canvas.natural_width || self.metadata.canvas.width) : 0);

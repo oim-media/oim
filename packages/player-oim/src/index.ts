@@ -278,7 +278,8 @@ OimPlayerElement._startAutoRotateLang = function (this: any) {
   
   const self = this;
   this._autoRotateIntervalId = setInterval(() => {
-    const metadata = self.getMetadata();
+    // The 1.x view: its slots carry the languages. The file document has them under layers.
+    const metadata = self._engine ? self._engine.metadata : null;
     if (!metadata) return;
     
     const slots = metadata.slots || metadata.elements || [];
@@ -543,7 +544,7 @@ OimPlayerElement._wake = function (this: any) {
 
 OimPlayerElement.getMetadata = function (this: any) {
   this._wake();
-  return this._engine ? this._engine.metadata : null;
+  return this._engine ? this._engine.fileMetadata : null;
 };
 
 OimPlayerElement.getSecurityStatus = function (this: any) {

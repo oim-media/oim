@@ -494,6 +494,8 @@ export class LegacyRenderer {
   protected sceneReady(): void {}
   updateViewportSize(): void {}
   host!: HTMLElement;
+  /** `only`: the base picture alone. Read by renderSlots, which then never paints. */
+  poster: 'auto' | 'only' = 'auto';
   metadata: any = null;
   /** File trust state: no_metadata | unsigned | verified | invalid_signature | corrupt */
   securityStatus: string = 'unsigned';
@@ -578,7 +580,8 @@ export class LegacyRenderer {
   }
 
   async renderSlots(options?: { onlyIds?: Set<string> }): Promise<void> {
-    if (!this.metadata || !this.host) return;
+    // Every caller (the load, a language change, a patch) lands here: `only` never paints a layer.
+    if (!this.metadata || !this.host || this.poster === 'only') return;
 
     const allSlots = (this.metadata.slots || this.metadata.elements || []) as any[];
     // The composition (masks and filters) is computed over the whole stack, so

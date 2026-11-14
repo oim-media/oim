@@ -90,8 +90,11 @@ function paintable(metadata: any): any {
 }
 
 export class ImageEngine extends LegacyRenderer {
-  /** `only`: the base picture alone, no scene. `auto`: a 2.0 poster is replaced by the scene. */
-  poster: 'auto' | 'only' = 'auto';
+  /**
+   * The document as the file holds it: what `getMetadata()` and `oim:loaded` return.
+   * `metadata` is the 1.x view the renderer paints; the two never swap places.
+   */
+  fileMetadata: any = null;
   // Set for a 2.0 poster (no base layer) until its scene is up: its base picture then fades out.
   private _posterFade = false;
 
@@ -396,12 +399,13 @@ export class ImageEngine extends LegacyRenderer {
    */
   async _applyVerified(v: VerifiedFile): Promise<boolean> {
     const self = this;
-    // `only` mounts no scene: the metadata is kept as it is and nothing is read from it, so no
-    // layer, font or upgrade chunk is loaded.
+    // `only` mounts no scene: the view is not built, so no layer, font or upgrade chunk is loaded.
     const only = this.poster === 'only';
     this._posterFade = !only && isV2(v.metadata) && !hasBaseLayer(v.metadata);
-    // Converted after the copy: the view's cache is keyed on the object the renderer keeps.
-    this.metadata = only ? structuredClone(v.metadata) : paintable(structuredClone(v.metadata));
+    const file = structuredClone(v.metadata);
+    this.fileMetadata = file;
+    // Converted after its own copy: the view's cache is keyed on the object the renderer keeps.
+    this.metadata = only ? structuredClone(file) : paintable(structuredClone(file));
     // The palette is first applied before the file is read; only now are its palettes known.
     if (!only) this.applyPalette();
 
@@ -423,7 +427,7 @@ export class ImageEngine extends LegacyRenderer {
     if (only) {
       this._viewport?.classList.add('oim-viewport--poster', 'oim-viewport--ready');
       this.host.dispatchEvent(new CustomEvent('oim:loaded', {
-        detail: { type: 'image', metadata: this.metadata, security: this.securityStatus },
+        detail: { type: 'image', metadata: this.fileMetadata, security: this.securityStatus },
       }));
       return true;
     }
@@ -457,7 +461,7 @@ export class ImageEngine extends LegacyRenderer {
     }
 
     this.host.dispatchEvent(new CustomEvent('oim:loaded', {
-      detail: { type: 'image', metadata: this.metadata, security: this.securityStatus },
+      detail: { type: 'image', metadata: this.fileMetadata, security: this.securityStatus },
     }));
     return true;
   }

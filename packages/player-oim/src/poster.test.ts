@@ -125,3 +125,57 @@ describe('poster attribute', () => {
     expect(shown(el)).toBe(false);
   });
 });
+
+describe('poster="only" never paints; metadata is the file document', () => {
+  beforeEach(() => { document.body.innerHTML = ''; verdict = null; });
+  afterEach(() => { vi.restoreAllMocks(); document.body.innerHTML = ''; });
+
+  it('a base load and a language change after it still paint no layer', async () => {
+    verdict = { security: 'verified', metadata: structuredClone(DOC_1X), announce: false };
+    const el = make({ src: 'art.oim', poster: 'only' });
+    await until(() => ready(el));
+    const img = base(el) as HTMLImageElement;
+    Object.defineProperty(img, 'naturalWidth', { value: 800, configurable: true });
+    Object.defineProperty(img, 'naturalHeight', { value: 600, configurable: true });
+    img.dispatchEvent(new Event('load'));
+    await new Promise((r) => setTimeout(r, 100));
+    expect(slots(el)).toBe(0);
+    (el as any).setLang('es');
+    await new Promise((r) => setTimeout(r, 100));
+    expect(slots(el)).toBe(0);
+  });
+
+  for (const poster of ['auto', 'only'] as const) {
+    it(`oim:loaded fires in ${poster} mode with the file's 2.0 document`, async () => {
+      verdict = { security: 'verified', metadata: structuredClone(DOC_WITH_BASE), announce: false };
+      const el = document.createElement('oim-player');
+      el.setAttribute('src', 'art.oim');
+      el.setAttribute('poster', poster);
+      const events: CustomEvent[] = [];
+      el.addEventListener('oim:loaded', (e) => events.push(e as CustomEvent));
+      document.body.appendChild(el);
+      await until(() => events.length > 0);
+      const meta = events[0].detail.metadata;
+      expect(meta.layers).toEqual(DOC_WITH_BASE.layers);
+      expect(meta.slots).toBeUndefined();
+    });
+  }
+
+  it('getMetadata() returns the 2.0 document as the file holds it, in auto mode', async () => {
+    verdict = { security: 'verified', metadata: structuredClone(DOC_WITH_BASE), announce: false };
+    const el = make({ src: 'art.oim' });
+    await until(() => ready(el));
+    const meta = (el as any).getMetadata();
+    expect(meta.layers).toEqual(DOC_WITH_BASE.layers);
+    expect(meta.slots).toBeUndefined();
+  });
+
+  it('getMetadata() returns the 2.0 document as the file holds it, in only mode', async () => {
+    verdict = { security: 'verified', metadata: structuredClone(DOC_WITH_BASE), announce: false };
+    const el = make({ src: 'art.oim', poster: 'only' });
+    await until(() => ready(el));
+    const meta = (el as any).getMetadata();
+    expect(meta.layers).toEqual(DOC_WITH_BASE.layers);
+    expect(meta.slots).toBeUndefined();
+  });
+});

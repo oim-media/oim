@@ -329,6 +329,36 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
     );
   }
 
+  /// A 1.x zone paints its box only: background, corners and backdrop blur. Its flow is not applied
+  /// and its layers keep their own position (Decision 14 Nov).
+  List<Widget> _zones(Map<String, dynamic> metadata, OimPalette? palette, double width, double height) {
+    final zones = metadata['zones'];
+    if (zones is! List) return const [];
+    double? px(dynamic v) => v is num ? v.toDouble() : double.tryParse('$v'.replaceAll('px', '').trim());
+    final out = <Widget>[];
+    for (final z in zones) {
+      if (z is! Map || z['position'] is! List || z['size'] is! List) continue;
+      final pos = (z['position'] as List).cast<num>(), size = (z['size'] as List).cast<num>();
+      final style = z['style'] is Map ? z['style'] as Map : const {};
+      final radius = BorderRadius.circular((px(style['borderRadius']) ?? 0) * _unit);
+      final blur = RegExp(r'blur\(([\d.]+)px\)').firstMatch('${style['backdropFilter'] ?? ''}');
+      final color = resolveColor(null, style['background'] ?? style['backgroundColor'], palette);
+      Widget box = DecoratedBox(decoration: BoxDecoration(color: color, borderRadius: radius));
+      if (blur != null) {
+        final sigma = double.parse(blur.group(1)!) * _unit;
+        box = ClipRRect(borderRadius: radius, child: BackdropFilter(filter: ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma), child: box));
+      }
+      out.add(Positioned(
+        left: pos[0] / 100 * width,
+        top: pos[1] / 100 * height,
+        width: size[0] / 100 * width,
+        height: size[1] / 100 * height,
+        child: IgnorePointer(child: box),
+      ));
+    }
+    return out;
+  }
+
   List<Widget> _buildSlots(
     Map<String, dynamic> metadata,
     String currentLang,
@@ -360,7 +390,13 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
     bool isBackground(dynamic s) => s is Map && (s['is_background_pattern'] == true || s['id'] == 'background-pattern-slot');
     final ordered = [...rawSlots.where(isBackground), ...rawSlots.where((s) => !isBackground(s))];
 
+    // 1.x zones sit under every layer except the canvas background, as on the web (Decision 14 Nov).
+    var zonesAdded = false;
     for (final raw in ordered) {
+      if (!zonesAdded && !isBackground(raw)) {
+        widgets.addAll(_zones(metadata, activePalette, containerWidth, containerHeight));
+        zonesAdded = true;
+      }
       if (raw is! Map<String, dynamic>) continue;
       final slotId = raw['id']?.toString() ?? '';
 

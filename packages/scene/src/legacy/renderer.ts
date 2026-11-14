@@ -729,43 +729,42 @@ export class LegacyRenderer {
 
     const fragment = document.createDocumentFragment();
 
+    // Decision (14 Nov): a zone is a 2.0 group without its flow (see core
+    // upgrade/zones.ts). Its layers keep their own x/y; the zone paints its box.
     const zonesMap: Record<string, HTMLElement> = {};
-    const zonesList = this.metadata.zones || [];
-    zonesList.forEach((zone: any) => {
+    const zoneOfSlot = new Map<string, string>();
+    const zoneLayers = v2LayersOf(self.metadata);
+    (this.metadata.zones || []).forEach((zone: any) => {
+      const group = zoneLayers.get(String(zone?.id));
+      if (!group || group.type !== 'group') return;
       const zoneDiv = document.createElement('div');
       zoneDiv.className = 'oim-zone';
-      zoneDiv.id = 'oim-zone-' + zone.id;
-      
-      const pos = zone.position || [0, 0];
-      const size = zone.size || [100, 100];
-      
+      zoneDiv.id = 'oim-zone-' + group.id;
       zoneDiv.style.position = 'absolute';
-      zoneDiv.style.left = pos[0] + '%';
-      zoneDiv.style.top = pos[1] + '%';
-      zoneDiv.style.width = size[0] + '%';
-      zoneDiv.style.height = size[1] + '%';
-      zoneDiv.style.boxSizing = 'border-box';
-      
-      const zoneStyle = zone.style || {};
-      const display = zoneStyle.display || 'flex';
-      zoneDiv.style.display = display;
-      if (display === 'flex') {
-        zoneDiv.style.flexDirection = zoneStyle.flexDirection || 'column';
-        zoneDiv.style.justifyContent = zoneStyle.justifyContent || 'flex-start';
-        zoneDiv.style.alignItems = zoneStyle.alignItems || 'flex-start';
-        zoneDiv.style.gap = scaleValue(zoneStyle.gap || '8px');
+      zoneDiv.style.inset = '0';
+      const plate = group.children?.find((c) => c.id === group.id + '__background');
+      const fill = plate?.fills?.[0];
+      const blur = group.effects?.find((e) => e.kind === 'backdrop')?.blur;
+      if (plate || blur) {
+        const box = group.box;
+        const el = document.createElement('div');
+        el.className = 'oim-zone-box';
+        el.style.position = 'absolute';
+        el.style.left = box.x + 'px';
+        el.style.top = box.y + 'px';
+        el.style.width = (box.width ?? 0) + 'px';
+        el.style.height = (box.height ?? 0) + 'px';
+        if (fill && 'kind' in fill && fill.kind === 'color') el.style.background = paintColors(self.metadata).css(fill.value) || '';
+        if (typeof plate?.corners === 'number') el.style.borderRadius = plate.corners + 'px';
+        if (blur) {
+          el.style.backdropFilter = 'blur(' + blur + 'px)';
+          (el.style as any).webkitBackdropFilter = el.style.backdropFilter;
+        }
+        zoneDiv.appendChild(el);
       }
-      
-      if (zoneStyle.background) zoneDiv.style.background = zoneStyle.background;
-      if (zoneStyle.padding) zoneDiv.style.padding = scaleValue(zoneStyle.padding);
-      if (zoneStyle.borderRadius) zoneDiv.style.borderRadius = scaleValue(zoneStyle.borderRadius);
-      if (zoneStyle.backdropFilter) {
-        zoneDiv.style.backdropFilter = zoneStyle.backdropFilter;
-        (zoneDiv.style as any).webkitBackdropFilter = zoneStyle.backdropFilter;
-      }
-      
       fragment.appendChild(zoneDiv);
-      zonesMap[zone.id] = zoneDiv;
+      zonesMap[group.id] = zoneDiv;
+      for (const child of group.children ?? []) zoneOfSlot.set(child.id, group.id);
     });
 
     // Which groups have children IN THIS file. It is computed before building
@@ -805,7 +804,7 @@ export class LegacyRenderer {
         // below filters out zone-assigned slots. So a mask/filter placed inside a
         // zone neither renders (this return) nor clips (never reaches the tree) —
         // it just ceases to exist. Unsupported, and previously with no diagnostic.
-        const _zoneId = slot.zone_id || slot.z;
+        const _zoneId = zoneOfSlot.get(String(slot.id));
         if (_zoneId && zonesMap[_zoneId]) {
           console.warn(
             '[OimPlayer] Slot "' + slot.id + '" is a mask layer inside zone "' + _zoneId +
@@ -1686,19 +1685,9 @@ export class LegacyRenderer {
         slotEl.style.setProperty('padding', '0', 'important');
       }
  
-      const zoneId = slot.zone_id || slot.z;
+      const zoneId = zoneOfSlot.get(String(slot.id));
       let boxInCanvas: { x: number; y: number; width: number; height: number } | null = null;
-      if (zoneId && zonesMap[zoneId]) {
-        slotEl.style.position = 'relative';
-        slotEl.style.left = 'auto';
-        slotEl.style.top = 'auto';
-        if (v2Box.rotation) {
-          slotEl.style.transform = 'rotate(' + v2Box.rotation + 'deg)';
-        } else {
-          slotEl.style.transform = 'none';
-        }
-        slotEl.style.margin = '0';
-      } else {
+      {
         const box = v2Box;
         slotEl.style.position = 'absolute';
         let transformX: string;
@@ -2231,7 +2220,7 @@ export class LegacyRenderer {
         slotEl.style.setProperty('padding', '0', 'important');
       }
 
-      // `zoneId` (resolved above as `slot.zone_id || slot.z`) is reused verbatim
+      // `zoneId` (resolved above as `zoneOfSlot.get(String(slot.id))`) is reused verbatim
       // so the attach step below and the zone-relative positioning branch at the
       // top of this block can never disagree about which zone a slot belongs to.
       // Contract 1.14.0: the flip goes in an inner element. The slot keeps
@@ -2311,7 +2300,7 @@ export class LegacyRenderer {
     // loop.
     const compositionSlots: CompositionSlot[] = [];
     slots.forEach(function (s: any, i: number) {
-      const zid = s.zone_id || s.z;
+      const zid = zoneOfSlot.get(String(s.id));
       if (zid && zonesMap[zid]) return;
       // The geometry travels too: getMaskClipPathD needs it to place
       // the silhouette in canvas coordinates. Before, only id, type and

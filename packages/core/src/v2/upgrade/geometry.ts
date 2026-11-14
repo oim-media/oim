@@ -81,7 +81,9 @@ function shapeGeometry(ctx: UpgradeContext, slot: V1Slot, media: string | undefi
     const fromLayers = pathsFromLayers(ctx, layers, viewBox);
     if (fromLayers) return fromLayers;
   }
-  const xml = typeof rawXml === "string" && rawXml ? rawXml : drawsMarkup(slot) ? media : undefined;
+  // 1.x painted the content of a markup layer; svgRawXml is the untouched original it was edited from.
+  const content = drawsMarkup(slot) && typeof media === "string" && /<svg/i.test(media) ? media : undefined;
+  const xml = content ?? (typeof rawXml === "string" && rawXml ? rawXml : drawsMarkup(slot) ? media : undefined);
   if (xml) {
     const parsed = svgToPaths(xml);
     if (parsed.ok) return { kind: "paths", ...parsed.value };

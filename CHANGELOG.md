@@ -3,6 +3,11 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## Unreleased
+
+- Core (`upgrade`): an SVG layer draws its content, as 1.x did, not `svgRawXml` (the
+  untouched original): colours and stroke widths edited in the content are kept.
+
 ## 1.27.11
 
 - Core (`upgrade`): a CSS corner shorthand (`"10px 25px 50px 0px"`) keeps its four corners;

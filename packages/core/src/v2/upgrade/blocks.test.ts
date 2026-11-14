@@ -192,6 +192,13 @@ describe("geometry, corners and images", () => {
     expect(valid({ svgRawXml: xml }, "svg")).toEqual([]);
   });
 
+  it("an SVG layer draws its content, not svgRawXml: 1.x painted the content (flyer_cafe cup)", () => {
+    const raw = '<svg viewBox="0 0 24 24" stroke-width="1.5"><path d="M3 10h14"/></svg>';
+    const content = '<svg viewBox="0 0 24 24" stroke-width="1.5"><path d="M3 10h14" stroke="#c84b31" stroke-width="2"/></svg>';
+    const paths = layer({ svgRawXml: raw }, "svg", { content: { "*": content } }).geometry.paths;
+    expect(paths[0]).toMatchObject({ stroke: "#c84b31", strokeWidth: 2 });
+  });
+
   it("the decomposed layers win over the raw XML: they carry the edited colours", () => {
     const svgLayers = [{ d: "M0 0h1", fill: "#ff0000", animationType: "none" }, { d: "M0 0v1", stroke: "#00f", strokeWidth: 2 }];
     expect(layer({ svgLayers, svgRawXml: '<svg viewBox="0 0 9 9"><path d="M9 9"/></svg>', svgViewBox: "0 0 16 16" }, "svg").geometry).toEqual({

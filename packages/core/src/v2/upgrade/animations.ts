@@ -237,6 +237,10 @@ export function convertAnimations(ctx: UpgradeContext, slot: V1Slot, layer: Draf
   }
   // The player read these only to clip the group; its looping children clip it now.
   ctx.retire(style, "sceneLoop");
+  // The flag only marked what clips; in 2.0 a loop clips by itself.
+  ctx.retire(raw, "isParallaxGroup");
+  ctx.retire(style, "isParallaxGroup");
+  ctx.retire(raw, "is_parallax_group");
   ctx.retire(style, "loopDepth");
 
   // What only a video layer used.

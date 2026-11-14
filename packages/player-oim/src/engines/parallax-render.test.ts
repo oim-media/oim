@@ -135,35 +135,7 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
     expect(slotEl.classList.contains(TRACK_CLASS)).toBe(false);
   });
 
-  it("a slot with isParallaxGroup has overflow: hidden to clip the loop", async () => {
-    const engine = new ImageEngine(hostEl);
-    engine._overlay = document.createElement("div");
-    shadowRoot.appendChild(engine._overlay);
-
-    engine.metadata = {
-      canvas_width: 800,
-      canvas_height: 600,
-      slots: [
-        {
-          id: "grupo-parallax",
-          type: "container",
-          isParallaxGroup: true,
-          style: {
-            width: "800px",
-            height: "600px",
-            filter: "brightness(1)", // would normally set overflow visible if this were not a group
-          },
-        },
-      ],
-    };
-
-    await engine.renderSlots();
-
-    const slotEl = engine._overlay.querySelector('[data-slot-id="grupo-parallax"]') as HTMLElement;
-    expect(slotEl).not.toBeNull();
-    expect(slotEl.style.overflow).toBe("hidden");
-  });
-
+  // Ruling (13 Nov): the isParallaxGroup flag is retired; a group clips when a child loops (below).
   it("a group with children that have parallax has overflow: hidden", async () => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");

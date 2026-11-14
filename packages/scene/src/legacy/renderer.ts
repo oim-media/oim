@@ -853,7 +853,7 @@ export class LegacyRenderer {
       // sizing. A slot that cannot be clicked needs neither of those
       // things.
       const isInteractiveSlot = !self.disableActions
-        && (slot.isInteractive === true || style.isInteractive === true || Boolean(slot.states || style.states));
+        && (!!v2Own.interactions?.length || !!v2Own.animations?.some((a) => a.on === 'hover' || a.on === 'press'));
       const isWindowMask = slotType === 'mask' && style.maskMode !== 'cutout';
       const isArtisticText = slotType === 'artistic-text';
       const isGeoLike = slotType === 'geo' || slotType === 'shape' || slotType === 'draw' || slotType === 'filter' || slotType === 'container' || isWindowMask || isInteractiveSlot || isArtisticText;
@@ -878,7 +878,7 @@ export class LegacyRenderer {
       } else if (slotType === 'pattern' || isBackgroundSlot) {
         // Falls straight into building the element: a pattern or background layer does not
         // carry `content`; its CSS comes from `patternLayerCss` or `isBackgroundSlot` further down.
-      } else if (!rawText && !(isGeoLike && (style.fillColor || style.fillType || style.width || slotType === 'filter' || slotType === 'container' || isWindowMask || isInteractiveSlot || isArtisticText))) return null;
+      } else if (!rawText && !(isGeoLike && (!!v2Own.fills?.length || v2Box.width !== undefined || slotType === 'filter' || slotType === 'container' || isWindowMask || isInteractiveSlot || isArtisticText))) return null;
 
       const isImageSlot = isImageContent(slot, rawText);
 
@@ -980,7 +980,6 @@ export class LegacyRenderer {
         }
       }
 
-      const maxWidth = localized.maxWidthValue;
       // A 2.0 text aligns by its text block; any other 2.0 layer is placed by its box alone.
       const textAlign = v2Own.type === 'text' ? v2Own.text?.align ?? 'left' : 'left';
       let alignItems = 'center';
@@ -993,7 +992,7 @@ export class LegacyRenderer {
       slotEl.setAttribute('data-slot-id', slot.id);
 
       // Selective visibility by language (languages rule: ["*"] | ["es", ...])
-      if (Array.isArray(slot.languages) && !slot.languages.includes('*') && !slot.languages.includes(self.lang)) {
+      if (v2Own.languages && !v2Own.languages.includes(self.lang)) {
         slotEl.style.display = 'none';
       }
 
@@ -1128,8 +1127,8 @@ export class LegacyRenderer {
         // here and drew 'contain' where the editor showed 'cover'. New files carry
         // the explicit value and do not depend on this line; matching the editor
         // also aligns the already exported ones.
-        const fit = v2Image ? v2Image.fit : style.objectFit;
-        const imageCrop = v2Image ? v2Image.crop : style.imageCrop;
+        const fit = v2Image?.fit;
+        const imageCrop = v2Image?.crop;
         imgEl.style.objectFit = fit || 'cover';
         // Contract 1.15.0: a crop frames and zooms the image over "cover"; its
         // wrapper clips the overflow. Without one, nothing changes.
@@ -1411,10 +1410,12 @@ export class LegacyRenderer {
       }
       
       // A text's typography comes from its 2.0 layer; what it leaves out keeps the defaults.
-      const v2Typo = slotType === 'text' ? typographyCss(v2Layers.get(String(slot.id)), self.lang) : undefined;
-      const lineHeightSource = v2Typo ? { lineHeight: v2Layers.get(String(slot.id))?.text?.lineHeight } : style;
-      const fontSize: string = v2Typo?.fontSize ?? localized.size;
-      const fontFamily = v2Typo ? v2Typo.fontFamily : style.fontFamily;
+      const v2Typo = typographyCss(v2Own, self.lang);
+      const lineHeightSource = { lineHeight: v2Own.text?.lineHeight };
+      const fontSize: string = v2Typo?.fontSize ?? '16px';
+      const fontFamily = v2Typo?.fontFamily;
+      // With no width of its own a text wraps at 80% of the canvas; anything else is not capped.
+      const maxWidth = isBackgroundSlot ? 'none' : v2Typo?.maxWidth ?? (v2Own.type === 'text' && !isImageSlot ? '80%' : 'none');
       // Only layers that paint text need a font. serializeSlots writes
       // fontFamily "Inter" on EVERY layer, images included, so without this
       // any .oim with an image asked Google for Inter when opened.
@@ -1433,7 +1434,7 @@ export class LegacyRenderer {
       else if (textAlign === 'right') alignItems = 'flex-end';
       else alignItems = 'center';
  
-      slotEl.style.maxWidth = v2Typo?.maxWidth ?? maxWidth;
+      slotEl.style.maxWidth = maxWidth;
       slotEl.style.fontSize = fontSize;
       // Unitless: it is inherited as a factor, so a child with a different font size
       // computes ITS line height and does not drag the parent's along.
@@ -1536,7 +1537,8 @@ export class LegacyRenderer {
       slotEl.style.whiteSpace = 'pre-line';
       slotEl.style.overflow = slotClipping({
         isText: slotType === 'text',
-        isParallaxGroup: !!(slot.isParallaxGroup || style.isParallaxGroup || slot.is_parallax_group),
+        // A loop clips to its own box (the window its track runs through), and so does a group whose child loops.
+        isParallaxGroup: !!v2Own.motion?.loop || !!groupChildren.get(slot.id)?.some((cid) => v2Layers.get(String(cid))?.motion?.loop),
         hasFilterOrShadow: !!(style.filter || style.boxShadow || style.textShadow),
         hasKeyframes: !!v2Own.animations?.some(isTimeline),
       });
@@ -1808,8 +1810,8 @@ export class LegacyRenderer {
         slotEl.style.position = 'relative';
         slotEl.style.left = 'auto';
         slotEl.style.top = 'auto';
-        if (style.rotation) {
-          slotEl.style.transform = 'rotate(' + style.rotation + 'deg)';
+        if (v2Box.rotation) {
+          slotEl.style.transform = 'rotate(' + v2Box.rotation + 'deg)';
         } else {
           slotEl.style.transform = 'none';
         }
@@ -2387,7 +2389,7 @@ export class LegacyRenderer {
       // its rotation and its animations, which rewrite its own transform.
       // A transformed element is the containing block of what it holds, so
       // absolutely placed fills and a group's children flip with it.
-      const flip = flipScale(style.flipX, style.flipY);
+      const flip = flipScale(v2Box.flipX, v2Box.flipY);
       if (flip) {
         const inner = document.createElement('div');
         inner.setAttribute('data-oim-flip', '');

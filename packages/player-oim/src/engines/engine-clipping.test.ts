@@ -64,7 +64,8 @@ describe("clipping in the engine", () => {
    * If the text rule won over this one, a headline loop would show the whole tape
    * and stop being a loop.
    */
-  it("a PARALLAX group of TEXT keeps clipping", async () => {
-    expect(await recorteDe({ ...text(), isParallaxGroup: true })).toBe("hidden");
+  // Ruling (13 Nov): 2.0 has no parallax-group flag; a text clips because it loops.
+  it("a LOOPING text keeps clipping", async () => {
+    expect(await recorteDe({ ...text(), parallax: { enabled: true, mode: "infinite_horizontal", infinite: { enabled: true, speedPxSec: 30 } } })).toBe("hidden");
   });
 });

@@ -93,6 +93,12 @@ describe("upgrade: the box the player painted", () => {
 });
 
 describe("visibility", () => {
+  it("a layer shown only in some languages keeps its list; \"*\" is every language", () => {
+    expect(at({ type: "geo", position: [0, 0], languages: ["es", "en"], style: { width: 10, height: 10 } }).languages).toEqual(["es", "en"]);
+    expect(at({ type: "geo", position: [0, 0], languages: ["*"], style: { width: 10, height: 10 } })).not.toHaveProperty("languages");
+    expect(at({ type: "geo", position: [0, 0], languages: [], style: { width: 10, height: 10 } }).visible).toBe(false);
+  });
+
   // Ruling (13 Nov): the 1.x player also hid a layer by the slot's own isVisible.
   it("a slot hidden at its top level stays hidden", async () => {
     const { upgrade } = await import("../upgrade.js");

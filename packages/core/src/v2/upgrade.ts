@@ -85,8 +85,14 @@ function startLayer(ctx: UpgradeContext, slot: V1Slot): DraftLayer {
   const name = ctx.take(raw, "name");
   if (typeof name === "string" && name) layer.name = name;
 
+  // Shown only in some languages; "*" (or no list) is every language, and an
+  // empty list hid the layer in all of them, as the 1.x player did.
   const languages = ctx.take(raw, "languages");
-  if (Array.isArray(languages) && languages.length > 0) layer.languages = languages.filter((l) => typeof l === "string");
+  if (Array.isArray(languages) && !languages.includes("*")) {
+    const own = languages.filter((l): l is string => typeof l === "string" && l.length > 0);
+    if (own.length > 0) layer.languages = [...new Set(own)];
+    else layer.visible = false;
+  }
 
   const pending = ctx.take(raw, "pendingTranslation");
   if (Array.isArray(pending) && pending.length > 0) {

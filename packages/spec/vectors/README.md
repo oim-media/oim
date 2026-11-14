@@ -12,7 +12,7 @@ this says what **result** comes out of a specific one.
 ## The Normative Vectors
 
 A reduced suite cannot tell apart an implementation that **reads the format**
-from one that **gets a simple case right by chance**. These 37 vectors cover the
+from one that **gets a simple case right by chance**. These 39 vectors cover the
 initial 20-vector matrix plus every capability added since contract 1.10.0:
 
 | # | Vector | What it covers |
@@ -72,7 +72,7 @@ without a look, which is a vector that no longer checks anything.
 
 ## The signature
 
-All 37 vectors are signed with the public key published in `packages/spec/keys.json`.
+All 39 vectors are signed with the public key published in `packages/spec/keys.json`.
 The signature covers the canonical serialisation
 of the metadata and the cryptographic hash of the pixels (`image_hash` over the `IDAT` chunks).
 A reader that verifies must rebuild that canonical form following the seven rules

@@ -346,7 +346,7 @@ Top-level structure carried in the `OIM_Data` payload:
 | `palettes` | `Record<string, Partial<Record<DynamicColorRole, string>>>` | Up to 6 named colour palettes mapping semantic roles to CSS colours (1.20.0). |
 | `defaultPalette` | `string` | Name of the active palette in `palettes` (1.20.0). |
 | `slots` | `OimSlot[]` | Array of interactive layers (maximum `MAX_SLOTS` = 150). |
-| `zones` | `OimZone[]` | Optional catalogue of named bounding box zones. |
+| `zones` | `OimZone[]` | Optional catalogue of named bounding box zones. A zone paints its background, corners and backdrop blur; its layers keep their own position. Flow properties in its style (`display`, `flexDirection`, `justifyContent`, `alignItems`, `gap`, `padding`) are not applied. |
 | `capabilities` | `("vector_parallax" \| "infinite_parallax" \| "text_marks" \| "image_fill" \| "media_filters" \| "frame_shapes")[]` | Capabilities used by the document. |
 | `capabilities_required` | same as `capabilities` | Capabilities the reader **must** implement to paint with fidelity (glTF pattern). |
 | `fonts` | `EmbeddedFont[]` | Font variants embedded in base64 for offline rendering (1.3.0): subset, static (no `fvar`, `gvar`, `avar`, `HVAR`, `MVAR`; `STAT` may stay) WOFF, `format: "woff"`, written since 1.27.0; WOFF2 (`format: "woff2"`) is read forever. The content starts with the magic of its format (`wOFF` / `wOF2`). |

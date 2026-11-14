@@ -10,6 +10,14 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
   published format and the root exports do not change.
 - Spec: `schema/oim2.schema.json`, generated from that draft, and `tools/upgrade-report.mjs`. The
   conformance gate also checks that every vector upgrades to valid 2.0 with nothing left behind.
+- Scene: new `@oim-media/scene`, the renderer the player and the editor share. The player now
+  paints from the 2.0 document that `upgrade` produces, not from the 1.x fields.
+- Player: a zone is drawn as a group. Its background, corners and backdrop blur are kept; its
+  layers keep their own position and its flex flow is no longer applied (a file that relied on
+  that flow lays out differently).
+- Flutter SDK: a hover `transitionDuration` is read in milliseconds, as the contract says. It
+  was multiplied by 1000, so a 200 ms transition lasted 200 s.
+- Spec: two new vectors, `zone-group` and `mask-window` (39 in all).
 
 ## 1.27.9
 

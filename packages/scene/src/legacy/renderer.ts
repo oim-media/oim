@@ -54,7 +54,7 @@ import { mediaFilterCss } from '../../../core/src/media-filters.js';
 import { buildSvgNoiseFilter, buildLayerGrainFilter, GRAIN_LAYER_TYPES } from '../../../core/src/generative/proceduralNoise.js';
 import { TEXTURE_CATALOG, type TexturePreset } from '../../../core/src/effects/index.js';
 import { infiniteLayerPlan, TRACK_CLASS, LEGACY_TRACK_CLASS, ensureParallaxKeyframes, type InfiniteLayer } from '../../../core/src/parallaxCss.js';
-import { localizedEntries, isImageContent, compareLangs } from './localizedEntries.js';
+import { localizedEntries, isImageContent, compareLangs, resolveContent } from './localizedEntries.js';
 import { a11yNodes, artworkLabel } from './a11y.js';
 import { dropShadowCss, shadowColorCss, shadowFollowsGlyphs } from './shadow.js';
 import { cropCss } from '../../../core/src/crop.js';
@@ -834,7 +834,9 @@ export class LegacyRenderer {
       }
 
       const localized = localizedEntries(slot, self.lang);
-      let rawText = localized.content;
+      // A 2.0 text reads its words from the layer, with the same language fallback.
+      const v2Words = v2Own?.type === 'text' ? v2Own.text?.content : undefined;
+      let rawText = v2Words ? resolveContent(v2Words, self.lang) : localized.content;
       // Pure geometric shapes and filter layers carry no text content but
       // still render from their style (fillColor, geoShape, width/height, backdropFilter).
       // The dedicated mask in "window" mode is a layer that gets painted: a

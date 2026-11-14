@@ -461,26 +461,6 @@ function buildLayerCompositionDefs(
 
 
 /**
- * Decides whether the background SVG is painted as a repeated tile or as a
- * full-bleed scene.
- *
- * `tile` is the historical behaviour and MUST remain the default: .oim files exported
- * before the generative engine carry no `backgroundFit`, and they are all repeating
- * icon patterns. Changing the default
- * would break any file already published.
- *
- * `backgroundType === 'generative'` infers `cover` as a safety net for
- * files baked by an editor version that did not yet write the field.
- */
-export function resolveBackgroundFit(style: any): 'tile' | 'cover' {
-  if (!style) return 'tile';
-  if (style.backgroundFit === 'cover' || style.backgroundFit === 'tile') {
-    return style.backgroundFit;
-  }
-  return style.backgroundType === 'generative' ? 'cover' : 'tile';
-}
-
-/**
  * Attaches one composition node (and its subtree) to `target`.
  *
  * Extracted out of `renderSlots` verbatim so the `results` -> `elByCompositionId`

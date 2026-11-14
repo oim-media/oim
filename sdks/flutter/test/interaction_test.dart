@@ -86,6 +86,17 @@ void main() {
     await g.removePointer();
   });
 
+  testWidgets('transitionDuration is in milliseconds, as the editor writes it', (t) async {
+    Future<Duration> durationOf(Map hover) async {
+      await t.pumpWidget(MaterialApp(
+        home: OimInteractive(states: {'hover': hover}, onHover: (_) {}, onLeave: () {}, onTap: (_) {}, child: const SizedBox()),
+      ));
+      return t.widget<AnimatedScale>(find.byType(AnimatedScale)).duration;
+    }
+    expect(await durationOf({'scale': 105, 'transitionDuration': 350}), const Duration(milliseconds: 350));
+    expect(await durationOf({'scale': 105}), const Duration(milliseconds: 200));
+  });
+
   testWidgets('isInteractive: false hooks nothing', (t) async {
     await _pump(t, 'interactive', interactive: false);
     expect(find.byType(OimInteractive), findsNothing);

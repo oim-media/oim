@@ -153,8 +153,8 @@ class _OimInteractiveState extends State<OimInteractive> {
   @override
   Widget build(BuildContext context) {
     final h = _hovered ? _hover : null;
-    final dur = Duration(
-        milliseconds: (((_hover?['transitionDuration'] as num?)?.toDouble() ?? 0.2) * 1000).round());
+    // Milliseconds, as the editor writes it and the web player reads it.
+    final dur = Duration(milliseconds: ((_hover?['transitionDuration'] as num?) ?? 200).round());
     final scale = h?['scale'] is num ? scaleAsFactor(h!['scale'] as num) : 1.0;
     final turns = h?['rotation'] is num ? (h!['rotation'] as num) / 360 : 0.0;
     final opacity = h?['opacity'] is num ? ((h!['opacity'] as num) / 100).clamp(0.0, 1.0) : 1.0;

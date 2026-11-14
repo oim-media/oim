@@ -394,15 +394,24 @@ describe("animations, motion and interactions", () => {
     ]);
   });
 
-  it("parallax and scene loop are motion, wherever 1.x wrote them", () => {
-    const parallax = { enabled: true, depth: 0.2, mode: "infinite_horizontal", axis: "x_only" };
-    expect(layer({}, "image", { slot: { parallax } }).motion).toEqual({ parallax });
-    expect(layer({ parallax }, "image").motion).toEqual({ parallax });
-    expect(layer({ parallax: { enabled: false, depth: 1 } }, "image")).not.toHaveProperty("motion");
-    expect(layer({ sceneLoop: { direction: "left_to_right", speedPxSec: 3 }, loopDepth: 0.2 }, "group").motion).toEqual({
-      sceneLoop: { direction: "left_to_right", speedPxSec: 3, depth: 0.2 },
-    });
+  // Decision (13 Nov): 2.0 keeps only the endless scroll; the pointer parallax is retired.
+  it("an endless scroll is the layer's loop, wherever 1.x wrote it", () => {
+    const parallax = { enabled: true, mode: "infinite_horizontal", infinite: { enabled: true, speed_px_sec: 35, direction: "left_to_right", seamless_tile: false } };
+    const loop = { speedPxSec: 35, direction: "left_to_right", mirror: false };
+    expect(layer({}, "image", { slot: { parallax } }).motion).toEqual({ loop });
+    expect(layer({ parallax }, "image").motion).toEqual({ loop });
+    expect(layer({ parallax: { enabled: true, mode: "infinite_horizontal" } }, "image").motion).toEqual({ loop: { speedPxSec: 20 } });
     expect(valid({ parallax }, "image")).toEqual([]);
+  });
+
+  it("a scroll that does not move, and the pointer parallax, are not carried", () => {
+    expect(layer({ parallax: { enabled: false, mode: "infinite_horizontal" } }, "image")).not.toHaveProperty("motion");
+    expect(layer({ parallax: { enabled: true, mode: "infinite_horizontal", infinite: { enabled: false, speed_px_sec: 35 } } }, "image")).not.toHaveProperty("motion");
+    expect(layer({ parallax: { enabled: true, depth: 0.8, mode: "mouse" } }, "image")).not.toHaveProperty("motion");
+    const pointer = run({ parallax: { enabled: true, depth: 0.8, mode: "mouse" } });
+    expect(pointer.unhandled).toEqual([]);
+    expect(pointer.retired.some((key) => key.endsWith(".parallax"))).toBe(true);
+    expect(layer({ sceneLoop: { speedPxSec: 3 }, loopDepth: 0.2 }, "group")).not.toHaveProperty("motion");
   });
 });
 

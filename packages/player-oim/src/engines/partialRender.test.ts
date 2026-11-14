@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { v2LayersOf } from "../../../scene/src/legacy/v2-layers.js";
 import { describe, it, expect, beforeEach } from "vitest";
 import ImageEngine from "./ImageEngine";
 
@@ -83,6 +84,8 @@ describe("the parallax controller survives a partial render", () => {
     // Without this the controller would keep moving the old node, already detached,
     // and the new layer would stay still without anything giving it away.
     const { host, motor } = mount(conParallax());
+    // Ruling (13 Nov): the pointer parallax is retired in 2.0; this pins the 1.x road.
+    v2LayersOf((motor as any).metadata).clear();
     await motor.renderSlots();
 
     const ctrl: any = motor._parallaxController;
@@ -100,6 +103,8 @@ describe("the parallax controller survives a partial render", () => {
     // Each render created a new one and left the old one running: a mousemove
     // listener and an rAF loop, forever.
     const { motor } = mount(conParallax());
+    // Ruling (13 Nov): the pointer parallax is retired in 2.0; this pins the 1.x road.
+    v2LayersOf((motor as any).metadata).clear();
     await motor.renderSlots();
 
     const first: any = motor._parallaxController;

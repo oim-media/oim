@@ -17,7 +17,6 @@ import {
   embeddedFontSchema,
   generativeFillSchema,
   keyframeEasingSchema,
-  parallaxSchema,
   textHighlightSchema,
   textMarkSchema,
   textRunsSchema,
@@ -320,18 +319,19 @@ function animationFor(targets: readonly [string, ...string[]]) {
 export const animationSchema = animationFor(["layer", "chars", "words", "lines"]);
 const layerOnlyAnimation = animationFor(["layer"]);
 
-const sceneLoop = z
+// A layer that scrolls forever, like a background repeating sideways. It is
+// the only motion 2.0 keeps: the parallax that followed the pointer is retired.
+const loop = z
   .object({
+    speedPxSec: z.number().min(-500).max(500),
     direction: z.enum(["left_to_right", "right_to_left"]).optional(),
-    speedPxSec: z.number().optional(),
+    // Every other copy mirrored, so the seam does not show. On unless said.
     mirror: z.boolean().optional(),
     pauseOnHover: z.boolean().optional(),
-    depth: z.number().optional(),
-    off: z.boolean().optional(),
   })
   .strict();
 
-export const motionSchema = z.object({ parallax: parallaxSchema.optional(), sceneLoop: sceneLoop.optional() }).strict();
+export const motionSchema = z.object({ loop: loop.optional() }).strict();
 
 export const interactionSchema = z
   .object({

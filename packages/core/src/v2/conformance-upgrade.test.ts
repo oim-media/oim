@@ -26,6 +26,9 @@ const ALLOWED_TO_RETIRE = new Set([
   "slot.s",
   "slot.zone_id",
   "slot.tracking_data",
+  // Decision (13 Nov): the pointer parallax is retired in 2.0.
+  "style.parallax",
+  "slot.parallax",
 ]);
 
 const countLayers = (layers: Layer[]): number => layers.reduce((n, layer) => n + 1 + countLayers(layer.children ?? []), 0);

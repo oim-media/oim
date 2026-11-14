@@ -18,6 +18,7 @@
  * because nothing of theirs listens to the window (9 Oct 2026).
  */
 
+import { v2LayersOf } from "../../../scene/src/legacy/v2-layers.js";
 import { describe, it, expect, vi } from "vitest";
 import ImageEngine from "./ImageEngine";
 import { ParallaxController } from "../../../scene/src/legacy/ParallaxController";
@@ -55,6 +56,8 @@ describe("a still card has no parallax controller", () => {
 
   it("a card that moves still gets its controller", async () => {
     const motor = mount();
+    // Ruling (13 Nov): the pointer parallax is retired in 2.0; this pins the 1.x road.
+    v2LayersOf((motor as any).metadata).clear();
     await motor.renderSlots();
     expect(motor._parallaxController).toBeInstanceOf(ParallaxController);
   });
@@ -64,6 +67,8 @@ describe("a controller created while the player is paused is born paused", () =>
   it("no frame loop running after the render", async () => {
     const motor = mount();
     motor.pause();
+    // Ruling (13 Nov): the pointer parallax is retired in 2.0; this pins the 1.x road.
+    v2LayersOf((motor as any).metadata).clear();
     await motor.renderSlots();
     const ctrl: any = motor._parallaxController;
     expect(ctrl).toBeInstanceOf(ParallaxController);

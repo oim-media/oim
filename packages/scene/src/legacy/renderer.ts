@@ -1312,7 +1312,11 @@ export class LegacyRenderer {
 
       // Infinite parallax: if the layer moves in a loop, wrap it in the track
       // with 2 copies per infiniteLayerPlan. It is only duplicated if it moves (duplicate: true).
-      const parallaxCfg = slot.parallax || style.parallax;
+      // A 2.0 layer loops by its `motion.loop`, read through the same chain as 1.x.
+      const v2Scroll = v2Own?.motion?.loop;
+      const parallaxCfg = v2Own
+        ? (v2Scroll ? { enabled: true, speedPxSec: v2Scroll.speedPxSec, direction: v2Scroll.direction, mirror: v2Scroll.mirror ?? true, pauseOnHover: !!v2Scroll.pauseOnHover } : undefined)
+        : slot.parallax || style.parallax;
       let duplicatedForInfinite = false;
 
       if (parallaxCfg && parallaxCfg.enabled) {
@@ -2294,7 +2298,10 @@ export class LegacyRenderer {
           const cSlot = slots.find((s: any) => s.id === cid);
           return cSlot && ((cSlot.parallax && cSlot.parallax.enabled) || (cSlot.style?.parallax && cSlot.style.parallax.enabled));
         });
-        const isParallaxGrp = !!(
+        // A 2.0 group clips when one of its children loops; 1.x also had flags and names.
+        const isParallaxGrp = v2Own
+          ? !!groupChildren.get(slot.id)?.some((cid) => v2Layers.get(String(cid))?.motion?.loop)
+          : !!(
           slot.isParallaxGroup ||
           style.isParallaxGroup ||
           slot.is_parallax_group ||
@@ -2817,8 +2824,12 @@ export class LegacyRenderer {
     }
 
     if (!onlyIds) {
+      // The pointer parallax is retired in 2.0: only a slot with no 2.0 layer still has it.
+      const v2Layers = v2LayersOf(this.metadata);
+      const pointerParallax = (s: any) =>
+        s.parallax && s.parallax.enabled && s.parallax.mode !== 'infinite_horizontal' && !v2Layers.has(String(s.id));
       const hasParallax = slots.some(function (s: any) {
-        return s.parallax && s.parallax.enabled && s.parallax.mode !== 'infinite_horizontal';
+        return pointerParallax(s);
       }) || (this.metadata && Array.isArray(this.metadata.capabilities) && this.metadata.capabilities.includes('vector_parallax'));
       if (hasParallax) {
         try {
@@ -2840,7 +2851,7 @@ export class LegacyRenderer {
           this._parallaxController = pCtrl;
           if (pCtrl && this._paused) pCtrl.pause();
           slots.forEach(function (s: any, i: number) {
-            if (s.parallax && s.parallax.enabled && s.parallax.mode !== 'infinite_horizontal') {
+            if (pointerParallax(s)) {
               const compId = compositionKeys[i];
               const el = elByCompositionId.get(compId);
               if (el) {

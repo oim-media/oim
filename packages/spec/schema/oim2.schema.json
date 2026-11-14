@@ -2354,75 +2354,14 @@
     "__schema63": {
       "type": "object",
       "properties": {
-        "parallax": {
+        "loop": {
           "type": "object",
           "properties": {
-            "enabled": {
-              "default": true,
-              "type": "boolean"
-            },
-            "depth": {
-              "default": 0.5,
+            "speedPxSec": {
               "type": "number",
-              "minimum": -2,
-              "maximum": 2
+              "minimum": -500,
+              "maximum": 500
             },
-            "mode": {
-              "default": "mouse",
-              "type": "string",
-              "enum": [
-                "mouse",
-                "scroll",
-                "infinite_horizontal"
-              ]
-            },
-            "axis": {
-              "default": "both",
-              "type": "string",
-              "enum": [
-                "both",
-                "x_only",
-                "y_only"
-              ]
-            },
-            "infinite": {
-              "type": "object",
-              "properties": {
-                "enabled": {
-                  "default": false,
-                  "type": "boolean"
-                },
-                "speed_px_sec": {
-                  "default": 20,
-                  "type": "number",
-                  "minimum": -500,
-                  "maximum": 500
-                },
-                "direction": {
-                  "default": "right_to_left",
-                  "type": "string",
-                  "enum": [
-                    "left_to_right",
-                    "right_to_left"
-                  ]
-                },
-                "seamless_tile": {
-                  "default": true,
-                  "type": "boolean"
-                },
-                "pause_on_hover": {
-                  "default": false,
-                  "type": "boolean"
-                }
-              },
-              "additionalProperties": {}
-            }
-          },
-          "additionalProperties": {}
-        },
-        "sceneLoop": {
-          "type": "object",
-          "properties": {
             "direction": {
               "type": "string",
               "enum": [
@@ -2430,22 +2369,16 @@
                 "right_to_left"
               ]
             },
-            "speedPxSec": {
-              "type": "number"
-            },
             "mirror": {
               "type": "boolean"
             },
             "pauseOnHover": {
               "type": "boolean"
-            },
-            "depth": {
-              "type": "number"
-            },
-            "off": {
-              "type": "boolean"
             }
           },
+          "required": [
+            "speedPxSec"
+          ],
           "additionalProperties": false
         }
       },

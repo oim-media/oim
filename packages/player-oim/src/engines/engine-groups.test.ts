@@ -17,6 +17,7 @@
  * Phase 3 of the group-as-node design spec.
  */
 
+import { v2LayersOf } from "../../../scene/src/legacy/v2-layers.js";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { ImageEngine } from "./ImageEngine";
 
@@ -425,6 +426,8 @@ describe("what the wrapper unlocks (phase 4)", () => {
       layer("a", { style: { groupId: "g1" } }),
       layer("b", { style: { groupId: "g1" } }),
     ]);
+    // Ruling (13 Nov): the pointer parallax is retired in 2.0; this pins the 1.x road.
+    v2LayersOf((engine as any).metadata).clear();
     await engine.renderSlots();
 
     // The controller registers the slot's element, which in a group IS the

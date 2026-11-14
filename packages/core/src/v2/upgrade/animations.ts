@@ -207,14 +207,36 @@ export function convertAnimations(ctx: UpgradeContext, slot: V1Slot, layer: Draf
   // The flag only said "this layer reacts"; the interactions themselves say it now.
   ctx.take(style, "isInteractive");
 
+  // 1.x moved a layer two ways. Only the endless scroll is carried; the parallax
+  // that followed the pointer is retired (Decision, 13 Nov).
   const parallax = asObject(ctx.take(raw, "parallax")) ?? asObject(ctx.take(style, "parallax"));
   ctx.take(style, "parallax");
-  const sceneLoop = asObject(ctx.take(style, "sceneLoop"));
-  const loopDepth = finite(ctx.take(style, "loopDepth"));
-  const motion: NonNullable<DraftLayer["motion"]> = {};
-  if (parallax && parallax.enabled !== false) motion.parallax = parallax as never;
-  if (sceneLoop || loopDepth !== undefined) motion.sceneLoop = { ...(sceneLoop as object), ...(loopDepth !== undefined ? { depth: loopDepth } : {}) } as never;
-  if (Object.keys(motion).length > 0) layer.motion = motion;
+  if (parallax && parallax.enabled !== false) {
+    const inf = asObject(parallax.infinite) ?? {};
+    // The same reading as the 1.x player: a loop that is off is zero speed.
+    const speed = inf.enabled === false ? 0
+      : finite(parallax.speedPxSec) ?? finite(inf.speedPxSec) ?? finite(inf.speed_px_sec)
+        ?? (parallax.mode === "infinite_horizontal" ? finite(parallax.speed) ?? 20 : 0);
+    const pick = (...values: unknown[]) => values.find((v) => v !== undefined);
+    const direction = pick(parallax.direction, inf.direction);
+    const mirror = pick(parallax.mirror, parallax.seamlessTile, inf.mirror, inf.seamlessTile, inf.seamless_tile);
+    const pauseOnHover = pick(parallax.pauseOnHover, inf.pauseOnHover, inf.pause_on_hover);
+    if (speed !== 0) {
+      layer.motion = {
+        loop: {
+          speedPxSec: Math.min(500, Math.max(-500, speed)),
+          ...(direction === "left_to_right" || direction === "right_to_left" ? { direction } : {}),
+          ...(mirror !== undefined ? { mirror: !!mirror } : {}),
+          ...(pauseOnHover !== undefined ? { pauseOnHover: !!pauseOnHover } : {}),
+        },
+      };
+    } else if (parallax.mode !== "infinite_horizontal") {
+      ctx.retire(raw.parallax !== undefined ? raw : style, "parallax");
+    }
+  }
+  // The player read these only to clip the group; its looping children clip it now.
+  ctx.retire(style, "sceneLoop");
+  ctx.retire(style, "loopDepth");
 
   // What only a video layer used.
   ctx.retire(raw, "tracking_data");

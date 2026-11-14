@@ -5,6 +5,7 @@
  */
 
 // @vitest-environment happy-dom
+import { v2LayersOf } from "../../../scene/src/legacy/v2-layers.js";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { TRACK_CLASS, CSS_PARALLAX, ensureParallaxKeyframes } from "../../../core/src/parallaxCss.js";
 import { ParallaxController } from "../../../scene/src/legacy/ParallaxController";
@@ -479,6 +480,8 @@ describe("the oversizing reaches the node", () => {
           parallax: { enabled: true, depth: 0.2, mode: "mouse", axis: "both" } },
       ],
     };
+    // Ruling (13 Nov): the pointer parallax is retired in 2.0; this pins the 1.x road.
+    v2LayersOf((motor as any).metadata).clear();
     await motor.renderSlots();
     const horizonte = host.shadowRoot!.querySelector('[data-slot-id="horizonte"]') as HTMLElement;
     const luna = host.shadowRoot!.querySelector('[data-slot-id="luna"]') as HTMLElement;
@@ -535,6 +538,8 @@ describe("a layer with an infinite loop is not oversized", () => {
                     infinite: { enabled: false } },
       }],
     };
+    // Ruling (13 Nov): the pointer parallax is retired in 2.0; this pins the 1.x road.
+    v2LayersOf((motor as any).metadata).clear();
     await motor.renderSlots();
     const el = shadow.querySelector('[data-slot-id="sky"]') as HTMLElement;
     expect(el.style.getPropertyValue("--oim-scale")).toBe("1.24");

@@ -1084,26 +1084,10 @@ export class LegacyRenderer {
       }
 
       let textFill: Record<string, string> | null = null;
-      const v2TextFills = slotType === 'text' ? v2Layers.get(String(slot.id))?.fills : undefined;
-      const v2TextFill = v2TextFills?.length === 1 ? v2TextFills[0] : undefined;
+      const v2TextFill = slotType === 'text' ? v2Own.fills?.[0] : undefined;
       if (v2TextFill) {
         const css = paintCss(v2TextFill, { colors: v2Colors, isText: true, width: slot.width_px || baseWidth, height: slot.height_px || baseHeight });
         textFill = Object.keys(css).length > 0 ? (css as Record<string, string>) : null;
-      } else if (slotType === 'text' && style.fillType && style.fillType !== 'none') {
-        textFill = getFillCss({
-          type: 'text',
-          width: slot.width_px || baseWidth,
-          height: slot.height_px || baseHeight,
-          fillType: style.fillType,
-          fillColor: resolveCssColor(style.fillColorRole || style.colorRole, style.fillColor),
-          fillGradient: style.fillGradient,
-          fillGenerative: style.fillGenerative,
-          fillPatternType: style.fillPatternType,
-          fillPatternColor: style.fillPatternColor,
-          fillPatternBgColor: style.fillPatternBgColor,
-          fillPatternSpeed: style.fillPatternSpeed,
-          fillPatternScale: style.fillPatternScale,
-        });
       }
 
       const isMaskFill = textFill !== null && (textFill.backgroundClip === 'text' || (textFill as any).webkitBackgroundClip === 'text');
@@ -1660,7 +1644,7 @@ export class LegacyRenderer {
       const hasVector = slotType === 'svg' || isSvg || !!style.svgRawXml
         || (isGeoLike && (!!shapeDrawing(style.geoShape) || !!style.svgPath));
       // The outline is the first 2.0 stroke with no `align` (outer and inner strokes
-      // are drawn elsewhere). Without one, the 1.x fields still decide.
+      // are drawn elsewhere). Without one, there is no outline.
       // A text's 2.0 strokes are its letters' outline (below), never a box border.
       const v2Layer = v2Layers.get(String(slot.id));
       const v2Stroke = v2Layer?.strokes?.find((s) => !s.align && 'kind' in s.paint && s.paint.kind === 'color' && typeof s.width === 'number');
@@ -1668,7 +1652,7 @@ export class LegacyRenderer {
         ? { color: '', width: 0, style: undefined }
         : v2Stroke
         ? { color: v2Colors.css((v2Stroke.paint as { value: unknown }).value) || '', width: v2Stroke.width as number, style: v2Stroke.style }
-        : { color: resolveCssColor(style.strokeColorRole, style.strokeColor), width: style.strokeWidth, style: style.strokeStyle };
+        : { color: '', width: 0, style: undefined };
       if (outline.color && outline.width && !isWindowMask && !hasVector) {
         slotEl.style.setProperty('border', `${outline.width}px ${outline.style || 'solid'} ${outline.color}`);
       }
@@ -1801,30 +1785,9 @@ export class LegacyRenderer {
         fillLayer.style.height = '100%';
         fillLayer.style.pointerEvents = 'none';
         fillLayer.style.borderRadius = 'inherit';
-        const v2Fills = v2Layers.get(String(slot.id))?.fills;
+        const v2Fill = v2Own.fills?.[0];
         const fillCss: Record<string, string> = {
-          ...(v2Fills?.length === 1
-            ? paintCss(v2Fills[0], { colors: v2Colors, width: slot.width_px || baseWidth, height: slot.height_px || baseHeight })
-            : getFillCss({
-            type: slotType,
-            width: slot.width_px || baseWidth,
-            height: slot.height_px || baseHeight,
-            fillType: style.fillType,
-            fillColor: style.fillColor,
-            fillGradient: style.fillGradient,
-            fillGenerative: style.fillGenerative,
-            fillPatternType: style.fillPatternType,
-            fillPatternColor: style.fillPatternColor,
-            fillPatternBgColor: style.fillPatternBgColor,
-            fillPatternSpeed: style.fillPatternSpeed,
-            fillPatternScale: style.fillPatternScale,
-            fillPatternDirection: style.fillPatternDirection,
-            fillPatternSvgs: style.fillPatternSvgs,
-            fillPatternColors: style.fillPatternColors,
-            fillPatternSizes: style.fillPatternSizes,
-            fillPatternCounts: style.fillPatternCounts,
-            fillPatternDispersions: style.fillPatternDispersions,
-          })),
+          ...(v2Fill ? paintCss(v2Fill, { colors: v2Colors, width: slot.width_px || baseWidth, height: slot.height_px || baseHeight }) : {}),
           ...(isVectorFill ? svgSilhouetteMaskCss(text) : shapeMaskCss(style.geoShape, style)),
         };
         // The drawing goes above the fill: a positioned sibling paints over a
@@ -2009,9 +1972,7 @@ export class LegacyRenderer {
               ? { width: s.width, color: v2Colors.css(s.paint.value) || '' }
               : undefined;
           })()
-        : style.textStrokeWidth
-          ? { width: style.textStrokeWidth, color: resolveCssColor(style.textStrokeColorRole || style.strokeColorRole, style.textStrokeColor || '#000000') }
-          : undefined;
+        : undefined;
       if (glyphStroke) {
         slotEl.style.setProperty('-webkit-text-stroke', glyphStroke.width + 'px ' + glyphStroke.color);
         slotEl.style.setProperty('paint-order', 'stroke fill');
@@ -2141,24 +2102,8 @@ export class LegacyRenderer {
         const slotW = slot.width_px || (slot.widthPercent ? (slot.widthPercent / 100) * baseWidth : 300);
         const slotH = slot.height_px || (slot.heightPercent ? (slot.heightPercent / 100) * baseHeight : 200);
 
-        const containerShape = {
-          width: slotW,
-          height: slotH,
-          fillType: style.fillType,
-          fillColor: style.fillColor,
-          fillGenerative: style.fillGenerative,
-          fillGradient: style.fillGradient,
-          fillPatternType: style.fillPatternType,
-          fillPatternColor: style.fillPatternColor,
-          fillPatternBgColor: style.fillPatternBgColor,
-          fillPatternSpeed: style.fillPatternSpeed,
-          fillPatternScale: style.fillPatternScale,
-        };
-
-        const v2Fills = v2Layers.get(String(slot.id))?.fills;
-        const containerCss = v2Fills?.length === 1
-          ? paintCss(v2Fills[0], { colors: v2Colors, width: slotW, height: slotH })
-          : getFillCss(containerShape);
+        const v2Fill = v2Own.fills?.[0];
+        const containerCss = v2Fill ? paintCss(v2Fill, { colors: v2Colors, width: slotW, height: slotH }) : {};
         Object.assign(slotEl.style, containerCss);
       }
 

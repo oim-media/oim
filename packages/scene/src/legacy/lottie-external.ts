@@ -19,6 +19,40 @@ export function vendorUrl(scriptUrl: string | null, version: string): string {
   return FALLBACK_BASE + file;
 }
 
+/** Loads one script that lives next to the player, once per page; `read` says what it defined. */
+export function createExternalScriptLoader(opts: { scriptUrl: string | null; file: string; marker: string; read: () => any; doc?: Document }): () => Promise<any> {
+  let pending: Promise<any> | null = null;
+  return function load() {
+    const existing = opts.read();
+    if (existing) return Promise.resolve(existing);
+    if (pending) return pending;
+    const doc = opts.doc ?? document;
+    let url = FALLBACK_BASE + opts.file;
+    if (opts.scriptUrl) {
+      try { url = new URL(opts.file, opts.scriptUrl).href; } catch { /* fall back */ }
+    }
+    pending = new Promise((resolve, reject) => {
+      const script = doc.createElement('script');
+      script.src = url;
+      script.async = true;
+      script.setAttribute(opts.marker, '');
+      script.onload = () => {
+        const lib = opts.read();
+        if (lib) resolve(lib);
+        else reject(new Error(`Script loaded from ${url} but did not define what was expected`));
+      };
+      script.onerror = () => {
+        script.remove();
+        reject(new Error(`Could not load ${url}`));
+      };
+      (doc.head || doc.documentElement).appendChild(script);
+    });
+    // A failed load must not poison the page: the next call retries.
+    pending.catch(() => { pending = null; });
+    return pending;
+  };
+}
+
 /**
  * Loads lottie_light as a separate <script>, once per page.
  *
@@ -28,33 +62,16 @@ export function vendorUrl(scriptUrl: string | null, version: string): string {
  * library is only downloaded when a Lottie layer is actually painted.
  */
 export function createExternalLottieLoader(opts: { scriptUrl: string | null; version: string; doc?: Document }): () => Promise<any> {
-  let pending: Promise<any> | null = null;
-  return function load() {
-    const existing = (globalThis as any).lottie;
-    if (existing && typeof existing.loadAnimation === 'function') return Promise.resolve(existing);
-    if (pending) return pending;
-    const doc = opts.doc ?? document;
-    const url = vendorUrl(opts.scriptUrl, opts.version);
-    pending = new Promise((resolve, reject) => {
-      const script = doc.createElement('script');
-      script.src = url;
-      script.async = true;
-      script.setAttribute('data-oim-lottie', '');
-      script.onload = () => {
-        const lib = (globalThis as any).lottie;
-        if (lib && typeof lib.loadAnimation === 'function') resolve(lib);
-        else reject(new Error(`Lottie script loaded from ${url} but did not define window.lottie`));
-      };
-      script.onerror = () => {
-        script.remove();
-        reject(new Error(`Could not load Lottie from ${url}`));
-      };
-      (doc.head || doc.documentElement).appendChild(script);
-    });
-    // A failed load must not poison the page: the next Lottie layer retries.
-    pending.catch(() => { pending = null; });
-    return pending;
-  };
+  return createExternalScriptLoader({
+    scriptUrl: opts.scriptUrl,
+    file: `vendor/lottie_light-${opts.version}.js`,
+    marker: 'data-oim-lottie',
+    doc: opts.doc,
+    read: () => {
+      const lib = (globalThis as any).lottie;
+      return lib && typeof lib.loadAnimation === 'function' ? lib : undefined;
+    },
+  });
 }
 
 const load = createExternalLottieLoader({

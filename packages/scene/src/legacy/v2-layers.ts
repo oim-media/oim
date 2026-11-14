@@ -6,7 +6,7 @@
 
 // The bridge of the migration: the renderer still walks the 1.x slots, and
 // reads from the 2.0 layer of each one the blocks already moved to 2.0.
-import { upgrade } from '../../../core/src/v2/upgrade.js';
+import { upgrade } from './upgrade-entry.js';
 import type { Box, Layer } from '../../../core/src/v2/schema.js';
 import type { PaintColors } from '../../../core/src/v2/paint-css.js';
 import { resolveCssColor, resolvePalette } from '../../../core/src/dynamic-colors.js';
@@ -25,7 +25,9 @@ export function v2LayersOf(metadata: object): Map<string, Layer> {
       walk(layer.children ?? []);
     }
   };
-  walk(upgrade(metadata).document.layers);
+  // Without `upgrade` (its script failed to load) the map stays empty and every
+  // slot is painted by its 1.x road.
+  try { walk(upgrade(metadata).document.layers); } catch (err) { console.warn('[OimPlayer] 2.0 view unavailable:', err); }
   cache.set(metadata, layers);
   return layers;
 }

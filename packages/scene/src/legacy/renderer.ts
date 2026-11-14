@@ -15,6 +15,7 @@ import { dropCapStyle, splitDropCap } from '../../../core/src/drop-cap.js';
 import { layerTextureMask } from '../../../core/src/effects/texture-mask.js';
 import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entranceClips, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
 import { loadLottie } from './lottie-loader.js';
+import { ensureUpgrade } from './upgrade-entry.js';
 import { v2LayersOf, anchorShift, paintColors, typographyCss, filterStyle, maskStyle, imageSrc } from './v2-layers.js';
 import { paintCss } from '../../../core/src/v2/paint-css.js';
 import { sanitizeHtml, sanitizeFontFamily, isSandboxImageSrc } from './sanitize.js';
@@ -714,6 +715,8 @@ export class LegacyRenderer {
     const slots = this.metadata.slots || this.metadata.elements || [];
     // Parallax normalization: if it travels inside style and the root lacks it, copy it to the root.
     // A single entry point so that the whole engine and controllers read from s.parallax.
+    // The CDN player fetches `upgrade` apart, the first time a file needs it.
+    try { await ensureUpgrade(); } catch (err) { console.warn('[OimPlayer] Could not load upgrade:', err); }
     // A 2.0 mask is read by the same helpers as 1.x: its fields are written back once here.
     const v2Masks = v2LayersOf(self.metadata);
     slots.forEach(function (s: any) {

@@ -6,6 +6,7 @@
 
 import { extractOIM } from '../../../core/src/binary.js';
 import { normalizeRawSlots } from './normalize-raw-slots.js';
+import { isV2 } from '../../../core/src/v2/upgrade.js';
 import {
   verifyMetadataSignature,
   validateOimMetadata,
@@ -55,8 +56,9 @@ self.onmessage = async function (e: MessageEvent) {
     } else if (security === 'unsigned' || security === 'expired_key') {
       extracted.metadata = { slots: [], elements: [], layers: [] };
     } else {
-      // Normalize Python backend format AFTER signature validation.
-      normalizeRawSlots(extracted.metadata);
+      // Normalize Python backend format AFTER signature validation. A 2.0 document is
+      // left as it is: the page builds its 1.x view (ImageEngine `paintable`).
+      if (!isV2(extracted.metadata)) normalizeRawSlots(extracted.metadata);
     }
 
     self.postMessage({

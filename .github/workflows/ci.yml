@@ -85,6 +85,12 @@ jobs:
           cd packages/spec
           node tools/render-web-goldens.mjs "$RUNNER_TEMP/parity/web" --suffix ""
           node tools/parity.mjs "$RUNNER_TEMP/parity/web" --renderer web --out "$RUNNER_TEMP/parity/diff/web"
+      # The same works as 2.0 files (layers, no slots) must paint the same goldens.
+      - name: Web 2.0 files against the goldens
+        run: |
+          cd packages/spec
+          OIM_VECTORS=vectors-2 node tools/render-web-goldens.mjs "$RUNNER_TEMP/parity/web2" --suffix ""
+          node tools/parity.mjs "$RUNNER_TEMP/parity/web2" --renderer web --out "$RUNNER_TEMP/parity/diff/web2"
       - uses: ./.github/actions/setup-flutter
       - name: Flutter against the goldens
         run: |

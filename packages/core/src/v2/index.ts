@@ -11,3 +11,4 @@ export * from "./schema.js";
 export * from "./upgrade.js";
 export type { UpgradeContext } from "./upgrade/context.js";
 export * from "./paint-css.js";
+export * from "./resources.js";

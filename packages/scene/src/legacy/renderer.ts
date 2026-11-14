@@ -281,6 +281,7 @@ export interface ImageEngineOptions {
   dropdownBlur?: boolean;
   fit?: 'contain' | 'cover';
   align?: 'center' | 'top' | 'bottom';
+  poster?: 'auto' | 'only';
 }
 
 export function getTouchDistance(touches: TouchList): number {
@@ -488,8 +489,13 @@ const REVEAL_MEDIA_CAP_MS = 1200;
 export class LegacyRenderer {
   /** The viewport is the player's; the renderer asks it to resize after painting. */
   updateScale(): void {}
+
+  /** The scene is up and the viewport revealed. A player may act on it (a poster fades out). */
+  protected sceneReady(): void {}
   updateViewportSize(): void {}
   host!: HTMLElement;
+  /** `only`: the base picture alone. Read by renderSlots, which then never paints. */
+  poster: 'auto' | 'only' = 'auto';
   metadata: any = null;
   /** File trust state: no_metadata | unsigned | verified | invalid_signature | corrupt */
   securityStatus: string = 'unsigned';
@@ -574,7 +580,8 @@ export class LegacyRenderer {
   }
 
   async renderSlots(options?: { onlyIds?: Set<string> }): Promise<void> {
-    if (!this.metadata || !this.host) return;
+    // Every caller (the load, a language change, a patch) lands here: `only` never paints a layer.
+    if (!this.metadata || !this.host || this.poster === 'only') return;
 
     const allSlots = (this.metadata.slots || this.metadata.elements || []) as any[];
     // The composition (masks and filters) is computed over the whole stack, so
@@ -598,6 +605,7 @@ export class LegacyRenderer {
       if (this._viewport) {
         this._viewport.classList.add('oim-viewport--ready');
       }
+      this.sceneReady();
       return;
     }
 
@@ -2415,6 +2423,7 @@ export class LegacyRenderer {
     if (self._viewport) {
       self._viewport.classList.add('oim-viewport--ready');
       self._revealed = true;
+      self.sceneReady();
     }
   }
 

@@ -151,10 +151,13 @@ describe("lottie ships apart from the player", () => {
   // the commit that makes it. Last raise: 59 KB for reveal and play (1.22.0).
   // Back to 59 KB once the renderer painted only from 2.0 (`upgrade` lives in
   // its own file, vendor/oim-upgrade-*.js, 12.6 KB).
-  it.skipIf(!hasBundle)("the player fits in 59 KB gzip", async () => {
+  // 60 KB (feat(scene): the player paints a 2.0 document): the 2.0 view
+  // (legacy-view.ts, resolveRefs, the palette and size fields the renderer reads)
+  // is in the main package; 58.87 KB at HEAD, 59.66 KB with it.
+  it.skipIf(!hasBundle)("the player fits in 60 KB gzip", async () => {
     const { gzipSync } = await import("node:zlib");
     const kb = gzipSync(readFileSync(BUNDLE)).length / 1024;
-    expect(Math.round(kb)).toBeLessThanOrEqual(59);
+    expect(Math.round(kb)).toBeLessThanOrEqual(60);
   });
 
   it.skipIf(!hasBundle)("the lottie file sits next to both player paths", () => {

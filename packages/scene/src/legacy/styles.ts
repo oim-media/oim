@@ -21,6 +21,10 @@ export function getStylesText(): string {
     '.oim-player-viewport { position: relative; aspect-ratio: var(--oim-ar, 16/9); flex-shrink: 0; opacity: 0; overflow: hidden; transition: opacity var(--oim-reveal-duration, 0.32s) ease-in-out, filter var(--oim-reveal-duration, 0.32s) ease-in-out; filter: blur(var(--oim-reveal-blur, 14px)); }',
     '.oim-player-viewport.oim-viewport--ready { opacity: 1; filter: none; }',
     '.oim-player-viewport:not(.oim-viewport--ready) .oim-slot { transition: none !important; }',
+    // A poster is the base picture on its own: shown at once, the scene held back until ready.
+    '.oim-player-viewport.oim-viewport--poster { opacity: 1; filter: none; }',
+    '.oim-player-viewport.oim-viewport--poster:not(.oim-viewport--ready) .oim-layer-overlay { visibility: hidden; }',
+    '.oim-player-base.oim-base--faded { opacity: 0; transition: opacity 200ms ease-out; }',
     '.oim-player-viewport.oim-fit-contain { max-width: 100%; max-height: 100%; }',
     '.oim-player-viewport.oim-fit-cover { min-width: 100%; min-height: 100%; max-width: none; max-height: none; }',
     '.oim-player-base { display: block; width: 100%; height: 100%; object-fit: fill; pointer-events: none; transition: filter 0.5s ease-in-out; image-rendering: high-quality; image-rendering: -webkit-optimize-contrast; }',

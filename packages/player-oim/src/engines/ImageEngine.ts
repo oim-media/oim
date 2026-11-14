@@ -16,6 +16,11 @@ import { layerTextureMask } from '../../../core/src/effects/texture-mask.js';
 import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entranceClips, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
 import { loadLottie } from '../../../scene/src/legacy/lottie-loader.js';
 import { normalizeRawSlots } from '../render/normalize-raw-slots.js';
+import { isV2 } from '../../../core/src/v2/upgrade.js';
+import { hasBaseLayer } from '../../../core/src/v2/base-layer.js';
+import { resolveRefs } from '../../../core/src/v2/resources.js';
+import { legacyView } from '../../../scene/src/legacy/legacy-view.js';
+import type { OimDocument } from '../../../core/src/v2/schema.js';
 import { sanitizeHtml, sanitizeFontFamily } from '../render/security.js';
 import { verifyInWorker, type WorkerReply } from '../render/verify-worker.js';
 import { extractOIM } from '../../../core/src/binary.js';
@@ -73,11 +78,31 @@ import { readEmbeddedFonts, registerEmbeddedFonts, embeddedFontFamily } from '..
 import { LegacyRenderer, getTouchDistance, type ImageEngineOptions } from '../../../scene/src/legacy/renderer.js';
 export * from '../../../scene/src/legacy/renderer.js';
 
+/**
+ * What the renderer paints: a 2.0 document through its 1.x view, with its references resolved.
+ * Built on the page, not in the worker: the view's cache lives on the page's own objects.
+ */
+function paintable(metadata: any): any {
+  if (!isV2(metadata)) return metadata;
+  const resolved = resolveRefs(metadata as OimDocument);
+  resolved.missing.forEach((id) => console.warn(`[OimPlayer] resource "${id}" is not in the document`));
+  return legacyView(resolved.document);
+}
+
 export class ImageEngine extends LegacyRenderer {
+  /**
+   * The document as the file holds it: what `getMetadata()` and `oim:loaded` return.
+   * `metadata` is the 1.x view the renderer paints; the two never swap places.
+   */
+  fileMetadata: any = null;
+  // Set for a 2.0 poster (no base layer) until its scene is up: its base picture then fades out.
+  private _posterFade = false;
+
   constructor(host: HTMLElement, opts?: ImageEngineOptions) {
     super();
     const options = opts || {};
     this.host = host;
+    this.poster = options.poster === 'only' ? 'only' : 'auto';
     this.lang = host.getAttribute('lang') || 'en';
     this.showControls = host.getAttribute('show-controls') !== 'false';
     this._deviceProfile = getDeviceProfile();
@@ -325,7 +350,7 @@ export class ImageEngine extends LegacyRenderer {
       // distract from the real issue.
       announce = true;
       // Normalize the Python backend format AFTER signature validation (mutating it before would break the signature check).
-      normalizeRawSlots(extracted.metadata);
+      if (!isV2(extracted.metadata)) normalizeRawSlots(extracted.metadata);
       metadata = extracted.metadata;
     }
     return { metadata, security: status, announce };
@@ -374,9 +399,15 @@ export class ImageEngine extends LegacyRenderer {
    */
   async _applyVerified(v: VerifiedFile): Promise<boolean> {
     const self = this;
-    this.metadata = structuredClone(v.metadata);
+    // `only` mounts no scene: the view is not built, so no layer, font or upgrade chunk is loaded.
+    const only = this.poster === 'only';
+    this._posterFade = !only && isV2(v.metadata) && !hasBaseLayer(v.metadata);
+    const file = structuredClone(v.metadata);
+    this.fileMetadata = file;
+    // Converted after its own copy: the view's cache is keyed on the object the renderer keeps.
+    this.metadata = only ? structuredClone(file) : paintable(structuredClone(file));
     // The palette is first applied before the file is read; only now are its palettes known.
-    this.applyPalette();
+    if (!only) this.applyPalette();
 
     // A PUBLIC file carries its own stamp. Showing it with the same green
     // badge as an authored file ("Signature verified") would promise too much:
@@ -393,6 +424,13 @@ export class ImageEngine extends LegacyRenderer {
       try { setFlag(this.host, 'data-oim-key-retired', 'data-oim-clave-retirada'); } catch (e) {}
       console.warn('[OimPlayer] This work was signed with a retired key. Ask the author to export it again.');
     }
+    if (only) {
+      this._viewport?.classList.add('oim-viewport--poster', 'oim-viewport--ready');
+      this.host.dispatchEvent(new CustomEvent('oim:loaded', {
+        detail: { type: 'image', metadata: this.fileMetadata, security: this.securityStatus },
+      }));
+      return true;
+    }
     if (v.announce) {
       self._announceUnsupported(this.metadata);
     }
@@ -401,6 +439,7 @@ export class ImageEngine extends LegacyRenderer {
     // no layer asks Google for a family the file already carries.
     this.embeddedFontFamilies = await registerEmbeddedFonts(readEmbeddedFonts(this.metadata));
 
+    if (this._posterFade) this._viewport?.classList.add('oim-viewport--poster');
     this.updateViewportSize();
     this.updateScale();
     await this.renderSlots();
@@ -422,9 +461,25 @@ export class ImageEngine extends LegacyRenderer {
     }
 
     this.host.dispatchEvent(new CustomEvent('oim:loaded', {
-      detail: { type: 'image', metadata: this.metadata, security: this.securityStatus },
+      detail: { type: 'image', metadata: this.fileMetadata, security: this.securityStatus },
     }));
     return true;
+  }
+
+  /**
+   * The scene is up. A 2.0 poster's base picture fades out now (and is dropped at once under
+   * reduced motion): the scene has replaced it.
+   */
+  protected sceneReady(): void {
+    const base = this._baseImg;
+    if (!this._posterFade || !base) return;
+    this._posterFade = false;
+    if (this._prefersLessMotion()) {
+      base.style.display = 'none';
+      return;
+    }
+    base.classList.add('oim-base--faded');
+    setTimeout(() => { base.style.display = 'none'; }, 200);
   }
 
   async _executeLoad(blob: Blob, src?: string | Blob): Promise<boolean> {

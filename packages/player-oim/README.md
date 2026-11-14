@@ -49,6 +49,7 @@ changes again.
 |---|---|---|---|
 | `src` | none | URL of the `.oim` file. Setting it again reloads the element. | yes |
 | `placeholder` | none | Thumbnail shown until the engine paints. Only `http:`, `https:`, `blob:` and `data:image/` URLs are used; anything else is ignored. A thumbnail that fails to load is removed. | yes |
+| `poster` | `auto` | `only`: just the base picture is shown; no layers, fonts or scene are loaded. This is the gallery mode. `auto`: a 2.0 file without a base layer shows its base picture until the scene is up, then the picture fades out (at once under reduced motion). A file with a base layer, a 1.x file, or an unsigned one keeps its picture under the layers. Any other value means `auto`. | yes |
 | `lang` | `en` | Language of the text layers. Changing it switches language without reloading. With no `lang`, the player uses English; if the file has no text in that language, it falls back to `en`, then `es`, then the first language present. | yes |
 | `activate-on` | visible | `hover`: the file moves only while the pointer is over it (on devices with a pointer; touch devices behave as `visible`). `manual`: the page decides with `play()` and `pause()`. Visibility still decides when the file is built. | yes |
 | `fit` | `contain` | `contain` or `cover`. | yes |
@@ -99,6 +100,7 @@ const player: OimPlayerInstance | null = OimPlayer.mount("hero", "/art/poster.oi
 | `fit` | `contain` or `cover` | Same as `fit`. |
 | `align` | `center`, `top` or `bottom` | Same as `align`. |
 | `placeholder` | string | Same as `placeholder`. |
+| `poster` | `auto` or `only` | Same as `poster`. |
 
 ### Element members
 

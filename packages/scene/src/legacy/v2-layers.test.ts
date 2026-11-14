@@ -50,3 +50,11 @@ describe('drawingLink and drawingSvg', () => {
     expect(inline).not.toContain('background-image');
   });
 });
+
+describe('imageSrc', () => {
+  it('the base picture paints nothing: the player already shows it under the layers', async () => {
+    const { imageSrc } = await import('./v2-layers');
+    expect(imageSrc('oim:base', 'es')).toBe('');
+    expect(imageSrc({ value: 'oim:base', modes: { es: 'https://x.test/es.png' } }, 'es')).toBe('https://x.test/es.png');
+  });
+});

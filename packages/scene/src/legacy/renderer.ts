@@ -1006,7 +1006,8 @@ export class LegacyRenderer {
       // text above a card, or a full-canvas group revealed by a click, used to
       // swallow the hover or click of the layer behind it. A CSS rule
       // (styles.ts), so show/hide cannot undo it.
-      if (!isInteractiveSlot && !(slot.interaction && !self.disableActions)) {
+      const hasOwnInteraction = v2Own ? !!v2Own.interactions?.length : !!slot.interaction;
+      if (!isInteractiveSlot && !(hasOwnInteraction && !self.disableActions)) {
         slotEl.setAttribute('data-oim-passthrough', '');
       }
       if (isBackgroundSlot) {
@@ -2420,7 +2421,8 @@ export class LegacyRenderer {
         }
       }
 
-      if (!self.disableActions && slot.interaction && slot.interaction.action_type === 'toggle_elements') {
+      // A 2.0 layer runs its press through the actions below, like any other.
+      if (!v2Own && !self.disableActions && slot.interaction && slot.interaction.action_type === 'toggle_elements') {
         const targetConfig = slot.interaction.target;
         if (targetConfig) {
           slotEl.addEventListener('click', function (e) {
@@ -2451,13 +2453,15 @@ export class LegacyRenderer {
             style: style as any
           }, slot.id);
 
-      // The hover look comes from the 2.0 layer; the actions are still read from 1.x.
+      // The hover look and the actions come from the 2.0 layer.
       const v2HoverLook = v2Own?.animations?.find((a) => a.on === 'hover' && a.tracks);
       const hoverTarget = (property: string) => {
         const k = v2HoverLook?.tracks?.find((t) => t.property === property)?.keyframes;
         return k ? k[k.length - 1].v : undefined;
       };
-      const boundStates = v2Own && slotStates
+      const v2Actions = (on: 'hover' | 'press') =>
+        (v2Own?.interactions ?? []).filter((i) => i.on === on).flatMap((i) => i.actions);
+      const boundStates = v2Own
         ? {
             hover: {
               scale: hoverTarget('scale'),
@@ -2465,13 +2469,16 @@ export class LegacyRenderer {
               opacity: hoverTarget('opacity') === undefined ? undefined : +(hoverTarget('opacity')! * 100).toFixed(6),
               // Milliseconds in 2.0; the stylesheet takes seconds.
               transitionDuration: v2HoverLook && v2HoverLook.duration > 0 ? +(v2HoverLook.duration / 1000).toFixed(6) : undefined,
-              actions: slotStates.hover?.actions,
+              actions: v2Actions('hover'),
             },
-            active: slotStates.active,
+            active: { actions: v2Actions('press') },
           }
         : slotStates;
+      const reacts = v2Own
+        ? !self.disableActions && (!!v2HoverLook || !!v2Own.interactions?.length)
+        : isInteractive && !!slotStates;
 
-      if (isInteractive && slotStates) {
+      if (reacts && boundStates) {
         const baseVisibility: Record<string, boolean> = {};
         const baseText: Record<string, string> = {};
 

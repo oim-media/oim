@@ -133,14 +133,17 @@ describe("screen-reader layer", () => {
     const buttonItem = { ...imageItem("b", 0, 0), interaction: { action_type: "toggle_elements", target: { hide_slots: ["t"] } } };
     const { host, motor } = mount([buttonItem, textItem("t", 0, 100, { es: "Hola" })]);
     motor.disableActions = false;
-    const spy = vi.spyOn(motor, "executeToggleState");
     await motor.renderSlots();
+    // Ruling (13 Nov): a 2.0 layer runs its press as actions, so the run is seen in
+    // the `oim:action` event, not in the old toggle function.
+    const runs: unknown[] = [];
+    host.addEventListener("oim:action", (e: Event) => runs.push((e as CustomEvent).detail));
     const btn = a11y(host).querySelector("button")!;
     expect(btn.textContent).toBe("Botón");
     btn.click();
-    expect(spy).toHaveBeenCalledTimes(1);
+    expect(runs).toMatchObject([{ targets: ["t"], types: ["hide"] }]);
     btn.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
-    expect(spy).toHaveBeenCalledTimes(2);
+    expect(runs).toHaveLength(2);
   });
 
   it("in image mode (actions off) an interactive layer is not a button", async () => {

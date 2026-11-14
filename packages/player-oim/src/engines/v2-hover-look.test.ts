@@ -32,7 +32,7 @@ async function hover(style: object, edit: (layer: any) => void) {
   const written: Record<string, string>[] = [];
   engine.queueUpdate = (_el: HTMLElement, styles: Record<string, string>) => { written.push(styles); };
   (shadow.querySelector('[data-slot-id="a"]') as HTMLElement).dispatchEvent(new Event("mouseenter"));
-  return written[0];
+  return written[0] ?? {};
 }
 
 describe("the hover look comes from the 2.0 layer", () => {

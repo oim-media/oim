@@ -382,6 +382,12 @@ describe("animations, motion and interactions", () => {
     expect(run({ isInteractive: true, states: { hover: { color: "#f00", scale: 105 } } }).unhandled).toEqual(["style.states.hover.color: a hover colour is not carried to 2.0"]);
   });
 
+  // Ruling (13 Nov): what the 1.x player ran wins: a state's actions only on a layer marked interactive.
+  it("actions on a layer not marked interactive are not carried", () => {
+    expect(layer({ states: { active: { actions: [{ target: "g1", type: "toggle" }] } } })).not.toHaveProperty("interactions");
+    expect(layer({ states: { active: { actions: [{ target: "g1", type: "toggle" }] } } }, "geo", { slot: { isInteractive: true } }).interactions).toHaveLength(1);
+  });
+
   it("a state that acts on other layers is an interaction, not an animation", () => {
     const result = layer({ isInteractive: true, states: { hover: { actions: [{ target: "g1", type: "toggle" }], transitionDuration: 0 } } });
     expect(result.interactions).toEqual([{ on: "hover", actions: [{ type: "toggle", target: "g1" }] }]);

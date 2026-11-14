@@ -190,7 +190,8 @@ export function convertAnimations(ctx: UpgradeContext, slot: V1Slot, layer: Draf
     if (!state) continue;
     const look = interactive && on === "hover" ? hoverLook(ctx, state, layer) : undefined;
     if (look) animations.push(look);
-    const acts = stateInteraction(state, on);
+    // 1.x ran a state's actions only on a layer marked interactive.
+    const acts = interactive ? stateInteraction(state, on) : undefined;
     if (acts) interactions.push(acts);
   }
 

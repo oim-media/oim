@@ -17,6 +17,8 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
   that flow lays out differently).
 - Flutter SDK: a hover `transitionDuration` is read in milliseconds, as the contract says. It
   was multiplied by 1000, so a 200 ms transition lasted 200 s.
+- Flutter SDK: 1.x zones are painted (background, corners and backdrop blur); they were not drawn
+  at all.
 - Spec: two new vectors, `zone-group` and `mask-window` (39 in all).
 
 ## 1.27.9

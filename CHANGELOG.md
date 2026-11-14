@@ -3,7 +3,7 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
-## Unreleased
+## 1.27.12
 
 - Core (`upgrade`): an SVG layer draws its content, as 1.x did, not `svgRawXml` (the
   untouched original): colours and stroke widths edited in the content are kept.

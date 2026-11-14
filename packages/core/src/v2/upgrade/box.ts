@@ -95,11 +95,14 @@ export function convertBox(ctx: UpgradeContext, slot: V1Slot, layer: DraftLayer)
   const [width, height] = size;
 
   if (width === undefined || height === undefined) {
-    if (type !== "text") {
-      // Sized by content in 1.x and with no text to measure: keep the reference box.
+    if (type !== "text" && !content) {
+      // Nothing to fit (a group): keep the reference box its wrapper is built from.
       layer.box = { x: fx * W, y: fy * H, width: Math.max(0, wRef), height: Math.max(0, hRef) };
     } else {
+      // Fitted to its content in 1.x: the point it was pinned at, and the
+      // reference width when it had one (an endless loop measures by it).
       layer.box = { x: anchorX, y: anchorY, anchor: align === "center" ? "center" : align === "right" ? "right" : "left" };
+      if (wRef > 0) layer.box.width = wRef;
     }
   } else {
     layer.box = { x: anchorX - pull(width), y: anchorY - height / 2, width: Math.max(0, width), height: Math.max(0, height) };

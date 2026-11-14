@@ -835,6 +835,7 @@ export class LegacyRenderer {
         console.warn('[OimPlayer] Slot "' + slot.id + '" has no 2.0 layer; it is not painted.');
         return null;
       }
+      const v2Box = v2Own.box;
 
       const localized = localizedEntries(slot, self.lang);
       // A 2.0 text reads its words from the layer, with the same language fallback.
@@ -1086,14 +1087,14 @@ export class LegacyRenderer {
       let textFill: Record<string, string> | null = null;
       const v2TextFill = slotType === 'text' ? v2Own.fills?.[0] : undefined;
       if (v2TextFill) {
-        const css = paintCss(v2TextFill, { colors: v2Colors, isText: true, width: slot.width_px || baseWidth, height: slot.height_px || baseHeight });
+        const css = paintCss(v2TextFill, { colors: v2Colors, isText: true, width: v2Own.box.width || baseWidth, height: v2Own.box.height || baseHeight });
         textFill = Object.keys(css).length > 0 ? (css as Record<string, string>) : null;
       }
 
       const isMaskFill = textFill !== null && (textFill.backgroundClip === 'text' || (textFill as any).webkitBackgroundClip === 'text');
       // loopWrap with position: absolute is only valid when the slot has defined dimensions;
       // otherwise, width: max-content and height: auto would collapse with content out of flow.
-      const hasDefinedSize = Boolean(style.width && style.height);
+      const hasDefinedSize = v2Own.box.width !== undefined && v2Own.box.height !== undefined;
       const useWrapMask = isMaskFill && hasDefinedSize;
 
       if (isImageSlot) {
@@ -1348,7 +1349,7 @@ export class LegacyRenderer {
           pauseOnHover: pauseOnHover,
         };
 
-        const slotW = slot.width_px || (slot.widthPercent ? (slot.widthPercent / 100) * baseWidth : (style.width ? (parseFloat(style.width) / 100) * baseWidth : baseWidth));
+        const slotW = v2Own.box.width || baseWidth;
         // The canvas WIDTH goes too: it decides how many pieces are needed so that the
         // track covers it for the whole loop. Without it, a layer narrower than the canvas
         // leaves empty bands at the sides.
@@ -1543,39 +1544,15 @@ export class LegacyRenderer {
       const origW = self.metadata?.canvas_width || self.metadata?.canvasWidth || (self.metadata?.canvas ? self.metadata.canvas.natural_width : 800);
       const origH = self.metadata?.canvas_height || self.metadata?.canvasHeight || (self.metadata?.canvas ? self.metadata.canvas.natural_height : 600);
       
-      let widthCqw = '';
-      let heightCqw = '';
-      if (slot.width_px && origW) {
-        widthCqw = ((slot.width_px / origW) * 100).toFixed(4) + 'cqw';
-      } else if (slot.widthPercent) {
-        widthCqw = slot.widthPercent + 'cqw';
-      }
-      if (slot.height_px && origW) {
-        heightCqw = ((slot.height_px / origW) * 100).toFixed(4) + 'cqw';
-      } else if (slot.heightPercent) {
-        heightCqw = slot.heightPercent + 'cqw';
-      }
-
       if (isInteractiveSlot) {
         applyMinHitArea(slotEl);
       }
 
-      const resolvedStyleWidth = resolveDimensionToCss(style.width, origW);
-      const resolvedStyleHeight = resolveDimensionToCss(style.height, origH || origW);
-
-      if (resolvedStyleWidth && resolvedStyleHeight) {
-        slotEl.style.width = resolvedStyleWidth;
-        slotEl.style.height = resolvedStyleHeight;
-      } else if (widthCqw && heightCqw && (isGeoLike || isImageSlot || !rawText)) {
-        slotEl.style.width = widthCqw;
-        slotEl.style.height = heightCqw;
-      } else if (isImageSlot) {
-        slotEl.style.width = resolvedStyleWidth || '10cqw';
-        slotEl.style.height = resolvedStyleHeight || '10cqw';
-      } else if ((isGeoLike && !hasHtmlOrSvg && !rawText) || isBackgroundSlot || slotType === 'pattern') {
-        // Pure geometric shapes, invisible triggers, and pattern background
-        slotEl.style.width = widthCqw || resolvedStyleWidth || '10cqw';
-        slotEl.style.height = heightCqw || resolvedStyleHeight || '10cqw';
+      // The size is the 2.0 box, painted against the canvas width (cqw) as 1.x did.
+      // A box with no size was sized by its content.
+      if (v2Box.width !== undefined && v2Box.height !== undefined) {
+        slotEl.style.width = ((v2Box.width / origW) * 100).toFixed(4) + 'cqw';
+        slotEl.style.height = ((v2Box.height / origW) * 100).toFixed(4) + 'cqw';
       } else {
         slotEl.style.width = 'max-content';
         slotEl.style.height = 'auto';
@@ -1766,8 +1743,8 @@ export class LegacyRenderer {
       // by a rect whose corner radius is a fraction of the box (0 = the whole box).
       if (imageSrcSafe && !silhouette) {
         const radio = parseFloat(String(style.borderRadius)) || 0;
-        const cajaW = slot.width_px || baseWidth;
-        const cajaH = slot.height_px || baseHeight;
+        const cajaW = v2Own.box.width || baseWidth;
+        const cajaH = v2Own.box.height || baseHeight;
         mountImageFill(slotEl, v2FillStyle(), {
           d: '',
           viewBox: '0 0 1 1',
@@ -1787,7 +1764,7 @@ export class LegacyRenderer {
         fillLayer.style.borderRadius = 'inherit';
         const v2Fill = v2Own.fills?.[0];
         const fillCss: Record<string, string> = {
-          ...(v2Fill ? paintCss(v2Fill, { colors: v2Colors, width: slot.width_px || baseWidth, height: slot.height_px || baseHeight }) : {}),
+          ...(v2Fill ? paintCss(v2Fill, { colors: v2Colors, width: v2Own.box.width || baseWidth, height: v2Own.box.height || baseHeight }) : {}),
           ...(isVectorFill ? svgSilhouetteMaskCss(text) : shapeMaskCss(style.geoShape, style)),
         };
         // The drawing goes above the fill: a positioned sibling paints over a
@@ -1838,87 +1815,30 @@ export class LegacyRenderer {
         }
         slotEl.style.margin = '0';
       } else {
-        const pos = normalizePosition(position || [0.5, 0.5]);
-        // Reuse the already-correctly-resolved baseWidth/baseHeight (which fall
-        // back through metadata.canvas.natural_width/natural_height) instead of
-        // re-deriving origW/origH here — a prior local redeclaration of these
-        // names only checked metadata.canvas_width/canvasWidth (missing the
-        // nested canvas.natural_* fallback), so any file storing its canvas size
-        // under metadata.canvas.natural_height fell back to a hardcoded 600,
-        // scaling hRef ~2x and shifting every non-square-canvas slot downward.
-        const origW = baseWidth;
-        const origH = baseHeight;
-
-        let wRef = 0;
-        if (slot.width_px) {
-          wRef = (slot.width_px / origW) * baseWidth;
-        } else if (slot.widthPercent) {
-          wRef = (slot.widthPercent / 100) * baseWidth;
-        } else if (style.width != null && style.width !== '') {
-          const resolvedW = resolveNumericDimension(style.width, baseWidth);
-          wRef = resolvedW !== null ? resolvedW : (parseFloat(style.width) / 100) * baseWidth;
-        }
-        let hRef = 0;
-        if (slot.height_px) {
-          hRef = (slot.height_px / origH) * baseHeight;
-        } else if (slot.heightPercent) {
-          hRef = (slot.heightPercent / 100) * baseHeight;
-        } else if (style.height != null && style.height !== '') {
-          const resolvedH = resolveNumericDimension(style.height, baseHeight);
-          hRef = resolvedH !== null ? resolvedH : (parseFloat(style.height) / 100) * baseHeight;
-        }
-
-        let anchorX = pos[0] * baseWidth;
-        if (!duplicatedForInfinite) {
-          if (textAlign === 'center') {
-            anchorX += wRef / 2;
-          } else if (textAlign === 'right') {
-            anchorX += wRef;
-          }
-        }
-        const anchorY = pos[1] * baseHeight + hRef / 2;
-
-        const leftPx = anchorX.toFixed(2);
-        const topPx = anchorY.toFixed(2);
-        let transformX = '-50%';
-        if (duplicatedForInfinite) {
-          transformX = '0%';
-        } else if (textAlign === 'right') transformX = '-100%';
-        else if (textAlign === 'left') transformX = '0%';
- 
-        const transformY = '-50%';
- 
+        const box = v2Box;
         slotEl.style.position = 'absolute';
-        // Placed from the 2.0 box: the same pixels as the 1.x anchor above,
-        // which only the infinite duplicate still uses.
-        const box = duplicatedForInfinite ? undefined : v2Layers.get(String(slot.id))?.box;
-        if (box && box.width !== undefined && box.height !== undefined) {
+        let transformX: string;
+        let transformY = '-50%';
+        if (box.width !== undefined && box.height !== undefined) {
           // The painted element is not always exactly the box (max-width, text
           // metrics), so it is pinned at the same point 1.x pinned, inside the box.
+          // The infinite duplicate is a track that starts at the box's left edge.
+          transformX = duplicatedForInfinite || textAlign === 'left' ? '0%' : textAlign === 'right' ? '-100%' : '-50%';
           const share = transformX === '0%' ? 0 : transformX === '-100%' ? 1 : 0.5;
           slotEl.style.left = (box.x + box.width * share).toFixed(2) + 'px';
           slotEl.style.top = (box.y + box.height / 2).toFixed(2) + 'px';
-          slotEl.style.setProperty('--oim-ty', transformY);
-        } else if (box) {
-          [transformX] = anchorShift(box);
-          const [, shiftY] = anchorShift(box);
+        } else {
+          [transformX, transformY] = anchorShift(box);
+          if (duplicatedForInfinite) transformX = '0%';
           slotEl.style.left = box.x.toFixed(2) + 'px';
           slotEl.style.top = box.y.toFixed(2) + 'px';
-          slotEl.style.setProperty('--oim-ty', shiftY);
-        } else {
-          slotEl.style.left = leftPx + 'px';
-          slotEl.style.top = topPx + 'px';
         }
-
-        const rotationDeg = style.rotation || 0;
         slotEl.style.setProperty('--oim-tx', transformX);
-        if (!box) slotEl.style.setProperty('--oim-ty', transformY);
-        slotEl.style.setProperty('--oim-rot', rotationDeg + 'deg');
+        slotEl.style.setProperty('--oim-ty', transformY);
+        slotEl.style.setProperty('--oim-rot', (box.rotation || 0) + 'deg');
 
-        // The box already resolved in canvas pixels. It is kept because the
-        // group wrapper, further down, needs it for its transform origin;
-        // `pos`/`wRef`/`hRef` live only in this block.
-        boxInCanvas = { x: pos[0] * baseWidth, y: pos[1] * baseHeight, width: wRef, height: hRef };
+        // The box in canvas pixels, for the group wrapper's transform origin.
+        boxInCanvas = { x: box.x, y: box.y, width: box.width ?? 0, height: box.height ?? 0 };
       }
 
       // A GROUP is not painted: it wraps. Up to phase 3 it arrived here like any
@@ -2099,8 +2019,8 @@ export class LegacyRenderer {
       }
 
       if (slotType === 'container') {
-        const slotW = slot.width_px || (slot.widthPercent ? (slot.widthPercent / 100) * baseWidth : 300);
-        const slotH = slot.height_px || (slot.heightPercent ? (slot.heightPercent / 100) * baseHeight : 200);
+        const slotW = v2Own.box.width || 300;
+        const slotH = v2Own.box.height || 200;
 
         const v2Fill = v2Own.fills?.[0];
         const containerCss = v2Fill ? paintCss(v2Fill, { colors: v2Colors, width: slotW, height: slotH }) : {};
@@ -2134,6 +2054,8 @@ export class LegacyRenderer {
         // The 2.0 typography is already on the element.
         if (v2Typo && (key === 'fontWeight' || key === 'fontStyle' || key === 'letterSpacing' ||
             key === 'textTransform' || key === 'textDecoration')) return;
+        // The size and the place come from the 2.0 box.
+        if (key === 'width' || key === 'height') return;
         if (key === 'position' || key === 'zIndex' || key === 'top' || key === 'left' ||
             key === 'right' || key === 'bottom' || key === 'display') return;
         let val = style[key];

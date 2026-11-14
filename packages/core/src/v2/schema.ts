@@ -363,17 +363,16 @@ const boxSchema = z
   .object({
     x: z.number(),
     y: z.number(),
-    width: z.number().min(0),
-    height: z.number().min(0),
+    // Left out, the layer fits its content, grown from its anchor. A width alone
+    // is a reference width (what an endless loop measures its copies by).
+    width: z.number().min(0).optional(),
+    height: z.number().min(0).optional(),
     anchor: z.enum(ANCHORS).optional(),
     rotation: z.number().optional(),
     flipX: z.boolean().optional(),
     flipY: z.boolean().optional(),
   })
   .strict();
-
-// A text may leave its size out: it then fits its content, grown from its anchor.
-const textBoxSchema = boxSchema.extend({ width: z.number().min(0).optional(), height: z.number().min(0).optional() }).strict();
 
 const BLEND = ["multiply", "screen", "overlay", "darken", "lighten", "color-dodge", "color-burn", "difference"] as const;
 
@@ -409,7 +408,7 @@ function layerOf<T extends LayerType>(type: T, own: Record<string, z.ZodType> = 
       id,
       type: z.literal(type),
       name: z.string().max(256).optional(),
-      box: type === "text" ? textBoxSchema : boxSchema,
+      box: boxSchema,
       opacity: unit.optional(),
       visible: z.boolean().optional(),
       blend: z.enum(BLEND).optional(),
@@ -507,7 +506,7 @@ export type Mask = z.infer<typeof maskSchema>;
 export type Animation = z.infer<typeof animationSchema>;
 export type Motion = z.infer<typeof motionSchema>;
 export type Interaction = z.infer<typeof interactionSchema>;
-export type Box = z.infer<typeof textBoxSchema>;
+export type Box = z.infer<typeof boxSchema>;
 export type Variables = z.infer<typeof variablesSchema>;
 
 export type Layer = {

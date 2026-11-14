@@ -66,17 +66,27 @@ describe("upgrade: the box the player painted", () => {
     expect(at({ type: "text", position: [10, 10], align: "right", content: { es: "Hola" } }).box.anchor).toBe("right");
   });
 
+  // Decision (13 Nov): a layer fitted to its content keeps its reference width
+  // (an endless loop measures its copies by it), with no height.
   it("a text with only width_px and height_px still fits its content, as the player did", () => {
     const layer = at({ type: "text", position: [10, 10], width_px: 300, height_px: 40, content: { es: "Hola" } });
-    expect(layer.box).not.toHaveProperty("width");
+    expect(layer.box.width).toBe(300);
+    expect(layer.box).not.toHaveProperty("height");
     expect(layer.box.anchor).toBe("left");
   });
 
-  it("only a text may leave its size out", () => {
+  it("a non-text layer with content and no size fits its content too", () => {
+    const layer = at({ type: "svg", position: [10, 10], content: { es: "<svg></svg>" } });
+    expect(layer.box).not.toHaveProperty("height");
+    expect(layer.box.anchor).toBe("left");
+  });
+
+  // Decision (13 Nov): any layer may leave its size out, not only a text.
+  it("any layer may leave its size out", () => {
     const shape = { id: "s", type: "shape", box: { x: 0, y: 0 }, geometry: { kind: "rect" } };
     const text = { id: "t", type: "text", box: { x: 0, y: 0, anchor: "center" }, text: { content: { es: "x" } } };
     const doc = (layer: object) => ({ oim: "2.0.0-draft.1", canvas: { width: 10, height: 10 }, languages: ["es"], layers: [layer] });
-    expect(documentSchema.safeParse(doc(shape)).success).toBe(false);
+    expect(documentSchema.safeParse(doc(shape)).success).toBe(true);
     expect(documentSchema.safeParse(doc(text)).success).toBe(true);
     expect(documentSchema.safeParse(doc({ ...text, box: { x: 0, y: 0, anchor: "middle" } })).success).toBe(false);
   });

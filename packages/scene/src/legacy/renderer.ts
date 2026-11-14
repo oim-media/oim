@@ -435,7 +435,7 @@ function buildLayerCompositionDefs(
         defs.appendChild(clip);
       }
     }
-    if (s.type === 'filter' && style.filterPreset === 'duotone') {
+    if (s.type === 'filter' && (s as any).duotone) {
       const filter = document.createElementNS(svgNs, 'filter');
       filter.setAttribute('id', getDuotoneFilterId(s));
       const colorMatrix = document.createElementNS(svgNs, 'feColorMatrix');
@@ -698,16 +698,11 @@ export class LegacyRenderer {
 
     const self = this;
     const slots = this.metadata.slots || this.metadata.elements || [];
-    // Parallax normalization: if it travels inside style and the root lacks it, copy it to the root.
-    // A single entry point so that the whole engine and controllers read from s.parallax.
     // The CDN player fetches `upgrade` apart, the first time a file needs it.
     try { await ensureUpgrade(); } catch (err) { console.warn('[OimPlayer] Could not load upgrade:', err); }
     // A 2.0 mask is read by the same helpers as 1.x: its fields are written back once here.
     const v2Masks = v2LayersOf(self.metadata);
     slots.forEach(function (s: any) {
-      if (s && !s.parallax && s.style && s.style.parallax) {
-        s.parallax = s.style.parallax;
-      }
       const v2Mask = s && s.type === 'mask' ? v2Masks.get(String(s.id)) : undefined;
       if (v2Mask) s.style = { ...s.style, ...maskStyle(v2Mask) };
     });
@@ -1836,7 +1831,7 @@ export class LegacyRenderer {
             overlay.style.zIndex = '1';
             // On the layer's own pixels, not its box (@oim-media/core layerTextureMask):
             // an SVG with a transparent background came out as a coloured square.
-            const mask = layerTextureMask({ type: slotType, svg: isSvg ? text : undefined, image: isImageSlot ? text.trim() : undefined, fit: v2Image ? v2Image.fit : style.objectFit });
+            const mask = layerTextureMask({ type: slotType, svg: isSvg ? text : undefined, image: isImageSlot ? text.trim() : undefined, fit: v2Image?.fit });
             if (mask) {
               const ms = overlay.style as CSSStyleDeclaration & { webkitMaskImage?: string; webkitMaskSize?: string; webkitMaskRepeat?: string; webkitMaskPosition?: string };
               ms.maskImage = ms.webkitMaskImage = mask.image;
@@ -1872,7 +1867,7 @@ export class LegacyRenderer {
           } else if (fx.kind === 'grain') {
             if (!(GRAIN_LAYER_TYPES as readonly string[]).includes(slotType)) continue;
             const grainId = 'oim-grain-' + String(slot.id).replace(/[^A-Za-z0-9_-]/g, '_');
-            self._defineLayerGrain(grainId, { grainIntensity: fx.intensity, grainSize: fx.size, grainBlend: fx.blend });
+            self._defineLayerGrain(grainId, fx as never);
             addFilter('url(#' + grainId + ')');
           } else if (fx.kind === 'texture') applyTexture({ ...fx, color: fx.color === undefined ? undefined : v2Literal(fx.color) });
         }
@@ -2319,6 +2314,8 @@ export class LegacyRenderer {
         id: compositionKeys[i],
         type: s.type,
         style: s.style || {},
+        // The 2.0 filter layer's backdrop effect says whether it is a duotone.
+        duotone: s.type === 'filter' && v2Layers.get(String(s.id))?.effects?.some((e: any) => e.kind === 'backdrop' && e.preset === 'duotone'),
         position: s.position,
         width_px: s.width_px,
         height_px: s.height_px
@@ -2330,7 +2327,7 @@ export class LegacyRenderer {
     // Checking it here meant the definitions were never generated and the
     // clipPath pointed at a nonexistent id: it clipped nothing.
     const hasMask = compositionSlots.some(function (s) { return s.type === 'mask'; });
-    const hasDuotoneFilter = compositionSlots.some(function (s) { return s.type === 'filter' && !!(s.style && s.style.filterPreset === 'duotone'); });
+    const hasDuotoneFilter = compositionSlots.some(function (s: any) { return !!s.duotone; });
     if (hasMask || hasDuotoneFilter) {
       fragment.appendChild(buildLayerCompositionDefs(compositionSlots, { width: baseWidth, height: baseHeight }));
     }
@@ -2449,7 +2446,7 @@ export class LegacyRenderer {
    * Parsed as SVG, never assigned as HTML: the markup is built from a
    * sanitised id, clamped numbers and a fixed list of blend modes.
    */
-  private _defineLayerGrain(id: string, style: any): void {
+  private _defineLayerGrain(id: string, fx: NonNullable<Parameters<typeof buildLayerGrainFilter>[1]>): void {
     // In the viewport, NOT in the overlay: a full render empties the overlay
     // (innerHTML = '') after the slots are styled, and took the defs with it.
     // Same shadow root, so url(#id) still resolves.
@@ -2471,9 +2468,9 @@ export class LegacyRenderer {
     const existing = defs.querySelector('#' + id);
     if (existing) existing.remove();
     const markup = buildLayerGrainFilter(id, {
-      intensity: style.grainIntensity,
-      size: style.grainSize,
-      blend: style.grainBlend,
+      intensity: fx.intensity,
+      size: fx.size,
+      blend: fx.blend,
     });
     const doc = new DOMParser().parseFromString(
       '<svg xmlns="http://www.w3.org/2000/svg"><defs>' + markup + '</defs></svg>',

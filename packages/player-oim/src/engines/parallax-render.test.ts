@@ -38,7 +38,7 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
     expect(shadowRoot.querySelectorAll("style")).toHaveLength(1);
   });
 
-  it("normalizes style.parallax on entering the engine and mounts an infinite track with 2 copies", async () => {
+  it("mounts an infinite track with 2 copies", async () => {
     const engine = new ImageEngine(hostEl);
     engine._overlay = document.createElement("div");
     shadowRoot.appendChild(engine._overlay);
@@ -67,9 +67,8 @@ describe("Parallax Render & Controller Engine (Tarea 2)", () => {
 
     await engine.renderSlots();
 
-    // Check that s.parallax was normalized
-    expect(engine.metadata.slots[0].parallax).toBeDefined();
-    expect(engine.metadata.slots[0].parallax.enabled).toBe(true);
+    // Decision (13 Nov): the loop comes from the 2.0 layer's motion; the engine no longer
+    // copies style.parallax onto the slot, so only the track it mounts is checked.
 
     // Check that the slot contains the track
     const slotEl = engine._overlay.querySelector('[data-slot-id="sky"]') as HTMLElement;

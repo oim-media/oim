@@ -265,7 +265,7 @@ dependencies = [
 
 [[package]]
 name = "oim-media"
-version = "1.27.10"
+version = "1.27.11"
 dependencies = [
  "base64",
  "flate2",

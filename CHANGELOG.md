@@ -3,6 +3,13 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.27.11
+
+- Core (`upgrade`): a CSS corner shorthand (`"10px 25px 50px 0px"`) keeps its four corners;
+  a text whose fill 1.x left transparent stays hollow instead of painting black; only the canvas
+  background tiles its raw SVG, so an SVG icon is drawn, not filled.
+- Scene: the colour under a photo fill is painted beneath it, clipped to the shape, as 1.x did.
+
 ## 1.27.10
 
 - Core: experimental `@oim-media/core/v2` entry with the draft of the 2.0 document and

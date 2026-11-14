@@ -34,7 +34,7 @@ const numbers = (value: unknown): number[] | undefined =>
   Array.isArray(value) && value.length > 0 && value.every((n) => typeof n === "number") ? (value as number[]) : undefined;
 
 /** The pattern fields that share a prefix: `fillPattern*` on a layer, `backgroundPattern*` on a layer or the canvas. */
-function patternOf(ctx: UpgradeContext, owner: V1Object, prefix: string, cssAnimation?: unknown): Paint | undefined {
+function patternOf(ctx: UpgradeContext, owner: V1Object, prefix: string, cssAnimation?: unknown, canvasBackground = false): Paint | undefined {
   const preset = ctx.take(owner, `${prefix}Type`);
   const single = colorOf(ctx, owner, `${prefix}Color`, `${prefix}ColorRole`);
   const bg = colorOf(ctx, owner, `${prefix}BgColor`, `${prefix}BgColorRole`);
@@ -49,7 +49,8 @@ function patternOf(ctx: UpgradeContext, owner: V1Object, prefix: string, cssAnim
   const dispersions = numbers(ctx.take(owner, `${prefix}Dispersions`)) ?? numbers(ctx.take(owner, `${prefix}Dispersion`));
   const colors: NonNullable<typeof single>[] = Array.isArray(list) ? list.filter(isColor) : [];
   // A raw SVG tile carries no preset: only the colours it is recoloured with, its fit and its motion.
-  const tile = prefix === "backgroundPattern" && typeof owner.svgRawXml === "string" && owner.svgRawXml !== "";
+  // Only the canvas background tiles its raw SVG; any other SVG layer is a drawing.
+  const tile = canvasBackground && prefix === "backgroundPattern" && typeof owner.svgRawXml === "string" && owner.svgRawXml !== "";
   if ((typeof preset !== "string" || !preset) && !tile && single === undefined && bg === undefined && colors.length === 0) return undefined;
 
   const pattern: Extract<Paint, { kind: "pattern" }>["pattern"] = typeof preset === "string" && preset ? { preset } : {};
@@ -119,7 +120,8 @@ function fillOf(ctx: UpgradeContext, slot: V1Slot): Paint | Paint[] | undefined 
   const image = imageOf(ctx, style);
   const cssAnimation = style.cssAnimation;
   const fillPattern = patternOf(ctx, style, "fillPattern", cssAnimation);
-  const backgroundPattern = patternOf(ctx, style, "backgroundPattern", cssAnimation);
+  const canvasBackground = slot.raw.is_background_pattern === true || slot.raw.id === "background-pattern-slot";
+  const backgroundPattern = patternOf(ctx, style, "backgroundPattern", cssAnimation, canvasBackground);
   const generative = asObject(ctx.take(style, "fillGenerative")) ?? asObject(ctx.take(style, "backgroundGenerative"));
   const backgroundFit = ctx.take(style, "backgroundFit");
   const textGradient = ctx.take(style, "textGradientType");
@@ -173,6 +175,8 @@ function textStrokeOf(ctx: UpgradeContext, style: V1Object): Stroke | undefined 
 
 export function convertPaints(ctx: UpgradeContext, slot: V1Slot, layer: DraftLayer): void {
   const { style } = slot;
+  // A text whose letter 1.x left transparent (only its stroke shows): no fill would paint it black.
+  const hollowText = layer.type === "text" && style.fillColor === "transparent" && (style.fillType === undefined || style.fillType === "solid" || style.fillType === "color");
 
   const fills = fillOf(ctx, slot);
   const fill = Array.isArray(fills) ? fills[0] : fills;
@@ -182,6 +186,7 @@ export function convertPaints(ctx: UpgradeContext, slot: V1Slot, layer: DraftLay
   const customPath = typeof style.svgPath === "string" && style.svgPath !== "" && (shape === undefined || shape === "custom");
   const colourless = slot.type === "geo" && (customPath || shape === "scribble") && !!fill && "kind" in fill && fill.kind === "color";
   if (fill && !colourless && admits(layer.type, "fills")) layer.fills = Array.isArray(fills) ? fills : [fill];
+  else if (hollowText) layer.fills = [{ kind: "color", value: "transparent" }];
 
   const strokeStyle = ctx.take(style, "strokeStyle");
   const dashed = strokeStyle === "dashed" || strokeStyle === "dotted" ? { style: strokeStyle as Stroke["style"] } : {};

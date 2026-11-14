@@ -1627,6 +1627,8 @@ export class LegacyRenderer {
         fillLayer.style.borderRadius = 'inherit';
         const fillCss: Record<string, string> = {
           ...(v2Fill ? paintCss(v2Fill, { colors: v2Colors, width: v2Own.box.width || baseWidth, height: v2Own.box.height || baseHeight }) : {}),
+          // 1.x painted the literal fillColor (never a stale palette role) under the photo, inside the silhouette.
+          ...(imageSrcSafe && underFill?.kind === 'color' && v2Literal(underFill.value) ? { backgroundColor: v2Literal(underFill.value) } : {}),
           ...(isVectorFill ? svgSilhouetteMaskCss(text)
             : shapeMaskCss(shapeOutline.round ? 'circle' : shapeOutline.preset, shapeOutline.path ? { svgPath: shapeOutline.path.d, svgViewBox: shapeOutline.path.viewBox } : undefined)),
         };

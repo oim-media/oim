@@ -104,11 +104,18 @@ const CORNER_KEYS = [
   ["borderRadiusBL", "borderBottomLeftRadius"],
 ];
 
+// The CSS shorthand order: one value for all, two for TL/BR and TR/BL, three for TL, TR/BL, BR.
+const SHORTHAND = [[0, 0, 0, 0], [0, 1, 0, 1], [0, 1, 2, 1], [0, 1, 2, 3]];
+
 function cornersOf(ctx: UpgradeContext, style: V1Object): number | number[] | undefined {
-  const all = toCanvasUnits(ctx.take(style, "borderRadius"), ctx.canvas.width) ?? 0;
-  const each = CORNER_KEYS.map((keys) => {
-    const values = keys.map((key) => toCanvasUnits(ctx.take(style, key), ctx.canvas.width));
-    return values.find((v) => v !== undefined);
+  const W = ctx.canvas.width;
+  const raw = ctx.take(style, "borderRadius");
+  const tokens = typeof raw === "string" ? raw.trim().split(/\s+/) : [];
+  const shorthand = tokens.length > 1 && tokens.length <= 4 ? SHORTHAND[tokens.length - 1].map((i) => toCanvasUnits(tokens[i], W)) : [];
+  const all = tokens.length > 1 ? 0 : (toCanvasUnits(raw, W) ?? 0);
+  const each = CORNER_KEYS.map((keys, corner) => {
+    const values = keys.map((key) => toCanvasUnits(ctx.take(style, key), W));
+    return values.find((v) => v !== undefined) ?? shorthand[corner];
   });
   if (each.some((v) => v !== undefined)) {
     const four = each.map((v) => Math.max(0, v ?? all));

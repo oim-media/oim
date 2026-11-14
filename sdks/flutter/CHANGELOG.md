@@ -4,6 +4,10 @@
 contract version. The full history, for all packages, is in the repository's
 [CHANGELOG.md](https://github.com/oim-media/oim/blob/main/CHANGELOG.md).
 
+## 1.27.11
+
+- No Flutter change; version aligned with the web packages.
+
 ## 1.27.10
 
 - A hover `transitionDuration` is read in milliseconds, as the contract says (200 ms lasted 200 s).

@@ -47,6 +47,14 @@ describe("image fill in shapes", () => {
     expect(boxItem(el)!.style.clipPath).toBe(`url(#${clip!.id})`);
   });
 
+  // 1.x painted fillColor under the photo, inside the silhouette: without it the
+  // anti-aliased rim of the photo let a hard shadow show through (shape-shadows).
+  it("the colour under a photo is painted beneath it, clipped to the shape", async () => {
+    const el = await slotDe({ fillType: "image", fillImage: FOTO, fillColor: "#d4d4d8" });
+    const under = el.querySelector(".oim-fill-layer") as HTMLElement;
+    expect(under.style.backgroundColor).toMatch(/#d4d4d8|rgb\(212, 212, 216\)/);
+  });
+
   it("without fillImage there is no picture and the shape paints fillColor", async () => {
     const el = await slotDe({ fillType: "image", fillColor: "#ff0000" });
     expect(boxItem(el)).toBeNull();

@@ -34,6 +34,18 @@ export function mediaOf(ctx: UpgradeContext, slot: V1Slot): string | undefined {
   return typeof value === "string" && value !== "" ? value : undefined;
 }
 
+/**
+ * A picture with per-language exceptions. 1.x kept the principal under "*" and
+ * gave a language its own key, final even when empty.
+ */
+function imageSource(slot: V1Slot, value: string): string | { value: string; modes: Record<string, string> } {
+  const map = asObject(slot.raw.content);
+  if (!map || typeof map["*"] !== "string" || value === "oim:base") return value;
+  const modes: Record<string, string> = {};
+  for (const [language, own] of Object.entries(map)) if (language !== "*" && typeof own === "string" && own !== value) modes[language] = own;
+  return Object.keys(modes).length > 0 ? { value, modes } : value;
+}
+
 function pathsFromLayers(ctx: UpgradeContext, layers: unknown[], viewBox: number[]): Geometry | undefined {
   const paths: PathEntry[] = [];
   for (const item of layers) {
@@ -115,7 +127,7 @@ export function convertGeometry(ctx: UpgradeContext, slot: V1Slot, layer: DraftL
   const crop = asObject(ctx.take(style, "imageCrop"));
   if (layer.type === "image") {
     // An image layer with no source of its own was baked into the PNG of the file.
-    layer.image = { src: media ?? "oim:base" };
+    layer.image = { src: imageSource(slot, media ?? "oim:base") };
     if (typeof fit === "string" && fit !== "cover") layer.image.fit = fit as never;
     if (crop) layer.image.crop = crop as never;
   }

@@ -10,6 +10,7 @@ import { upgrade } from '../../../core/src/v2/upgrade.js';
 import type { Box, Layer } from '../../../core/src/v2/schema.js';
 import type { PaintColors } from '../../../core/src/v2/paint-css.js';
 import { resolveCssColor, resolvePalette } from '../../../core/src/dynamic-colors.js';
+import { resolveByLang } from './localizedEntries.js';
 
 const cache = new WeakMap<object, Map<string, Layer>>();
 
@@ -136,4 +137,10 @@ export function maskStyle(layer: Layer): Record<string, unknown> {
     maskStrokeWidth: stroke?.width,
     cuts: (layer.extensions as { studio?: { maskCuts?: unknown } } | undefined)?.studio?.maskCuts,
   };
+}
+
+/** The picture a 2.0 image shows in one language: its own exception, else the principal; the base PNG paints none. */
+export function imageSrc(src: string | { value: string; modes?: Record<string, string> }, lang: string): string {
+  const pick = typeof src === 'string' ? src : resolveByLang(src.modes ?? {}, lang) ?? src.value;
+  return pick === 'oim:base' ? '' : pick;
 }

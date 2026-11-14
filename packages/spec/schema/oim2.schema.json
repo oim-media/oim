@@ -1614,8 +1614,35 @@
               "type": "object",
               "properties": {
                 "src": {
-                  "type": "string",
-                  "minLength": 1
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "modes": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "modes"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
                 },
                 "fit": {
                   "$ref": "#/$defs/__schema15"

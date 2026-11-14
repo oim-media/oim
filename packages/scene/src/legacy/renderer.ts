@@ -15,7 +15,7 @@ import { dropCapStyle, splitDropCap } from '../../../core/src/drop-cap.js';
 import { layerTextureMask } from '../../../core/src/effects/texture-mask.js';
 import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entranceClips, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
 import { loadLottie } from './lottie-loader.js';
-import { v2LayersOf, anchorShift, paintColors, typographyCss, filterStyle, maskStyle } from './v2-layers.js';
+import { v2LayersOf, anchorShift, paintColors, typographyCss, filterStyle, maskStyle, imageSrc } from './v2-layers.js';
 import { paintCss } from '../../../core/src/v2/paint-css.js';
 import { sanitizeHtml, sanitizeFontFamily, isSandboxImageSrc } from './sanitize.js';
 import {
@@ -836,7 +836,11 @@ export class LegacyRenderer {
       const localized = localizedEntries(slot, self.lang);
       // A 2.0 text reads its words from the layer, with the same language fallback.
       const v2Words = v2Own?.type === 'text' ? v2Own.text?.content : undefined;
-      let rawText = v2Words ? resolveContent(v2Words, self.lang) : localized.content;
+      // A 2.0 image reads its picture from the layer, per language.
+      const v2Image = slotType === 'image' ? v2Own?.image : undefined;
+      let rawText = v2Words ? resolveContent(v2Words, self.lang)
+        : v2Image ? imageSrc(v2Image.src as never, self.lang)
+        : localized.content;
       // Pure geometric shapes and filter layers carry no text content but
       // still render from their style (fillColor, geoShape, width/height, backdropFilter).
       // The dedicated mask in "window" mode is a layer that gets painted: a
@@ -1149,11 +1153,13 @@ export class LegacyRenderer {
         // here and drew 'contain' where the editor showed 'cover'. New files carry
         // the explicit value and do not depend on this line; matching the editor
         // also aligns the already exported ones.
-        imgEl.style.objectFit = style.objectFit || 'cover';
+        const fit = v2Image ? v2Image.fit : style.objectFit;
+        const imageCrop = v2Image ? v2Image.crop : style.imageCrop;
+        imgEl.style.objectFit = fit || 'cover';
         // Contract 1.15.0: a crop frames and zooms the image over "cover"; its
         // wrapper clips the overflow. Without one, nothing changes.
-        if (style.imageCrop) {
-          const c = cropCss(style.imageCrop);
+        if (imageCrop) {
+          const c = cropCss(imageCrop as never);
           imgEl.style.objectFit = c.objectFit;
           imgEl.style.objectPosition = c.objectPosition;
           imgEl.style.transform = c.transform;
@@ -2085,7 +2091,7 @@ export class LegacyRenderer {
             overlay.style.zIndex = '1';
             // On the layer's own pixels, not its box (@oim-media/core layerTextureMask):
             // an SVG with a transparent background came out as a coloured square.
-            const mask = layerTextureMask({ type: slotType, svg: isSvg ? text : undefined, image: isImageSlot ? text.trim() : undefined, fit: style.objectFit });
+            const mask = layerTextureMask({ type: slotType, svg: isSvg ? text : undefined, image: isImageSlot ? text.trim() : undefined, fit: v2Image ? v2Image.fit : style.objectFit });
             if (mask) {
               const ms = overlay.style as CSSStyleDeclaration & { webkitMaskImage?: string; webkitMaskSize?: string; webkitMaskRepeat?: string; webkitMaskPosition?: string };
               ms.maskImage = ms.webkitMaskImage = mask.image;

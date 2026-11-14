@@ -421,6 +421,22 @@ describe("animations, motion and interactions", () => {
   });
 });
 
+describe("the picture of an image", () => {
+  const img = (content: object) => upgrade({ oim: "1.27.9", languages: ["es", "en"], canvas: { natural_width: 100, natural_height: 100 }, slots: [{ id: "a", type: "image", position: [0, 0], content, style: { width: 10, height: 10 } }] }).document.layers[0].image;
+
+  it("a language with its own picture is an exception; an empty one shows none", () => {
+    expect(img({ "*": "data:image/png;base64,AA", en: "data:image/png;base64,BB", fr: "" })?.src).toEqual({
+      value: "data:image/png;base64,AA",
+      modes: { en: "data:image/png;base64,BB", fr: "" },
+    });
+  });
+
+  it("one picture for every language stays a plain source", () => {
+    expect(img({ "*": "data:image/png;base64,AA", en: "data:image/png;base64,AA" })?.src).toBe("data:image/png;base64,AA");
+    expect(img({})?.src).toBe("oim:base");
+  });
+});
+
 describe("mask and the merged layer types", () => {
   // Ruling (13 Nov): what the 1.x player drew wins. It never drew an inverted
   // mask; it covered the canvas unless told "container"; a cutout only clips;

@@ -49,8 +49,6 @@ import { paintPattern } from '../../../scene/src/legacy/patternPaint.js';
 import { resolveCssColor, resolvePalette, DYNAMIC_COLOR_ROLES } from '../../../core/src/dynamic-colors.js';
 import { nextWheelZoom, MIN_ZOOM, MAX_ZOOM } from '../render/wheelZoom.js';
 import { applyTrimToSvgPaths, ensureTrimKeyframes } from '../../../scene/src/legacy/trimPath.js';
-import { ParallaxController } from '../../../scene/src/legacy/ParallaxController.js';
-import { oversizeScale } from '../../../core/src/oversize.js';
 import { shapeDrawing } from '../../../core/src/geoShapes.js';
 import { frameSilhouette } from '../../../core/src/frame-silhouette.js';
 import { mediaFilterCss } from '../../../core/src/media-filters.js';
@@ -140,13 +138,6 @@ export class ImageEngine extends LegacyRenderer {
       try { a.stop(); } catch (e) {}
     });
     this._textAnimations = [];
-    // The parallax controller has its own rAF loop and its own listener on `window`:
-    // without this they stayed alive after the player was removed from the document,
-    // one for each card in a feed.
-    if (this._parallaxController) {
-      try { this._parallaxController.destroy(); } catch (e) {}
-      this._parallaxController = null;
-    }
     if (this._onDragMove) {
       window.removeEventListener('mousemove', this._onDragMove);
       this._onDragMove = null;

@@ -420,22 +420,6 @@ describe("what the wrapper unlocks (phase 4)", () => {
     expect(el(engine, "g1").contains(el(engine, "a"))).toBe(true);
   });
 
-  it("a group's parallax moves the wrapper, not an empty box", async () => {
-    const engine = engineWith([
-      layer("g1", { type: "group", style: { parallax: { enabled: true, depth: 0.5, axis: "both" } } }),
-      layer("a", { style: { groupId: "g1" } }),
-      layer("b", { style: { groupId: "g1" } }),
-    ]);
-    // Ruling (13 Nov): the pointer parallax is retired in 2.0; this pins the 1.x road.
-    v2LayersOf((engine as any).metadata).clear();
-    await engine.renderSlots();
-
-    // The controller registers the slot's element, which in a group IS the
-    // wrapper: moving it takes everything it contains along with it.
-    expect(engine._parallaxController).not.toBeNull();
-    expect(el(engine, "g1").contains(el(engine, "a"))).toBe(true);
-    expect(el(engine, "g1").contains(el(engine, "b"))).toBe(true);
-  });
 });
 
 describe("with a slot like the one the backend REALLY emits", () => {

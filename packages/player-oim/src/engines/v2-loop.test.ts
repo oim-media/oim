@@ -56,6 +56,6 @@ describe("a layer loops from its 2.0 layer", () => {
 
   it("the pointer parallax is retired: no controller for a 2.0 layer", async () => {
     const { engine } = await render([geo("a", { parallax: { enabled: true, depth: 0.8, mode: "mouse" } })], () => {});
-    expect(engine._parallaxController).toBeNull();
+    expect(engine).not.toHaveProperty("_parallaxController");
   });
 });

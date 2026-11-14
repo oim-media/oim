@@ -21,7 +21,6 @@ import { paintCss } from '../../../core/src/v2/paint-css.js';
 import { sanitizeHtml, sanitizeFontFamily, isSandboxImageSrc } from './sanitize.js';
 import {
   computeLayerComposition,
-  getFilterCss,
   getMaskPathData,
   getMaskClipPathD,
   getMaskSilhouettePath,
@@ -47,8 +46,6 @@ import { getFillCss, patternLayerCss, shapeMaskCss, svgSilhouetteMaskCss } from 
 import { paintPattern } from './patternPaint.js';
 import { resolveCssColor, resolvePalette, DYNAMIC_COLOR_ROLES } from '../../../core/src/dynamic-colors.js';
 import { applyTrimToSvgPaths, ensureTrimKeyframes } from './trimPath.js';
-import { ParallaxController } from './ParallaxController.js';
-import { oversizeScale } from '../../../core/src/oversize.js';
 import { shapeDrawing } from '../../../core/src/geoShapes.js';
 import { frameSilhouette } from '../../../core/src/frame-silhouette.js';
 import { mediaFilterCss } from '../../../core/src/media-filters.js';
@@ -57,7 +54,7 @@ import { TEXTURE_CATALOG, type TexturePreset } from '../../../core/src/effects/i
 import { infiniteLayerPlan, TRACK_CLASS, LEGACY_TRACK_CLASS, ensureParallaxKeyframes, type InfiniteLayer } from '../../../core/src/parallaxCss.js';
 import { localizedEntries, isImageContent, compareLangs, resolveContent } from './localizedEntries.js';
 import { a11yNodes, artworkLabel } from './a11y.js';
-import { dropShadowCss, shadowColorCss, shadowFollowsGlyphs } from './shadow.js';
+import { shadowColorCss } from './shadow.js';
 import { cropCss } from '../../../core/src/crop.js';
 import { mountImageFill } from './image-fill.js';
 import { flipScale } from '../../../core/src/flip.js';
@@ -66,9 +63,9 @@ import { resolveLineHeight, inkMargin } from '../../../core/src/typography.js';
 import { resolveDimensionToCss, resolveNumericDimension } from '../../../core/src/dimensions.js';
 import { slotClipping } from '../../../core/src/clipping.js';
 import { whatTheReaderCannotDo, describeMissing, CONTRACT_VERSION, PLAYER_CAPABILITIES } from '../../../core/src/compatibility.js';
-import { bindStates, resolveActions, applyMinHitArea, readInteraction, type ActionRunner, type RegisterOutsideTap } from './states.js';
+import { bindStates, resolveActions, applyMinHitArea, type ActionRunner, type RegisterOutsideTap } from './states.js';
 import { resolveMode } from './modes.js';
-import { buildArtisticTextModelFromSlot, buildArtisticTextModelFromLayer, generateArtisticTextSvgString } from './artisticText.js';
+import { buildArtisticTextModelFromLayer, generateArtisticTextSvgString } from './artisticText.js';
 import { readEmbeddedFonts, registerEmbeddedFonts, embeddedFontFamily } from './embeddedFonts.js';
 
 /**
@@ -540,8 +537,6 @@ export class LegacyRenderer {
   _baseImg: HTMLImageElement | null = null;
   _overlay: HTMLElement | null = null;
   _lottieInstances: Array<{ slotId: string; inst: LottieAnimation }> = [];
-  /** The live controller. It is kept so it can be destroyed and repointed. */
-  _parallaxController: ParallaxController | null = null;
   /** The drag listeners on `window`, so they can be removed on destroy. */
   _onDragMove: ((e: MouseEvent) => void) | null = null;
   _onDragEnd: (() => void) | null = null;
@@ -798,8 +793,7 @@ export class LegacyRenderer {
       const v2Own = v2Layers.get(String(slot.id));
       // The 1.x style with its filters replaced by the 2.0 image fill's.
       const v2FillStyle = () => {
-        if (!v2Own) return slot.style || {};
-        const paint = v2Own.fills?.find((p: any) => p && p.kind === 'image') as { filters?: Record<string, unknown> } | undefined;
+        const paint = v2Own?.fills?.find((p: any) => p && p.kind === 'image') as { filters?: Record<string, unknown> } | undefined;
         return { ...(slot.style || {}), ...filterStyle(paint?.filters) };
       };
       if (onlyIds && !onlyIds.has(String(slot.id))) return null;
@@ -836,11 +830,17 @@ export class LegacyRenderer {
         return null;
       }
 
+      // Every layer is painted from its 2.0 reading; a slot upgrade could not read is not painted.
+      if (!v2Own) {
+        console.warn('[OimPlayer] Slot "' + slot.id + '" has no 2.0 layer; it is not painted.');
+        return null;
+      }
+
       const localized = localizedEntries(slot, self.lang);
       // A 2.0 text reads its words from the layer, with the same language fallback.
-      const v2Words = v2Own?.type === 'text' ? v2Own.text?.content : undefined;
+      const v2Words = v2Own.type === 'text' ? v2Own.text?.content : undefined;
       // A 2.0 image reads its picture from the layer, per language.
-      const v2Image = slotType === 'image' ? v2Own?.image : undefined;
+      const v2Image = slotType === 'image' ? v2Own.image : undefined;
       let rawText = v2Words ? resolveContent(v2Words, self.lang)
         : v2Image ? imageSrc(v2Image.src as never, self.lang)
         : localized.content;
@@ -981,10 +981,7 @@ export class LegacyRenderer {
 
       const maxWidth = localized.maxWidthValue;
       // A 2.0 text aligns by its text block; any other 2.0 layer is placed by its box alone.
-      const v2Align = v2Layers.get(String(slot.id));
-      const textAlign = v2Align
-        ? (v2Align.type === 'text' ? v2Align.text?.align ?? 'left' : 'left')
-        : style.textAlign || slot.align || 'left';
+      const textAlign = v2Own.type === 'text' ? v2Own.text?.align ?? 'left' : 'left';
       let alignItems = 'center';
       if (textAlign === 'left') alignItems = 'flex-start';
       else if (textAlign === 'right') alignItems = 'flex-end';
@@ -999,27 +996,17 @@ export class LegacyRenderer {
         slotEl.style.display = 'none';
       }
 
-      // Visual layer effects (neon glow)
-      // A 2.0 layer carries the neon as its first glow, painted with the other effects.
-      if (style.effect === 'neon' && !v2Layers.has(String(slot.id))) {
-        const neonColor = resolveCssColor(style.effectColorRole, style.effectColor || '#f59e0b');
-        const r = typeof style.effectRadius === 'number' ? style.effectRadius : 16;
-        slotEl.style.filter = 'drop-shadow(0 0 ' + (r * 0.4) + 'px ' + neonColor + ') drop-shadow(0 0 ' + r + 'px ' + neonColor + ')';
-      }
-
       // Background layer slots (editor's dynamic pattern) must paint BEHIND the
       // rest regardless of their position in the slots array.
       slotEl.style.zIndex = isBackgroundSlot ? '0' : '1';
       // How it enters and leaves: the 2.0 layer's `enter` animation, or the 1.x reveal.
-      const v2Enter = v2Own?.animations?.find((a) => a.on === 'enter' && a.preset);
-      (slotEl as any)._oimReveal = v2Own
-        ? (v2Enter ? { effect: v2Enter.preset, duration: v2Enter.duration, easing: v2Enter.easing } : undefined)
-        : style.reveal;
+      const v2Enter = v2Own.animations?.find((a) => a.on === 'enter' && a.preset);
+      (slotEl as any)._oimReveal = v2Enter ? { effect: v2Enter.preset, duration: v2Enter.duration, easing: v2Enter.easing } : undefined;
       // A layer with no interaction of its own lets the pointer through: a
       // text above a card, or a full-canvas group revealed by a click, used to
       // swallow the hover or click of the layer behind it. A CSS rule
       // (styles.ts), so show/hide cannot undo it.
-      const hasOwnInteraction = v2Own ? !!v2Own.interactions?.length : !!slot.interaction;
+      const hasOwnInteraction = !!v2Own.interactions?.length;
       if (!isInteractiveSlot && !(hasOwnInteraction && !self.disableActions)) {
         slotEl.setAttribute('data-oim-passthrough', '');
       }
@@ -1174,7 +1161,7 @@ export class LegacyRenderer {
         // Contract 1.18.0: only an image layer's picture takes the filter; a
         // non-image slot whose content is a data:image must not get it.
         imgEl.style.filter = slot.type === 'image'
-          ? (mediaFilterCss(v2Own ? filterStyle(v2Own.image?.filters as Record<string, unknown> | undefined) : style) ?? '')
+          ? (mediaFilterCss(filterStyle(v2Own.image?.filters as Record<string, unknown> | undefined)) ?? '')
           : '';
         
         loopWrap.style.width = '100%';
@@ -1237,10 +1224,7 @@ export class LegacyRenderer {
         hoverWrap.style.justifyContent = 'center';
         hoverWrap.style.pointerEvents = 'none';
 
-        const v2Artistic = v2Layers.get(String(slot.id));
-        const model = v2Artistic?.text?.artistic
-          ? buildArtisticTextModelFromLayer(v2Artistic, self.lang, v2Literal)
-          : buildArtisticTextModelFromSlot(slot, self.lang, baseWidth);
+        const model = buildArtisticTextModelFromLayer(v2Own, self.lang, v2Literal);
         // The SVG appends ", sans-serif" itself; the embedded name goes first.
         const embeddedArtistic = embeddedFontFamily(model.fontFamily, self.embeddedFontFamilies);
         if (embeddedArtistic) model.fontFamily = embeddedArtistic.replace(/, sans-serif$/, '');
@@ -1289,15 +1273,12 @@ export class LegacyRenderer {
         }
 
         // The text animation: the 2.0 layer's preset on load, or the 1.x fields without a 2.0 layer.
-        const v2TextAnim = v2Own?.animations?.find((a) => a.on === 'load' && a.preset);
+        const v2TextAnim = v2Own.animations?.find((a) => a.on === 'load' && a.preset);
         const v2TextParams = (v2TextAnim?.params ?? {}) as { speed?: number; intensity?: number; cursor?: boolean };
-        const textAnim: { type?: string; speed?: number; delay?: number; cursor?: boolean; intensity?: number } = v2Own
-          ? { type: v2TextAnim?.preset, speed: v2TextParams.speed, delay: v2TextAnim?.delay ? +(v2TextAnim.delay / 1000).toFixed(6) : undefined, cursor: v2TextParams.cursor, intensity: v2TextParams.intensity }
-          : { type: style.textAnimationType, speed: style.textAnimationSpeed, delay: style.textAnimationDelay, cursor: (style as any).typewriterCursor, intensity: (style as any).textAnimationIntensity };
+        const textAnim = { type: v2TextAnim?.preset, speed: v2TextParams.speed, delay: v2TextAnim?.delay ? +(v2TextAnim.delay / 1000).toFixed(6) : undefined, cursor: v2TextParams.cursor, intensity: v2TextParams.intensity };
         const animType = textAnim.type as any;
         // Highlight, marks and drop cap come from the 2.0 text block when there is one.
-        const v2TextBlock = slotType === 'text' ? v2Layers.get(String(slot.id))?.text : undefined;
-        const textBlock: any = v2TextBlock ?? { highlight: style.textHighlight, marks: style.marks, dropCap: style.dropCap };
+        const textBlock: any = (slotType === 'text' ? v2Own.text : undefined) ?? {};
         applyTextHighlight(textTarget, textBlock.highlight);
         // Text marks (contract 1.11.0): what cannot hold marks (animations,
         // the drop cap) gets the plain text, never the tags.
@@ -1329,10 +1310,8 @@ export class LegacyRenderer {
       // Infinite parallax: if the layer moves in a loop, wrap it in the track
       // with 2 copies per infiniteLayerPlan. It is only duplicated if it moves (duplicate: true).
       // A 2.0 layer loops by its `motion.loop`, read through the same chain as 1.x.
-      const v2Scroll = v2Own?.motion?.loop;
-      const parallaxCfg = v2Own
-        ? (v2Scroll ? { enabled: true, speedPxSec: v2Scroll.speedPxSec, direction: v2Scroll.direction, mirror: v2Scroll.mirror ?? true, pauseOnHover: !!v2Scroll.pauseOnHover } : undefined)
-        : slot.parallax || style.parallax;
+      const v2Scroll = v2Own.motion?.loop;
+      const parallaxCfg: any = v2Scroll ? { enabled: true, speedPxSec: v2Scroll.speedPxSec, direction: v2Scroll.direction, mirror: v2Scroll.mirror ?? true, pauseOnHover: !!v2Scroll.pauseOnHover } : undefined;
       let duplicatedForInfinite = false;
 
       if (parallaxCfg && parallaxCfg.enabled) {
@@ -1434,15 +1413,13 @@ export class LegacyRenderer {
       // trimStart 0 and trimEnd 100 trims nothing, but IS animated, and it is the
       // most common case: drawing the whole icon from start to finish.
       // The 2.0 trim: at rest in the geometry, drawn over time by a load animation over `trimEnd`.
-      const v2Trim = (v2Own?.geometry as { trim?: { start?: number; end?: number } } | undefined)?.trim;
-      const v2TrimAnim = v2Own?.animations?.find((a) => a.on === 'load' && a.tracks?.some((t) => t.property === 'trimEnd'));
+      const v2Trim = (v2Own.geometry as { trim?: { start?: number; end?: number } } | undefined)?.trim;
+      const v2TrimAnim = v2Own.animations?.find((a) => a.on === 'load' && a.tracks?.some((t) => t.property === 'trimEnd'));
       const percent = (share: number) => +(share * 100).toFixed(6);
-      const trimStyle = v2Own
-        ? (v2Trim || v2TrimAnim
-            // upgrade already asked for a stroke width; any truthy one lets the trim through.
-            ? { strokeWidth: 1, trimStart: percent(v2Trim?.start ?? 0), trimEnd: percent(v2Trim?.end ?? 1), trimDuration: v2TrimAnim ? +(v2TrimAnim.duration / 1000).toFixed(6) : 0 }
-            : undefined)
-        : (style.trimStart || (style.trimEnd != null && style.trimEnd < 100) || style.trimDuration ? style : undefined);
+      // upgrade already asked for a stroke width; any truthy one lets the trim through.
+      const trimStyle = v2Trim || v2TrimAnim
+        ? { strokeWidth: 1, trimStart: percent(v2Trim?.start ?? 0), trimEnd: percent(v2Trim?.end ?? 1), trimDuration: v2TrimAnim ? +(v2TrimAnim.duration / 1000).toFixed(6) : 0 }
+        : undefined;
       if (hasHtmlOrSvg && trimStyle) {
         if (trimStyle.trimDuration) ensureTrimKeyframes(self.host.shadowRoot);
         applyTrimToSvgPaths(hoverWrap, trimStyle);
@@ -1576,9 +1553,7 @@ export class LegacyRenderer {
         isText: slotType === 'text',
         isParallaxGroup: !!(slot.isParallaxGroup || style.isParallaxGroup || slot.is_parallax_group),
         hasFilterOrShadow: !!(style.filter || style.boxShadow || style.textShadow),
-        hasKeyframes: v2Own
-          ? !!v2Own.animations?.some(isTimeline)
-          : Array.isArray(style.animation?.keyframes) && style.animation.keyframes.length >= 2,
+        hasKeyframes: !!v2Own.animations?.some(isTimeline),
       });
       // Resolve slot width and height based on design proportions
       const origW = self.metadata?.canvas_width || self.metadata?.canvasWidth || (self.metadata?.canvas ? self.metadata.canvas.natural_width : 800);
@@ -2108,8 +2083,8 @@ export class LegacyRenderer {
       };
       const addFilter = (part: string) => { slotEl.style.filter = (slotEl.style.filter ? slotEl.style.filter + ' ' : '') + part; };
       const addTextShadow = (part: string) => { slotEl.style.textShadow = slotEl.style.textShadow ? slotEl.style.textShadow + ', ' + part : part; };
-      const v2Effects = v2Layers.get(String(slot.id))?.effects;
-      if (v2Layers.has(String(slot.id))) {
+      const v2Effects = v2Own.effects;
+      {
         // 2.0: the layer's effects, in their order. Glyph shadows on a text; on
         // anything else (an artistic text is an SVG) they follow the silhouette.
         for (const fx of v2Effects ?? []) {
@@ -2134,78 +2109,26 @@ export class LegacyRenderer {
             addFilter('url(#' + grainId + ')');
           } else if (fx.kind === 'texture') applyTexture({ ...fx, color: fx.color === undefined ? undefined : v2Literal(fx.color) });
         }
-      } else if (Array.isArray(style.effects) && style.effects.length > 0) {
-        for (const eff of style.effects) {
-          if (!eff || eff.enabled === false) continue;
-          if (eff.type === 'blur') {
-            const r = typeof eff.radius === 'number' ? eff.radius : 8;
-            slotEl.style.filter = (slotEl.style.filter ? slotEl.style.filter + ' ' : '') + 'blur(' + r + 'px)';
-          } else if (eff.type === 'drop-shadow') {
-            const x = eff.x || 0;
-            const y = eff.y !== undefined ? eff.y : 4;
-            const b = eff.blur !== undefined ? eff.blur : 12;
-            const rawColor = eff.color || 'rgba(0, 0, 0, 0.35)';
-            const role = eff.colorRole || style.shadowColorRole;
-            const c = role ? resolveCssColor(role, rawColor) : rawColor;
-            if (slotType === 'text' || slotType === 'artistic-text') {
-              const shadowPart = x + 'px ' + y + 'px ' + b + 'px ' + c;
-              slotEl.style.textShadow = slotEl.style.textShadow ? slotEl.style.textShadow + ', ' + shadowPart : shadowPart;
-            } else {
-              slotEl.style.filter = (slotEl.style.filter ? slotEl.style.filter + ' ' : '') + 'drop-shadow(' + x + 'px ' + y + 'px ' + b + 'px ' + c + ')';
-            }
-          } else if (eff.type === 'glow') {
-            const r = eff.radius || 16;
-            const rawColor = eff.color || '#f59e0b';
-            const role = eff.colorRole || style.effectColorRole;
-            const c = role ? resolveCssColor(role, rawColor) : rawColor;
-            if (slotType === 'text' || slotType === 'artistic-text') {
-              const glowPart = '0px 0px ' + (r * 0.4) + 'px ' + c + ', 0px 0px ' + r + 'px ' + c;
-              slotEl.style.textShadow = slotEl.style.textShadow ? slotEl.style.textShadow + ', ' + glowPart : glowPart;
-            } else {
-              slotEl.style.filter = (slotEl.style.filter ? slotEl.style.filter + ' ' : '') + 'drop-shadow(0px 0px ' + (r * 0.4) + 'px ' + c + ') drop-shadow(0px 0px ' + r + 'px ' + c + ')';
-            }
-          } else if (eff.type === 'texture') {
-            applyTexture(eff);
-          }
-        }
-      } else {
-        // Fall back to legacy fields if style.effects is not present
-        const layerBlur = typeof style.layerBlur === 'number' ? style.layerBlur : style.blur;
-        if (typeof layerBlur === 'number' && layerBlur > 0) {
-          slotEl.style.filter = (slotEl.style.filter ? slotEl.style.filter + ' ' : '') + 'blur(' + layerBlur + 'px)';
-        }
-        if (style.grain === true && (GRAIN_LAYER_TYPES as readonly string[]).includes(slotType)) {
-          const grainId = 'oim-grain-' + String(slot.id).replace(/[^A-Za-z0-9_-]/g, '_');
-          self._defineLayerGrain(grainId, style);
-          slotEl.style.filter = (slotEl.style.filter ? slotEl.style.filter + ' ' : '') + 'url(#' + grainId + ')';
-        }
-        if (style.shadowEnabled) {
-          if (!shadowFollowsGlyphs(slotType)) {
-            slotEl.style.filter = (slotEl.style.filter ? slotEl.style.filter + ' ' : '') + dropShadowCss(style);
-          } else {
-            slotEl.style.textShadow = (style.shadowOffsetX || 0) + 'px ' + (style.shadowOffsetY || 0) + 'px ' + (style.shadowBlur || 0) + 'px ' + shadowColorCss(style);
-          }
-        }
       }
 
       // Editor opacity is 0-100; store the resolved 0-1 value so the fade-in
       // animation (which temporarily forces opacity to 1 while entering) can
       // settle on the shape's real target opacity instead of always landing
       // on fully opaque.
-      const targetOpacity = v2Own ? v2Own.opacity ?? 1 : style.opacity !== undefined ? Math.max(0, Math.min(100, style.opacity)) / 100 : 1;
+      const targetOpacity = v2Own.opacity ?? 1;
       slotEl.dataset.oimOpacity = String(targetOpacity);
       slotEl.style.setProperty('--oim-target-opacity', String(targetOpacity));
 
-      if (v2Own ? v2Own.visible === false : style.isVisible === false || slot.isVisible === false) {
+      if (v2Own.visible === false) {
         slotEl.style.display = 'none';
         slotEl.style.opacity = '0';
         slotEl.style.pointerEvents = 'none';
       }
 
       if (slotType === 'filter') {
-        const backdrop = v2Own?.effects?.find((fx) => fx.kind === 'backdrop') as Record<string, unknown> | undefined;
-        const filterCss = v2Own ? mediaFilterCss(filterStyle(backdrop)) : getFilterCss(slot);
-        const filterValue = (v2Own ? backdrop?.preset : style.filterPreset) === 'duotone'
+        const backdrop = v2Own.effects?.find((fx) => fx.kind === 'backdrop') as Record<string, unknown> | undefined;
+        const filterCss = mediaFilterCss(filterStyle(backdrop));
+        const filterValue = backdrop?.preset === 'duotone'
           ? 'url(#' + getDuotoneFilterId(slot) + ')'
           : filterCss;
         if (filterValue) {
@@ -2310,22 +2233,8 @@ export class LegacyRenderer {
         // group is parallax (sceneLoop, isParallaxGroup or children with infinite parallax),
         // it MUST clip with `hidden` so that the duplicated infinite track does not overflow
         // outside the frame.
-        const hasParallaxChildren = groupChildren.get(slot.id)?.some((cid) => {
-          const cSlot = slots.find((s: any) => s.id === cid);
-          return cSlot && ((cSlot.parallax && cSlot.parallax.enabled) || (cSlot.style?.parallax && cSlot.style.parallax.enabled));
-        });
-        // A 2.0 group clips when one of its children loops; 1.x also had flags and names.
-        const isParallaxGrp = v2Own
-          ? !!groupChildren.get(slot.id)?.some((cid) => v2Layers.get(String(cid))?.motion?.loop)
-          : !!(
-          slot.isParallaxGroup ||
-          style.isParallaxGroup ||
-          slot.is_parallax_group ||
-          style.sceneLoop ||
-          (slot.name && String(slot.name).toLowerCase().includes('parallax')) ||
-          (slot.id && String(slot.id).startsWith('grp-parallax')) ||
-          hasParallaxChildren
-        );
+        // A group clips when one of its children loops.
+        const isParallaxGrp = !!groupChildren.get(slot.id)?.some((cid) => v2Layers.get(String(cid))?.motion?.loop);
         slotEl.style.overflow = isParallaxGrp ? 'hidden' : 'visible';
 
         // The children go into `loopWrap`, not into `slotEl`. It marks this for the
@@ -2350,35 +2259,21 @@ export class LegacyRenderer {
 
       // One reading for both contracts: the 2.0 layer's animations, or the 1.x
       // `animation` object when the file has no 2.0 layer.
-      const v2Timeline = v2Own?.animations?.find(isTimeline);
-      const v2Loop = v2Own?.animations?.find((a) => a.on === 'loop' && a.preset);
-      const v2Hover = v2Own?.animations?.find((a) => a.on === 'hover' && a.preset);
+      const v2Timeline = v2Own.animations?.find(isTimeline);
+      const v2Loop = v2Own.animations?.find((a) => a.on === 'loop' && a.preset);
+      const v2Hover = v2Own.animations?.find((a) => a.on === 'hover' && a.preset);
       const seconds = (ms: number | undefined) => (ms ? +(ms / 1000).toFixed(6) : 0);
-      const animSource = v2Own
-        ? (v2Timeline || v2Loop || v2Hover
-            ? {
-                frames: v2Timeline ? tracksToWaapi(v2Timeline.tracks!) : undefined,
-                duration: v2Timeline ? seconds(v2Timeline.duration) : 0,
-                trigger: v2Timeline?.on === 'action' ? 'action' : undefined,
-                loop: v2Loop?.preset,
-                loopDuration: seconds(v2Loop?.duration),
-                loopDelay: seconds(v2Loop?.delay),
-                hover: v2Hover?.preset,
-              }
-            : undefined)
-        : style.animation
-          ? {
-              frames: Array.isArray(style.animation.keyframes) && style.animation.keyframes.length >= 2 && (style.animation.duration || 8) > 0
-                ? keyframesToWaapi(style.animation.keyframes, style.animation.duration || 8)
-                : undefined,
-              duration: style.animation.duration || 8,
-              trigger: style.animation.trigger,
-              loop: style.animation.loop,
-              loopDuration: style.animation.duration,
-              loopDelay: style.animation.delay,
-              hover: style.animation.hover,
-            }
-          : undefined;
+      const animSource = v2Timeline || v2Loop || v2Hover
+        ? {
+            frames: v2Timeline ? tracksToWaapi(v2Timeline.tracks!) : undefined,
+            duration: v2Timeline ? seconds(v2Timeline.duration) : 0,
+            trigger: v2Timeline?.on === 'action' ? 'action' : undefined,
+            loop: v2Loop?.preset,
+            loopDuration: seconds(v2Loop?.duration),
+            loopDelay: seconds(v2Loop?.delay),
+            hover: v2Hover?.preset,
+          }
+        : undefined;
       if (animSource && !self.disableAnimations) {
         const anim = animSource;
         
@@ -2436,48 +2331,16 @@ export class LegacyRenderer {
         }
       }
 
-      // A 2.0 layer runs its press through the actions below, like any other.
-      if (!v2Own && !self.disableActions && slot.interaction && slot.interaction.action_type === 'toggle_elements') {
-        const targetConfig = slot.interaction.target;
-        if (targetConfig) {
-          slotEl.addEventListener('click', function (e) {
-            e.stopPropagation();
-            self.executeToggleState(targetConfig);
-          });
-          slotEl.style.cursor = 'pointer';
-        }
-      }
-
-      // The interaction fields travel inside `slot.style`, which is where
-      // `buildSlotStyle` puts them in the editor. The root is also accepted because
-      // hand-written slots carry them there.
-      //
-      // Reading them ONLY from the root was the failure this feature was born with: the file
-      // was fine (isInteractive true, states.hover.actions with its target) and the player hooked
-      // up nothing, because the condition was never true. No test saw it: all of them build the
-      // slot in the shape the code expects. The first real .oim that was opened showed it.
-      // In image mode it is not even read: so nothing is hooked AND no console warning
-      // is raised. That actionEvent exists for "the file asks for it and the player does not know";
-      // here the player does know and has decided not to do it, so it would send people
-      // looking for a failure that does not exist, and in a gallery of twenty, twenty times.
-      const { isInteractive, states: slotStates } = self.disableActions
-        ? { isInteractive: false, states: undefined }
-        : readInteraction({
-            isInteractive: slot.isInteractive,
-            states: slot.states,
-            style: style as any
-          }, slot.id);
 
       // The hover look and the actions come from the 2.0 layer.
-      const v2HoverLook = v2Own?.animations?.find((a) => a.on === 'hover' && a.tracks);
+      const v2HoverLook = v2Own.animations?.find((a) => a.on === 'hover' && a.tracks);
       const hoverTarget = (property: string) => {
         const k = v2HoverLook?.tracks?.find((t) => t.property === property)?.keyframes;
         return k ? k[k.length - 1].v : undefined;
       };
       const v2Actions = (on: 'hover' | 'press') =>
-        (v2Own?.interactions ?? []).filter((i) => i.on === on).flatMap((i) => i.actions);
-      const boundStates = v2Own
-        ? {
+        (v2Own.interactions ?? []).filter((i) => i.on === on).flatMap((i) => i.actions);
+      const boundStates = {
             hover: {
               scale: hoverTarget('scale'),
               rotation: hoverTarget('rotation'),
@@ -2487,13 +2350,10 @@ export class LegacyRenderer {
               actions: v2Actions('hover'),
             },
             active: { actions: v2Actions('press') },
-          }
-        : slotStates;
-      const reacts = v2Own
-        ? !self.disableActions && (!!v2HoverLook || !!v2Own.interactions?.length)
-        : isInteractive && !!slotStates;
+          };
+      const reacts = !self.disableActions && (!!v2HoverLook || !!v2Own.interactions?.length);
 
-      if (reacts && boundStates) {
+      if (reacts) {
         const baseVisibility: Record<string, boolean> = {};
         const baseText: Record<string, string> = {};
 
@@ -2793,9 +2653,6 @@ export class LegacyRenderer {
             res.slotEl.appendChild(inside[i]);
           }
           previous.parentNode.replaceChild(res.slotEl, previous);
-          // The controller keeps the node, not the id: if it is not repointed, it would keep
-          // moving the old node and the new layer would stay still.
-          if (self._parallaxController) self._parallaxController.retarget(slotIdText, res.slotEl);
         }
       });
     } else {
@@ -2845,89 +2702,6 @@ export class LegacyRenderer {
       });
     }
 
-    if (!onlyIds) {
-      // The pointer parallax is retired in 2.0: only a slot with no 2.0 layer still has it.
-      const v2Layers = v2LayersOf(this.metadata);
-      const pointerParallax = (s: any) =>
-        s.parallax && s.parallax.enabled && s.parallax.mode !== 'infinite_horizontal' && !v2Layers.has(String(s.id));
-      const hasParallax = slots.some(function (s: any) {
-        return pointerParallax(s);
-      }) || (this.metadata && Array.isArray(this.metadata.capabilities) && this.metadata.capabilities.includes('vector_parallax'));
-      if (hasParallax) {
-        try {
-          // Without this they accumulated: each full render created a
-          // controller with its mousemove listener and its rAF loop, and the
-          // previous one kept running forever.
-          if (this._parallaxController) {
-            try { this._parallaxController.destroy(); } catch (e) {}
-          }
-          // A still player (`disable-animations`, every card of the mobile
-          // gallery) gets no controller: it listens to `pointermove` on the
-          // whole window and measures its card on each event, so twenty still
-          // cards made scrolling with the finger stutter. The oversize below
-          // is still computed, so the composition is the same.
-          //
-          // One created while the player is paused is born paused: this runs
-          // after `pause()`, and the constructor starts its frame loop.
-          const pCtrl = this._isStill() ? null : new ParallaxController(layer);
-          this._parallaxController = pCtrl;
-          if (pCtrl && this._paused) pCtrl.pause();
-          slots.forEach(function (s: any, i: number) {
-            if (pointerParallax(s)) {
-              const compId = compositionKeys[i];
-              const el = elByCompositionId.get(compId);
-              if (el) {
-                const depth = s.parallax.depth !== undefined ? s.parallax.depth : 0.5;
-                const axis = s.parallax.axis || 'both';
-
-                // Oversizing: a layer stuck to the edge uncovers the void when it moves.
-                // It is enlarged just enough so it is not seen, and only if it reaches the edge
-                // (otherwise, moving apart a bit is the effect).
-                //
-                // The box is recalculated instead of measuring the node: `offsetWidth`
-                // here is 0 while the canvas has not been laid out.
-                const isBackground = s.is_background_pattern === true || s.id === 'background-pattern-slot';
-                const pos = normalizePosition(s.position || [0.5, 0.5]);
-                const layerWidth = isBackground ? baseWidth
-                  : (s.width_px || (s.widthPercent ? (s.widthPercent / 100) * baseWidth : 0));
-                const layerHeight = isBackground ? baseHeight
-                  : (s.height_px || (s.heightPercent ? (s.heightPercent / 100) * baseHeight : 0));
-                // The three alignments cancel out with their own `--oim-tx`:
-                // the left edge ends at `pos[0] * width` in all three.
-                const scale = oversizeScale(
-                  {
-                    left: isBackground ? 0 : pos[0] * baseWidth,
-                    top: isBackground ? 0 : pos[1] * baseHeight,
-                    width: layerWidth,
-                    height: layerHeight,
-                  },
-                  { width: baseWidth, height: baseHeight },
-                  depth,
-                  axis,
-                  // The NODE is checked and the condition is not rebuilt. The player
-                  // mounts the track if the speed is not zero (without looking at the
-                  // mode), and the editor if the mode is infinite or `inf.enabled`:
-                  // these are two different conditions, and rewriting either of them
-                  // here would be a third one.
-                  !!el.querySelector('.' + TRACK_CLASS)
-                );
-                if (scale !== 1) el.style.setProperty('--oim-scale', String(scale));
-
-                if (pCtrl) pCtrl.registerSlot({
-                  id: s.id,
-                  element: el,
-                  depth: depth,
-                  mode: s.parallax.mode || 'mouse',
-                  axis: axis,
-                });
-              }
-            }
-          });
-        } catch (err) {
-          console.warn('[OIM Player] Failed to load ParallaxController extension:', err);
-        }
-      }
-    }
 
     // The veil is the only entrance: every layer is placed at its final
     // opacity and size underneath it, and the veil lifts once what the layers
@@ -3435,9 +3209,6 @@ export class LegacyRenderer {
       this._heldTimelines.forEach(function (a) { a.play(); });
       this._heldTimelines.clear();
     }
-    if (this._parallaxController) {
-      try { this._parallaxController.play(); } catch (e) {}
-    }
   }
 
   pause(): void {
@@ -3455,9 +3226,6 @@ export class LegacyRenderer {
       this._lottieInstances.forEach(function (reg) {
         try { reg.inst.pause(); } catch (e) {}
       });
-    }
-    if (this._parallaxController) {
-      try { this._parallaxController.pause(); } catch (e) {}
     }
   }
 

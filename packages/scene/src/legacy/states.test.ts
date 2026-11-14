@@ -413,12 +413,6 @@ describe("the engine does not stay silent about what it cannot do either", () =>
   const sinComentarios = (t: string) =>
     t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
 
-  it("passes the slot id to readInteraction, or the warnings do not say which one it is", () => {
-    const code = sinComentarios(source());
-    const i = code.indexOf("readInteraction(");
-    expect(i, "I cannot find the call to readInteraction").toBeGreaterThan(-1);
-    expect(code.slice(i, i + 200)).toContain("slot.id");
-  });
 
   it("warns once about an action whose target does not exist", () => {
     const code = sinComentarios(source());

@@ -704,7 +704,13 @@ export class LegacyRenderer {
     const v2Masks = v2LayersOf(self.metadata);
     slots.forEach(function (s: any) {
       const v2Mask = s && s.type === 'mask' ? v2Masks.get(String(s.id)) : undefined;
-      if (v2Mask) s.style = { ...s.style, ...maskStyle(v2Mask) };
+      if (v2Mask) {
+        s.style = { ...s.style, ...maskStyle(v2Mask) };
+        // Its place on the canvas too: the mask helpers take x, y, width and height
+        // in canvas units before the 1.x position and size.
+        const { x, y, width, height } = v2Mask.box;
+        Object.assign(s, { x, y, width: width ?? 0, height: height ?? 0 });
+      }
     });
     const fontPromises: Promise<void>[] = [];
     const canvasWidth = (self.metadata && (self.metadata.artboardWidth || self.metadata.canvasWidth || self.metadata.canvas_width)) || ((self.metadata && self.metadata.canvas) ? (self.metadata.canvas.natural_width || self.metadata.canvas.width) : 0);
@@ -931,8 +937,7 @@ export class LegacyRenderer {
         if (tileSvg || layerPattern) {
           paintPattern(slotEl, patternFields, tileSvg);
 
-          // shortcut: a raw SVG background still reads its 1.x fit; goes with the SVG migration.
-          const fitMode = layerPattern ? (layerPattern.fit === 'cover' ? 'cover' : 'tile') : resolveBackgroundFit(style);
+          const fitMode = layerPattern?.fit === 'cover' ? 'cover' : 'tile';
           if (fitMode === 'cover') {
             slotEl.style.backgroundSize = 'cover';
             slotEl.style.backgroundRepeat = 'no-repeat';
@@ -951,7 +956,7 @@ export class LegacyRenderer {
           const motion = layerPattern?.motion;
           const bgAnimation = motion
             ? `background-animation-${motion.direction} ${motion.period || 8}s linear infinite`
-            : layerPattern ? undefined : style.cssAnimation;
+            : undefined;
           if (!self.disableAnimations && typeof bgAnimation === 'string' && bgAnimation.indexOf('background-animation-') === 0) {
             slotEl.style.animation = bgAnimation;
           }

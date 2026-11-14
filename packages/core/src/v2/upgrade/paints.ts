@@ -48,8 +48,9 @@ function patternOf(ctx: UpgradeContext, owner: V1Object, prefix: string, cssAnim
   const counts = numbers(ctx.take(owner, `${prefix}Counts`)) ?? numbers(ctx.take(owner, `${prefix}Count`));
   const dispersions = numbers(ctx.take(owner, `${prefix}Dispersions`)) ?? numbers(ctx.take(owner, `${prefix}Dispersion`));
   const colors: NonNullable<typeof single>[] = Array.isArray(list) ? list.filter(isColor) : [];
-  // A raw SVG tile carries no preset: only the colours it is recoloured with.
-  if ((typeof preset !== "string" || !preset) && single === undefined && bg === undefined && colors.length === 0) return undefined;
+  // A raw SVG tile carries no preset: only the colours it is recoloured with, its fit and its motion.
+  const tile = prefix === "backgroundPattern" && typeof owner.svgRawXml === "string" && owner.svgRawXml !== "";
+  if ((typeof preset !== "string" || !preset) && !tile && single === undefined && bg === undefined && colors.length === 0) return undefined;
 
   const pattern: Extract<Paint, { kind: "pattern" }>["pattern"] = typeof preset === "string" && preset ? { preset } : {};
   // The first colour of the list is the one the role tints.
@@ -131,7 +132,7 @@ function fillOf(ctx: UpgradeContext, slot: V1Slot): Paint | Paint[] | undefined 
   const solid = (): Paint | undefined => {
     return color === undefined ? undefined : { kind: "color", value: color };
   };
-  const kind = typeof fillType === "string" ? fillType : typeof backgroundType === "string" ? backgroundType : slot.type === "pattern" ? "pattern" : "color";
+  const kind = typeof fillType === "string" ? fillType : typeof backgroundType === "string" ? backgroundType : slot.type === "pattern" || backgroundPattern ? "pattern" : "color";
   if (kind === "none" || kind === "transparent") return undefined;
   if (kind === "gradient") return gradient ?? solid();
   // 1.x kept fillColor under the photo: it shows when the photo does not load.

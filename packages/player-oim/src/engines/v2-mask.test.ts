@@ -58,6 +58,13 @@ describe("a mask comes from its 2.0 layer", () => {
     expect(d(rect)).not.toBe(d(circle));
   });
 
+  it("its place: the window's hole follows the 2.0 box", async () => {
+    const d = (s: ShadowRoot) => s.querySelector('[data-slot-id="m"] path')!.getAttribute("d");
+    const moved = await render(old, (l) => { l.box = { ...l.box, x: 400, y: 300 }; });
+    const still = await render(old, () => {});
+    expect(d(moved)).not.toBe(d(still));
+  });
+
   it("a cutout paints nothing of its own", async () => {
     const shadow = await render(old, (l) => { l.mask = { mode: "cutout" }; });
     expect(shadow.querySelector('[data-slot-id="m"]')).toBeNull();

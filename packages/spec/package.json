@@ -42,6 +42,7 @@
   },
   "scripts": {
     "parity": "node tools/parity.mjs",
+    "parity:v2": "OIM_VECTORS=vectors-2 node tools/render-web-goldens.mjs .out/web2 --suffix '' && node tools/parity.mjs .out/web2 --renderer web",
     "goldens": "node tools/render-web-goldens.mjs vectors/golden"
   },
   "devDependencies": {

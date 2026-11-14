@@ -10,6 +10,7 @@
 // that was neither taken nor retired is reported as unhandled.
 
 import type { Layer } from "../schema.js";
+import { isValidDynamicColorRole } from "../../dynamic-colors.js";
 
 export type V1Object = Record<string, unknown>;
 /** A 1.x slot with its aliases already resolved. */
@@ -52,7 +53,8 @@ export function createContext(
   return {
     canvas,
     language,
-    hasRole: (role) => roles.has(role),
+    // A host page can set the eight dynamic roles even when the file has no palettes.
+    hasRole: (role) => roles.has(role) || isValidDynamicColorRole(role),
     register(owner, label) {
       labels.set(owner, label);
     },

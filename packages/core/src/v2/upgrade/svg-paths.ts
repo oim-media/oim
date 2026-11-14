@@ -77,13 +77,34 @@ function attributesOf(text: string): Attrs {
   return attrs;
 }
 
-const num = (attrs: Attrs, name: string): number => {
-  const value = Number.parseFloat(attrs[name] ?? "0");
-  return Number.isFinite(value) ? value : 0;
+const HORIZONTAL = new Set(["x", "width", "cx", "rx", "x1", "x2"]);
+const VERTICAL = new Set(["y", "height", "cy", "ry", "y1", "y2"]);
+
+/** A length; a percentage is of the viewBox, as SVG resolves it (r: of its normalised diagonal). */
+const numIn = (attrs: Attrs, name: string, viewBox?: number[]): number => {
+  const raw = attrs[name] ?? "0";
+  const value = Number.parseFloat(raw);
+  if (!Number.isFinite(value)) return 0;
+  if (!raw.trim().endsWith("%") || !viewBox) return value;
+  const [w, h] = [viewBox[2], viewBox[3]];
+  const ref = HORIZONTAL.has(name) ? w : VERTICAL.has(name) ? h : Math.sqrt((w * w + h * h) / 2);
+  return (value / 100) * ref;
 };
 
+/**
+ * A layer 1.x drew from SVG markup: the `svg` type, or an old library icon created
+ * as `geo` with the SVG in its content. Its strokeColor tints the drawing.
+ */
+export function drawsMarkup(slot: { type?: unknown; raw: { content?: unknown } }): boolean {
+  if (slot.type === "svg") return true;
+  const content = slot.raw.content;
+  const values = typeof content === "string" ? [content] : content && typeof content === "object" ? Object.values(content) : [];
+  return values.some((v) => typeof v === "string" && /<svg/i.test(v));
+}
+
 /** The path data of a basic shape. */
-function shapeToPath(tag: string, a: Attrs): string | null {
+function shapeToPath(tag: string, a: Attrs, vb?: number[]): string | null {
+  const num = (attrs: Attrs, name: string) => numIn(attrs, name, vb);
   if (tag === "path") return a.d?.trim() || null;
   if (tag === "rect") {
     const [x, y, w, h] = [num(a, "x"), num(a, "y"), num(a, "width"), num(a, "height")];
@@ -173,7 +194,7 @@ export function svgToPaths(xml: unknown): SvgResult {
     }
 
     if (SHAPES.has(name)) {
-      const d = shapeToPath(name, attrs);
+      const d = shapeToPath(name, attrs, viewBox);
       if (!d) continue;
       const entry: PathEntry = { d };
       // SVG fills in black when nothing says otherwise; `none` is written out.

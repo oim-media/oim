@@ -65,7 +65,8 @@ describe("pointer passes through plain text", () => {
   it("a layer with a legacy click interaction keeps the pointer", async () => {
     const get = await render([
       { id: "old", type: "geo", position: [0, 0], style: { width: "20cqw", height: "10cqw", fillColor: "#000" },
-        interaction: { action_type: "toggle_elements", target: { show: [], hide: [] } } },
+        // The toggle's own keys: one that hides nothing does nothing, and 2.0 does not carry it.
+        interaction: { action_type: "toggle_elements", target: { hide_slots: ["x"] } } },
     ]);
     expect(get("old").hasAttribute("data-oim-passthrough")).toBe(false);
   });

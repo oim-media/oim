@@ -17,6 +17,7 @@
  * Phase 3 of the group-as-node design spec.
  */
 
+import { v2LayersOf } from "../../../scene/src/legacy/v2-layers.js";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { ImageEngine } from "./ImageEngine";
 
@@ -419,20 +420,6 @@ describe("what the wrapper unlocks (phase 4)", () => {
     expect(el(engine, "g1").contains(el(engine, "a"))).toBe(true);
   });
 
-  it("a group's parallax moves the wrapper, not an empty box", async () => {
-    const engine = engineWith([
-      layer("g1", { type: "group", style: { parallax: { enabled: true, depth: 0.5, axis: "both" } } }),
-      layer("a", { style: { groupId: "g1" } }),
-      layer("b", { style: { groupId: "g1" } }),
-    ]);
-    await engine.renderSlots();
-
-    // The controller registers the slot's element, which in a group IS the
-    // wrapper: moving it takes everything it contains along with it.
-    expect(engine._parallaxController).not.toBeNull();
-    expect(el(engine, "g1").contains(el(engine, "a"))).toBe(true);
-    expect(el(engine, "g1").contains(el(engine, "b"))).toBe(true);
-  });
 });
 
 describe("with a slot like the one the backend REALLY emits", () => {

@@ -59,13 +59,31 @@ describe("effects", () => {
     ]);
   });
 
+  // Ruling (13 Nov): the 1.x player filled in a listed effect's missing values,
+  // and with a list it painted the list alone.
+  it("a listed effect gets the defaults 1.x painted, and the list replaces the loose effects", () => {
+    expect(layer({ effects: [{ type: "drop-shadow" }, { type: "glow", radius: 0 }] }).effects).toEqual([
+      { kind: "shadow", y: 4, blur: 12, color: "rgba(0, 0, 0, 0.35)" },
+      { kind: "glow", radius: 16, color: "#f59e0b" },
+    ]);
+    expect(layer({ effects: [{ type: "blur", radius: 2 }], layerBlur: 9, grain: true, ...off, shadowEnabled: true }).effects).toEqual([{ kind: "blur", radius: 2 }]);
+    expect(layer({ effects: [{ type: "glow" }, { type: "drop-shadow" }, { type: "blur", radius: 2 }] }, "artistic-text").effects).toEqual([{ kind: "blur", radius: 2 }]);
+  });
+
+  it("without a list: blur, then grain, then the shadow", () => {
+    expect(layer({ ...off, shadowEnabled: true, grain: true, blur: 3 }).effects?.map((fx: { kind: string }) => fx.kind)).toEqual(["blur", "grain", "shadow"]);
+  });
+
   it("an effect type nobody knows is reported", () => {
     expect(upgrade(doc({ effects: [{ type: "warp" }] })).unhandled).toEqual(['style.effects: unknown effect type "warp"']);
   });
 
-  it("the named effect: neon is a glow, shadow is a shadow, none is nothing", () => {
+  // Ruling (13 Nov): what the 1.x player painted wins. It drew the neon (amber
+  // by default) and never drew the named "shadow".
+  it("the named effect: neon is a glow, shadow and none are nothing", () => {
     expect(layer({ effect: "neon", effectColor: "#00ff88", effectRadius: 20 }).effects).toEqual([{ kind: "glow", radius: 20, color: "#00ff88" }]);
-    expect(layer({ effect: "shadow", effectRadius: 12 }).effects).toEqual([{ kind: "shadow", blur: 12 }]);
+    expect(layer({ effect: "neon" }).effects).toEqual([{ kind: "glow", radius: 16, color: "#f59e0b" }]);
+    expect(layer({ effect: "shadow", effectRadius: 12 })).not.toHaveProperty("effects");
     expect(layer({ effect: "none", effectColor: "#00ff88" })).not.toHaveProperty("effects");
   });
 
@@ -86,9 +104,15 @@ describe("effects", () => {
     expect(filled).not.toHaveProperty("effects");
   });
 
-  it("filters that change nothing are dropped; on a layer with no image they filter the layer itself", () => {
+  // Ruling (13 Nov): what the 1.x player painted wins. It filtered only an
+  // image, an image fill and what is behind a filter layer, and only with a
+  // preset its table knew; the filter layer was also read by `fp`.
+  it("filters that change nothing, or that 1.x never painted, are dropped", () => {
     expect(layer({ filterPreset: "none", filterBrightness: 100 })).not.toHaveProperty("effects");
-    expect(layer({ filterBlur: 3, filterSaturate: 140 }).effects).toEqual([{ kind: "filter", blur: 3, saturate: 1.4 }]);
+    expect(layer({ filterBlur: 3, filterSaturate: 140 })).not.toHaveProperty("effects");
+    expect(layer({ filterPreset: "bogus" }, "filter").effects).toEqual([{ kind: "backdrop" }]);
+    expect(layer({ fp: "sepia" }, "filter").effects).toEqual([{ kind: "backdrop", preset: "sepia" }]);
+    expect(layer({ filterPreset: "duotone" }, "filter").effects).toEqual([{ kind: "backdrop", preset: "duotone" }]);
   });
 
   it("an image layer keeps its filters in the image", () => {

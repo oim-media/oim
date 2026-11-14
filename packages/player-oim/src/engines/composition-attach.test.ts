@@ -21,7 +21,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { attachCompositionNode } from './ImageEngine';
-import { computeLayerComposition, type Slot } from '../render/layerComposition';
+import { computeLayerComposition, type Slot } from '../../../scene/src/legacy/layerComposition';
 
 function makeSlot(id: string): Slot {
   return { id: id, type: 'text', style: {} };

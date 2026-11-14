@@ -141,8 +141,10 @@ describe("what the fix must NOT take away", () => {
    * The minimum is measured, not the width: the width comes from `style.width` through
    * another branch that this bench does not exercise, so asserting on it would be measuring nothing.
    */
+  // Ruling (13 Nov): in 2.0 a layer is interactive because it reacts (a hover look
+  // or an interaction); the bare 1.x flag is not carried.
   it("an interactive text keeps its minimum contact area", async () => {
-    const el = await slotDe(text({ isInteractive: true }));
+    const el = await slotDe(text({ isInteractive: true, states: { hover: { scale: 105 } } }));
     expect(el.style.minWidth).toBe("24px");
     expect(el.style.minHeight).toBe("24px");
   });

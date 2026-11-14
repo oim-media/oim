@@ -379,7 +379,8 @@ describe("allow-dynamic-colors: exempting a specific image", () => {
     await motor.renderSlots();
     const cardEl = shadow.querySelector('[data-slot-id="card_legacy_shadow"]') as HTMLElement;
     expect(cardEl).toBeTruthy();
-    expect(cardEl.style.filter).toContain("drop-shadow(6px 6px 10px var(--oim-color-accent, var(--oim-palette-accent, rgba(163, 230, 53, 1))))");
+    // Ruling (13 Nov): from its 2.0 layer the fallback is the hex itself, not rgba(..., 1): the same colour.
+    expect(cardEl.style.filter).toContain("drop-shadow(6px 6px 10px var(--oim-color-accent, var(--oim-palette-accent, #a3e635)))");
 
     const textEl = shadow.querySelector('[data-slot-id="text_legacy_shadow"]') as HTMLElement;
     expect(textEl).toBeTruthy();

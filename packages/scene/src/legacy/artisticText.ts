@@ -38,6 +38,53 @@ export interface ArtisticTextRenderModel {
 }
 
 
+type V2Layer = import('../../../core/src/v2/schema.js').Layer;
+type Literal = (value: unknown) => string | undefined;
+
+/**
+ * The same model from a 2.0 text layer with `text.artistic`. Colours are
+ * literals: an SVG presentation attribute cannot hold a `var()`. The defaults
+ * are the 1.x ones, for what the layer leaves out.
+ */
+export function buildArtisticTextModelFromLayer(layer: V2Layer, lang: string, literal: Literal): ArtisticTextRenderModel {
+  const t = layer.text!;
+  const art = t.artistic ?? {};
+  const content = t.content;
+  const text = content[lang] || content.es || content.en || Object.values(content)[0] || "CARTEL";
+  const num = (v: unknown, fallback: number) => (typeof v === "number" ? v : v && typeof v === "object" && typeof (v as { value?: unknown }).value === "number" ? (v as { value: number }).value : fallback);
+  const box = layer.box as { width?: number; height?: number };
+  const width = box.width || 400;
+  const height = box.height || 120;
+  const sized = t.font?.size;
+  const fontSize = (sized && typeof sized === "object" && "modes" in sized ? (sized.modes as Record<string, number>)[lang] : undefined) ?? num(sized, 48);
+  const weight = t.font?.weight;
+  const fill = layer.fills?.[0] as { kind?: string; value?: unknown; preset?: string } | undefined;
+  const strokeOf = (align: string) => layer.strokes?.find((s) => s.align === align) as { paint: { value?: unknown }; width: unknown } | undefined;
+  const outer = strokeOf("outside");
+  const inner = strokeOf("inside");
+  const curveAmount = art.curve?.amount ?? 0;
+  const ext = art.extrusion;
+  return {
+    text: String(text),
+    width,
+    height,
+    fontFamily: t.font?.family || "Bangers",
+    fontSize,
+    bold: weight === "bold" || Number(weight) >= 700,
+    letterSpacing: t.letterSpacing ?? 0,
+    lineHeight: resolveLineHeight({ lineHeight: t.lineHeight }),
+    fillColor: (fill?.kind === "color" ? literal(fill.value) : undefined) || "#FBBF24",
+    curvePathD: calculateTextCurvePath(width, height, curveAmount, art.curve?.type ?? "arc"),
+    isCurved: curveAmount !== 0,
+    extrusionLayers: calculate3DExtrusionLayers(ext?.depth ?? 0, ext?.angle ?? 45, (ext?.color !== undefined && literal(ext.color)) || "#111827", ext?.shading !== false),
+    outerStrokeColor: outer ? literal(outer.paint.value) : undefined,
+    outerStrokeWidth: outer ? num(outer.width, 0) : 0,
+    innerStrokeColor: inner ? literal(inner.paint.value) : undefined,
+    innerStrokeWidth: inner ? num(inner.width, 0) : 0,
+    textGradientType: fill?.kind === "gradient" && fill.preset ? (fill.preset as ArtisticTextRenderModel["textGradientType"]) : "none",
+  };
+}
+
 /**
  * Builds the full vector rendering model from the viewer's slot.
  */

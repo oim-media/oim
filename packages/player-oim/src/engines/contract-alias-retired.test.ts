@@ -22,7 +22,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 import ImageEngine from "./ImageEngine";
-import { buildArtisticTextModelFromSlot } from "../render/artisticText";
+import { buildArtisticTextModelFromSlot } from "../../../scene/src/legacy/artisticText";
 
 function mount(slots: any[]) {
   const host = document.createElement("div");

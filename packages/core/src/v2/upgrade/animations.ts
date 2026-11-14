@@ -28,22 +28,35 @@ const KEYFRAME_PROPERTIES: [letter: string, property: Property, rest: number][] 
   ["b", "blur", 0],
 ];
 
+/** What 1.x wrote into one `transform`: a frame that left one out drew it at rest. */
+const IN_TRANSFORM = new Set<Property>(["x", "y", "scale", "rotation"]);
+
 /**
  * 1.x keyframes carry every property at once, in seconds. Each property that
- * ever leaves its rest value becomes a track, with time from 0 to 1.
+ * ever leaves its rest value becomes a track, with time from 0 to 1. Position,
+ * scale and rotation take every frame (at rest where the frame is silent, as
+ * 1.x drew it); opacity and blur take only the frames that name them.
  */
 function tracksOf(keyframes: unknown[], duration: number): Track[] {
   const frames = keyframes.map(asObject).filter((f): f is V1Object => !!f && finite(f.t) !== undefined);
+  // 1.x ran a timeline only from two keyframes up.
+  if (frames.length < 2) return [];
   const tracks: Track[] = [];
   for (const [letter, property, rest] of KEYFRAME_PROPERTIES) {
-    const own = frames.filter((f) => finite(f[letter]) !== undefined);
-    if (!own.some((f) => f[letter] !== rest)) continue;
+    const named = frames.filter((f) => finite(f[letter]) !== undefined);
+    if (!named.some((f) => f[letter] !== rest)) continue;
+    const own = IN_TRANSFORM.has(property) ? frames : named;
     const points = own.map((f) => {
-      const point: Track["keyframes"][number] = { t: Math.min(1, Math.max(0, (f.t as number) / duration)), v: f[letter] as number };
+      const point: Track["keyframes"][number] = { t: Math.min(1, Math.max(0, (f.t as number) / duration)), v: finite(f[letter]) ?? rest };
       if (f.e !== undefined) point.e = f.e as never;
       return point;
     });
-    if (points.length === 1) points.push({ t: 1, v: points[0].v });
+    // A lone opacity or blur keyframe: the browser ran to it from the layer's own value, and back.
+    if (points.length === 1) {
+      const at = points[0].t;
+      if (at > 0) points.unshift({ t: 0, v: rest });
+      if (at < 1) points.push({ t: 1, v: rest });
+    }
     tracks.push({ property, keyframes: points });
   }
   return tracks;
@@ -51,21 +64,29 @@ function tracksOf(keyframes: unknown[], duration: number): Track[] {
 
 const TEXT_TARGET: Record<string, "words" | "lines"> = { "rise-words": "words", "reveal-mask": "lines" };
 
-/** A hover or press state that changes how the layer looks. */
-function stateAnimation(state: V1Object, on: "hover" | "press"): Animation | undefined {
+/**
+ * The look a layer takes under the pointer. Each track runs from the layer's
+ * own value to the state's, which 1.x set outright (it did not add to it).
+ * Only hover: 1.x never drew the look of `active`.
+ */
+function hoverLook(ctx: UpgradeContext, state: V1Object, layer: DraftLayer): Animation | undefined {
   const tracks: Track[] = [];
+  const to = (property: Property, own: number, target: number) => {
+    if (target !== own) tracks.push({ property, keyframes: [{ t: 0, v: own }, { t: 1, v: target }] });
+  };
   const scale = finite(state.scale);
   // 1.x wrote the scale as a percentage; a value of 10 or less is an old multiplier.
-  if (scale !== undefined) {
-    const factor = scale > 10 ? scale / 100 : scale;
-    if (factor !== 1) tracks.push({ property: "scale", keyframes: [{ t: 0, v: 1 }, { t: 1, v: factor }] });
-  }
+  if (scale !== undefined) to("scale", 1, scale > 10 ? scale / 100 : scale);
   const rotation = finite(state.rotation);
-  if (rotation) tracks.push({ property: "rotation", keyframes: [{ t: 0, v: 0 }, { t: 1, v: rotation }] });
+  if (rotation !== undefined) to("rotation", layer.box.rotation ?? 0, rotation);
   const opacity = finite(state.opacity);
-  if (opacity !== undefined && opacity !== 100) tracks.push({ property: "opacity", keyframes: [{ t: 0, v: 1 }, { t: 1, v: opacity / 100 }] });
+  if (opacity !== undefined) to("opacity", layer.opacity ?? 1, opacity / 100);
+  // No track can carry a colour.
+  if (state.color) ctx.note("style.states.hover.color: a hover colour is not carried to 2.0");
   if (tracks.length === 0) return undefined;
-  return { on, tracks, duration: finite(state.transitionDuration) ?? 200 };
+  // In milliseconds, as the editor wrote it (the 1.x player read it as seconds).
+  // None of its own: the player's transition decides (0).
+  return { on: "hover", tracks, duration: Math.max(0, finite(state.transitionDuration) ?? 0) };
 }
 
 const ACTIONS = new Set(["show", "hide", "toggle", "setText", "play"]);
@@ -85,14 +106,17 @@ export function convertAnimations(ctx: UpgradeContext, slot: V1Slot, layer: Draf
 
   const animation = asObject(ctx.take(style, "animation"));
   if (animation) {
-    const seconds = finite(animation.duration) ?? 1;
+    const said = finite(animation.duration);
     const delay = finite(animation.delay);
-    const timing = { duration: seconds * 1000, ...(delay ? { delay: delay * 1000 } : {}) };
-    const tracks = Array.isArray(animation.keyframes) ? tracksOf(animation.keyframes, seconds) : [];
+    // A timeline with no duration of its own ran for 8 seconds, and never waited:
+    // the delay was the named loop's alone.
+    const seconds = said || 8;
+    const tracks = Array.isArray(animation.keyframes) && seconds > 0 ? tracksOf(animation.keyframes, seconds) : [];
     // Keyframes loop for ever unless an action starts them, which is how every player runs them.
-    if (tracks.length > 0) animations.push({ on: animation.trigger === "action" ? "action" : "loop", tracks, ...timing });
+    if (tracks.length > 0) animations.push({ on: animation.trigger === "action" ? "action" : "loop", tracks, duration: seconds * 1000 });
     if (typeof animation.loop === "string" && animation.loop !== "none" && animation.loop !== "custom") {
-      animations.push({ on: "loop", preset: animation.loop, ...timing });
+      // No duration of its own: the preset decides it (0).
+      animations.push({ on: "loop", preset: animation.loop, duration: said && said > 0 ? said * 1000 : 0, ...(delay && delay > 0 ? { delay: delay * 1000 } : {}) });
     }
     if (typeof animation.hover === "string" && animation.hover !== "none" && animation.hover !== "custom") {
       animations.push({ on: "hover", preset: animation.hover, duration: 200 });
@@ -112,7 +136,8 @@ export function convertAnimations(ctx: UpgradeContext, slot: V1Slot, layer: Draf
     const params: Record<string, unknown> = {};
     if (speed !== undefined) params.speed = speed;
     if (intensity !== undefined) params.intensity = intensity;
-    if (cursor === true) params.cursor = true;
+    // The typewriter drew its cursor unless told not to: a `false` must survive.
+    if (typeof cursor === "boolean") params.cursor = cursor;
     animations.push({
       on: "load",
       target: TEXT_TARGET[textType] ?? "chars",
@@ -137,21 +162,36 @@ export function convertAnimations(ctx: UpgradeContext, slot: V1Slot, layer: Draf
   const trimStart = finite(ctx.take(style, "trimStart"));
   const trimEnd = finite(ctx.take(style, "trimEnd"));
   const trimDuration = finite(ctx.take(style, "trimDuration"));
-  if (layer.type === "shape" && trimDuration) {
-    animations.push({
-      on: "load",
-      duration: trimDuration * 1000,
-      tracks: [{ property: "trimEnd", keyframes: [{ t: 0, v: (trimStart ?? 0) / 100 }, { t: 1, v: (trimEnd ?? 100) / 100 }] }],
-    });
+  // 1.x trimmed only markup it drew itself (an SVG, or HTML) that had a stroke
+  // width, and only when the trim hid something or was animated.
+  const share = (percent: number) => Math.min(1, Math.max(0, percent / 100));
+  const start = share(trimStart ?? 0);
+  const end = share(trimEnd ?? 100);
+  const seconds = Math.max(0, trimDuration ?? 0);
+  const content = raw.content;
+  const texts = typeof content === "string" ? [content] : Object.values(asObject(content) ?? {});
+  const drawn = slot.type !== "image" && texts.some((t) => typeof t === "string" && /(<|&lt;)svg|<span|<div|<a|<img/i.test(t));
+  if (layer.type === "shape" && layer.geometry && drawn && style.strokeWidth) {
+    // The trim at rest lives in the geometry: it is drawn even where nothing animates.
+    if (start > 0 || end < 1) layer.geometry.trim = { ...(start > 0 ? { start } : {}), ...(end < 1 ? { end } : {}) };
+    // Drawn over time: the stroke grows from its start to its end at rest.
+    if (seconds > 0) {
+      animations.push({ on: "load", duration: seconds * 1000, tracks: [{ property: "trimEnd", keyframes: [{ t: 0, v: start }, { t: 1, v: end }] }] });
+    }
   }
 
-  const states = asObject(ctx.take(style, "states")) ?? {};
+  // The slot's own states won over the style's, and counted only on a layer marked interactive.
+  const ownStates = asObject(ctx.take(raw, "states"));
+  const states = ownStates ?? asObject(ctx.take(style, "states")) ?? {};
+  const interactive = raw.isInteractive === true || style.isInteractive === true;
+  ctx.take(raw, "isInteractive");
   for (const [name, on] of [["hover", "hover"], ["active", "press"]] as const) {
     const state = asObject(states[name]);
     if (!state) continue;
-    const look = stateAnimation(state, on);
+    const look = interactive && on === "hover" ? hoverLook(ctx, state, layer) : undefined;
     if (look) animations.push(look);
-    const acts = stateInteraction(state, on);
+    // 1.x ran a state's actions only on a layer marked interactive.
+    const acts = interactive ? stateInteraction(state, on) : undefined;
     if (acts) interactions.push(acts);
   }
 
@@ -168,14 +208,40 @@ export function convertAnimations(ctx: UpgradeContext, slot: V1Slot, layer: Draf
   // The flag only said "this layer reacts"; the interactions themselves say it now.
   ctx.take(style, "isInteractive");
 
+  // 1.x moved a layer two ways. Only the endless scroll is carried; the parallax
+  // that followed the pointer is retired (Decision, 13 Nov).
   const parallax = asObject(ctx.take(raw, "parallax")) ?? asObject(ctx.take(style, "parallax"));
   ctx.take(style, "parallax");
-  const sceneLoop = asObject(ctx.take(style, "sceneLoop"));
-  const loopDepth = finite(ctx.take(style, "loopDepth"));
-  const motion: NonNullable<DraftLayer["motion"]> = {};
-  if (parallax && parallax.enabled !== false) motion.parallax = parallax as never;
-  if (sceneLoop || loopDepth !== undefined) motion.sceneLoop = { ...(sceneLoop as object), ...(loopDepth !== undefined ? { depth: loopDepth } : {}) } as never;
-  if (Object.keys(motion).length > 0) layer.motion = motion;
+  if (parallax && parallax.enabled !== false) {
+    const inf = asObject(parallax.infinite) ?? {};
+    // The same reading as the 1.x player: a loop that is off is zero speed.
+    const speed = inf.enabled === false ? 0
+      : finite(parallax.speedPxSec) ?? finite(inf.speedPxSec) ?? finite(inf.speed_px_sec)
+        ?? (parallax.mode === "infinite_horizontal" ? finite(parallax.speed) ?? 20 : 0);
+    const pick = (...values: unknown[]) => values.find((v) => v !== undefined);
+    const direction = pick(parallax.direction, inf.direction);
+    const mirror = pick(parallax.mirror, parallax.seamlessTile, inf.mirror, inf.seamlessTile, inf.seamless_tile);
+    const pauseOnHover = pick(parallax.pauseOnHover, inf.pauseOnHover, inf.pause_on_hover);
+    if (speed !== 0) {
+      layer.motion = {
+        loop: {
+          speedPxSec: Math.min(500, Math.max(-500, speed)),
+          ...(direction === "left_to_right" || direction === "right_to_left" ? { direction } : {}),
+          ...(mirror !== undefined ? { mirror: !!mirror } : {}),
+          ...(pauseOnHover !== undefined ? { pauseOnHover: !!pauseOnHover } : {}),
+        },
+      };
+    } else if (parallax.mode !== "infinite_horizontal") {
+      ctx.retire(raw.parallax !== undefined ? raw : style, "parallax");
+    }
+  }
+  // The player read these only to clip the group; its looping children clip it now.
+  ctx.retire(style, "sceneLoop");
+  // The flag only marked what clips; in 2.0 a loop clips by itself.
+  ctx.retire(raw, "isParallaxGroup");
+  ctx.retire(style, "isParallaxGroup");
+  ctx.retire(raw, "is_parallax_group");
+  ctx.retire(style, "loopDepth");
 
   // What only a video layer used.
   ctx.retire(raw, "tracking_data");

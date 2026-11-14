@@ -10,3 +10,4 @@ export * from "./layer-blocks.js";
 export * from "./schema.js";
 export * from "./upgrade.js";
 export type { UpgradeContext } from "./upgrade/context.js";
+export * from "./paint-css.js";

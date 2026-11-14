@@ -21,6 +21,7 @@ import { asObject, createContext, type DraftLayer, type UpgradeContext, type V1O
 import { canvasOf, convertRoot, languagesOf, rolesOf } from "./upgrade/root.js";
 import { convertText } from "./upgrade/text.js";
 import { buildTree, TYPE_OF } from "./upgrade/tree.js";
+import { convertZones } from "./upgrade/zones.js";
 import { convertVariables } from "./upgrade/variables.js";
 
 export type UpgradeResult = {
@@ -52,27 +53,19 @@ export function isV2(input: unknown): boolean {
   return typeof version === "string" && /^2\./.test(version);
 }
 
-// Short aliases retired in 1.12.0 and still present in old files.
-const SLOT_ALIASES: [alias: string, key: string][] = [
-  ["p", "position"],
-  ["st", "style"],
-  ["c", "content"],
-  ["t", "tracking_data"],
-];
+// Short aliases retired in 1.12.0. The player has not read them since, so a
+// file that still carries them was painted without them: they are retired here too.
+const SLOT_ALIASES = ["p", "st", "c", "t"];
 
 function readSlot(ctx: UpgradeContext, value: unknown, index: number): V1Slot {
   const raw: V1Object = { ...(asObject(value) ?? {}) };
-  for (const [alias, key] of SLOT_ALIASES) {
-    if (raw[key] === undefined && raw[alias] !== undefined) raw[key] = raw[alias];
-    delete raw[alias];
-  }
   const style: V1Object = { ...(asObject(raw.style) ?? {}) };
   ctx.register(raw, "slot");
+  for (const alias of SLOT_ALIASES) if (alias in raw) ctx.retire(raw, alias);
   ctx.register(style, "style");
   ctx.take(raw, "style");
-  // `s` was a size nobody wrote; `zone_id` pointed at zones no file declares.
+  // `s` was a size nobody wrote.
   ctx.retire(raw, "s");
-  ctx.retire(raw, "zone_id");
   for (const key of RETIRED_STYLE_KEYS) ctx.retire(style, key);
   if (raw.id === undefined) raw.id = `layer-${index + 1}`;
   const type = typeof raw.type === "string" ? raw.type : "text";
@@ -92,8 +85,14 @@ function startLayer(ctx: UpgradeContext, slot: V1Slot): DraftLayer {
   const name = ctx.take(raw, "name");
   if (typeof name === "string" && name) layer.name = name;
 
+  // Shown only in some languages; "*" (or no list) is every language, and an
+  // empty list hid the layer in all of them, as the 1.x player did.
   const languages = ctx.take(raw, "languages");
-  if (Array.isArray(languages) && languages.length > 0) layer.languages = languages.filter((l) => typeof l === "string");
+  if (Array.isArray(languages) && !languages.includes("*")) {
+    const own = languages.filter((l): l is string => typeof l === "string" && l.length > 0);
+    if (own.length > 0) layer.languages = [...new Set(own)];
+    else layer.visible = false;
+  }
 
   const pending = ctx.take(raw, "pendingTranslation");
   if (Array.isArray(pending) && pending.length > 0) {
@@ -126,7 +125,13 @@ export function upgrade(input: unknown): UpgradeResult {
     return layer;
   });
 
-  document.layers = buildTree(ctx, slots, layers);
+  // The zone a layer sits in: only a top-level layer, as 1.x attached only those.
+  const zoneOf = new Map<DraftLayer, string>();
+  slots.forEach((slot, i) => {
+    const zone = ctx.take(slot.raw, "zone_id");
+    if (typeof zone === "string" && zone) zoneOf.set(layers[i], zone);
+  });
+  document.layers = convertZones(ctx, meta, buildTree(ctx, slots, layers), zoneOf);
 
   const variables = convertVariables(ctx, meta, document.languages);
   if (variables) document.variables = variables;

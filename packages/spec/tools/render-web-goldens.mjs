@@ -48,6 +48,12 @@ const page = (src, height) => `<!doctype html><html><head><meta charset="utf-8">
 const server = http.createServer((req, res) => {
   const url = decodeURIComponent(req.url.split('?')[0]);
   if (url === '/oim-player.js') return res.end(fs.readFileSync(PLAYER));
+  // What the player fetches next to itself: `upgrade` and Lottie.
+  const vendor = path.join(path.dirname(PLAYER), 'vendor', path.basename(url));
+  if (url.startsWith('/vendor/') && fs.existsSync(vendor)) {
+    res.setHeader('content-type', 'text/javascript');
+    return res.end(fs.readFileSync(vendor));
+  }
   if (url.startsWith('/page/')) {
     res.setHeader('content-type', 'text/html');
     const name = path.basename(url);
@@ -85,6 +91,8 @@ for (const file of fs.readdirSync(VECTORS).filter((f) => f.endsWith('.oim.png'))
     ).map((img) => img.decode().catch(() => {}))));
     // Two frames: the engine lays out after load.
     await tab.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+    // A golden painted without `upgrade` would be the 1.x road, not the one that ships.
+    if (!(await tab.evaluate(() => typeof window.__oimUpgrade === 'function'))) throw new Error('upgrade did not load');
     await tab.locator('#p').screenshot({ path: path.join(outDir, `${name}${suffix}.png`), animations: 'disabled' });
     console.log(`rendered ${name}`);
   } catch (err) {

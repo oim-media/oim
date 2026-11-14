@@ -5,9 +5,9 @@
  */
 
 import { cropCss } from '../../../core/src/crop.js';
-import { resolveCssColor } from '../../../core/src/dynamic-colors.js';
 import { mediaFilterCss } from '../../../core/src/media-filters.js';
 import { flipScale } from '../../../core/src/flip.js';
+import { filterStyle } from './v2-layers.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 let sequence = 0;
@@ -20,9 +20,10 @@ let sequence = 0;
  */
 export function mountImageFill(
   slotEl: HTMLElement,
-  style: Record<string, any>,
+  paint: { crop?: { x: number; y: number; zoom: number }; flipX?: boolean; flipY?: boolean; filters?: Record<string, unknown> },
   silhouette: { d: string; viewBox: string; rect?: { rx: number; ry: number } },
-  resolvedUrl: string
+  resolvedUrl: string,
+  fallbackColor?: string
 ): void {
   const id = `oim-image-fill-${++sequence}`;
   // The clip is in objectBoundingBox units: the silhouette maps onto the unit box.
@@ -65,7 +66,7 @@ export function mountImageFill(
   svg.appendChild(clip);
   box.appendChild(svg);
 
-  const crop = cropCss(style.fillImageCrop ?? { x: 50, y: 50, zoom: 1 });
+  const crop = cropCss(paint.crop ?? { x: 50, y: 50, zoom: 1 });
   const img = document.createElement('img');
   img.alt = '';
   img.draggable = false;
@@ -75,23 +76,22 @@ export function mountImageFill(
   img.style.objectFit = crop.objectFit;
   img.style.objectPosition = crop.objectPosition;
   // The mirror goes on the photo only, inside the crop: the silhouette is never flipped.
-  const flip = flipScale(style.fillImageFlipX, style.fillImageFlipY);
+  const flip = flipScale(paint.flipX, paint.flipY);
   img.style.transform = flip ? `${crop.transform} scale(${flip[0]}, ${flip[1]})`.trim() : crop.transform;
   img.style.transformOrigin = crop.transformOrigin;
-  img.style.filter = mediaFilterCss(style) ?? '';
+  img.style.filter = mediaFilterCss(filterStyle(paint.filters)) ?? '';
   img.addEventListener('error', () => {
     box.remove();
-    // The photo failed: the shape goes back to its flat fillColor.
-    const color = resolveCssColor(style.fillColorRole, style.fillColor);
-    if (!color) return;
+    // The photo failed: the shape shows the colour under it.
+    if (!fallbackColor) return;
     // A rectangle has no stroke figure: its colour is the slot's own background.
     if (silhouette.rect) {
-      slotEl.style.backgroundColor = color;
+      slotEl.style.backgroundColor = fallbackColor;
       return;
     }
     for (const child of Array.from(slotEl.children)) {
       if (child.tagName.toLowerCase() !== 'svg') continue;
-      for (const stroke of Array.from(child.children)) stroke.setAttribute('fill', color);
+      for (const stroke of Array.from(child.children)) stroke.setAttribute('fill', fallbackColor);
     }
   });
   img.src = resolvedUrl;

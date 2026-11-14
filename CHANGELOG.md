@@ -3,6 +3,12 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.28.0
+
+- The player paints a 2.0 file (layers, no slots) with the same pixels as its 1.x original, and resolves `resources` refs.
+- New `poster="auto|only"` attribute: `only` shows the file's image without mounting the scene (gallery mode).
+- `@oim-media/spec` ships `vectors-2/`, the conformance vectors as signed 2.0 files.
+
 ## 1.27.12
 
 - Core (`upgrade`): an SVG layer draws its content, as 1.x did, not `svgRawXml` (the

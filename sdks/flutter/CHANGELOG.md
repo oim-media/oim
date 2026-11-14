@@ -4,6 +4,10 @@
 contract version. The full history, for all packages, is in the repository's
 [CHANGELOG.md](https://github.com/oim-media/oim/blob/main/CHANGELOG.md).
 
+## 1.28.0
+
+- Version aligned with the 1.28.0 release; no Dart change.
+
 ## 1.27.12
 
 - No Flutter change; version aligned with the web packages.

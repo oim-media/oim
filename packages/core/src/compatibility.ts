@@ -43,8 +43,9 @@
  * the format can change without the player being touched. Tying both numbers
  * together would make an internal fix look like a format break.
  */
-export const CONTRACT_VERSION = "1.27.12";
-// 1.27.12: an SVG layer upgrades from its content, not svgRawXml; no format change.
+export const CONTRACT_VERSION = "1.28.0";
+// 1.28.0: the player reads 2.0 files and has a poster attribute; 2.0 conformance vectors ship in @oim-media/spec.
+// 1.28.0: an SVG layer upgrades from its content, not svgRawXml; no format change.
 // 1.27.11: fixes to the 2.0 upgrade (corner shorthand, hollow text, SVG icons, colour under a photo); no format change.
 // 1.27.10: no format change; the player paints from 2.0 and a zone is a group without its flow.
 // 1.27.9: numbers beyond +/-(2^53 - 1) have no canonical form; the Rust crate parses decimals exactly.

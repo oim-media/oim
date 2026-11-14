@@ -16,6 +16,10 @@ import { layerTextureMask } from '../../../core/src/effects/texture-mask.js';
 import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entranceClips, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
 import { loadLottie } from '../../../scene/src/legacy/lottie-loader.js';
 import { normalizeRawSlots } from '../render/normalize-raw-slots.js';
+import { isV2 } from '../../../core/src/v2/upgrade.js';
+import { resolveRefs } from '../../../core/src/v2/resources.js';
+import { legacyView } from '../../../scene/src/legacy/legacy-view.js';
+import type { OimDocument } from '../../../core/src/v2/schema.js';
 import { sanitizeHtml, sanitizeFontFamily } from '../render/security.js';
 import { verifyInWorker, type WorkerReply } from '../render/verify-worker.js';
 import { extractOIM } from '../../../core/src/binary.js';
@@ -72,6 +76,17 @@ import { buildArtisticTextModelFromSlot, generateArtisticTextSvgString } from '.
 import { readEmbeddedFonts, registerEmbeddedFonts, embeddedFontFamily } from '../../../scene/src/legacy/embeddedFonts.js';
 import { LegacyRenderer, getTouchDistance, type ImageEngineOptions } from '../../../scene/src/legacy/renderer.js';
 export * from '../../../scene/src/legacy/renderer.js';
+
+/**
+ * What the renderer paints: a 2.0 document through its 1.x view, with its references resolved.
+ * Built on the page, not in the worker: the view's cache lives on the page's own objects.
+ */
+function paintable(metadata: any): any {
+  if (!isV2(metadata)) return metadata;
+  const resolved = resolveRefs(metadata as OimDocument);
+  resolved.missing.forEach((id) => console.warn(`[OimPlayer] resource "${id}" is not in the document`));
+  return legacyView(resolved.document);
+}
 
 export class ImageEngine extends LegacyRenderer {
   constructor(host: HTMLElement, opts?: ImageEngineOptions) {
@@ -325,7 +340,7 @@ export class ImageEngine extends LegacyRenderer {
       // distract from the real issue.
       announce = true;
       // Normalize the Python backend format AFTER signature validation (mutating it before would break the signature check).
-      normalizeRawSlots(extracted.metadata);
+      if (!isV2(extracted.metadata)) normalizeRawSlots(extracted.metadata);
       metadata = extracted.metadata;
     }
     return { metadata, security: status, announce };
@@ -374,7 +389,8 @@ export class ImageEngine extends LegacyRenderer {
    */
   async _applyVerified(v: VerifiedFile): Promise<boolean> {
     const self = this;
-    this.metadata = structuredClone(v.metadata);
+    // Converted after the copy: the view's cache is keyed on the object the renderer keeps.
+    this.metadata = paintable(structuredClone(v.metadata));
     // The palette is first applied before the file is read; only now are its palettes known.
     this.applyPalette();
 

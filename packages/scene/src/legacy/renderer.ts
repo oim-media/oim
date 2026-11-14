@@ -810,7 +810,7 @@ export class LegacyRenderer {
       // A 2.0 drawing (paths that paint themselves) is drawn from its geometry: the file carries no SVG markup.
       const v2Drawing = v2Own.type === 'shape' && v2Own.geometry?.kind === 'paths' && !geometryOutline(v2Own.geometry).path ? v2Own.geometry : undefined;
       let rawText = v2Words ? resolveContent(v2Words, self.lang)
-        : v2Image ? imageSrc(v2Image.src as never, self.lang)
+        : v2Image ? imageSrc(v2Image.src as never, self.lang, self._baseImg?.getAttribute('src') ?? '')
         : v2Drawing && !isBackground(slot) ? drawingSvg(v2Drawing, drawingLink(v2Own, v2Colors.css))
         : v2Own.type === 'lottie' ? (v2Own.lottie?.src ?? '')
         : localized.content;

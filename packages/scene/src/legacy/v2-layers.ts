@@ -7,29 +7,40 @@
 // The bridge of the migration: the renderer still walks the 1.x slots, and
 // reads from the 2.0 layer of each one the blocks already moved to 2.0.
 import { upgrade } from './upgrade-entry.js';
-import type { Box, Geometry, Layer } from '../../../core/src/v2/schema.js';
+import type { Box, Geometry, Layer, OimDocument } from '../../../core/src/v2/schema.js';
 import type { PaintColors } from '../../../core/src/v2/paint-css.js';
 import { resolveCssColor, resolvePalette } from '../../../core/src/dynamic-colors.js';
 import { resolveByLang } from './localizedEntries.js';
 
 const cache = new WeakMap<object, Map<string, Layer>>();
 
+/** Every layer by id, nested ones included. */
+function indexLayers(list: Layer[]): Map<string, Layer> {
+  const layers = new Map<string, Layer>();
+  const walk = (items: Layer[]) => {
+    for (const layer of items) {
+      layers.set(layer.id, layer);
+      walk(layer.children ?? []);
+    }
+  };
+  walk(list);
+  return layers;
+}
+
 /** Every layer of the document as 2.0, by id, nested ones included. Computed once per metadata object. */
 export function v2LayersOf(metadata: object): Map<string, Layer> {
   let layers = cache.get(metadata);
   if (layers) return layers;
-  layers = new Map();
-  const walk = (list: Layer[]) => {
-    for (const layer of list) {
-      layers!.set(layer.id, layer);
-      walk(layer.children ?? []);
-    }
-  };
   // Without `upgrade` (its script failed to load) the map stays empty and every
   // slot is painted by its 1.x road.
-  try { walk(upgrade(metadata).document.layers); } catch (err) { console.warn('[OimPlayer] 2.0 view unavailable:', err); }
+  try { layers = indexLayers(upgrade(metadata).document.layers); } catch (err) { console.warn('[OimPlayer] 2.0 view unavailable:', err); layers = new Map(); }
   cache.set(metadata, layers);
   return layers;
+}
+
+/** Seeds the cache of a view built from a 2.0 document, so `upgrade` never runs on it. */
+export function rememberDocument(view: object, document: OimDocument): void {
+  cache.set(view, indexLayers(document.layers));
 }
 
 /**
@@ -141,10 +152,10 @@ export function maskStyle(layer: Layer): Record<string, unknown> {
   };
 }
 
-/** The picture a 2.0 image shows in one language: its own exception, else the principal; the base PNG paints none. */
-export function imageSrc(src: string | { value: string; modes?: Record<string, string> }, lang: string): string {
+/** The picture a 2.0 image shows in one language: its own exception, else the principal. `oim:base` is the player's base picture, `baseUrl`, or none. */
+export function imageSrc(src: string | { value: string; modes?: Record<string, string> }, lang: string, baseUrl = ''): string {
   const pick = typeof src === 'string' ? src : resolveByLang(src.modes ?? {}, lang) ?? src.value;
-  return pick === 'oim:base' ? '' : pick;
+  return pick === 'oim:base' ? baseUrl : pick;
 }
 
 type Paths = Extract<Geometry, { kind: 'paths' }>;

@@ -50,3 +50,11 @@ describe('drawingLink and drawingSvg', () => {
     expect(inline).not.toContain('background-image');
   });
 });
+
+describe('imageSrc', () => {
+  it('the base picture is the URL of the player base image, and nothing without one', async () => {
+    const { imageSrc } = await import('./v2-layers');
+    expect(imageSrc('oim:base', 'es', 'blob:base')).toBe('blob:base');
+    expect(imageSrc('oim:base', 'es')).toBe('');
+  });
+});

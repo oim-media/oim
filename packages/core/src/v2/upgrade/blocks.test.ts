@@ -168,7 +168,8 @@ describe("geometry, corners and images", () => {
     expect(layer({ geoShape: "circle" }).geometry).toEqual({ kind: "ellipse" });
     expect(layer({ geoShape: "line" }).geometry).toEqual({ kind: "line" });
     expect(layer({ geoShape: "star" }).geometry).toEqual({ kind: "preset", name: "star" });
-    expect(layer({ geoType: "triangle" }).geometry).toEqual({ kind: "preset", name: "triangle" });
+    // Ruling (13 Nov): the 1.x player ignored geoType and painted the box.
+    expect(layer({ geoType: "triangle" }).geometry).not.toEqual({ kind: "preset", name: "triangle" });
     expect(layer({}).geometry).toEqual({ kind: "rect" });
   });
 

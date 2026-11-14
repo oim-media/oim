@@ -67,7 +67,8 @@ function pathsFromLayers(ctx: UpgradeContext, layers: unknown[], viewBox: number
 
 function shapeGeometry(ctx: UpgradeContext, slot: V1Slot, media: string | undefined): Geometry {
   const { style } = slot;
-  const name = ctx.take(style, "geoShape") ?? ctx.take(style, "geoType");
+  // Ruling (13 Nov): the 1.x player drew only `geoShape`; a `geoType` alone painted the box.
+  const name = ctx.take(style, "geoShape");
   ctx.take(style, "geoType");
   const path = ctx.take(style, "svgPath");
   const blob = ctx.take(style, "customBlobPath");
@@ -88,7 +89,10 @@ function shapeGeometry(ctx: UpgradeContext, slot: V1Slot, media: string | undefi
     return { kind: "rect" };
   }
   const d = typeof path === "string" && path ? path : typeof blob === "string" && blob ? blob : undefined;
-  if (d && (name === undefined || name === "custom" || name === "blob")) return { kind: "paths", viewBox, paths: [{ d }] };
+  // The blob and the scribble draw their own path (1.x: customBlobPath first, then svgPath for the blob).
+  if (name === "scribble" && typeof blob === "string" && blob) return { kind: "paths", viewBox: [0, 0, 100, 100], paths: [{ d: blob }] };
+  if (name === "blob" && typeof blob === "string" && blob) return { kind: "paths", viewBox: [0, 0, 100, 100], paths: [{ d: blob }] };
+  if (d && (name === undefined || name === "custom" || name === "blob")) return { kind: "paths", viewBox: name === "blob" ? [0, 0, 100, 100] : viewBox, paths: [{ d }] };
   if (typeof name === "string" && name) return BASIC[name] ?? { kind: "preset", name };
   return { kind: "rect" };
 }

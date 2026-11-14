@@ -16,6 +16,7 @@ import { layerTextureMask } from '../../../core/src/effects/texture-mask.js';
 import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entranceClips, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
 import { loadLottie } from './lottie-loader.js';
 import { ensureUpgrade } from './upgrade-entry.js';
+import { geometryOutline } from '../../../core/src/v2/geometry-outline.js';
 import { v2LayersOf, anchorShift, paintColors, typographyCss, filterStyle, maskStyle, imageSrc } from './v2-layers.js';
 import { paintCss } from '../../../core/src/v2/paint-css.js';
 import { sanitizeHtml, sanitizeFontFamily, isSandboxImageSrc } from './sanitize.js';
@@ -42,12 +43,10 @@ import {
 import { calculateGlitchState, glitchLayers } from '../../../core/src/glitch.js';
 import { easingToCss, revealFrames, revealTiming } from '../../../core/src/reveal.js';
 import { calculateTypewriterState } from './typewriterText.js';
-import { getFillCss, patternLayerCss, shapeMaskCss, svgSilhouetteMaskCss } from '../../../core/src/fill.js';
+import { patternLayerCss, shapeMaskCss, svgSilhouetteMaskCss } from '../../../core/src/fill.js';
 import { paintPattern } from './patternPaint.js';
 import { resolveCssColor, resolvePalette, DYNAMIC_COLOR_ROLES } from '../../../core/src/dynamic-colors.js';
 import { applyTrimToSvgPaths, ensureTrimKeyframes } from './trimPath.js';
-import { shapeDrawing } from '../../../core/src/geoShapes.js';
-import { frameSilhouette } from '../../../core/src/frame-silhouette.js';
 import { mediaFilterCss } from '../../../core/src/media-filters.js';
 import { buildSvgNoiseFilter, buildLayerGrainFilter, GRAIN_LAYER_TYPES } from '../../../core/src/generative/proceduralNoise.js';
 import { TEXTURE_CATALOG, type TexturePreset } from '../../../core/src/effects/index.js';
@@ -460,15 +459,6 @@ function buildLayerCompositionDefs(
 }
 
 
-function normalizePosition(position: [number, number]): [number, number] {
-  let x = position[0];
-  let y = position[1];
-  if (x > 1 || y > 1) {
-    x = x / 100;
-    y = y / 100;
-  }
-  return [x, y];
-}
 
 /**
  * Decides whether the background SVG is painted as a repeated tile or as a
@@ -792,15 +782,10 @@ export class LegacyRenderer {
       const slotType = slot.type;
       const v2Own = v2Layers.get(String(slot.id));
       // The 1.x style with its filters replaced by the 2.0 image fill's.
-      const v2FillStyle = () => {
-        const paint = v2Own?.fills?.find((p: any) => p && p.kind === 'image') as { filters?: Record<string, unknown> } | undefined;
-        return { ...(slot.style || {}), ...filterStyle(paint?.filters) };
-      };
       if (onlyIds && !onlyIds.has(String(slot.id))) return null;
       // Short aliases (st, p, t, c) retired in 1.12.0: one name per concept,
       // one reading of a file (no writer ever emitted them).
       const style = slot.style || {};
-      const position = slot.position;
       const tracking_data = slot.tracking_data;
 
       // Mask and filter slots are pure composition directives: computeLayerComposition
@@ -1544,7 +1529,6 @@ export class LegacyRenderer {
       });
       // Resolve slot width and height based on design proportions
       const origW = self.metadata?.canvas_width || self.metadata?.canvasWidth || (self.metadata?.canvas ? self.metadata.canvas.natural_width : 800);
-      const origH = self.metadata?.canvas_height || self.metadata?.canvasHeight || (self.metadata?.canvas ? self.metadata.canvas.natural_height : 600);
       
       if (isInteractiveSlot) {
         applyMinHitArea(slotEl);
@@ -1585,20 +1569,26 @@ export class LegacyRenderer {
       // Vector layers too, for pattern and generative: the layer is
       // masked with the drawing's silhouette, so the fill follows the icon. A
       // gradient is not here: the editor writes it inside the SVG itself.
-      const isVectorFill = (slotType === 'svg' || isSvg) && !isWindowMask && (
-        (style.fillType === 'pattern' && !!style.fillPatternType) ||
-        (style.fillType === 'generative' && !!style.fillGenerative)
-      );
-      // A photo that is actually painted covers the slot: a stale fill role must
-      // not put its palette colour behind the photo's transparent parts.
-      const pictureShown = style.fillType === 'image' && isSandboxImageSrc(String(style.fillImage || '').trim());
+      // The layer's 2.0 fill and figure.
+      const v2Fill = v2Own.fills?.[0] as any;
+      const fillKind: string | undefined = v2Fill && 'kind' in v2Fill ? v2Fill.kind : undefined;
+      const shapeOutline = geometryOutline(v2Own.type === 'shape' ? v2Own.geometry : undefined);
+      const isVectorFill = (slotType === 'svg' || isSvg) && !isWindowMask && (fillKind === 'pattern' || fillKind === 'generative');
+      // Image fill (contract 1.17.0): the same resolution as an image layer's
+      // content. A network URL is refused, as there (the file carries its picture).
+      const fillImageSrc = isGeoLike && !isWindowMask && fillKind === 'image' ? String(v2Fill.src || '').trim() : '';
+      const imageSrcSafe = !!fillImageSrc && isSandboxImageSrc(fillImageSrc);
+      // A photo that is actually painted covers the slot.
       const hasComplexFill = isVectorFill || ((slotType === 'geo' || slotType === 'shape') && !isWindowMask && (
-        pictureShown ||
-        (style.fillType === 'gradient' && !!style.fillGradient) ||
-        (style.fillType === 'pattern' && !!style.fillPatternType) ||
-        (style.fillType === 'generative' && !!style.fillGenerative)
+        imageSrcSafe || fillKind === 'gradient' || fillKind === 'generative'
+        // A background pattern is painted by `paintPattern` below, with live palette roles.
+        // shortcut: still reads the 1.x keys; goes when the pattern block moves to 2.0.
+        || (fillKind === 'pattern' && !style.backgroundPatternType && !style.backgroundPatternSvgs)
       ));
-      const resolvedBgColor = resolveCssColor(style.fillColorRole, style.fillColor);
+      // The colour under a photo (fills[1]): painted when the photo is refused or fails.
+      const underFill = v2Own.fills?.[1] as any;
+      const underColor = fillKind === 'image' && underFill?.kind === 'color' ? v2Colors.css(underFill.value) : undefined;
+      const resolvedBgColor = fillKind === 'color' ? v2Colors.css(v2Fill.value) : imageSrcSafe ? undefined : underColor;
       if (resolvedBgColor && isGeoLike && !isWindowMask && slotType !== 'text' && !isArtisticText && !hasComplexFill) {
         slotEl.style.setProperty('background-color', resolvedBgColor);
       }
@@ -1620,8 +1610,8 @@ export class LegacyRenderer {
       // follows the silhouette.
       // A `border` on top would be the rectangle this work was meant to remove.
       // 
-      const hasVector = slotType === 'svg' || isSvg || !!style.svgRawXml
-        || (isGeoLike && (!!shapeDrawing(style.geoShape) || !!style.svgPath));
+      const hasVector = slotType === 'svg' || isSvg || v2Own.geometry?.kind === 'paths'
+        || (isGeoLike && !!shapeOutline.silhouette);
       // The outline is the first 2.0 stroke with no `align` (outer and inner strokes
       // are drawn elsewhere). Without one, there is no outline.
       // A text's 2.0 strokes are its letters' outline (below), never a box border.
@@ -1643,16 +1633,11 @@ export class LegacyRenderer {
       // editor's, and the five shapes this engine did not know (heart, diamond, hexagon,
       // arrow and line) fell through to an `else` that only painted the background and
       // were published as coloured rectangles.
-      const drawing = isGeoLike && !isWindowMask ? shapeDrawing(style.geoShape) : undefined;
-      // Image fill (contract 1.17.0): the same resolution as an image layer's
-      // content. A network URL is refused, as there (the file carries its picture).
-      const fillImageSrc = isGeoLike && !isWindowMask && style.fillType === 'image' ? String(style.fillImage || '').trim() : '';
-      const imageSrcSafe = !!fillImageSrc && isSandboxImageSrc(fillImageSrc);
       if (fillImageSrc && !imageSrcSafe) {
         console.warn('[OimPlayer] Fill image not embedded in the file (network URLs are not loaded), slot:', slot.id);
       }
       // The outline (and its fallback chain) is core's, so the editor draws the same.
-      const silhouette = isGeoLike && !isWindowMask ? frameSilhouette(style) : null;
+      const silhouette = isGeoLike && !isWindowMask ? shapeOutline.silhouette : null;
       if (silhouette) {
         const svgNs = 'http://www.w3.org/2000/svg';
         const svg = document.createElementNS(svgNs, 'svg');
@@ -1676,26 +1661,12 @@ export class LegacyRenderer {
 
         // An open stroke (the line or freehand drawing) with fill becomes a bar.
         // A custom svgPath keeps its colour fill off (as before); only a photo may fill it.
-        const fillable = drawing && (drawing.kind === 'polygon' || drawing.fillable);
-        const resolvedSvgFill = resolveCssColor(style.fillColorRole, style.fillColor);
-        const imageFill = (!drawing || !!fillable) && imageSrcSafe;
-        figure.setAttribute(
-          'fill',
-          fillable && resolvedSvgFill && style.fillType !== 'none' && !hasComplexFill && !imageFill ? resolvedSvgFill : 'none'
-        );
-        // The doodle is the only shape to which the editor gives stroke fallbacks:
-        // without thickness it paints 2, and without a stroke colour it uses the fill colour.
-        // These must be replicated, because being an open stroke it carries no fill
-        // (`fillable: false`) and without a stroke nothing is left to see: the doodle
-        // was visible in the editor and published invisible. The line, by contrast,
-        // uses `strokeWidth ?? 0` in the editor, so it is left as it was.
-        const isScribble = style.geoShape === 'scribble';
-        const strokeThickness = v2Stroke ? outline.width : style.strokeWidth && style.strokeWidth > 0
-          ? style.strokeWidth
-          : (isScribble ? 2 : 0);
-        const strokeColor = v2Stroke ? outline.color : (style.strokeColor || style.strokeColorRole)
-          ? resolveCssColor(style.strokeColorRole, style.strokeColor || '#000000')
-          : (isScribble ? (resolveCssColor(style.fillColorRole, style.fillColor) || '#2563EB') : '');
+        const fillable = shapeOutline.fillable;
+        const imageFill = fillable && imageSrcSafe;
+        figure.setAttribute('fill', fillable && resolvedBgColor && !hasComplexFill && !imageFill ? resolvedBgColor : 'none');
+        // The scribble's own stroke (2 px, its fill colour) is written by upgrade.
+        const strokeThickness = v2Stroke ? outline.width : 0;
+        const strokeColor = v2Stroke ? outline.color : '';
         if (strokeThickness && strokeColor) {
           figure.setAttribute('stroke', strokeColor);
           figure.setAttribute('stroke-width', String(strokeThickness));
@@ -1712,7 +1683,7 @@ export class LegacyRenderer {
         slotEl.appendChild(svg);
         if (imageFill) {
           const d = silhouette.d ?? 'M ' + silhouette.points!.split(' ').join(' L ') + ' Z';
-          mountImageFill(slotEl, v2FillStyle(), { d, viewBox: silhouette.viewBox }, fillImageSrc);
+          mountImageFill(slotEl, v2Fill, { d, viewBox: silhouette.viewBox }, fillImageSrc, underColor);
         }
 
         // The colour goes on the <path>, not on the container, or the whole box would show
@@ -1721,37 +1692,25 @@ export class LegacyRenderer {
         slotEl.style.padding = '0';
         slotEl.style.overflow = 'visible';
       } else if (isGeoLike && !isWindowMask) {
-        const geoShape = style.geoShape;
-        if (geoShape === 'circle') {
+        if (shapeOutline.round) {
           slotEl.style.borderRadius = '50%';
-          // And it is deleted from the styles object so the generic loop further down does
-          // not overwrite it. `buildRawSlots` ALWAYS writes `border_radius_px: 0` in the .oim,
-          // which arrives here as
-          // `style.borderRadius = '0px'`, and that loop runs AFTER: the circle
-          // ended up square.
-          //
-          // It had always been like this. It was not seen because the circles in templates
-          // are usually locked and baked into the base image;
-          // it only breaks when the circle is a live layer.
+          // And the generic loop further down must not overwrite it with the file's
+          // `borderRadius` (`buildRawSlots` ALWAYS writes 0): the circle ended up square.
           delete style.borderRadius;
-        } else if (geoShape === 'triangle') {
-          slotEl.style.clipPath = 'polygon(50% 0%, 0% 100%, 100% 100%)';
-        } else if (geoShape === 'star') {
-          slotEl.style.clipPath = 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)';
         }
       }
 
       // Rectangles and unknown shapes have no silhouette: their picture is clipped
       // by a rect whose corner radius is a fraction of the box (0 = the whole box).
       if (imageSrcSafe && !silhouette) {
-        const radio = parseFloat(String(style.borderRadius)) || 0;
+        const radio = typeof v2Own.corners === 'number' ? v2Own.corners : 0;
         const cajaW = v2Own.box.width || baseWidth;
         const cajaH = v2Own.box.height || baseHeight;
-        mountImageFill(slotEl, v2FillStyle(), {
+        mountImageFill(slotEl, v2Fill, {
           d: '',
           viewBox: '0 0 1 1',
           rect: { rx: Math.min(Math.max(radio / cajaW, 0), 0.5), ry: Math.min(Math.max(radio / cajaH, 0), 0.5) },
-        }, fillImageSrc);
+        }, fillImageSrc, underColor);
       }
 
       if (hasComplexFill) {
@@ -1764,10 +1723,10 @@ export class LegacyRenderer {
         fillLayer.style.height = '100%';
         fillLayer.style.pointerEvents = 'none';
         fillLayer.style.borderRadius = 'inherit';
-        const v2Fill = v2Own.fills?.[0];
         const fillCss: Record<string, string> = {
           ...(v2Fill ? paintCss(v2Fill, { colors: v2Colors, width: v2Own.box.width || baseWidth, height: v2Own.box.height || baseHeight }) : {}),
-          ...(isVectorFill ? svgSilhouetteMaskCss(text) : shapeMaskCss(style.geoShape, style)),
+          ...(isVectorFill ? svgSilhouetteMaskCss(text)
+            : shapeMaskCss(shapeOutline.round ? 'circle' : shapeOutline.preset, shapeOutline.path ? { svgPath: shapeOutline.path.d, svgViewBox: shapeOutline.path.viewBox } : undefined)),
         };
         // The drawing goes above the fill: a positioned sibling paints over a
         // static one, and the absolute fill layer hid the icon's stroke.

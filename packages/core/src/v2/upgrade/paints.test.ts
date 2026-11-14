@@ -200,3 +200,24 @@ describe("the background of the canvas", () => {
     expect(canvas({}).document.canvas).toEqual({ width: 1000, height: 1000 });
   });
 });
+
+describe("1.x shapes whose fill the player read through fallbacks", () => {
+  const IMG = "data:image/png;base64,iVBORw0KGgo=";
+  it("a photo keeps its fillColor under it, for when it does not load", () => {
+    expect(layer({ fillType: "image", fillImage: IMG, fillColor: "#ff0000" }).fills).toEqual([
+      expect.objectContaining({ kind: "image", src: IMG }),
+      { kind: "color", value: "#ff0000" },
+    ]);
+    expect(layer({ fillType: "image", fillImage: IMG }).fills).toHaveLength(1);
+  });
+
+  it("a scribble with no stroke gets 2 px in its fill colour, and no fill", () => {
+    const l = layer({ geoShape: "scribble", fillColor: "#00ff00", customBlobPath: "M 0 0 L 10 10" });
+    expect(l.fills).toBeUndefined();
+    expect(l.strokes?.[0]).toMatchObject({ width: 2, paint: { kind: "color", value: "#00ff00" } });
+  });
+
+  it("a custom path takes no colour fill", () => {
+    expect(layer({ svgPath: "M 0 0 L 10 10 Z", fillColor: "#00ff00" }).fills).toBeUndefined();
+  });
+});

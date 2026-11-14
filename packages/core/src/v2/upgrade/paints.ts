@@ -96,7 +96,7 @@ function imageOf(ctx: UpgradeContext, style: V1Object): Paint | undefined {
 
 const TEXT_GRADIENT_PRESETS = new Set(["metallic-chrome", "sunset-gold", "neon-glow", "linear"]);
 
-function fillOf(ctx: UpgradeContext, slot: V1Slot): Paint | undefined {
+function fillOf(ctx: UpgradeContext, slot: V1Slot): Paint | Paint[] | undefined {
   const { style } = slot;
   const fillType = ctx.take(style, "fillType");
   const backgroundType = ctx.take(style, "backgroundType");
@@ -127,7 +127,8 @@ function fillOf(ctx: UpgradeContext, slot: V1Slot): Paint | undefined {
   const kind = typeof fillType === "string" ? fillType : typeof backgroundType === "string" ? backgroundType : "color";
   if (kind === "none" || kind === "transparent") return undefined;
   if (kind === "gradient") return gradient ?? solid();
-  if (kind === "image") return image ?? solid();
+  // 1.x kept fillColor under the photo: it shows when the photo does not load.
+  if (kind === "image") return image ? (color === undefined ? image : [image, solid()!]) : solid();
   if (kind === "pattern") return pattern ?? solid();
   if (kind === "generative") return generative ? { kind: "generative", generative: generative as never } : solid();
   if ((slot.type === "text" || slot.type === "artistic-text") && typeof textGradient === "string" && TEXT_GRADIENT_PRESETS.has(textGradient) && textGradient !== "linear") {
@@ -165,8 +166,14 @@ function textStrokeOf(ctx: UpgradeContext, style: V1Object): Stroke | undefined 
 export function convertPaints(ctx: UpgradeContext, slot: V1Slot, layer: DraftLayer): void {
   const { style } = slot;
 
-  const fill = fillOf(ctx, slot);
-  if (fill && admits(layer.type, "fills")) layer.fills = [fill];
+  const fills = fillOf(ctx, slot);
+  const fill = Array.isArray(fills) ? fills[0] : fills;
+  // 1.x painted no colour inside a custom path (only a photo, a gradient or a
+  // pattern) nor inside the scribble, an open stroke.
+  const shape = style.geoShape;
+  const customPath = typeof style.svgPath === "string" && style.svgPath !== "" && (shape === undefined || shape === "custom");
+  const colourless = slot.type === "geo" && (customPath || shape === "scribble") && !!fill && "kind" in fill && fill.kind === "color";
+  if (fill && !colourless && admits(layer.type, "fills")) layer.fills = Array.isArray(fills) ? fills : [fill];
 
   const strokeStyle = ctx.take(style, "strokeStyle");
   const dashed = strokeStyle === "dashed" || strokeStyle === "dotted" ? { style: strokeStyle as Stroke["style"] } : {};
@@ -175,7 +182,14 @@ export function convertPaints(ctx: UpgradeContext, slot: V1Slot, layer: DraftLay
   const borderStyle = ctx.take(style, "borderStyle");
   const border = strokeOf(ctx, style, "borderColor", "borderWidth",
     borderStyle === "dashed" || borderStyle === "dotted" ? { style: borderStyle } : {});
-  const outline = strokeOf(ctx, style, "strokeColor", "strokeWidth", dashed, "strokeColorRole");
+  let outline = strokeOf(ctx, style, "strokeColor", "strokeWidth", dashed, "strokeColorRole");
+  // The scribble is an open stroke with no fill: 1.x gave it a stroke of its own when it had
+  // none, 2 px wide and in its stroke colour, else its fill colour, else blue.
+  if (!outline && style.geoShape === "scribble") {
+    const width = typeof style.strokeWidth === "number" && style.strokeWidth > 0 ? style.strokeWidth : 2;
+    const color = colorOf(ctx, style, "strokeColor", "strokeColorRole") ?? colorOf(ctx, style, "fillColor", "fillColorRole") ?? "#2563EB";
+    outline = { paint: { kind: "color", value: color }, width, ...dashed };
+  }
   const glyphs = textStrokeOf(ctx, style);
   // On a text the stroke is the outline of the letters. The box border 1.x drew
   // when a text carried strokeColor has no 2.0 meaning and is dropped.

@@ -32,6 +32,7 @@ vi.mock("../../../scene/src/legacy/lottie-loader.js", () => ({
 }));
 
 import ImageEngine from "./ImageEngine";
+import { v2LayersOf } from "../../../scene/src/legacy/v2-layers.js";
 
 function mount() {
   const host = document.createElement("div");
@@ -86,5 +87,16 @@ describe("a Lottie follows the player's pause, even when it loads late", () => {
     await motor.renderSlots();
     await settle();
     expect(created[0].options.autoplay).toBe(true);
+  });
+});
+
+describe("a Lottie comes from its 2.0 layer", () => {
+  it("plays the layer's animation, not the 1.x content", async () => {
+    created.length = 0;
+    const motor = mount();
+    v2LayersOf(motor.metadata).get("anim")!.lottie = { src: JSON.stringify({ v: "5.7.0", fr: 30, ip: 0, op: 30, w: 77, h: 10, layers: [] }) };
+    await motor.renderSlots();
+    await settle();
+    expect(created[0].options.animationData.w).toBe(77);
   });
 });

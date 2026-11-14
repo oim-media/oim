@@ -833,6 +833,7 @@ export class LegacyRenderer {
       let rawText = v2Words ? resolveContent(v2Words, self.lang)
         : v2Image ? imageSrc(v2Image.src as never, self.lang)
         : v2Drawing && !isBackground(slot) ? drawingSvg(v2Drawing, drawingLink(v2Own, v2Colors.css))
+        : v2Own.type === 'lottie' ? (v2Own.lottie?.src ?? '')
         : localized.content;
       // Pure geometric shapes and filter layers carry no text content but
       // still render from their style (fillColor, geoShape, width/height, backdropFilter).

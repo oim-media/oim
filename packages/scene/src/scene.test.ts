@@ -74,6 +74,27 @@ describe("mount", () => {
     expect(mount(document.createElement("div"), doc([shape({ box })])).elementOf("a")!.style.transform).toBe(transform);
   });
 
+  it("setTransform moves one layer to its new box and leaves the others alone", () => {
+    const host = document.createElement("div");
+    const scene = mount(host, doc([shape(), shape({ id: "b", box: { x: 0, y: 0, width: 100, height: 100 } })]));
+    const otherLeft = scene.elementOf("b")!.style.left;
+    scene.setTransform("a", { x: 500, y: 250, width: 100, height: 50 });
+    const el = scene.elementOf("a")!;
+    expect([el.style.left, el.style.top, el.style.width, el.style.height]).toEqual(["50%", "50%", "10%", "10%"]);
+    expect(scene.elementOf("b")!.style.left).toBe(otherLeft);
+  });
+
+  it("setTransform places a child inside its group's frame", () => {
+    const group = {
+      id: "g", type: "group", box: { x: 100, y: 100, width: 400, height: 200 },
+      children: [shape({ id: "c", box: { x: 200, y: 150, width: 100, height: 50 } })],
+    } as Layer;
+    const scene = mount(document.createElement("div"), doc([group]));
+    scene.setTransform("c", { x: 200, y: 150, width: 200, height: 100 });
+    const el = scene.elementOf("c")!;
+    expect([el.style.left, el.style.top, el.style.width, el.style.height]).toEqual(["25%", "25%", "50%", "50%"]);
+  });
+
   it("elementOf an unknown id is null", () => {
     expect(mount(document.createElement("div"), doc([shape()])).elementOf("nope")).toBeNull();
   });

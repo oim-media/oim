@@ -1,0 +1,65 @@
+<!doctype html>
+<!--
+  @license
+  Copyright (c) 2026 Xue Studios LLC
+  SPDX-License-Identifier: Apache-2.0
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>scene drag benchmark</title>
+<style>html,body{margin:0;background:#fff}#host{width:800px}</style>
+</head>
+<body>
+<div id="host"></div>
+<script type="module">
+import { mount } from "../dist/bench/scene.js";
+
+// 150 layers on a 1600x1000 canvas: 15 columns of 100 units, 10 rows of 60 units.
+// Boxes only: scene does not paint text or images yet, so every layer is a box.
+const canvas = { width: 1600, height: 1000 };
+const layers = Array.from({ length: 150 }, (_, i) => ({
+  id: `L${i}`,
+  type: "shape",
+  box: { x: (i % 15) * 100 + 10, y: Math.floor(i / 15) * 60 + 10, width: 80, height: 40 },
+  geometry: { kind: "rect" },
+}));
+const scene = mount(document.getElementById("host"), { oim: "2.0.0-draft.1", canvas, languages: ["es"], layers });
+
+// Inline background colours after mount: 50 solid, 50 gradient, 50 solid (stand-ins for text and images).
+layers.forEach((layer, i) => {
+  const el = scene.elementOf(layer.id);
+  const hue = (i * 37) % 360;
+  el.style.background = i >= 50 && i < 100
+    ? `linear-gradient(90deg, hsl(${hue} 80% 60%), hsl(${(hue + 60) % 360} 80% 50%))`
+    : `hsl(${hue} 70% 55%)`;
+});
+
+// Longtasks are collected from the start of the page, so a run only reads them.
+const longtasks = [];
+new PerformanceObserver((list) => longtasks.push(...list.getEntries().map((e) => e.duration)))
+  .observe({ type: "longtask", buffered: true });
+
+// Moves L0 in a loop, one setTransform per requestAnimationFrame, for `ms` milliseconds.
+window.runDrag = (ms) => new Promise((resolve) => {
+  longtasks.length = 0;
+  const frames = [];
+  const work = [];
+  const start = performance.now();
+  let last = null;
+  const step = (now) => {
+    const t0 = performance.now();
+    const k = ((now - start) / 1000) * Math.PI * 2;
+    scene.setTransform("L0", { x: 100 + 1200 * Math.abs(Math.sin(k / 2)), y: 100 + 700 * Math.abs(Math.sin(k)), width: 200, height: 120 });
+    work.push(performance.now() - t0);
+    if (last !== null) frames.push(now - last);
+    last = now;
+    if (now - start < ms) return requestAnimationFrame(step);
+    setTimeout(() => resolve({ frames, work, longtasks: [...longtasks] }), 300);
+  };
+  requestAnimationFrame(step);
+});
+window.__ready = true;
+</script>
+</body>
+</html>

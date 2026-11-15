@@ -20,7 +20,8 @@
   ],
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "bench:build": "tsc --ignoreConfig src/scene.ts src/box.ts --outDir dist/bench --rootDir src --module esnext --target es2022 --moduleResolution bundler --skipLibCheck --declaration false"
   },
   "dependencies": {
     "@oim-media/core": "workspace:1.27.9",

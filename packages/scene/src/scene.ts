@@ -26,7 +26,8 @@ export type Scene = {
   destroy(): void;
 };
 
-type Entry = { el: HTMLElement; layer: Layer };
+/** The frame is the parent's, so a child can be placed again from canvas units. */
+type Entry = { el: HTMLElement; layer: Layer; frame: Frame };
 
 const notYet = (name: string) => () => {
   throw new Error(`scene.${name} is not implemented yet`);
@@ -39,23 +40,28 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   Object.assign(root.style, { position: "relative", aspectRatio: `${width} / ${height}`, containerType: "inline-size" });
 
   const entries = new Map<string, Entry>();
+  const canvas: Frame = { x: 0, y: 0, width, height };
   const paint = (layer: Layer, parent: HTMLElement, frame: Frame) => {
     const el = container.ownerDocument.createElement("div");
     el.dataset.oimId = layer.id;
     el.style.position = "absolute";
     applyBox(el, layer.box, frame);
-    entries.set(layer.id, { el, layer });
+    entries.set(layer.id, { el, layer, frame });
     for (const child of layer.children ?? []) paint(child, el, layer.box as Frame); // only groups have children, and a group is always sized
     parent.appendChild(el);
   };
-  const canvas: Frame = { x: 0, y: 0, width, height };
   for (const layer of document.layers) paint(layer, root, canvas);
   container.appendChild(root);
 
   return {
     elementOf: (id) => entries.get(id)?.el ?? null,
     update: notYet("update"),
-    setTransform: notYet("setTransform"),
+    setTransform(id, box) {
+      const entry = entries.get(id);
+      if (!entry) return;
+      applyBox(entry.el, box, entry.frame);
+      entry.layer = { ...entry.layer, box } as Layer;
+    },
     setMode: notYet("setMode"),
     play: notYet("play"),
     pause: notYet("pause"),

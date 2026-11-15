@@ -11,8 +11,8 @@ import { applyCorners } from "./blocks/corners.js";
 import { applyFills, pictureNode } from "./blocks/fills.js";
 import { applyGeometry } from "./blocks/geometry.js";
 import { pictureOf } from "./blocks/image.js";
-import { applyText } from "./blocks/text.js";
 import { applyStrokes } from "./blocks/strokes.js";
+import { applyText } from "./blocks/text.js";
 import { unsupportedUse } from "./coverage.js";
 
 export type SceneOptions = {
@@ -65,21 +65,36 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
 
   applyFills(root, document.canvas, { colors, isText: false });
   const lang = document.languages[0];
+
+  /**
+   * Paints the blocks of a layer. `only` limits the pass to the blocks that changed
+   * (their field names); without it every block is painted. A figure depends on
+   * its fills, geometry and strokes together, so any of them repaints the figure.
+   */
+  const paintBlocks = (el: HTMLElement, layer: Layer, only?: ReadonlySet<string>) => {
+    const has = (...keys: string[]) => !only || keys.some((k) => only.has(k));
+    const isText = layer.type === "text";
+    if (has("fills")) applyFills(el, layer, { colors, isText });
+    if (layer.type === "text" && has("text")) applyText(el, layer, { lang });
+    const figure = has("fills", "geometry", "strokes");
+    const outline = layer.type === "shape" ? (figure ? applyGeometry(el, layer, { colors }) : geometryOutline(layer.geometry)) : geometryOutline(undefined);
+    if (has("corners", "geometry")) applyCorners(el, layer, !!outline.round);
+    if (has("strokes", "geometry", "fills")) applyStrokes(el, layer, { colors, isText, vector: !!outline.silhouette });
+    if (layer.type === "image" && has("image")) {
+      el.querySelectorAll(":scope > img[data-oim-fill]").forEach((node) => node.remove());
+      const picture = pictureOf(layer.image, lang);
+      if (picture !== undefined) pictureNode(el, { src: picture, fit: layer.image?.fit, crop: layer.image?.crop });
+    }
+  };
+
   const paint = (layer: Layer, parent: HTMLElement, frame: Frame) => {
     // An image layer with no picture of its own is not painted: the file's base picture is the page's, behind the layers.
-    const picture = layer.type === "image" ? pictureOf(layer.image, lang) : undefined;
-    if (layer.type === "image" && picture === undefined) return;
+    if (layer.type === "image" && pictureOf(layer.image, lang) === undefined) return;
     const el = container.ownerDocument.createElement("div");
     el.dataset.oimId = layer.id;
     el.style.position = "absolute";
     applyBox(el, layer.box, frame);
-    const isText = layer.type === "text";
-    applyFills(el, layer, { colors, isText });
-    if (layer.type === "text") applyText(el, layer, { lang });
-    const outline = layer.type === "shape" ? applyGeometry(el, layer, { colors }) : geometryOutline(undefined);
-    applyCorners(el, layer, !!outline.round);
-    applyStrokes(el, layer, { colors, isText, vector: !!outline.silhouette });
-    if (picture !== undefined) pictureNode(el, { src: picture, fit: layer.image?.fit, crop: layer.image?.crop });
+    paintBlocks(el, layer);
     entries.set(layer.id, { el, layer, frame });
     for (const child of layer.children ?? []) paint(child, el, layer.box as Frame); // only groups have children, and a group is always sized
     parent.appendChild(el);
@@ -87,20 +102,44 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   for (const layer of document.layers) paint(layer, root, canvas);
   container.appendChild(root);
 
+  // A move is written once when it starts a frame; the moves that follow in the same frame are kept and written once more, at the next frame.
+  let frame: number | undefined;
+  const pendingMoves = new Map<string, Box>();
+  const flushMoves = () => {
+    frame = undefined;
+    for (const [id, box] of pendingMoves) {
+      const entry = entries.get(id);
+      if (entry) applyBox(entry.el, box, entry.frame);
+    }
+    pendingMoves.clear();
+  };
+
   return {
     elementOf: (id) => entries.get(id)?.el ?? null,
-    update: notYet("update"),
+    update(id, changes) {
+      const entry = entries.get(id);
+      if (!entry) return;
+      entry.layer = { ...entry.layer, ...changes } as Layer;
+      if (changes.box) applyBox(entry.el, entry.layer.box, entry.frame);
+      paintBlocks(entry.el, entry.layer, new Set(Object.keys(changes)));
+    },
     setTransform(id, box) {
       const entry = entries.get(id);
       if (!entry) return;
-      applyBox(entry.el, box, entry.frame);
       entry.layer = { ...entry.layer, box } as Layer;
+      if (frame === undefined) {
+        applyBox(entry.el, box, entry.frame);
+        frame = requestAnimationFrame(flushMoves);
+      } else pendingMoves.set(id, box);
     },
     setMode: notYet("setMode"),
     play: notYet("play"),
     pause: notYet("pause"),
     seek: notYet("seek"),
     destroy() {
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      frame = undefined;
+      pendingMoves.clear();
       root.remove();
       entries.clear();
     },

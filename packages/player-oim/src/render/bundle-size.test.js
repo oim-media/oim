@@ -154,10 +154,12 @@ describe("lottie ships apart from the player", () => {
   // 60 KB (feat(scene): the player paints a 2.0 document): the 2.0 view
   // (legacy-view.ts, resolveRefs, the palette and size fields the renderer reads)
   // is in the main package; 58.87 KB at HEAD, 59.66 KB with it.
-  it.skipIf(!hasBundle)("the player fits in 60 KB gzip", async () => {
+  // 62 KB (approved 14 Nov): 60.09 KB at 1.29.0 (image src by ref). Moving the
+  // 2.0 view to a lazy chunk belongs to the player 2.0 API phase (7b).
+  it.skipIf(!hasBundle)("the player fits in 62 KB gzip", async () => {
     const { gzipSync } = await import("node:zlib");
     const kb = gzipSync(readFileSync(BUNDLE)).length / 1024;
-    expect(Math.round(kb)).toBeLessThanOrEqual(60);
+    expect(Math.round(kb)).toBeLessThanOrEqual(62);
   });
 
   it.skipIf(!hasBundle)("the lottie file sits next to both player paths", () => {

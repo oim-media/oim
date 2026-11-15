@@ -21,6 +21,7 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
+    "build": "vite build --config vite.page.config.mjs",
     "bench:build": "tsc --ignoreConfig src/scene.ts src/box.ts --outDir dist/bench --rootDir src --module esnext --target es2022 --moduleResolution bundler --skipLibCheck --declaration false"
   },
   "dependencies": {
@@ -31,6 +32,7 @@
     "@types/node": "^25.9.9",
     "happy-dom": "^21.0.4",
     "typescript": "~6.0.3",
+    "vite": "^8.3.6",
     "vitest": "^5.1.0"
   },
   "repository": {

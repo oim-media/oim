@@ -229,4 +229,24 @@ describe('extractOIM', () => {
     // Verify that the 100 KB of trailing data was not downloaded
     expect(totalBytesEnqueued).toBeLessThan(pngBytes.length + 1024);
   });
+  it('extractOIMMetadataFromStream finds the metadata chunk after IDAT', async () => {
+    const original = { slots: [{ id: 'after-idat' }] };
+    const encoded = new TextEncoder().encode(await compressAndEncodeJSON(original));
+    const key = new TextEncoder().encode('OIM_Data' + String.fromCharCode(0));
+    const meta = new Uint8Array(key.length + encoded.length);
+    meta.set(key, 0);
+    meta.set(encoded, key.length);
+    const chunk = (type: string, data: Uint8Array) => {
+      const out = new Uint8Array(12 + data.length);
+      const view = new DataView(out.buffer);
+      view.setUint32(0, data.length);
+      for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+      out.set(data, 8);
+      return out;
+    };
+    const parts = [pngHeader, chunk('IDAT', new Uint8Array(32)), chunk('tEXt', meta), chunk('IEND', new Uint8Array(0))];
+    const { extractOIMMetadataFromStream } = await import('./binary');
+    const stream = new Blob(parts).stream();
+    expect(await extractOIMMetadataFromStream(stream)).toEqual(original);
+  });
 });

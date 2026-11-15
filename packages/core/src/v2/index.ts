@@ -15,3 +15,4 @@ export * from "./resources.js";
 // The shared outline of a shape and the test for a document that shows its base picture.
 export * from "./geometry-outline.js";
 export * from "./base-layer.js";
+export * from "./colors.js";

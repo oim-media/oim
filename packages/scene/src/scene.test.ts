@@ -6,6 +6,7 @@
 
 import type { Layer, OimDocument } from "@oim-media/core/v2";
 import { describe, expect, it } from "vitest";
+import { DYNAMIC_COLOR_ROLES } from "@oim-media/core";
 import { mount } from "./index.js";
 
 const shape = (o: Partial<Layer> = {}): Layer => ({
@@ -97,6 +98,15 @@ describe("mount", () => {
 
   it("elementOf an unknown id is null", () => {
     expect(mount(document.createElement("div"), doc([shape()])).elementOf("nope")).toBeNull();
+  });
+
+  it("the active palette's colours are custom properties of the root, which a palette binding reads", () => {
+    const role = DYNAMIC_COLOR_ROLES[0];
+    const withPalettes = { oim: "2.0.0-draft.1", canvas: { width: 1000, height: 500 }, languages: ["es"], layers: [],
+      variables: { modes: { palette: ["light", "dark"] }, defaults: { palette: "light" }, values: { [role]: { light: "#123456", dark: "#abcdef" } } } };
+    const host = document.createElement("div");
+    mount(host, withPalettes as unknown as OimDocument, { palette: "dark" });
+    expect((host.firstElementChild as HTMLElement).style.getPropertyValue(`--oim-palette-${role}`)).toBe("#abcdef");
   });
 
   it("destroy empties the container and forgets the layers", () => {

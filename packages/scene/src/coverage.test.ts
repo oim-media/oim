@@ -25,7 +25,7 @@ describe("unsupportedUse", () => {
       rect({ effects: [{ kind: "blur", radius: 2 }] }),
       rect({ id: "b", animations: [{ on: "load", preset: "fade", duration: 1 }] }),
       rect({ id: "c", fills: [{ kind: "pattern", pattern: { preset: "dots" } }] as Layer["fills"] }),
-      { id: "t", type: "text", box: { x: 0, y: 0 }, text: { content: { es: "x" }, runs: [] } } as Layer,
+      { id: "t", type: "text", box: { x: 0, y: 0 }, text: { content: { es: "x" }, runs: [] } } as unknown as Layer,
     ];
     expect(unsupportedUse(doc(layers))).toEqual(["animations", "effects", "paint:pattern", "text:runs"]);
   });

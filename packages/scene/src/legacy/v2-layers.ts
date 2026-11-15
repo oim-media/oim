@@ -8,8 +8,8 @@
 // reads from the 2.0 layer of each one the blocks already moved to 2.0.
 import { upgrade } from './upgrade-entry.js';
 import type { Box, Geometry, Layer, OimDocument } from '../../../core/src/v2/schema.js';
-import type { PaintColors } from '../../../core/src/v2/paint-css.js';
-import { resolveCssColor, resolvePalette } from '../../../core/src/dynamic-colors.js';
+import { paintColors } from '../../../core/src/v2/colors.js';
+export { paintColors };
 import { resolveByLang } from './localizedEntries.js';
 
 const cache = new WeakMap<object, Map<string, Layer>>();
@@ -41,21 +41,6 @@ export function v2LayersOf(metadata: object): Map<string, Layer> {
 /** Seeds the cache of a view built from a 2.0 document, so `upgrade` never runs on it. */
 export function rememberDocument(view: object, document: OimDocument): void {
   cache.set(view, indexLayers(document.layers));
-}
-
-/**
- * How the renderer paints a 2.0 colour: a palette binding stays a `var()` so a
- * mode change needs no repaint; drawn-in paints (patterns) take the default
- * palette's value, since an image cannot hold a `var()`.
- */
-export function paintColors(metadata: { palettes?: Record<string, Record<string, string>>; defaultPalette?: string }): PaintColors {
-  const isVar = (v: unknown): v is { var: string; fallback?: string } => !!v && typeof v === 'object' && typeof (v as { var?: unknown }).var === 'string';
-  return {
-    css: (v) => (isVar(v) ? resolveCssColor(v.var, v.fallback) : typeof v === 'string' ? resolveCssColor(null, v) : '') || undefined,
-    literal: (v) => (isVar(v)
-      ? (resolvePalette(metadata)?.colors as Record<string, string> | undefined)?.[v.var] ?? resolveCssColor(null, v.fallback)
-      : typeof v === 'string' ? resolveCssColor(null, v) : '') || undefined,
-  };
 }
 
 /** How far a box moves, as CSS translate shares of its own size, so its anchor lands on x, y. */

@@ -144,6 +144,13 @@ describe("upgrade: root, tree and box", () => {
     expect(result.unhandled).toEqual([]);
   });
 
+  // The editor's role buttons wrote textRole; no player ever read it, so 2.0 retires it.
+  it("a text's editor-only textRole is retired, not unhandled", () => {
+    const result = upgrade(v1([slot({ type: "text", content: { es: "Hola" }, style: { width: "20cqw", textRole: "title" } })]));
+    expect(result.retired).toContain("style.textRole");
+    expect(result.unhandled).toEqual([]);
+  });
+
   it("a layer limited to some languages keeps that limit", () => {
     expect(first(v1([slot({ languages: ["en"] })])).languages).toEqual(["en"]);
   });

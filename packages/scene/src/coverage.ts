@@ -14,6 +14,7 @@ import type { Layer, OimDocument, Paint } from "@oim-media/core/v2";
 export const UNSUPPORTED_BLOCKS = [
   "animations",
   "effects",
+  "figure:image",
   "interactions",
   "lottie",
   "mask",
@@ -22,6 +23,8 @@ export const UNSUPPORTED_BLOCKS = [
   "paint:pattern",
   "paint:texture",
   "image:filters",
+  "layer:blend",
+  "layer:opacity",
   "text:artistic",
   "text:dropCap",
   "text:decoration",
@@ -49,6 +52,10 @@ const layerUses = (layer: Layer): UnsupportedBlock[] => {
   if (layer.mask) uses.push("mask");
   if (layer.interactions?.length) uses.push("interactions");
   if (layer.image?.filters) uses.push("image:filters");
+  if (layer.opacity !== undefined && layer.opacity !== 1) uses.push("layer:opacity");
+  if (layer.blend) uses.push("layer:blend");
+  // A picture on a figure (a star, a cloud, a path) is not drawn yet: only a box takes one.
+  if (layer.geometry && layer.geometry.kind !== "rect" && (layer.fills ?? []).some((p) => "kind" in p && p.kind === "image")) uses.push("figure:image");
   const text = layer.text;
   if (text) {
     if (text.artistic) uses.push("text:artistic");

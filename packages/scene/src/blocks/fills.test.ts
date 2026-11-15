@@ -61,6 +61,12 @@ describe("applyFills", () => {
     expect(el.style.backgroundColor).toBe(kept("#00ff00"));
   });
 
+  it("a cropped picture is zoomed inside its layer, so the layer clips what spills out", () => {
+    const el = paint([{ kind: "image", src: "data:image/png;base64,AA==", crop: { x: 20, y: 70, zoom: 2 } }]);
+    expect(el.style.overflow).toBe("hidden");
+    expect(el.querySelector("img")!.style.transform).toBe("scale(2)");
+  });
+
   it("an image paint is a picture node above the background, and a data: picture only", () => {
     const el = paint([{ kind: "image", src: "data:image/png;base64,AA==", fit: "contain" }]);
     const img = el.querySelector("img")!;

@@ -7,22 +7,32 @@
 import { typographyCss, type Layer, type PaintColors } from "@oim-media/core/v2";
 import { describe, expect, it } from "vitest";
 import { applyFills } from "./fills.js";
-import { applyText } from "./text.js";
+import { applyText, canvasLength } from "./text.js";
+
+// Units the test DOM may not keep (cqw): compare with what the element keeps.
+const kept = (value: string, prop: "fontSize" | "maxWidth") => {
+  const probe = document.createElement("div");
+  probe.style[prop] = value;
+  return probe.style[prop];
+};
 
 const colors: PaintColors = { css: (v) => (typeof v === "string" ? v : undefined), literal: (v) => (typeof v === "string" ? v : undefined) };
 const textLayer = (text: Record<string, unknown>, extra: Partial<Layer> = {}) =>
   ({ id: "t", type: "text", box: { x: 0, y: 0 }, text: { content: { es: "Hola" }, ...text }, ...extra }) as Layer;
-const paint = (layer: Layer, lang = "es") => {
+// The canvas is 800 canvas units wide, so 1 unit is 0.125 % of the canvas.
+const paint = (layer: Layer, lang = "es", canvasWidth = 800) => {
   const el = document.createElement("div");
-  applyText(el, layer, { lang });
+  applyText(el, layer, { lang, canvasWidth });
   return el;
 };
 
 describe("applyText", () => {
-  it("the font size is the one the player writes for the same text, in canvas px", () => {
+  it("the font size is the player's size in canvas units, so it scales with the canvas", () => {
     const layer = textLayer({ font: { size: 42 } });
-    expect(paint(layer).style.fontSize).toBe(typographyCss(layer, "es")!.fontSize);
-    expect(paint(layer).style.fontSize).toBe("42px");
+    expect(typographyCss(layer, "es")!.fontSize).toBe("42px");
+    expect(canvasLength("42px", 1000)).toBe("4.2cqw");
+    expect(canvasLength("42px", 1600)).toBe("2.625cqw");
+    expect(paint(layer, "es", 1000).style.fontSize).toBe(kept("4.2cqw", "fontSize"));
   });
 
   it("a gradient fill on a text clips the gradient to its letters", () => {
@@ -51,6 +61,10 @@ describe("applyText", () => {
     expect(el.style.maxWidth).toBe("80%");
   });
 
+  it("the box includes the text's right padding, so its lines are centred inside the box as the player centres them", () => {
+    expect(paint(textLayer({})).style.boxSizing).toBe("border-box");
+  });
+
   it("a text sits in the middle of its box's height, and its alignment places the lines across the width", () => {
     const el = paint(textLayer({ align: "right" }, { box: { x: 0, y: 0, width: 300, height: 100 } } as Partial<Layer>));
     expect(el.style.display).toBe("flex");
@@ -62,6 +76,6 @@ describe("applyText", () => {
   it("a stated alignment and maximum width replace the defaults", () => {
     const el = paint(textLayer({ align: "center", maxWidth: 300 }));
     expect(el.style.textAlign).toBe("center");
-    expect(el.style.maxWidth).toBe("300px");
+    expect(el.style.maxWidth).toBe(kept("37.5cqw", "maxWidth"));
   });
 });

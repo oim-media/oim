@@ -41,11 +41,23 @@ const notYet = (name: string) => () => {
   throw new Error(`scene.${name} is not implemented yet`);
 };
 
+/** The file's language that the reader's own matches (exactly, then by its main tag), else the file's first. */
+function languageOf(languages: string[], reader: string | undefined): string {
+  const main = (tag: string) => tag.toLowerCase().split("-")[0];
+  return languages.find((l) => reader !== undefined && l.toLowerCase() === reader.toLowerCase())
+    ?? languages.find((l) => reader !== undefined && main(l) === main(reader))
+    ?? languages[0];
+}
+
 export function mount(container: HTMLElement, document: OimDocument, _options: SceneOptions = {}): Scene {
   const { width, height } = document.canvas;
+  // The canvas keeps its ratio inside its container and sits in the middle of it, as the player letterboxes it.
+  const letterbox = container.ownerDocument.createElement("div");
+  Object.assign(letterbox.style, { position: "relative", width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" });
   const root = container.ownerDocument.createElement("div");
   root.className = "oim-scene";
-  Object.assign(root.style, { position: "relative", aspectRatio: `${width} / ${height}`, containerType: "inline-size" });
+  Object.assign(root.style, { position: "relative", width: "100%", maxHeight: "100%", aspectRatio: `${width} / ${height}`, containerType: "inline-size" });
+  letterbox.appendChild(root);
 
   const entries = new Map<string, Entry>();
   const canvas: Frame = { x: 0, y: 0, width, height };
@@ -64,7 +76,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   for (const block of unsupportedUse(document)) console.warn(`[oim scene] "${block}" is not painted yet; it is ignored`);
 
   applyFills(root, document.canvas, { colors, isText: false });
-  const lang = document.languages[0];
+  const lang = languageOf(document.languages, _options.language ?? (typeof navigator === "undefined" ? undefined : navigator.language));
 
   /**
    * Paints the blocks of a layer. `only` limits the pass to the blocks that changed
@@ -75,7 +87,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     const has = (...keys: string[]) => !only || keys.some((k) => only.has(k));
     const isText = layer.type === "text";
     if (has("fills")) applyFills(el, layer, { colors, isText });
-    if (layer.type === "text" && has("text")) applyText(el, layer, { lang });
+    if (layer.type === "text" && has("text")) applyText(el, layer, { lang, canvasWidth: width });
     const figure = has("fills", "geometry", "strokes");
     const outline = layer.type === "shape" ? (figure ? applyGeometry(el, layer, { colors }) : geometryOutline(layer.geometry)) : geometryOutline(undefined);
     if (has("corners", "geometry")) applyCorners(el, layer, !!outline.round);
@@ -100,7 +112,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     parent.appendChild(el);
   };
   for (const layer of document.layers) paint(layer, root, canvas);
-  container.appendChild(root);
+  container.appendChild(letterbox);
 
   // A move is written once when it starts a frame; the moves that follow in the same frame are kept and written once more, at the next frame.
   let frame: number | undefined;
@@ -140,7 +152,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
       if (frame !== undefined) cancelAnimationFrame(frame);
       frame = undefined;
       pendingMoves.clear();
-      root.remove();
+      letterbox.remove();
       entries.clear();
     },
   };

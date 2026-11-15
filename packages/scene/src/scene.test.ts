@@ -24,9 +24,18 @@ describe("mount", () => {
   it("the root keeps the canvas ratio and is a size container", () => {
     const host = document.createElement("div");
     mount(host, doc([]));
-    const root = host.firstElementChild as HTMLElement;
+    const root = host.querySelector<HTMLElement>(".oim-scene")!;
     expect(root.style.aspectRatio.replace(/\s/g, "")).toBe("1000/500");
     expect(root.style.containerType).toBe("inline-size");
+  });
+
+  it("the canvas is centred in its container, as the player letterboxes it", () => {
+    const host = document.createElement("div");
+    mount(host, doc([]));
+    const letterbox = host.firstElementChild as HTMLElement;
+    expect(letterbox.style.display).toBe("flex");
+    expect(letterbox.style.justifyContent).toBe("center");
+    expect(letterbox.querySelector(".oim-scene")).not.toBeNull();
   });
 
   it("a layer sits at its box, as shares of the canvas", () => {
@@ -106,7 +115,16 @@ describe("mount", () => {
       variables: { modes: { palette: ["light", "dark"] }, defaults: { palette: "light" }, values: { [role]: { light: "#123456", dark: "#abcdef" } } } };
     const host = document.createElement("div");
     mount(host, withPalettes as unknown as OimDocument, { palette: "dark" });
-    expect((host.firstElementChild as HTMLElement).style.getPropertyValue(`--oim-palette-${role}`)).toBe("#abcdef");
+    expect(host.querySelector<HTMLElement>(".oim-scene")!.style.getPropertyValue(`--oim-palette-${role}`)).toBe("#abcdef");
+  });
+
+  it("a text is written in the reader's language when the file has it, else in the file's first", () => {
+    const text = { id: "t", type: "text", box: { x: 0, y: 0 }, text: { content: { es: "Hola", en: "Hello" } } } as Layer;
+    const file = { oim: "2.0.0-draft.1", canvas: { width: 1000, height: 500 }, languages: ["es", "en"], layers: [text] } as unknown as OimDocument;
+    const read = (options: Parameters<typeof mount>[2]) => mount(document.createElement("div"), file, options).elementOf("t")!.textContent;
+    expect(read({ language: "es" })).toBe("Hola");
+    expect(read({})).toBe("Hello");
+    expect(read({ language: "fr" })).toBe("Hola");
   });
 
   it("destroy empties the container and forgets the layers", () => {

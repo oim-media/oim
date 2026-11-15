@@ -30,6 +30,13 @@ describe("unsupportedUse", () => {
     expect(unsupportedUse(doc(layers))).toEqual(["animations", "effects", "paint:pattern", "text:runs"]);
   });
 
+  it("a layer's own opacity, its blend mode, and a picture on a figure are not painted yet", () => {
+    expect(unsupportedUse(doc([rect({ opacity: 0.7 })]))).toEqual(["layer:opacity"]);
+    expect(unsupportedUse(doc([rect({ blend: "multiply" })]))).toEqual(["layer:blend"]);
+    const figure = rect({ geometry: { kind: "preset", name: "star" }, fills: [{ kind: "image", src: "data:image/png;base64,AA==" }] } as Partial<Layer>);
+    expect(unsupportedUse(doc([figure]))).toEqual(["figure:image"]);
+  });
+
   it("looks inside groups, and into the canvas background", () => {
     const group = { id: "g", type: "group", box: { x: 0, y: 0, width: 5, height: 5 }, children: [rect({ id: "m", mask: { mode: "cutout" } })] } as Layer;
     expect(unsupportedUse(doc([group]))).toEqual(["mask"]);

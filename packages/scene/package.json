@@ -22,7 +22,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "build": "vite build --config vite.page.config.mjs",
-    "bench:build": "tsc --ignoreConfig src/scene.ts src/box.ts --outDir dist/bench --rootDir src --module esnext --target es2022 --moduleResolution bundler --skipLibCheck --declaration false"
+    "bench:build": "vite build --config vite.bench.config.mjs"
   },
   "dependencies": {
     "@oim-media/core": "workspace:1.27.9",

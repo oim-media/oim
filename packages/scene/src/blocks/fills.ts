@@ -62,6 +62,8 @@ export function pictureNode(el: HTMLElement, paint: Picture): HTMLImageElement {
   Object.assign(img.style, { position: "absolute", left: "0", top: "0", width: "100%", height: "100%", display: "block", pointerEvents: "none", objectFit: paint.fit ?? "cover" });
   const transforms: string[] = [];
   if (paint.crop) {
+    // The zoom spills past the layer: the layer clips it, as the player does for an image layer.
+    el.style.overflow = "hidden";
     const crop = cropCss(paint.crop);
     Object.assign(img.style, { objectFit: crop.objectFit, objectPosition: crop.objectPosition, transformOrigin: crop.transformOrigin });
     transforms.push(crop.transform);

@@ -8,39 +8,41 @@
 <head>
 <meta charset="utf-8">
 <title>scene drag benchmark</title>
-<style>html,body{margin:0;background:#fff}#host{width:800px}</style>
+<style>html,body{margin:0;background:#fff;font-family:sans-serif}#host{width:800px;text-rendering:geometricPrecision}</style>
 </head>
 <body>
 <div id="host"></div>
 <script type="module">
 import { mount } from "../dist/bench/scene.js";
 
-// 150 layers on a 1600x1000 canvas: 15 columns of 100 units, 10 rows of 60 units.
-// Boxes only: scene does not paint text or images yet, so every layer is a box.
+// 150 real layers on a 1600x1000 canvas, 15 columns of 100 units, 10 rows of 60 units:
+// 100 shapes (50 solid, 50 gradient, every fifth with a 2 px stroke and 4 px corners),
+// 40 texts, 10 pictures (a data: PNG).
 const canvas = { width: 1600, height: 1000 };
-const layers = Array.from({ length: 150 }, (_, i) => ({
-  id: `L${i}`,
-  type: "shape",
-  box: { x: (i % 15) * 100 + 10, y: Math.floor(i / 15) * 60 + 10, width: 80, height: 40 },
-  geometry: { kind: "rect" },
-}));
-const scene = mount(document.getElementById("host"), { oim: "2.0.0-draft.1", canvas, languages: ["es"], layers });
-
-// Inline background colours after mount: 50 solid, 50 gradient, 50 solid (stand-ins for text and images).
-layers.forEach((layer, i) => {
-  const el = scene.elementOf(layer.id);
+const PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGN4nh8IRwzEcQC5Ehpxr683xgAAAABJRU5ErkJggg==";
+const cell = (i) => ({ x: (i % 15) * 100 + 10, y: Math.floor(i / 15) * 60 + 10, width: 80, height: 40 });
+const layers = Array.from({ length: 150 }, (_, i) => {
+  const id = `L${i}`;
   const hue = (i * 37) % 360;
-  el.style.background = i >= 50 && i < 100
-    ? `linear-gradient(90deg, hsl(${hue} 80% 60%), hsl(${(hue + 60) % 360} 80% 50%))`
-    : `hsl(${hue} 70% 55%)`;
+  const box = cell(i);
+  if (i < 100) {
+    const fills = i < 50
+      ? [{ kind: "color", value: `hsl(${hue} 70% 55%)` }]
+      : [{ kind: "gradient", gradient: { type: "linear", angle: 90, stops: [{ color: `hsl(${hue} 80% 60%)` }, { color: `hsl(${(hue + 60) % 360} 80% 50%)` }] } }];
+    return { id, type: "shape", box, geometry: { kind: "rect" }, fills, corners: i % 5 === 0 ? 4 : undefined,
+      strokes: i % 5 === 0 ? [{ paint: { kind: "color", value: "#202020" }, width: 2 }] : undefined };
+  }
+  if (i < 140) return { id, type: "text", box, text: { content: { en: "Hello there" }, font: { size: 14 } } };
+  return { id, type: "image", box, image: { src: PNG } };
 });
+const scene = mount(document.getElementById("host"), { oim: "2.0.0-draft.1", canvas, languages: ["en"], layers });
 
 // Longtasks are collected from the start of the page, so a run only reads them.
 const longtasks = [];
 new PerformanceObserver((list) => longtasks.push(...list.getEntries().map((e) => e.duration)))
   .observe({ type: "longtask", buffered: true });
 
-// Moves L0 in a loop, one setTransform per requestAnimationFrame, for `ms` milliseconds.
+// Moves L0 (a solid shape) in a loop, one setTransform per requestAnimationFrame, for `ms` milliseconds.
 window.runDrag = (ms) => new Promise((resolve) => {
   longtasks.length = 0;
   const frames = [];

@@ -43,7 +43,8 @@
  * the format can change without the player being touched. Tying both numbers
  * together would make an internal fix look like a format break.
  */
-export const CONTRACT_VERSION = "1.29.0";
+export const CONTRACT_VERSION = "1.29.1";
+// 1.29.1: the 1.x to 2.0 upgrade retires the editor-only textRole field; no format change.
 // 1.29.0: a 2.0 image src can be { ref } to a resources entry of kind image.
 // 1.29.0: the player reads 2.0 files and has a poster attribute; 2.0 conformance vectors ship in @oim-media/spec.
 // 1.29.0: an SVG layer upgrades from its content, not svgRawXml; no format change.

@@ -3,6 +3,10 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.29.1
+
+- The 1.x to 2.0 upgrade retires the editor-only `textRole` field (no player read it). No format change.
+
 ## 1.29.0
 
 - 2.0: `image.src` can reference a `resources` entry (`{ "ref": "res_x" }`), so a photo used by several layers travels once.

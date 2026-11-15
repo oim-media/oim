@@ -61,3 +61,36 @@ describe("resolveRefs", () => {
     expect(missing).toEqual([]);
   });
 });
+
+describe("resolveRefs on image src", () => {
+  const photo = { kind: "image", src: "https://x.test/a.png" };
+
+  it("resolves an image src ref to the resource src", () => {
+    const input = doc({ resources: { res_1: photo }, layers: [{ id: "p", type: "image", box, image: { src: { ref: "res_1" } } }] });
+    const { document, missing } = resolveRefs(input);
+    expect(document.layers[0].image?.src).toBe("https://x.test/a.png");
+    expect(missing).toEqual([]);
+  });
+
+  it("reports a ref to a non-image resource as missing", () => {
+    const input = doc({ resources: { res_1: red }, layers: [{ id: "p", type: "image", box, image: { src: { ref: "res_1" } } }] });
+    const { document, missing } = resolveRefs(input);
+    expect(document.layers[0].image).toBeUndefined();
+    expect(missing).toEqual(["res_1"]);
+  });
+
+  it("resolves the same ref used by two layers", () => {
+    const input = doc({
+      resources: { res_1: photo },
+      layers: [
+        { id: "p", type: "image", box, image: { src: { ref: "res_1" } } },
+        group("g", [{ id: "q", type: "image", box, image: { src: { ref: "res_1" } } }]),
+      ],
+    });
+    const { document, missing } = resolveRefs(input);
+    expect(document.layers[0].image?.src).toBe("https://x.test/a.png");
+    expect(document.layers[1].children?.[0].image?.src).toBe("https://x.test/a.png");
+    expect(missing).toEqual([]);
+  });
+});
+

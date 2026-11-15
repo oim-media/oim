@@ -81,3 +81,8 @@ describe("document 2.0", () => {
     bad({ ...doc([rect]), oim: "1.27.9" });
   });
 });
+
+describe("image src by ref", () => {
+  it("accepts an image src by ref", () =>
+    ok(doc([{ id: "photo", type: "image", box, image: { src: { ref: "res_photo" } } }])));
+});

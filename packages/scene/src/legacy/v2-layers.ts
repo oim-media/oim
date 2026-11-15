@@ -152,9 +152,12 @@ export function maskStyle(layer: Layer): Record<string, unknown> {
   };
 }
 
-/** The picture a 2.0 image shows in one language: its own exception, else the principal; the base PNG paints none (the player shows it under the layers). */
-export function imageSrc(src: string | { value: string; modes?: Record<string, string> }, lang: string): string {
-  const pick = typeof src === 'string' ? src : resolveByLang(src.modes ?? {}, lang) ?? src.value;
+/** The picture a 2.0 image shows in one language: its own exception, else the principal; the base PNG paints none (the player shows it under the layers). An unresolved `{ ref }` paints nothing. */
+export function imageSrc(src: string | { value?: string; modes?: Record<string, string> } | { ref: string }, lang: string): string {
+  if (typeof src === 'string') return src === 'oim:base' ? '' : src;
+  // An unresolved { ref } (or a malformed object) paints nothing.
+  if (!('value' in src) || typeof src.value !== 'string') return '';
+  const pick = resolveByLang(src.modes ?? {}, lang) ?? src.value;
   return pick === 'oim:base' ? '' : pick;
 }
 

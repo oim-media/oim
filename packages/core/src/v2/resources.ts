@@ -9,6 +9,8 @@ import type { Layer, OimDocument, Paint } from "./schema.js";
 // Paints live in three places: `canvas.fills`, each layer's `fills`, and each
 // stroke's `paint`. A `{ ref }` in any of them points at `document.resources`.
 // A stroke whose ref is missing is dropped, since a stroke has no paint without it.
+// An image layer's `src` may be a `{ ref }` to an image paint; if that is missing or
+// not an image, the layer loses its `image` block rather than keeping a dead source.
 
 /** A copy of the document with every `{ ref }` paint replaced by its resource. */
 export function resolveRefs(document: OimDocument): { document: OimDocument; missing: string[] } {
@@ -32,6 +34,15 @@ export function resolveRefs(document: OimDocument): { document: OimDocument; mis
           const paint = one(stroke.paint);
           return paint ? [{ ...stroke, paint }] : [];
         });
+      }
+      if (layer.image && typeof layer.image.src === "object" && "ref" in layer.image.src) {
+        const src = layer.image.src;
+        const resource = Object.prototype.hasOwnProperty.call(resources, src.ref) ? resources[src.ref] : undefined;
+        if (resource && "kind" in resource && resource.kind === "image") layer.image = { ...layer.image, src: resource.src };
+        else {
+          delete layer.image;
+          if (!missing.includes(src.ref)) missing.push(src.ref);
+        }
       }
       if (layer.children) walk(layer.children);
     }

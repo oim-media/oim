@@ -49,8 +49,10 @@ export function applyFills(el: HTMLElement, layer: Pick<Layer, "fills">, ctx: Pa
   for (const paint of pictures) el.appendChild(pictureNode(el, paint));
 }
 
-/** An image paint as a picture covering its layer: fit, crop, flip and opacity as 2.0 states them. */
-function pictureNode(el: HTMLElement, paint: Extract<Paint, { kind: "image" }>): HTMLImageElement {
+/** A picture as a node covering its layer: fit, crop, flip and opacity as 2.0 states them. Shared by image paints and image layers. */
+export type Picture = Omit<Extract<Paint, { kind: "image" }>, "kind">;
+
+export function pictureNode(el: HTMLElement, paint: Picture): HTMLImageElement {
   const img = el.ownerDocument.createElement("img");
   img.dataset.oimFill = "";
   // Only a picture that travels inside the file is painted: a network URL would be a tracking pixel.

@@ -5,9 +5,12 @@
  */
 
 import { DYNAMIC_COLOR_ROLES, resolvePalette } from "@oim-media/core";
-import { paintColors, palettesOf, type Box, type Layer, type OimDocument, type PaintColors } from "@oim-media/core/v2";
+import { geometryOutline, paintColors, palettesOf, type Box, type Layer, type OimDocument, type PaintColors } from "@oim-media/core/v2";
 import { applyBox, type Frame } from "./box.js";
-import { applyFills } from "./blocks/fills.js";
+import { applyCorners } from "./blocks/corners.js";
+import { applyFills, pictureNode } from "./blocks/fills.js";
+import { applyGeometry } from "./blocks/geometry.js";
+import { pictureOf } from "./blocks/image.js";
 import { applyStrokes } from "./blocks/strokes.js";
 import { unsupportedUse } from "./coverage.js";
 
@@ -60,14 +63,21 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   for (const block of unsupportedUse(document)) console.warn(`[oim scene] "${block}" is not painted yet; it is ignored`);
 
   applyFills(root, document.canvas, { colors, isText: false });
+  const lang = document.languages[0];
   const paint = (layer: Layer, parent: HTMLElement, frame: Frame) => {
+    // An image layer with no picture of its own is not painted: the file's base picture is the page's, behind the layers.
+    const picture = layer.type === "image" ? pictureOf(layer.image, lang) : undefined;
+    if (layer.type === "image" && picture === undefined) return;
     const el = container.ownerDocument.createElement("div");
     el.dataset.oimId = layer.id;
     el.style.position = "absolute";
     applyBox(el, layer.box, frame);
     const isText = layer.type === "text";
     applyFills(el, layer, { colors, isText });
-    applyStrokes(el, layer, { colors, isText });
+    const outline = layer.type === "shape" ? applyGeometry(el, layer, { colors }) : geometryOutline(undefined);
+    applyCorners(el, layer, !!outline.round);
+    applyStrokes(el, layer, { colors, isText, vector: !!outline.silhouette });
+    if (picture !== undefined) pictureNode(el, { src: picture, fit: layer.image?.fit, crop: layer.image?.crop });
     entries.set(layer.id, { el, layer, frame });
     for (const child of layer.children ?? []) paint(child, el, layer.box as Frame); // only groups have children, and a group is always sized
     parent.appendChild(el);

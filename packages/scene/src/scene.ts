@@ -11,6 +11,7 @@ import { applyCorners } from "./blocks/corners.js";
 import { applyFills, pictureNode } from "./blocks/fills.js";
 import { applyGeometry } from "./blocks/geometry.js";
 import { pictureOf } from "./blocks/image.js";
+import { applyText } from "./blocks/text.js";
 import { applyStrokes } from "./blocks/strokes.js";
 import { unsupportedUse } from "./coverage.js";
 
@@ -74,6 +75,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     applyBox(el, layer.box, frame);
     const isText = layer.type === "text";
     applyFills(el, layer, { colors, isText });
+    if (layer.type === "text") applyText(el, layer, { lang });
     const outline = layer.type === "shape" ? applyGeometry(el, layer, { colors }) : geometryOutline(undefined);
     applyCorners(el, layer, !!outline.round);
     applyStrokes(el, layer, { colors, isText, vector: !!outline.silhouette });

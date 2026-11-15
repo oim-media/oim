@@ -403,14 +403,7 @@ export async function extractOIMMetadataFromStream(
         }
       }
 
-      // If we reach the IDAT chunks and have already passed the header without
-      // finding tEXt, there is no need to keep reading megabytes of image blindly.
-      if (typeStr === 'IDAT') {
-        // In OIM the metadata chunk normally precedes IDAT.
-        // If it is absent, abort the stream to save transfer.
-        break;
-      }
-
+      // No early stop at IDAT: since 2.0 the metadata chunk follows the image.
       if (typeStr === 'IEND') break;
 
       offset += totalChunkSize;

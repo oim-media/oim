@@ -2,7 +2,9 @@
 // Copyright (c) 2026 Xue Studios LLC
 // SPDX-License-Identifier: Apache-2.0
 // Renders every conformance vector with the web player (the reference renderer).
-// Usage: node render-web-goldens.mjs <out-dir> [--suffix .web]
+// Usage: node render-web-goldens.mjs <out-dir> [--suffix .web] [--renderer web|scene]
+// `--renderer scene` paints each vector with @oim-media/scene (packages/scene/dist/scene-page.js).
+// A vector the scene does not paint yet writes `<name>.skipped` instead of a PNG.
 // Goldens are only valid when produced on the CI runner's Linux: fonts rasterise
 // differently elsewhere.
 import fs from 'node:fs';
@@ -17,18 +19,22 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PALETTE = process.env.OIM_PALETTE;
 const VECTORS = process.env.OIM_VECTORS ?? path.join(HERE, '..', 'vectors');
 const PLAYER = path.join(HERE, '..', '..', 'player-oim', 'dist', 'oim-player.js');
+const SCENE_PAGE = path.join(HERE, '..', '..', 'scene', 'dist', 'scene-page.js');
 const WIDTH = 800;
 
 const args = process.argv.slice(2);
 const outDir = args[0];
 const suffixAt = args.indexOf('--suffix');
 const suffix = suffixAt >= 0 ? args[suffixAt + 1] : '.web';
-if (!outDir) {
-  console.error('usage: render-web-goldens.mjs <out-dir> [--suffix .web]');
+const rendererAt = args.indexOf('--renderer');
+const renderer = rendererAt >= 0 ? args[rendererAt + 1] : 'web';
+if (!outDir || !['web', 'scene'].includes(renderer)) {
+  console.error('usage: render-web-goldens.mjs <out-dir> [--suffix .web] [--renderer web|scene]');
   process.exit(2);
 }
-if (!fs.existsSync(PLAYER)) {
-  console.error(`player bundle not found: ${PLAYER} (run pnpm build first)`);
+const ENTRY = renderer === 'scene' ? SCENE_PAGE : PLAYER;
+if (!fs.existsSync(ENTRY)) {
+  console.error(`${renderer} bundle not found: ${ENTRY} (run pnpm build first)`);
   process.exit(2);
 }
 
@@ -45,9 +51,24 @@ const page = (src, height) => `<!doctype html><html><head><meta charset="utf-8">
 <script src="/oim-player.js"></script></head>
 <body><oim-player id="p" src="${src}" disable-animations="true"${PALETTE ? ` palette="${PALETTE}"` : ''}></oim-player></body></html>`;
 
+// The scene page: the same frame as the player's, with the vector's file read by the page itself.
+const scenePage = (name, height) => `<!doctype html><html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#fff;font-family:sans-serif}#host{width:${WIDTH}px;height:${height}px;text-rendering:geometricPrecision;position:relative}</style>
+<script type="module" src="/scene-page.js"></script></head>
+<body><div id="host" data-src="/vectors/${name}"></div></body></html>`;
+
 const server = http.createServer((req, res) => {
   const url = decodeURIComponent(req.url.split('?')[0]);
   if (url === '/oim-player.js') return res.end(fs.readFileSync(PLAYER));
+  if (url === '/scene-page.js') {
+    res.setHeader('content-type', 'text/javascript');
+    return res.end(fs.readFileSync(SCENE_PAGE));
+  }
+  if (url.startsWith('/scene/')) {
+    res.setHeader('content-type', 'text/html');
+    const name = path.basename(url);
+    return res.end(scenePage(name, goldenSize(fs.readFileSync(path.join(VECTORS, name))).height));
+  }
   // What the player fetches next to itself: `upgrade` and Lottie.
   const vendor = path.join(path.dirname(PLAYER), 'vendor', path.basename(url));
   if (url.startsWith('/vendor/') && fs.existsSync(vendor)) {
@@ -78,13 +99,24 @@ let failed = 0;
 for (const file of fs.readdirSync(VECTORS).filter((f) => f.endsWith('.oim.png')).sort()) {
   const name = file.slice(0, -'.oim.png'.length);
   const tab = await context.newPage();
+  // A stale result of an earlier run must not stand for this one.
+  for (const stale of [`${name}.skipped`, `${name}${suffix}.png`]) fs.rmSync(path.join(outDir, stale), { force: true });
   try {
     await tab.addInitScript(() => {
       ['oim:loaded', 'oim:unsupported', 'oim:incomplete', 'error'].forEach((e) =>
         document.addEventListener(e, () => { window.__oimSettled = e; }, { capture: true }));
     });
-    await tab.goto(`${base}/page/${file}`);
+    await tab.goto(`${base}/${renderer === 'scene' ? 'scene' : 'page'}/${file}`);
     await tab.waitForFunction(() => window.__oimSettled, null, { timeout: 15000 }).catch(() => {});
+    if (renderer === 'scene') {
+      const skipped = await tab.evaluate(() => (window.__oimSettled === 'skipped' ? window.__oimSkip : null));
+      if (skipped) {
+        fs.writeFileSync(path.join(outDir, `${name}.skipped`), JSON.stringify(skipped));
+        console.log(`skipped ${name}: ${skipped.join(', ')}`);
+        continue;
+      }
+      if ((await tab.evaluate(() => window.__oimSettled)) !== 'loaded') throw new Error('scene did not mount the file');
+    }
     await tab.evaluate(() => document.fonts.ready);
     await tab.evaluate(() => Promise.all([...document.images, ...document.querySelectorAll('*')].flatMap((el) =>
       el.shadowRoot ? [...el.shadowRoot.querySelectorAll('img')] : el instanceof HTMLImageElement ? [el] : [],
@@ -92,8 +124,8 @@ for (const file of fs.readdirSync(VECTORS).filter((f) => f.endsWith('.oim.png'))
     // Two frames: the engine lays out after load.
     await tab.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
     // A golden painted without `upgrade` would be the 1.x road, not the one that ships.
-    if (!(await tab.evaluate(() => typeof window.__oimUpgrade === 'function'))) throw new Error('upgrade did not load');
-    await tab.locator('#p').screenshot({ path: path.join(outDir, `${name}${suffix}.png`), animations: 'disabled' });
+    if (renderer === 'web' && !(await tab.evaluate(() => typeof window.__oimUpgrade === 'function'))) throw new Error('upgrade did not load');
+    await tab.locator(renderer === 'scene' ? '#host' : '#p').screenshot({ path: path.join(outDir, `${name}${suffix}.png`), animations: 'disabled' });
     console.log(`rendered ${name}`);
   } catch (err) {
     failed++;

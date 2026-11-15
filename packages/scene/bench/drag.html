@@ -1,0 +1,67 @@
+<!doctype html>
+<!--
+  @license
+  Copyright (c) 2026 Xue Studios LLC
+  SPDX-License-Identifier: Apache-2.0
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>scene drag benchmark</title>
+<style>html,body{margin:0;background:#fff;font-family:sans-serif}#host{width:800px;text-rendering:geometricPrecision}</style>
+</head>
+<body>
+<div id="host"></div>
+<script type="module">
+import { mount } from "../dist/bench/scene.js";
+
+// 150 real layers on a 1600x1000 canvas, 15 columns of 100 units, 10 rows of 60 units:
+// 100 shapes (50 solid, 50 gradient, every fifth with a 2 px stroke and 4 px corners),
+// 40 texts, 10 pictures (a data: PNG).
+const canvas = { width: 1600, height: 1000 };
+const PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGN4nh8IRwzEcQC5Ehpxr683xgAAAABJRU5ErkJggg==";
+const cell = (i) => ({ x: (i % 15) * 100 + 10, y: Math.floor(i / 15) * 60 + 10, width: 80, height: 40 });
+const layers = Array.from({ length: 150 }, (_, i) => {
+  const id = `L${i}`;
+  const hue = (i * 37) % 360;
+  const box = cell(i);
+  if (i < 100) {
+    const fills = i < 50
+      ? [{ kind: "color", value: `hsl(${hue} 70% 55%)` }]
+      : [{ kind: "gradient", gradient: { type: "linear", angle: 90, stops: [{ color: `hsl(${hue} 80% 60%)` }, { color: `hsl(${(hue + 60) % 360} 80% 50%)` }] } }];
+    return { id, type: "shape", box, geometry: { kind: "rect" }, fills, corners: i % 5 === 0 ? 4 : undefined,
+      strokes: i % 5 === 0 ? [{ paint: { kind: "color", value: "#202020" }, width: 2 }] : undefined };
+  }
+  if (i < 140) return { id, type: "text", box, text: { content: { en: "Hello there" }, font: { size: 14 } } };
+  return { id, type: "image", box, image: { src: PNG } };
+});
+const scene = mount(document.getElementById("host"), { oim: "2.0.0-draft.1", canvas, languages: ["en"], layers });
+
+// Longtasks are collected from the start of the page, so a run only reads them.
+const longtasks = [];
+new PerformanceObserver((list) => longtasks.push(...list.getEntries().map((e) => e.duration)))
+  .observe({ type: "longtask", buffered: true });
+
+// Moves L0 (a solid shape) in a loop, one setTransform per requestAnimationFrame, for `ms` milliseconds.
+window.runDrag = (ms) => new Promise((resolve) => {
+  longtasks.length = 0;
+  const frames = [];
+  const work = [];
+  const start = performance.now();
+  let last = null;
+  const step = (now) => {
+    const t0 = performance.now();
+    const k = ((now - start) / 1000) * Math.PI * 2;
+    scene.setTransform("L0", { x: 100 + 1200 * Math.abs(Math.sin(k / 2)), y: 100 + 700 * Math.abs(Math.sin(k)), width: 200, height: 120 });
+    work.push(performance.now() - t0);
+    if (last !== null) frames.push(now - last);
+    last = now;
+    if (now - start < ms) return requestAnimationFrame(step);
+    setTimeout(() => resolve({ frames, work, longtasks: [...longtasks] }), 300);
+  };
+  requestAnimationFrame(step);
+});
+window.__ready = true;
+</script>
+</body>
+</html>

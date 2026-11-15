@@ -9,6 +9,7 @@
 // `rememberDocument` hands over without an upgrade.
 import type { Layer, OimDocument, Variables } from '../../../core/src/v2/schema.js';
 import { rememberDocument } from './v2-layers.js';
+import { palettesOf } from '../../../core/src/v2/colors.js';
 
 export type LegacySlot = { id: string; type: string; style: Record<string, unknown>; content?: Record<string, string> };
 
@@ -42,19 +43,6 @@ function textFields(slot: LegacySlot, text: NonNullable<Layer['text']>): void {
   if (size.byLang) slot.style.fontSizes = size.byLang;
   if (width.px) slot.style.maxWidth = width.px;
   if (width.byLang) slot.style.maxWidths = width.byLang;
-}
-
-/** The named palettes of the 1.x file, read back from the variables: one role → colour map per palette name. */
-function palettesOf(variables: Variables | undefined): Record<string, Record<string, string>> | undefined {
-  const names = variables?.modes?.palette;
-  if (!variables || !names) return undefined;
-  const palettes: Record<string, Record<string, string>> = Object.fromEntries(names.map((name) => [name, {}]));
-  for (const [role, byPalette] of Object.entries(variables.values ?? {})) {
-    for (const [name, color] of Object.entries(byPalette as Record<string, unknown>)) {
-      if (palettes[name] && typeof color === 'string') palettes[name][role] = color;
-    }
-  }
-  return palettes;
 }
 
 /** Slots in paint order: a group, then its children right after it, nested ones included. */

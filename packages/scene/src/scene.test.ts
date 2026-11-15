@@ -6,6 +6,7 @@
 
 import type { Layer, OimDocument } from "@oim-media/core/v2";
 import { describe, expect, it } from "vitest";
+import { DYNAMIC_COLOR_ROLES } from "@oim-media/core";
 import { mount } from "./index.js";
 
 const shape = (o: Partial<Layer> = {}): Layer => ({
@@ -23,9 +24,18 @@ describe("mount", () => {
   it("the root keeps the canvas ratio and is a size container", () => {
     const host = document.createElement("div");
     mount(host, doc([]));
-    const root = host.firstElementChild as HTMLElement;
+    const root = host.querySelector<HTMLElement>(".oim-scene")!;
     expect(root.style.aspectRatio.replace(/\s/g, "")).toBe("1000/500");
     expect(root.style.containerType).toBe("inline-size");
+  });
+
+  it("the canvas is centred in its container, as the player letterboxes it", () => {
+    const host = document.createElement("div");
+    mount(host, doc([]));
+    const letterbox = host.firstElementChild as HTMLElement;
+    expect(letterbox.style.display).toBe("flex");
+    expect(letterbox.style.justifyContent).toBe("center");
+    expect(letterbox.querySelector(".oim-scene")).not.toBeNull();
   });
 
   it("a layer sits at its box, as shares of the canvas", () => {
@@ -74,8 +84,47 @@ describe("mount", () => {
     expect(mount(document.createElement("div"), doc([shape({ box })])).elementOf("a")!.style.transform).toBe(transform);
   });
 
+  it("setTransform moves one layer to its new box and leaves the others alone", () => {
+    const host = document.createElement("div");
+    const scene = mount(host, doc([shape(), shape({ id: "b", box: { x: 0, y: 0, width: 100, height: 100 } })]));
+    const otherLeft = scene.elementOf("b")!.style.left;
+    scene.setTransform("a", { x: 500, y: 250, width: 100, height: 50 });
+    const el = scene.elementOf("a")!;
+    expect([el.style.left, el.style.top, el.style.width, el.style.height]).toEqual(["50%", "50%", "10%", "10%"]);
+    expect(scene.elementOf("b")!.style.left).toBe(otherLeft);
+  });
+
+  it("setTransform places a child inside its group's frame", () => {
+    const group = {
+      id: "g", type: "group", box: { x: 100, y: 100, width: 400, height: 200 },
+      children: [shape({ id: "c", box: { x: 200, y: 150, width: 100, height: 50 } })],
+    } as Layer;
+    const scene = mount(document.createElement("div"), doc([group]));
+    scene.setTransform("c", { x: 200, y: 150, width: 200, height: 100 });
+    const el = scene.elementOf("c")!;
+    expect([el.style.left, el.style.top, el.style.width, el.style.height]).toEqual(["25%", "25%", "50%", "50%"]);
+  });
+
   it("elementOf an unknown id is null", () => {
     expect(mount(document.createElement("div"), doc([shape()])).elementOf("nope")).toBeNull();
+  });
+
+  it("the active palette's colours are custom properties of the root, which a palette binding reads", () => {
+    const role = DYNAMIC_COLOR_ROLES[0];
+    const withPalettes = { oim: "2.0.0-draft.1", canvas: { width: 1000, height: 500 }, languages: ["es"], layers: [],
+      variables: { modes: { palette: ["light", "dark"] }, defaults: { palette: "light" }, values: { [role]: { light: "#123456", dark: "#abcdef" } } } };
+    const host = document.createElement("div");
+    mount(host, withPalettes as unknown as OimDocument, { palette: "dark" });
+    expect(host.querySelector<HTMLElement>(".oim-scene")!.style.getPropertyValue(`--oim-palette-${role}`)).toBe("#abcdef");
+  });
+
+  it("a text is written in the reader's language when the file has it, else in the file's first", () => {
+    const text = { id: "t", type: "text", box: { x: 0, y: 0 }, text: { content: { es: "Hola", en: "Hello" } } } as Layer;
+    const file = { oim: "2.0.0-draft.1", canvas: { width: 1000, height: 500 }, languages: ["es", "en"], layers: [text] } as unknown as OimDocument;
+    const read = (options: Parameters<typeof mount>[2]) => mount(document.createElement("div"), file, options).elementOf("t")!.textContent;
+    expect(read({ language: "es" })).toBe("Hola");
+    expect(read({})).toBe("Hello");
+    expect(read({ language: "fr" })).toBe("Hola");
   });
 
   it("destroy empties the container and forgets the layers", () => {

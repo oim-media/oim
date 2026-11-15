@@ -4,8 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Box, Layer, OimDocument } from "@oim-media/core/v2";
+import { DYNAMIC_COLOR_ROLES, resolvePalette } from "@oim-media/core";
+import { geometryOutline, paintColors, palettesOf, type Box, type Layer, type OimDocument, type PaintColors } from "@oim-media/core/v2";
 import { applyBox, type Frame } from "./box.js";
+import { applyCorners } from "./blocks/corners.js";
+import { applyFills, pictureNode } from "./blocks/fills.js";
+import { applyGeometry } from "./blocks/geometry.js";
+import { pictureOf } from "./blocks/image.js";
+import { applyStrokes } from "./blocks/strokes.js";
+import { applyText } from "./blocks/text.js";
+import { unsupportedUse } from "./coverage.js";
 
 export type SceneOptions = {
   language?: string;
@@ -26,42 +34,125 @@ export type Scene = {
   destroy(): void;
 };
 
-type Entry = { el: HTMLElement; layer: Layer };
+/** The frame is the parent's, so a child can be placed again from canvas units. */
+type Entry = { el: HTMLElement; layer: Layer; frame: Frame };
 
 const notYet = (name: string) => () => {
   throw new Error(`scene.${name} is not implemented yet`);
 };
 
+/** The file's language that the reader's own matches (exactly, then by its main tag), else the file's first. */
+function languageOf(languages: string[], reader: string | undefined): string {
+  const main = (tag: string) => tag.toLowerCase().split("-")[0];
+  return languages.find((l) => reader !== undefined && l.toLowerCase() === reader.toLowerCase())
+    ?? languages.find((l) => reader !== undefined && main(l) === main(reader))
+    ?? languages[0];
+}
+
 export function mount(container: HTMLElement, document: OimDocument, _options: SceneOptions = {}): Scene {
   const { width, height } = document.canvas;
+  // The canvas keeps its ratio inside its container and sits in the middle of it, as the player letterboxes it.
+  const letterbox = container.ownerDocument.createElement("div");
+  Object.assign(letterbox.style, { position: "relative", width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" });
   const root = container.ownerDocument.createElement("div");
   root.className = "oim-scene";
-  Object.assign(root.style, { position: "relative", aspectRatio: `${width} / ${height}`, containerType: "inline-size" });
+  Object.assign(root.style, { position: "relative", width: "100%", maxHeight: "100%", aspectRatio: `${width} / ${height}`, containerType: "inline-size" });
+  letterbox.appendChild(root);
 
   const entries = new Map<string, Entry>();
+  const canvas: Frame = { x: 0, y: 0, width, height };
+  const palettes = palettesOf(document.variables);
+  const defaultPalette = _options.palette ?? document.variables?.defaults?.palette;
+  const colors: PaintColors = paintColors({ palettes, defaultPalette });
+  // The active palette's roles become custom properties, so a colour bound to a role is a var() and a mode change needs no repaint.
+  // With both light and dark palettes, the reader's colour scheme decides, as the player does.
+  const prefersDark = typeof matchMedia === "function" && matchMedia("(prefers-color-scheme: dark)").matches;
+  const active = resolvePalette({ palettes, defaultPalette }, { requested: _options.palette ?? null, prefersDark });
+  for (const role of DYNAMIC_COLOR_ROLES) {
+    const value = active?.colors[role];
+    if (value) root.style.setProperty(`--oim-palette-${role}`, value);
+  }
+  // A block scene does not paint yet is ignored, and said once per block type, not per layer.
+  for (const block of unsupportedUse(document)) console.warn(`[oim scene] "${block}" is not painted yet; it is ignored`);
+
+  applyFills(root, document.canvas, { colors, isText: false });
+  const lang = languageOf(document.languages, _options.language ?? (typeof navigator === "undefined" ? undefined : navigator.language));
+
+  /**
+   * Paints the blocks of a layer. `only` limits the pass to the blocks that changed
+   * (their field names); without it every block is painted. A figure depends on
+   * its fills, geometry and strokes together, so any of them repaints the figure.
+   */
+  const paintBlocks = (el: HTMLElement, layer: Layer, only?: ReadonlySet<string>) => {
+    const has = (...keys: string[]) => !only || keys.some((k) => only.has(k));
+    const isText = layer.type === "text";
+    if (has("fills")) applyFills(el, layer, { colors, isText });
+    if (layer.type === "text" && has("text")) applyText(el, layer, { lang, canvasWidth: width });
+    const figure = has("fills", "geometry", "strokes");
+    const outline = layer.type === "shape" ? (figure ? applyGeometry(el, layer, { colors }) : geometryOutline(layer.geometry)) : geometryOutline(undefined);
+    if (has("corners", "geometry")) applyCorners(el, layer, !!outline.round);
+    if (has("strokes", "geometry", "fills")) applyStrokes(el, layer, { colors, isText, vector: !!outline.silhouette });
+    if (layer.type === "image" && has("image")) {
+      el.querySelectorAll(":scope > img[data-oim-fill]").forEach((node) => node.remove());
+      const picture = pictureOf(layer.image, lang);
+      if (picture !== undefined) pictureNode(el, { src: picture, fit: layer.image?.fit, crop: layer.image?.crop });
+    }
+  };
+
   const paint = (layer: Layer, parent: HTMLElement, frame: Frame) => {
+    // An image layer with no picture of its own is not painted: the file's base picture is the page's, behind the layers.
+    if (layer.type === "image" && pictureOf(layer.image, lang) === undefined) return;
     const el = container.ownerDocument.createElement("div");
     el.dataset.oimId = layer.id;
     el.style.position = "absolute";
     applyBox(el, layer.box, frame);
-    entries.set(layer.id, { el, layer });
+    paintBlocks(el, layer);
+    entries.set(layer.id, { el, layer, frame });
     for (const child of layer.children ?? []) paint(child, el, layer.box as Frame); // only groups have children, and a group is always sized
     parent.appendChild(el);
   };
-  const canvas: Frame = { x: 0, y: 0, width, height };
   for (const layer of document.layers) paint(layer, root, canvas);
-  container.appendChild(root);
+  container.appendChild(letterbox);
+
+  // A move is written once when it starts a frame; the moves that follow in the same frame are kept and written once more, at the next frame.
+  let frame: number | undefined;
+  const pendingMoves = new Map<string, Box>();
+  const flushMoves = () => {
+    frame = undefined;
+    for (const [id, box] of pendingMoves) {
+      const entry = entries.get(id);
+      if (entry) applyBox(entry.el, box, entry.frame);
+    }
+    pendingMoves.clear();
+  };
 
   return {
     elementOf: (id) => entries.get(id)?.el ?? null,
-    update: notYet("update"),
-    setTransform: notYet("setTransform"),
+    update(id, changes) {
+      const entry = entries.get(id);
+      if (!entry) return;
+      entry.layer = { ...entry.layer, ...changes } as Layer;
+      if (changes.box) applyBox(entry.el, entry.layer.box, entry.frame);
+      paintBlocks(entry.el, entry.layer, new Set(Object.keys(changes)));
+    },
+    setTransform(id, box) {
+      const entry = entries.get(id);
+      if (!entry) return;
+      entry.layer = { ...entry.layer, box } as Layer;
+      if (frame === undefined) {
+        applyBox(entry.el, box, entry.frame);
+        frame = requestAnimationFrame(flushMoves);
+      } else pendingMoves.set(id, box);
+    },
     setMode: notYet("setMode"),
     play: notYet("play"),
     pause: notYet("pause"),
     seek: notYet("seek"),
     destroy() {
-      root.remove();
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      frame = undefined;
+      pendingMoves.clear();
+      letterbox.remove();
       entries.clear();
     },
   };

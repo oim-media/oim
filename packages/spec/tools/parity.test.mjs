@@ -12,7 +12,7 @@ const white = () => ({ width: 40, height: 40, rgba: new Uint8Array(40 * 40 * 4).
 const black = () => ({ width: 40, height: 40, rgba: new Uint8Array(40 * 40 * 4).map((_, i) => (i % 4 === 3 ? 255 : 0)) });
 
 // vectors a, b; goldens a, b (white); renders as given.
-const setup = ({ renders = { a: white(), b: white() }, exceptions = {}, vectors = ['a', 'b'], goldens = ['a', 'b'] } = {}) => {
+const setup = ({ renders = { a: white(), b: white() }, exceptions = {}, vectors = ['a', 'b'], goldens = ['a', 'b'], skipped = {} } = {}) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'parity-'));
   const dirs = Object.fromEntries(['vectors', 'golden', 'renders', 'out'].map((d) => [d, path.join(root, d)]));
   Object.values(dirs).forEach((d) => fs.mkdirSync(d));
@@ -20,6 +20,7 @@ const setup = ({ renders = { a: white(), b: white() }, exceptions = {}, vectors 
   goldens.forEach((g) => fs.writeFileSync(path.join(dirs.golden, `${g}.web.png`), encodePng(white())));
   fs.writeFileSync(path.join(dirs.golden, 'exceptions.json'), JSON.stringify(exceptions));
   Object.entries(renders).forEach(([n, im]) => fs.writeFileSync(path.join(dirs.renders, `${n}.png`), encodePng(im)));
+  Object.entries(skipped).forEach(([n, blocks]) => fs.writeFileSync(path.join(dirs.renders, `${n}.skipped`), JSON.stringify(blocks)));
   const r = runParity({ rendersDir: dirs.renders, renderer: 'flutter', outDir: dirs.out, goldenDir: dirs.golden, vectorsDir: dirs.vectors });
   return { ...r, out: dirs.out };
 };
@@ -68,3 +69,10 @@ test('excepted vector with a size mismatch still fails', () => {
 });
 
 test('no vectors at all fails', () => assert.match(why(setup({ vectors: [], goldens: [], renders: {} })), /no vectors/));
+
+// A renderer that does not paint a vector's blocks writes a `.skipped` marker instead of a PNG.
+test('a vector that uses an out-of-scope block is skipped, not failed', () => {
+  const r = setup({ renders: { b: white() }, skipped: { a: ['effects'] } });
+  assert.deepEqual(r.failures, []);
+  assert.match(r.lines.find((l) => l.startsWith('a ')), /SKIPPED.*effects/);
+});

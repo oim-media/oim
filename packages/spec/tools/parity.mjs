@@ -43,6 +43,13 @@ export const runParity = ({
 
   for (const name of goldens.filter((g) => vectors.includes(g))) {
     const renderPath = path.join(rendersDir, `${name}.png`);
+    // A renderer that does not paint everything a vector uses writes `<name>.skipped` (JSON: the blocks it left out).
+    // Skipped is neither a pass nor a failure: it is listed, so the coverage of each renderer stays visible.
+    const skipPath = path.join(rendersDir, `${name}.skipped`);
+    if (fs.existsSync(skipPath)) {
+      lines.push(`${name.padEnd(32)} ${'SKIPPED'.padEnd(8)} ${JSON.parse(fs.readFileSync(skipPath, 'utf8')).join(', ')}`);
+      continue;
+    }
     const excepted = name in exceptions;
     // `broken`: no comparison happened (missing, unreadable or wrong-size render). An exception never covers it.
     let verdict, detail = '', broken = false;

@@ -91,6 +91,13 @@ jobs:
           cd packages/spec
           OIM_VECTORS=vectors-2 node tools/render-web-goldens.mjs "$RUNNER_TEMP/parity/web2" --suffix ""
           node tools/parity.mjs "$RUNNER_TEMP/parity/web2" --renderer web --out "$RUNNER_TEMP/parity/diff/web2"
+      # The scene (@oim-media/scene) against the same goldens. Required for the vectors in scope; a vector that uses a block
+      # the scene does not paint yet is listed as SKIPPED (packages/scene/src/coverage.ts), never failed.
+      - name: Scene against the goldens
+        run: |
+          cd packages/spec
+          OIM_VECTORS=vectors-2 node tools/render-web-goldens.mjs "$RUNNER_TEMP/parity/scene" --renderer scene --suffix ""
+          node tools/parity.mjs "$RUNNER_TEMP/parity/scene" --renderer scene --out "$RUNNER_TEMP/parity/diff/scene"
       - uses: ./.github/actions/setup-flutter
       - name: Flutter against the goldens
         run: |

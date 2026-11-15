@@ -8,8 +8,9 @@
 // reads from the 2.0 layer of each one the blocks already moved to 2.0.
 import { upgrade } from './upgrade-entry.js';
 import type { Box, Geometry, Layer, OimDocument } from '../../../core/src/v2/schema.js';
-import type { PaintColors } from '../../../core/src/v2/paint-css.js';
-import { resolveCssColor, resolvePalette } from '../../../core/src/dynamic-colors.js';
+import { paintColors } from '../../../core/src/v2/colors.js';
+import { typographyCss } from '../../../core/src/v2/typography.js';
+export { paintColors, typographyCss };
 import { resolveByLang } from './localizedEntries.js';
 
 const cache = new WeakMap<object, Map<string, Layer>>();
@@ -43,60 +44,12 @@ export function rememberDocument(view: object, document: OimDocument): void {
   cache.set(view, indexLayers(document.layers));
 }
 
-/**
- * How the renderer paints a 2.0 colour: a palette binding stays a `var()` so a
- * mode change needs no repaint; drawn-in paints (patterns) take the default
- * palette's value, since an image cannot hold a `var()`.
- */
-export function paintColors(metadata: { palettes?: Record<string, Record<string, string>>; defaultPalette?: string }): PaintColors {
-  const isVar = (v: unknown): v is { var: string; fallback?: string } => !!v && typeof v === 'object' && typeof (v as { var?: unknown }).var === 'string';
-  return {
-    css: (v) => (isVar(v) ? resolveCssColor(v.var, v.fallback) : typeof v === 'string' ? resolveCssColor(null, v) : '') || undefined,
-    literal: (v) => (isVar(v)
-      ? (resolvePalette(metadata)?.colors as Record<string, string> | undefined)?.[v.var] ?? resolveCssColor(null, v.fallback)
-      : typeof v === 'string' ? resolveCssColor(null, v) : '') || undefined,
-  };
-}
-
 /** How far a box moves, as CSS translate shares of its own size, so its anchor lands on x, y. */
 export function anchorShift(box: Box): [string, string] {
   const anchor = box.anchor ?? 'top-left';
   const x = /left/.test(anchor) ? '0%' : /right/.test(anchor) ? '-100%' : '-50%';
   const y = /^top/.test(anchor) ? '0%' : /^bottom/.test(anchor) ? '-100%' : '-50%';
   return [x, y];
-}
-
-/** A 2.0 scalar resolved for one language: its exception for that mode, else its value. */
-function forLanguage(value: unknown, lang: string): number | undefined {
-  if (typeof value === 'number') return value;
-  if (value && typeof value === 'object' && 'value' in value) {
-    const { value: base, modes } = value as { value: unknown; modes?: Record<string, unknown> };
-    const own = modes?.[lang];
-    return typeof own === 'number' ? own : typeof base === 'number' ? base : undefined;
-  }
-  return undefined;
-}
-
-/**
- * The CSS typography of a 2.0 text, for one language. Lengths are canvas units,
- * which the overlay paints 1:1 as px. Absent fields are absent: the caller
- * keeps its defaults.
- */
-export function typographyCss(layer: Layer | undefined, lang: string): Record<string, string> | undefined {
-  const text = layer?.text;
-  if (!text) return undefined;
-  const css: Record<string, string> = {};
-  const size = forLanguage(text.font?.size, lang);
-  if (size !== undefined) css.fontSize = `${+size.toFixed(4)}px`;
-  const maxWidth = forLanguage(text.maxWidth, lang);
-  if (maxWidth !== undefined) css.maxWidth = `${+maxWidth.toFixed(4)}px`;
-  if (text.font?.family) css.fontFamily = text.font.family;
-  if (text.font?.weight !== undefined) css.fontWeight = String(text.font.weight);
-  if (text.font?.italic) css.fontStyle = 'italic';
-  if (text.letterSpacing !== undefined) css.letterSpacing = `${text.letterSpacing}px`;
-  if (text.transform) css.textTransform = text.transform;
-  if (text.decoration) css.textDecoration = text.decoration;
-  return css;
 }
 
 /**

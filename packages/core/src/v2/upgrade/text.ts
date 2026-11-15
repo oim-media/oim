@@ -40,6 +40,8 @@ const TYPOGRAPHY_KEYS = [
 
 export function convertText(ctx: UpgradeContext, slot: V1Slot, layer: DraftLayer): void {
   const { raw, style } = slot;
+  // The editor's hierarchy buttons; no player read it, on any layer type.
+  ctx.retire(style, "textRole");
   const align = ctx.take(style, "textAlign") ?? ctx.take(raw, "align");
   ctx.take(raw, "align");
 

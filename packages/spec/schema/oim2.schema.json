@@ -1608,6 +1608,18 @@
                         "modes"
                       ],
                       "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "ref": {
+                          "$ref": "#/$defs/__schema28"
+                        }
+                      },
+                      "required": [
+                        "ref"
+                      ],
+                      "additionalProperties": false
                     }
                   ]
                 },

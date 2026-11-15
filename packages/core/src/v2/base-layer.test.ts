@@ -31,3 +31,11 @@ describe("hasBaseLayer", () => {
     expect(hasBaseLayer({ layers: [] })).toBe(false);
   });
 });
+
+describe("hasBaseLayer through a ref", () => {
+  it("reads a ref through the image resource it names", () => {
+    expect(hasBaseLayer({ resources: { r: { kind: "image", src: "oim:base" } }, layers: [image("a", { ref: "r" })] } as never)).toBe(true);
+    expect(hasBaseLayer({ resources: { r: { kind: "image", src: "https://x.test/a.png" } }, layers: [image("a", { ref: "r" })] } as never)).toBe(false);
+    expect(hasBaseLayer({ resources: { r: { kind: "color", value: "#000" } }, layers: [image("a", { ref: "r" })] } as never)).toBe(false);
+  });
+});

@@ -269,8 +269,13 @@ const corners = z.union([z.number().min(0), z.array(z.number().min(0)).length(4)
 export const imageSchema = z
   .object({
     // "oim:base" is the PNG of the file itself. A language can have its own
-    // picture; an empty one means that language shows none.
-    src: z.union([z.string().min(1), z.object({ value: z.string().min(1), modes: z.record(z.string(), z.string()) }).strict()]),
+    // picture; an empty one means that language shows none. A `{ ref }` names an
+    // image paint in `document.resources` (resolved by resolveRefs).
+    src: z.union([
+      z.string().min(1),
+      z.object({ value: z.string().min(1), modes: z.record(z.string(), z.string()) }).strict(),
+      z.object({ ref: id }).strict(),
+    ]),
     fit: fit.optional(),
     crop: crop.optional(),
     filters: imageFiltersSchema.optional(),

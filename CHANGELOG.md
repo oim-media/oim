@@ -3,6 +3,10 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.29.0
+
+- 2.0: `image.src` can reference a `resources` entry (`{ "ref": "res_x" }`), so a photo used by several layers travels once.
+
 ## 1.28.0
 
 - The player paints a 2.0 file (layers, no slots) with the same pixels as its 1.x original, and resolves `resources` refs.

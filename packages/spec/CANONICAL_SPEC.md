@@ -96,7 +96,7 @@ interface OimSlot {
 - `maxWidth`: Container percentage string (e.g. `"80cqw"`, `"none"`) or numeric value.
 - `fontSizes`: Map of size specific to each language `{ "es": "3.0cqw", "ja": "2.5cqw" }`.
 - `maxWidths`: Map of maximum width specific to each language `{ "en": "60cqw" }`.
-- `textRole`: Semantic hierarchy hint (`"auto" | "title" | "subtitle" | "body"`).
+- `textRole`: **retired** (2.0 upgrade). Editor-only hierarchy hint; no renderer reads it. Readers ignore it; new writers omit it.
 - **Text marks (1.11.0, `text_marks` capability):** `content` can wrap phrases in `{name}…{/name}`; literal braces are doubled (`{{`, `}}`). `style.marks` defines each mark with a closed set (`color`/`colorRole`, `bold`, `italic`, `underline`, `highlight{style, color, colorRole, paddingX, paddingY, borderRadius}`). Names `^[a-z][a-z0-9-]{0,23}$`, maximum 8 per layer, not nested. A single interpretation: `parseMarks`, `markStyle` (`@oim-media/core`). The backend does not sign malformed tags (`OIM_E_TEXT_MARKS_INVALID`).
 - `dropCap`: `{ enabled, lines: 2|3, fontFamily?, color?, marginRight? }`. Size is set with `dropCapStyle`; the rest of the text keeps its marks (`splitDropCap`).
 - `textHighlight`: **retired** (1.12.0). Kept read-only for published files; new writers use `marks`.
@@ -362,7 +362,7 @@ Top-level structure carried in the `OIM_Data` payload:
 ## 8. Retired Keys (Read-Only for Backward Compatibility)
 
 These keys remain declared with `deprecated: true` in `oim.schema.json` so already-published files continue to validate, but **no new writer may emit them**:
-- **In `style`:** `textTransform`, `verticalAlign`, `shader_fx`, `blendMode` (closed to 9 values), `grain`/`grainIntensity`/`grainSize`/`grainBlend` (replaced by `style.effects` texture), `textHighlight` (replaced by `style.marks`), `animation.custom_loop_css`/`custom_keyframes`/`custom_hover_css` (retired in 1.9.0).
+- **In `style`:** `textTransform`, `verticalAlign`, `shader_fx`, `blendMode` (closed to 9 values), `grain`/`grainIntensity`/`grainSize`/`grainBlend` (replaced by `style.effects` texture), `textHighlight` (replaced by `style.marks`), `textRole` (editor-only hint, retired), `animation.custom_loop_css`/`custom_keyframes`/`custom_hover_css` (retired in 1.9.0).
 - **At the root:** `reedicion` (renamed to `reedit` in 1.23.0; mapped by `normalizeLegacyKeys`), `grain` and `effects` (background grain is baked into the base image, 1.12.0), `elements` and `layers` (`slots` is the single canonical name, 1.12.0), `allowed_domains` (retired in 1.7.0), `redirect_membership_verified` and `terms_accepted` (retired in 1.1.0).
 - **In the slot:** `p`, `s`, `st`, `c`, `t` (short aliases retired in 1.12.0).
 

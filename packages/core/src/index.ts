@@ -35,6 +35,8 @@ export * from "./crop.js";
 export * from "./geoShapes.js";
 // path-data.ts: the one SVG path parser for mask outlines, shared by player and editor.
 export * from "./path-data.js";
+// mask-outline.ts: the silhouette a mask cuts with, drawn from the catalogue (contract 1.31.0).
+export * from "./mask-outline.js";
 // frame-silhouette.ts: the outline a photo frame crops to, shared by player and editor (1.19.0).
 export * from "./frame-silhouette.js";
 export * from "./parallaxCss.js";

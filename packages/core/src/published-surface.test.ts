@@ -190,6 +190,8 @@ const SUPERFICIE = [
   // path-data.ts — the one SVG path parser for mask outlines (contract 1.31.0).
   "normalizePathData",
   "transformPathData",
+  // mask-outline.ts — the silhouette a mask cuts with (contract 1.31.0).
+  "maskOutlinePath",
   // parallaxCss.ts — the parallax CSS and its endless track.
   "TRACK_CLASS",
   "LEGACY_TRACK_CLASS",

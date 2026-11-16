@@ -221,6 +221,7 @@ const SUPERFICIE = [
   "isMultiColorPattern",
   "resolvePatternColors",
   "getFillCss",
+  "maskFrameFillCss",
   "patternShapeMask",
   "shapeMaskCss",
   "svgSilhouetteMaskCss",

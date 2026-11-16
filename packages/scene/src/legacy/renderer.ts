@@ -370,7 +370,7 @@ function buildWindowMaskSvg(slot: any, artboard: { width: number; height: number
  * `userSpaceOnUse`: `objectBoundingBox` stretched the silhouette over the
  * clipped layer's box and ignored the mask's own geometry.
  */
-function buildLayerCompositionDefs(
+export function buildLayerCompositionDefs(
   slots: CompositionSlot[],
   artboard: { width: number; height: number }
 ): SVGSVGElement {

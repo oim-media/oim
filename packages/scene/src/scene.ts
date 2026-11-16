@@ -8,6 +8,7 @@ import { DYNAMIC_COLOR_ROLES, resolvePalette } from "@oim-media/core";
 import { geometryOutline, paintColors, palettesOf, type Box, type Layer, type OimDocument, type PaintColors } from "@oim-media/core/v2";
 import { applyBox, type Frame } from "./box.js";
 import { applyCorners } from "./blocks/corners.js";
+import { effectsToStyle } from "./blocks/effects.js";
 import { applyFills, pictureNode } from "./blocks/fills.js";
 import { applyGeometry } from "./blocks/geometry.js";
 import { pictureOf } from "./blocks/image.js";
@@ -78,6 +79,19 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   applyFills(root, document.canvas, { colors, isText: false });
   const lang = languageOf(document.languages, _options.language ?? (typeof navigator === "undefined" ? undefined : navigator.language));
 
+  /** The effects the scene paints (blur, shadow, glow, backdrop); grain, texture and duotone wait for their own painter (see coverage). */
+  const applyEffects = (el: HTMLElement, layer: Layer) => {
+    const style = effectsToStyle(layer.effects, {
+      isText: layer.type === "text",
+      grainable: false,
+      layerId: layer.id,
+      colorCss: (color) => colors.css(color),
+    });
+    el.style.filter = style.filter;
+    el.style.textShadow = style.textShadow;
+    el.style.backdropFilter = style.backdropFilter ?? "";
+  };
+
   /**
    * Paints the blocks of a layer. `only` limits the pass to the blocks that changed
    * (their field names); without it every block is painted. A figure depends on
@@ -87,6 +101,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     const has = (...keys: string[]) => !only || keys.some((k) => only.has(k));
     const isText = layer.type === "text";
     if (has("fills")) applyFills(el, layer, { colors, isText });
+    if (has("effects")) applyEffects(el, layer);
     if (layer.type === "text" && has("text")) applyText(el, layer, { lang, canvasWidth: width });
     const figure = has("fills", "geometry", "strokes");
     const outline = layer.type === "shape" ? (figure ? applyGeometry(el, layer, { colors }) : geometryOutline(layer.geometry)) : geometryOutline(undefined);

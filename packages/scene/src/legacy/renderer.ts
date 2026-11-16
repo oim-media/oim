@@ -19,7 +19,7 @@ import { ensureUpgrade } from './upgrade-entry.js';
 import { ensureFeatures } from './features-entry.js';
 import { featuresOf } from './features.js';
 import { geometryOutline } from '../../../core/src/v2/geometry-outline.js';
-import { v2LayersOf, anchorShift, paintColors, typographyCss, filterStyle, maskStyle, imageSrc, drawingSvg, drawingLink } from './v2-layers.js';
+import { v2LayersOf, anchorShift, paintColors, typographyCss, maskStyle, imageSrc, drawingSvg, drawingLink } from './v2-layers.js';
 import { paintCss, patternStyle } from '../../../core/src/v2/paint-css.js';
 import { sanitizeHtml, sanitizeFontFamily, isSandboxImageSrc } from './sanitize.js';
 import {
@@ -55,7 +55,7 @@ import { TEXTURE_CATALOG, type TexturePreset } from '../../../core/src/effects/i
 import { infiniteLayerPlan, TRACK_CLASS, LEGACY_TRACK_CLASS, ensureParallaxKeyframes, type InfiniteLayer } from '../../../core/src/parallaxCss.js';
 import { localizedEntries, isImageContent, compareLangs, resolveContent, isBackground } from './localizedEntries.js';
 import { a11yNodes, artworkLabel } from './a11y.js';
-import { shadowColorCss } from './shadow.js';
+import { effectsToStyle, filterStyle } from '../blocks/effects.js';
 import { cropCss } from '../../../core/src/crop.js';
 import { mountImageFill } from './image-fill.js';
 import { flipScale } from '../../../core/src/flip.js';
@@ -1851,32 +1851,18 @@ export class LegacyRenderer {
       };
       const addFilter = (part: string) => { slotEl.style.filter = (slotEl.style.filter ? slotEl.style.filter + ' ' : '') + part; };
       const addTextShadow = (part: string) => { slotEl.style.textShadow = slotEl.style.textShadow ? slotEl.style.textShadow + ', ' + part : part; };
-      const v2Effects = v2Own.effects;
-      {
-        // 2.0: the layer's effects, in their order. Glyph shadows on a text; on
-        // anything else (an artistic text is an SVG) they follow the silhouette.
-        for (const fx of v2Effects ?? []) {
-          if (fx.kind === 'blur') addFilter('blur(' + fx.radius + 'px)');
-          else if (fx.kind === 'glow') {
-            const c = v2Colors.css(fx.color) || '#f59e0b';
-            const r = fx.radius;
-            if (slotType === 'text') addTextShadow('0px 0px ' + (r * 0.4) + 'px ' + c + ', 0px 0px ' + r + 'px ' + c);
-            else addFilter('drop-shadow(0px 0px ' + (r * 0.4) + 'px ' + c + ') drop-shadow(0px 0px ' + r + 'px ' + c + ')');
-          } else if (fx.kind === 'shadow') {
-            const bound = fx.color && typeof fx.color === 'object' ? fx.color as { var: string; fallback?: string } : undefined;
-            const c = fx.opacity !== undefined
-              ? shadowColorCss({ shadowColor: bound ? bound.fallback : fx.color as string, shadowOpacity: fx.opacity * 100, shadowColorRole: bound?.var })
-              : v2Colors.css(fx.color ?? '#000000') || '#000000';
-            const part = (fx.x || 0) + 'px ' + (fx.y || 0) + 'px ' + (fx.blur || 0) + 'px ' + c;
-            if (slotType === 'text') addTextShadow(part);
-            else addFilter('drop-shadow(' + part + ')');
-          } else if (fx.kind === 'grain') {
-            if (!(GRAIN_LAYER_TYPES as readonly string[]).includes(slotType)) continue;
-            const grainId = 'oim-grain-' + String(slot.id).replace(/[^A-Za-z0-9_-]/g, '_');
-            self._defineLayerGrain(grainId, fx as never);
-            addFilter('url(#' + grainId + ')');
-          } else if (fx.kind === 'texture') applyTexture({ ...fx, color: fx.color === undefined ? undefined : v2Literal(fx.color) });
-        }
+      // 2.0: the layer's effects, in their order (the shared effectsToStyle): glyph shadows on a text, the silhouette's otherwise.
+      const fxStyle = effectsToStyle(v2Own.effects, {
+        isText: slotType === 'text',
+        grainable: (GRAIN_LAYER_TYPES as readonly string[]).includes(slotType),
+        layerId: String(slot.id),
+        colorCss: (color) => v2Colors.css(color),
+      });
+      if (fxStyle.filter) addFilter(fxStyle.filter);
+      if (fxStyle.textShadow) addTextShadow(fxStyle.textShadow);
+      for (const def of fxStyle.defs) {
+        if (def.kind === 'grain') self._defineLayerGrain(def.id, def.effect as never);
+        else if (def.kind === 'texture') applyTexture({ ...def.effect, color: def.effect.color === undefined ? undefined : v2Literal(def.effect.color) });
       }
 
       // Editor opacity is 0-100; store the resolved 0-1 value so the fade-in
@@ -1894,11 +1880,8 @@ export class LegacyRenderer {
       }
 
       if (slotType === 'filter') {
-        const backdrop = v2Own.effects?.find((fx) => fx.kind === 'backdrop') as Record<string, unknown> | undefined;
-        const filterCss = mediaFilterCss(filterStyle(backdrop));
-        const filterValue = backdrop?.preset === 'duotone'
-          ? 'url(#' + getDuotoneFilterId(slot) + ')'
-          : filterCss;
+        const duotone = fxStyle.defs.some((def) => def.kind === 'duotone');
+        const filterValue = duotone ? 'url(#' + getDuotoneFilterId(slot) + ')' : fxStyle.backdropFilter;
         if (filterValue) {
           slotEl.style.backdropFilter = filterValue;
           (slotEl.style as any).webkitBackdropFilter = filterValue;

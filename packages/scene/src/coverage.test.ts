@@ -22,12 +22,22 @@ describe("unsupportedUse", () => {
 
   it("reports each out-of-scope block once, sorted", () => {
     const layers = [
-      rect({ effects: [{ kind: "blur", radius: 2 }] }),
+      rect({ effects: [{ kind: "grain", intensity: 20 }] }),
       rect({ id: "b", animations: [{ on: "load", preset: "fade", duration: 1 }] }),
       rect({ id: "c", fills: [{ kind: "pattern", pattern: { preset: "dots" } }] as Layer["fills"] }),
       { id: "t", type: "text", box: { x: 0, y: 0 }, text: { content: { es: "x" }, runs: [] } } as unknown as Layer,
     ];
-    expect(unsupportedUse(doc(layers))).toEqual(["animations", "effects", "paint:pattern", "text:runs"]);
+    expect(unsupportedUse(doc(layers))).toEqual(["animations", "effect:grain", "paint:pattern", "text:runs"]);
+  });
+
+  it("the effects scene paints (blur, shadow, glow, backdrop) are not out of scope", () => {
+    const effects = [{ kind: "blur", radius: 2 }, { kind: "shadow", blur: 4 }, { kind: "glow", radius: 6 }, { kind: "backdrop", blur: 8 }] as Layer["effects"];
+    expect(unsupportedUse(doc([rect({ effects })]))).toEqual([]);
+  });
+
+  it("a duotone backdrop, a texture, a colour grade and an image filter are not painted yet", () => {
+    const effects = [{ kind: "backdrop", preset: "duotone" }, { kind: "texture", preset: "paper" }, { kind: "color-grade", preset: "warm" }, { kind: "filter", blur: 1 }] as Layer["effects"];
+    expect(unsupportedUse(doc([rect({ effects })]))).toEqual(["effect:color-grade", "effect:duotone", "effect:filter", "effect:texture"]);
   });
 
   it("a layer's own opacity, its blend mode, and a picture on a figure are not painted yet", () => {

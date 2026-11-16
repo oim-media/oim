@@ -5,15 +5,20 @@
  */
 
 // What scene does not paint yet. Stage 6b.1 covers the static blocks; 6b.2 adds
-// effects, masks, animation and time, modes, Lottie, artistic text, patterns,
-// generative fills and textures. A vector that uses one of these is skipped by
+// the effects that need an SVG or an overlay (grain, texture, duotone), masks,
+// animation and time, modes, Lottie, artistic text, patterns, generative fills
+// and textures. A vector that uses one of these is skipped by
 // the visual gate, never failed, and the renderer ignores the block (with one
 // development warning per block type).
-import type { Layer, OimDocument, Paint } from "@oim-media/core/v2";
+import type { Effect, Layer, OimDocument, Paint } from "@oim-media/core/v2";
 
 export const UNSUPPORTED_BLOCKS = [
   "animations",
-  "effects",
+  "effect:color-grade",
+  "effect:duotone",
+  "effect:filter",
+  "effect:grain",
+  "effect:texture",
   "figure:image",
   "interactions",
   "lottie",
@@ -43,10 +48,16 @@ const paintUses = (paints: readonly Paint[] | undefined): UnsupportedBlock[] =>
     return paint.kind === "image" && paint.filters ? ["image:filters"] : [];
   });
 
+/** The effects scene paints are blur, shadow, glow and backdrop; a duotone is a backdrop's preset. */
+const effectUses = (fx: Effect): UnsupportedBlock[] => {
+  if (fx.kind === "color-grade" || fx.kind === "filter" || fx.kind === "grain" || fx.kind === "texture") return [`effect:${fx.kind}`];
+  return fx.kind === "backdrop" && fx.preset === "duotone" ? ["effect:duotone"] : [];
+};
+
 const layerUses = (layer: Layer): UnsupportedBlock[] => {
   const uses: UnsupportedBlock[] = [...paintUses(layer.fills), ...(layer.strokes ?? []).flatMap((s) => paintUses([s.paint as Paint]))];
   if (layer.type === "lottie") uses.push("lottie");
-  if (layer.effects?.length) uses.push("effects");
+  for (const fx of layer.effects ?? []) uses.push(...effectUses(fx));
   if (layer.animations?.length) uses.push("animations");
   if (layer.motion) uses.push("motion");
   if (layer.mask) uses.push("mask");

@@ -73,14 +73,12 @@ void main() {
     final top = para.localToGlobal(Offset.zero).dy;
     expect(top + para.size.height / 2, closeTo(80, 1));
     expect(para.size.height, lessThan(160));
-    // Web: `.oim-slot` has `padding: 0 0.25em 0 0` (content-box) and is centred on its
-    // position, so the text area sits 0.125em left of the box centre: 200 - 0.125 * 40.
-    expect(para.localToGlobal(Offset.zero).dx + para.size.width / 2, closeTo(195, 1));
+    // Web: the 0.25em italic room is shifted back out of the box, so the text centres on the box itself.
+    expect(para.localToGlobal(Offset.zero).dx + para.size.width / 2, closeTo(200, 1));
   });
 
-  // Web: the slot is translated by -100% (right), -50% (centre) or 0% (left) of its padded box,
-  // so the 0.25em right padding moves the text by all, half or none of it.
-  for (final (align, right) in [('left', null), ('right', 390.0)]) {
+  // Web: the 0.25em italic room no longer moves the text: a right-aligned text ends on its box's edge.
+  for (final (align, right) in [('left', null), ('right', 400.0)]) {
     testWidgets('slot padding shift follows align $align', (t) async {
       final meta = {
         'canvas': {'natural_width': 800, 'natural_height': 600},

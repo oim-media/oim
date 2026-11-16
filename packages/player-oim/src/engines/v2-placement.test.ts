@@ -26,9 +26,11 @@ async function place(slot: object) {
 }
 
 describe("a sized layer is pinned by its alignment inside the 2.0 box", () => {
-  it("centred: at the box's centre, moved back half its own width", async () => {
+  // The 0.25em italic room on a text's right is not in the box the editor measured: a centred text is
+  // shifted back by half of it, or it drifted left of its box ("E-Commerce" touched the icon, 16 Nov 2026).
+  it("centred: at the box's centre plus half the italic room, moved back half its own width", async () => {
     const el = await place({ position: [10, 33.3333], align: "center", width_px: 640, height_px: 120, style: { width: "80cqw", height: "15cqw" } });
-    expect(parseFloat(el.style.left)).toBeCloseTo(400.00, 1);
+    expect(el.style.left.replace(/\s/g, "")).toBe("calc(400px+0.125em)");
     expect(parseFloat(el.style.top)).toBeCloseTo(260.00, 1);
     expect(el.style.getPropertyValue("--oim-tx")).toBe("-50%");
   });

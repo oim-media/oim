@@ -780,10 +780,9 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
       shadows: [if (shadowOf(style, unit: _unit) != null) shadowOf(style, unit: _unit)!, ...textEffectShadows(style, activePalette, unit: _unit)],
     );
     final marks = style['marks'] is Map ? (style['marks'] as Map).cast<String, dynamic>() : const <String, dynamic>{};
-    // Web: `.oim-slot` has `padding: 0 0.25em 0 0` (content-box) and is
-    // translated by 0% (left), -50% (centre) or -100% (right) of that padded box: the text moves
-    // left by none, half or all of the 0.25em.
-    final shift = switch (style['textAlign'] ?? slot['align']) { 'left' => 0.0, 'right' => 0.25, _ => 0.125 };
+    // Web: `.oim-slot` keeps 0.25em of italic room on its right, and the web player shifts the slot
+    // back by its share of that room, so the text sits on its box whatever the alignment.
+    const shift = 0.0;
     Widget slotPadding(Widget child) => Transform.translate(offset: Offset(-shift * (textStyle.fontSize ?? 0), 0), child: child);
     final animType = style['textAnimationType'];
     if (isTextAnimation(animType) && !widget.disableAnimations) {

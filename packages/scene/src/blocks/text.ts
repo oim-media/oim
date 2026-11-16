@@ -30,7 +30,8 @@ export function applyText(el: HTMLElement, layer: Pick<Layer, "text">, ctx: Text
   style.overflowWrap = "break-word";
   style.wordBreak = "break-word";
   style.padding = "0 0.25em 0 0";
-  style.boxSizing = "border-box";
+  // The italic room sits outside the box, as the player shifts it back: the lines centre on the box itself.
+  style.boxSizing = "content-box";
   style.textAlign = text?.align ?? "left";
   // A column whose lines sit in the middle of the box, across it by the alignment, as the player lays them out.
   style.display = "flex";

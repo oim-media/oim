@@ -61,8 +61,8 @@ describe("applyText", () => {
     expect(el.style.maxWidth).toBe("80%");
   });
 
-  it("the box includes the text's right padding, so its lines are centred inside the box as the player centres them", () => {
-    expect(paint(textLayer({})).style.boxSizing).toBe("border-box");
+  it("the italic room on the right sits outside the box, so its lines centre on the box itself as the player does", () => {
+    expect(paint(textLayer({})).style.boxSizing).toBe("content-box");
   });
 
   it("a text sits in the middle of its box's height, and its alignment places the lines across the width", () => {

@@ -84,6 +84,8 @@ function arcToCubics(
 
 /** Normalizes M L H V C Q S T A Z (absolute and relative) to absolute M L C Z. null when malformed. */
 export function normalizePathData(d: string): PathOp[] | null {
+  // SVG requires the first command to be a moveto; "" and "L10 10" are not paths.
+  if (!/^\s*[Mm]/.test(d)) return null;
   const ops: PathOp[] = [];
   let i = 0;
   let cmd = "";

@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { typographyCss } from './v2-layers';
+import { maskStyle, paintColors, typographyCss } from './v2-layers';
 
 const text = (t: object) => ({ id: 't', type: 'text', box: { x: 0, y: 0 }, text: { content: { es: 'x' }, ...t } }) as never;
 
@@ -61,5 +61,17 @@ describe('imageSrc', () => {
   it("returns '' for an unresolved ref object instead of crashing", async () => {
     const { imageSrc } = await import('./v2-layers');
     expect(imageSrc({ ref: 'res_1' } as never, 'es')).toBe('');
+  });
+});
+
+describe('maskStyle', () => {
+  const window = (fills: unknown[]) => ({ id: 'm', type: 'shape', box: { x: 0, y: 0, width: 100, height: 50 }, geometry: { kind: 'preset', name: 'window' }, mask: { mode: 'window' }, fills }) as never;
+
+  it("writes a window mask's gradient fill back as 1.x fillType and fillGradient", () => {
+    const gradient = { kind: 'gradient', gradient: { type: 'linear', angle: 90, stops: [{ color: '#000' }, { color: '#fff' }] } };
+    const style = maskStyle(window([gradient]), paintColors({}));
+    expect(style.fillType).toBe('gradient');
+    expect(style.fillGradient).toBe('linear-gradient(90deg, #000, #fff)');
+    expect(style.maskBgColor).toBeUndefined();
   });
 });

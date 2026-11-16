@@ -703,7 +703,7 @@ export class LegacyRenderer {
     slots.forEach(function (s: any) {
       const v2Mask = s && s.type === 'mask' ? v2Masks.get(String(s.id)) : undefined;
       if (v2Mask) {
-        s.style = { ...s.style, ...maskStyle(v2Mask) };
+        s.style = { ...s.style, ...maskStyle(v2Mask, paintColors(self.metadata)) };
         // Its place on the canvas too: the mask helpers take x, y, width and height
         // in canvas units before the 1.x position and size.
         const { x, y, width, height } = v2Mask.box;

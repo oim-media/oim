@@ -689,14 +689,15 @@ export class LegacyRenderer {
     const self = this;
     const slots = this.metadata.slots || this.metadata.elements || [];
     // The CDN player fetches `upgrade` apart, the first time a file needs it.
-    // So do the optional parts, each only when this document uses it.
-    const parts: Promise<void>[] = [ensureUpgrade(), ensureFeatures(featuresOf(this.metadata))];
-    for (const result of await Promise.allSettled(parts)) {
-      if (result.status === 'fulfilled') continue;
-      const message = String((result.reason as Error)?.message ?? result.reason);
+    // So do the optional parts, each only when this document uses it. They are read
+    // from the 2.0 layers too, which live apart from the view (v2LayersOf), so after `upgrade`.
+    const report = (err: unknown) => {
+      const message = String((err as Error)?.message ?? err);
       console.error('[OimPlayer] A part of the player did not load; the work is shown without it.', message);
       this.host.dispatchEvent(new CustomEvent('oim:error', { detail: { code: 'chunk', message } }));
-    }
+    };
+    await ensureUpgrade().catch(report);
+    await ensureFeatures(featuresOf([this.metadata, Array.from(v2LayersOf(this.metadata).values())])).catch(report);
     // A 2.0 mask is read by the same helpers as 1.x: its fields are written back once here.
     const v2Masks = v2LayersOf(self.metadata);
     slots.forEach(function (s: any) {

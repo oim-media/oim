@@ -1767,7 +1767,19 @@
         "hexagon",
         "heart",
         "blob",
-        "custom"
+        "custom",
+        "pill",
+        "octagon",
+        "pentagon",
+        "cross",
+        "moon",
+        "cloud",
+        "drop",
+        "bolt",
+        "bubble",
+        "flower",
+        "burst",
+        "arch"
       ]
     },
     "__schema79": {

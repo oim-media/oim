@@ -4,6 +4,10 @@
 contract version. The full history, for all packages, is in the repository's
 [CHANGELOG.md](https://github.com/oim-media/oim/blob/main/CHANGELOG.md).
 
+## 1.30.0
+
+- Version aligned with the 1.30.0 release; no Dart change (the new `OIM_Seal` chunk is ignored).
+
 ## 1.29.1
 
 - Version aligned with the 1.29.1 release; no Dart change.

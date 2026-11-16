@@ -91,7 +91,8 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
   bool _showLayers = true;
   bool _allowLottie = true;
   bool _playMotion = true;
-  bool _inspectorOpen = true;
+  // Open beside the work on wide screens; on a phone it would cover it.
+  late bool _inspectorOpen = MediaQuery.sizeOf(context).width >= 720;
   String? _error;
   final _library = LibraryClient();
 
@@ -220,7 +221,7 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
                       radius: 0.9,
                       colors: [_bgCenter, _bg]),
                 ),
-                child: Column(
+                child: SafeArea(child: Column(
                   children: [
                     _TopBar(
                       fileName: _fileName,
@@ -313,7 +314,7 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
                       ),
                     ),
                   ],
-                ),
+                )),
               ),
             )));
   }

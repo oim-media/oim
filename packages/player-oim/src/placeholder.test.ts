@@ -23,7 +23,7 @@ vi.mock('./engines/ImageEngine.js', () => ({
   },
 }));
 vi.mock('./render/file-cache.js', () => ({
-  fileCache: { sniff: () => Promise.resolve(null) },
+  fileCache: { sniff: () => Promise.resolve(null), readPoster: () => Promise.resolve(null) },
 }));
 
 await import('./index');

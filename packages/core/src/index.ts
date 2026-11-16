@@ -33,6 +33,8 @@ export * from "./crop.js";
 // oversizing. None of them imports anything, so moving them was trivial; what was
 // costly was the machinery that existed to keep the two copies equal.
 export * from "./geoShapes.js";
+// path-data.ts: the one SVG path parser for mask outlines, shared by player and editor.
+export * from "./path-data.js";
 // frame-silhouette.ts: the outline a photo frame crops to, shared by player and editor (1.19.0).
 export * from "./frame-silhouette.js";
 export * from "./parallaxCss.js";

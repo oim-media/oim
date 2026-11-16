@@ -1707,6 +1707,10 @@ export class LegacyRenderer {
           transformX = duplicatedForInfinite || textAlign === 'left' ? '0%' : textAlign === 'right' ? '-100%' : '-50%';
           const share = transformX === '0%' ? 0 : transformX === '-100%' ? 1 : 0.5;
           slotEl.style.left = (box.x + box.width * share).toFixed(2) + 'px';
+          // The 0.25em italic room on a text's right is not in a 2.0 box: shift it back by its share.
+          if (share > 0 && paintsText && (self.metadata as { fromDocument?: boolean }).fromDocument) {
+            slotEl.style.left = `calc(${slotEl.style.left} + ${0.25 * share}em)`;
+          }
           slotEl.style.top = (box.y + box.height / 2).toFixed(2) + 'px';
         } else {
           [transformX, transformY] = anchorShift(box);

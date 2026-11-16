@@ -30,6 +30,7 @@ const exported = {
       fills: [{ kind: "color", value: "#FFFFFF" }],
       geometry: { kind: "paths", viewBox: [0, 0, 24, 24], paths: [{ d: scissors, fill: "currentColor" }] },
     },
+    { id: "title", type: "text", box: { x: 52, y: 10, width: 162, height: 39 }, text: { content: "E-Commerce", align: "center" } },
   ],
 };
 
@@ -56,5 +57,13 @@ describe("a file exported as 2.0", () => {
     const slot = overlay.querySelector('[data-slot-id="scissors"]') as HTMLElement;
     expect(slot.querySelector("svg path")).not.toBeNull();
     expect(["", "transparent", "rgba(0, 0, 0, 0)"]).toContain(slot.style.backgroundColor);
+  });
+
+  // The editor measures a text without the 0.25em italic room the player adds on its right, so a
+  // centred text drifted 0.125em to the left of its box: «E-Commerce» touched the icon tile.
+  it("keeps a centred text centred on its box despite the italic room on its right", async () => {
+    const overlay = await render();
+    const slot = overlay.querySelector('[data-slot-id="title"]') as HTMLElement;
+    expect(slot.style.left.replace(/\s/g, "")).toBe("calc(133px+0.125em)");
   });
 });

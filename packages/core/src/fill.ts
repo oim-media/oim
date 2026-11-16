@@ -171,7 +171,8 @@ export type MaskFrameFillStyle = Pick<Shape,
 /**
  * The CSS of a window frame. A frame without `fillType` is the 1.x colour
  * `maskBgColor`; with one, it takes the shape fill model through `getFillCss`.
- * Patterns and generative fills are not frame fills.
+ * Patterns and generative fills are not frame fills. For `image` this returns only the
+ * colour underneath: the renderers paint the photo over it, as they do for shapes.
  */
 export function maskFrameFillCss(style: MaskFrameFillStyle): CSSProperties {
   if (!style.fillType) {

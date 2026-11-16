@@ -21,4 +21,14 @@ describe("maskFrameFillCss", () => {
     const css = maskFrameFillCss({ fillType: "color", fillColorRole: "primary", fillColor: "#123456" });
     expect(css.backgroundColor).toBe("var(--oim-color-primary, var(--oim-palette-primary, #123456))");
   });
+
+  it("fillType image paints its colour underneath; the photo is painted by the renderers", () => {
+    const css = maskFrameFillCss({ fillType: "image", fillColor: "#d4d4d8", fillImage: "data:image/png;base64,aGVsbG8=" });
+    expect(css).toEqual({ backgroundColor: "#d4d4d8" });
+  });
+
+  it("the legacy maskBgColorRole resolves through the palette, with maskBgColor as fallback", () => {
+    const css = maskFrameFillCss({ maskBgColorRole: "primary", maskBgColor: "#123456" });
+    expect(css.backgroundColor).toBe("var(--oim-color-primary, var(--oim-palette-primary, #123456))");
+  });
 });

@@ -25,6 +25,11 @@ describe("clampRadius", () => {
   it("keeps a radius that already fits", () => {
     expect(clampRadius(10, 142, 120)).toBe(10);
   });
+
+  it("clamps by the narrow side when the box is taller than wide", () => {
+    expect(clampRadius(50, 20, 100)).toBe(10);
+    expect(filterClipPath({ borderRadiusTopLeft: 50 }, { x: 0, y: 0, width: 20, height: 100 })).toMatch(/^M10 0 /);
+  });
 });
 
 describe("filterClipPath", () => {

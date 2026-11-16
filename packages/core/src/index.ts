@@ -37,6 +37,8 @@ export * from "./geoShapes.js";
 export * from "./path-data.js";
 // mask-outline.ts: the silhouette a mask cuts with, drawn from the catalogue (contract 1.31.0).
 export * from "./mask-outline.js";
+// filter-shape.ts: the clip of a filter layer, shared by editor, player and export (1.31.0).
+export * from "./filter-shape.js";
 // frame-silhouette.ts: the outline a photo frame crops to, shared by player and editor (1.19.0).
 export * from "./frame-silhouette.js";
 export * from "./parallaxCss.js";

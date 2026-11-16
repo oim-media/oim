@@ -135,3 +135,52 @@ describe("mount", () => {
     expect(scene.elementOf("a")).toBeNull();
   });
 });
+
+describe("layer effects", () => {
+  const onShape = (effects: NonNullable<Layer["effects"]>, extra: Partial<Layer> = {}) =>
+    mount(document.createElement("div"), doc([shape({ effects, ...extra })])).elementOf("a")!;
+  const onText = (effects: NonNullable<Layer["effects"]>) =>
+    mount(document.createElement("div"), doc([{ id: "t", type: "text", box: { x: 0, y: 0, width: 400, height: 100 }, text: { content: { es: "Hola" } }, effects } as Layer])).elementOf("t")!;
+
+  it("a blur is the element's CSS filter, at its radius", () => {
+    expect(onShape([{ kind: "blur", radius: 4 }]).style.filter).toBe("blur(4px)");
+  });
+
+  it("a shadow on a shape follows its silhouette: a drop-shadow, with the opacity in the colour", () => {
+    const el = onShape([{ kind: "shadow", x: 10, y: 20, blur: 5, color: "#000000", opacity: 0.5 }]);
+    expect(el.style.filter).toBe("drop-shadow(10px 20px 5px rgba(0, 0, 0, 0.5))");
+    expect(el.style.textShadow).toBe("");
+  });
+
+  it("a shadow on a text follows its glyphs: a text-shadow, not a filter", () => {
+    const el = onText([{ kind: "shadow", x: 2, y: 3, blur: 4, color: "#000000", opacity: 0.25 }]);
+    expect(el.style.textShadow).toBe("2px 3px 4px rgba(0, 0, 0, 0.25)");
+    expect(el.style.filter).toBe("");
+  });
+
+  it("a glow on a text is two text-shadows at 0.4 and 1 of its radius", () => {
+    expect(onText([{ kind: "glow", radius: 10, color: "#f00" }]).style.textShadow).toBe("0px 0px 4px #f00, 0px 0px 10px #f00");
+  });
+
+  it("a glow on a shape is two drop-shadows at 0.4 and 1 of its radius", () => {
+    expect(onShape([{ kind: "glow", radius: 10, color: "#f00" }]).style.filter).toBe("drop-shadow(0px 0px 4px #f00) drop-shadow(0px 0px 10px #f00)");
+  });
+
+  it("a backdrop blur filters what is behind the layer: the backdrop-filter", () => {
+    const el = onShape([{ kind: "backdrop", blur: 8 }]);
+    expect(el.style.backdropFilter).toBe("blur(8px)");
+    expect(el.style.filter).toBe("");
+  });
+
+  it("effects keep their order in the filter", () => {
+    expect(onShape([{ kind: "blur", radius: 2 }, { kind: "shadow", y: 4, blur: 6, color: "#000000" }]).style.filter)
+      .toBe("blur(2px) drop-shadow(0px 4px 6px #000000)");
+  });
+
+  it("an update without effects clears the filter the earlier effects set", () => {
+    const scene = mount(document.createElement("div"), doc([shape({ effects: [{ kind: "blur", radius: 4 }] })]));
+    expect(scene.elementOf("a")!.style.filter).toBe("blur(4px)");
+    scene.update("a", { effects: [] });
+    expect(scene.elementOf("a")!.style.filter).toBe("");
+  });
+});

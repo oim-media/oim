@@ -21,6 +21,8 @@ export type LegacyMetadata = {
   fonts?: OimDocument['fonts'];
   palettes?: Record<string, Record<string, string>>;
   defaultPalette?: string;
+  /** The canvas paint, painted behind the layers: 1.x had none, its PNG was the background. */
+  canvasFills?: OimDocument['canvas']['fills'];
 };
 
 /** A 2.0 size or width as 1.x wrote it: the value in px, and the px of each language that has its own. */
@@ -67,6 +69,7 @@ export function legacyView(document: OimDocument): LegacyMetadata {
     slots,
   };
   // The embedded fonts are the file's own; the palettes are the variables, one mode per palette name.
+  if (document.canvas.fills?.length) view.canvasFills = document.canvas.fills;
   if (document.fonts) view.fonts = document.fonts;
   const palettes = palettesOf(document.variables);
   if (palettes) view.palettes = palettes;

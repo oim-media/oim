@@ -774,6 +774,12 @@ export class LegacyRenderer {
     const v2Layers = v2LayersOf(self.metadata);
     const v2Colors = paintColors(self.metadata);
     // What an SVG attribute can hold: the literal 1.x painted (a role's fallback first).
+    // A 2.0 canvas paints its own background; on a poster-first file the base picture fades away.
+    const canvasFill = (self.metadata as { canvasFills?: unknown[] }).canvasFills?.[0];
+    if (canvasFill && self._overlay && !onlyIds) {
+      const css = paintCss(canvasFill as never, { colors: v2Colors, width: self.metadata.canvas_width, height: self.metadata.canvas_height });
+      for (const [prop, value] of Object.entries(css)) (self._overlay.style as any)[prop] = value;
+    }
     const v2Literal = (v: unknown) => (v && typeof v === 'object' && typeof (v as any).fallback === 'string' ? v2Colors.literal((v as any).fallback) : v2Colors.literal(v));
 
     const slotPromises = slots.map(async (slot: any) => {
@@ -1512,7 +1518,9 @@ export class LegacyRenderer {
       const underFill = v2Own.fills?.[1] as any;
       const underColor = fillKind === 'image' && underFill?.kind === 'color' ? v2Colors.css(underFill.value) : undefined;
       const resolvedBgColor = fillKind === 'color' ? v2Colors.css(v2Fill.value) : imageSrcSafe ? undefined : underColor;
-      if (resolvedBgColor && isGeoLike && !isWindowMask && slotType !== 'text' && !isArtisticText && !hasComplexFill) {
+      // A drawing's fill paints its paths (drawingLink), never the box behind them.
+      const isDrawing = v2Own?.type === 'shape' && v2Own.geometry?.kind === 'paths';
+      if (resolvedBgColor && isGeoLike && !isWindowMask && slotType !== 'text' && !isArtisticText && !hasComplexFill && !isDrawing) {
         slotEl.style.setProperty('background-color', resolvedBgColor);
       }
       // A window-mode mask has no box border: its outline is

@@ -46,12 +46,17 @@ function imageSource(slot: V1Slot, value: string): string | { value: string; mod
   return Object.keys(modes).length > 0 ? { value, modes } : value;
 }
 
-function pathsFromLayers(ctx: UpgradeContext, layers: unknown[], viewBox: number[]): Geometry | undefined {
+function pathsFromLayers(ctx: UpgradeContext, layers: unknown[], viewBox: number[], original: PathEntry[] = []): Geometry | undefined {
   const paths: PathEntry[] = [];
   for (const item of layers) {
     const part = asObject(item);
     if (!part || typeof part.d !== "string" || !part.d) continue;
     const entry: PathEntry = { d: part.d };
+    // The editor's layers keep only what was set on each path; paint inherited from <svg> lives in the original.
+    if (part.fill === undefined && part.stroke === undefined) {
+      const { d: _, ...inherited } = original.find((path) => path.d === part.d) ?? { d: "" };
+      Object.assign(entry, inherited);
+    }
     if (typeof part.fill === "string" && part.fill !== "none") entry.fill = part.fill;
     if (typeof part.stroke === "string" && part.stroke !== "none") {
       entry.stroke = part.stroke;
@@ -76,13 +81,19 @@ function shapeGeometry(ctx: UpgradeContext, slot: V1Slot, media: string | undefi
   const rawXml = ctx.take(style, "svgRawXml");
   const layers = ctx.take(style, "svgLayers");
 
-  // The decomposed layers carry the colours the author edited; the raw XML is the original.
-  if (Array.isArray(layers) && layers.length > 0) {
-    const fromLayers = pathsFromLayers(ctx, layers, viewBox);
-    if (fromLayers) return fromLayers;
-  }
   // 1.x painted the content of a markup layer; svgRawXml is the untouched original it was edited from.
   const content = drawsMarkup(slot) && typeof media === "string" && /<svg/i.test(media) ? media : undefined;
+  // The editor writes every colour, its per-layer ones included, into that content.
+  if (content) {
+    const parsed = svgToPaths(content);
+    if (parsed.ok) return { kind: "paths", ...parsed.value };
+  }
+  // Without content, the decomposed layers carry the colours the author edited; the raw XML is the original.
+  if (Array.isArray(layers) && layers.length > 0) {
+    const original = typeof rawXml === "string" && rawXml ? svgToPaths(rawXml) : undefined;
+    const fromLayers = pathsFromLayers(ctx, layers, viewBox, original?.ok ? original.value.paths : []);
+    if (fromLayers) return fromLayers;
+  }
   const xml = content ?? (typeof rawXml === "string" && rawXml ? rawXml : drawsMarkup(slot) ? media : undefined);
   if (xml) {
     const parsed = svgToPaths(xml);

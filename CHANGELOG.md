@@ -3,6 +3,12 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.30.0
+
+- New `OIM_Seal` chunk: the image hash signed on its own, written after the image and before the metadata, so a player can verify and paint the poster from a partial read. Readers that do not know it ignore it.
+- Players read a URL up to the seal; `poster="only"` never downloads the metadata, and the rest of the file comes with `Range`.
+- The core stream metadata reader no longer stops at IDAT (the metadata now follows the image).
+
 ## 1.29.1
 
 - The 1.x to 2.0 upgrade retires the editor-only `textRole` field (no player read it). No format change.

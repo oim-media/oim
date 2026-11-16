@@ -48,6 +48,20 @@ OIM metadata is preferably stored in an ancillary text chunk:
   - **BEFORE** or **AFTER** the image `IDAT` chunks.
   - **ALWAYS BEFORE** the closing `IEND` chunk.
 
+  Writers since 1.30.0 put it **after** the last `IDAT`, so the image arrives first.
+
+### 2.3. Poster seal (`OIM_Seal`, since 1.30.0)
+
+A `tEXt` chunk with keyword `OIM_Seal`, written after the last `IDAT` and before the metadata chunk. Its value is JSON:
+
+```json
+{"v":1,"alg":"sha256-idat","image_hash":"<hex SHA-256 of the concatenated IDAT payloads>","key_version":"v2","signature":"<base64 raw P-256 r||s>"}
+```
+
+- **Signed bytes:** `JSON.stringify` of `{alg, image_hash, key_version, v}` with keys in that (sorted) order; ECDSA P-256 / SHA-256 with the key named by `key_version`. Its signed fields differ from the metadata's, so neither signature passes as the other.
+- **Use:** a reader may stop after this chunk, verify `image_hash` against the `IDAT` it read and the signature, and show the image as a poster without reading the metadata. The same key-expiry rules apply.
+- **Optional:** readers that do not know it ignore it; a file without it is read whole, as before.
+
 > **Critical note on injection:** The metadata chunk must be inserted **surgically at byte level** into the PNG binary stream, without re-rendering or re-encoding the `IDAT` blocks, preserving the exact cryptographic hash of the canvas.
 
 ---

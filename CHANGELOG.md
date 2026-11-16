@@ -3,6 +3,11 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.30.1
+
+- No format change. The CDN player fetches generative fills and pattern tiles from `vendor/` only when a document uses them (61.4 to 53.1 KB gzip).
+- A part of the player that fails to load emits `oim:error` with `code: "chunk"` and its URL; the rest of the work is still drawn.
+
 ## 1.30.0
 
 - New `OIM_Seal` chunk: the image hash signed on its own, written after the image and before the metadata, so a player can verify and paint the poster from a partial read. Readers that do not know it ignore it.

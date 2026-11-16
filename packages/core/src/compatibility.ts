@@ -43,7 +43,8 @@
  * the format can change without the player being touched. Tying both numbers
  * together would make an internal fix look like a format break.
  */
-export const CONTRACT_VERSION = "1.30.0";
+export const CONTRACT_VERSION = "1.30.1";
+// 1.30.1: no format change; the CDN player loads generative fills and pattern tiles on demand.
 // 1.30.0: OIM_Seal, a signed poster seal after the image, before the metadata; readers that do not know it ignore it.
 // 1.29.1: the 1.x to 2.0 upgrade retires the editor-only textRole field; no format change.
 // 1.29.0: a 2.0 image src can be { ref } to a resources entry of kind image.

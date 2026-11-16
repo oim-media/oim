@@ -206,6 +206,14 @@ describe("geometry, corners and images", () => {
     });
   });
 
+  it("a decomposed path with no paint of its own keeps what the original <svg> gave it (store icon, 15 Nov)", () => {
+    const svgLayers = [{ d: "M0 0h1" }, { d: "M0 0v1", fill: "#ff0000" }];
+    const raw = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M0 0h1"/><path d="M0 0v1"/></svg>';
+    expect(layer({ svgLayers, svgRawXml: raw, svgViewBox: "0 0 24 24" }, "svg").geometry.paths).toEqual([
+      { d: "M0 0h1", fill: "currentColor" }, { d: "M0 0v1", fill: "#ff0000" },
+    ]);
+  });
+
   it("an SVG outside the profile keeps its layer and says why", () => {
     const result = run({ svgRawXml: '<svg viewBox="0 0 1 1"><text>hi</text></svg>' }, "svg");
     expect(result.document.layers[0].geometry).toEqual({ kind: "rect" });

@@ -4,6 +4,10 @@
 contract version. The full history, for all packages, is in the repository's
 [CHANGELOG.md](https://github.com/oim-media/oim/blob/main/CHANGELOG.md).
 
+## 1.30.2
+
+- Centred and right-aligned text is no longer shifted left by the italic room, as on the web.
+
 ## 1.30.1
 
 - No change to this SDK; version follows the contract.

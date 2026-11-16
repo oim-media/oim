@@ -156,10 +156,26 @@ describe("lottie ships apart from the player", () => {
   // is in the main package; 58.87 KB at HEAD, 59.66 KB with it.
   // 62 KB (approved 14 Nov): 60.09 KB at 1.29.0 (image src by ref). Moving the
   // 2.0 view to a lazy chunk belongs to the player 2.0 API phase (7b).
-  it.skipIf(!hasBundle)("the player fits in 62 KB gzip", async () => {
+  // 55 KB (15 Nov, player 2.0 step 2): generative fills and pattern tiles moved
+  // to vendor/ (oim-generative-*.js, oim-patterns-*.js); 53.1 KB at that commit.
+  it.skipIf(!hasBundle)("the player fits in 55 KB gzip", async () => {
     const { gzipSync } = await import("node:zlib");
     const kb = gzipSync(readFileSync(BUNDLE)).length / 1024;
-    expect(Math.round(kb)).toBeLessThanOrEqual(62);
+    expect(Math.round(kb)).toBeLessThanOrEqual(55);
+  });
+
+  it.skipIf(!hasBundle)("generative fills and pattern tiles ship apart, next to both player paths", () => {
+    const bundle = readFileSync(BUNDLE, "utf8");
+    // A generator id from the catalog and the path of the `clouds` preset survive minification.
+    expect(bundle.includes("stacked-waves")).toBe(false);
+    expect(bundle.includes("M17.5 19A5.5")).toBe(false);
+    for (const [part, mark] of [["generative", "stacked-waves"], ["patterns", "M17.5 19A5.5"]]) {
+      for (const dir of [join(DIST, "vendor"), join(DIST, "player", "v1", "vendor")]) {
+        const file = readdirSync(dir).find((f) => f.startsWith(`oim-${part}-`));
+        expect(file, `${part} in ${dir}`).toBeTruthy();
+        expect(readFileSync(join(dir, file), "utf8").includes(mark)).toBe(true);
+      }
+    }
   });
 
   it.skipIf(!hasBundle)("the lottie file sits next to both player paths", () => {

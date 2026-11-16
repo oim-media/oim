@@ -16,6 +16,8 @@ import { layerTextureMask } from '../../../core/src/effects/texture-mask.js';
 import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entranceClips, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
 import { loadLottie } from './lottie-loader.js';
 import { ensureUpgrade } from './upgrade-entry.js';
+import { ensureFeatures } from './features-entry.js';
+import { featuresOf } from './features.js';
 import { geometryOutline } from '../../../core/src/v2/geometry-outline.js';
 import { v2LayersOf, anchorShift, paintColors, typographyCss, filterStyle, maskStyle, imageSrc, drawingSvg, drawingLink } from './v2-layers.js';
 import { paintCss, patternStyle } from '../../../core/src/v2/paint-css.js';
@@ -687,7 +689,14 @@ export class LegacyRenderer {
     const self = this;
     const slots = this.metadata.slots || this.metadata.elements || [];
     // The CDN player fetches `upgrade` apart, the first time a file needs it.
-    try { await ensureUpgrade(); } catch (err) { console.warn('[OimPlayer] Could not load upgrade:', err); }
+    // So do the optional parts, each only when this document uses it.
+    const parts: Promise<void>[] = [ensureUpgrade(), ensureFeatures(featuresOf(this.metadata))];
+    for (const result of await Promise.allSettled(parts)) {
+      if (result.status === 'fulfilled') continue;
+      const message = String((result.reason as Error)?.message ?? result.reason);
+      console.error('[OimPlayer] A part of the player did not load; the work is shown without it.', message);
+      this.host.dispatchEvent(new CustomEvent('oim:error', { detail: { code: 'chunk', message } }));
+    }
     // A 2.0 mask is read by the same helpers as 1.x: its fields are written back once here.
     const v2Masks = v2LayersOf(self.metadata);
     slots.forEach(function (s: any) {

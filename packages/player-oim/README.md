@@ -26,9 +26,9 @@ import "@oim-media/player-oim";
 ```
 
 The second form is also reachable as the subpath `@oim-media/player-oim/cdn`.
-The single file is about **59 KB gzip** and includes the verifier. Lottie is not
-in it: it is loaded from `dist/vendor/` only when a file uses it. A test keeps the
-file under a 59 KB budget.
+The single file is about **53 KB gzip** and includes the verifier. Lottie, generative fills and pattern tiles are not
+in it: each is loaded from `dist/vendor/`, next to the player, only when a file uses it. A test keeps the
+file under a 55 KB budget.
 
 ## Usage
 
@@ -211,8 +211,8 @@ from `https://api.oim.media/v1/media/keys`. A page can point that at its own
 backend with `window.OIM_PLAYER_CONFIG = { keysUrl: "..." }`, set before the
 player loads. The player never holds a private key.
 
-Network use: the `.oim` file itself, the key endpoint when needed, and the Lottie
-library from the package's `dist/vendor/` when a file uses Lottie. The player makes
+Network use: the `.oim` file itself, the key endpoint when needed, and the optional parts (Lottie, generative fills, pattern tiles)
+from the package's `dist/vendor/` when a file uses them. The player makes
 no analytics requests.
 
 A valid signature proves the file has not changed since it was signed. It does not

@@ -231,7 +231,7 @@ export function transformPathData(
   if (!ops) return null;
   const fmt = (n: number) => {
     const r = Math.round(n * 100) / 100;
-    return String(r === 0 ? 0 : r);
+    return String(r); // String(-0) is "0", so negative zero needs no guard
   };
   return ops
     .map(({ cmd, args }) => {

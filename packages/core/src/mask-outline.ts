@@ -39,7 +39,7 @@ function parseViewBox(raw: string | undefined): [number, number, number, number]
   return nums as [number, number, number, number];
 }
 
-/** Maps path data from a viewBox into the box, or null when the data is not a path. */
+/** Maps path data from a viewBox into the box, or null when the data is not a path. Stretches x and y independently, as the editor's boxMatrix does. */
 function fitToBox(d: string, [vx, vy, vw, vh]: [number, number, number, number], box: MaskBox): string | null {
   return transformPathData(d, (x, y) => [
     box.x + ((x - vx) / vw) * box.width,

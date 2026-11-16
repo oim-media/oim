@@ -11,7 +11,7 @@ void main() {
   testWidgets('OimViewerApp shows the empty state with the load button', (WidgetTester tester) async {
     uiSpanish = true;
     await tester.pumpWidget(const OimViewerApp());
-    expect(find.text('Cargar otro'), findsOneWidget);
+    expect(find.text('Abrir'), findsOneWidget);
     expect(find.text('Cargar archivo'), findsOneWidget);
   });
 
@@ -19,7 +19,7 @@ void main() {
   testWidgets('the interface is in English when the system is not in Spanish', (WidgetTester tester) async {
     uiSpanish = false;
     await tester.pumpWidget(const OimViewerApp());
-    expect(find.text('Load another'), findsOneWidget);
+    expect(find.text('Open'), findsOneWidget);
     expect(find.text('Load file'), findsOneWidget);
     expect(find.text('Cargar archivo'), findsNothing);
   });

@@ -10,25 +10,25 @@ import 'library/library_client.dart';
 import 'library/library_bench.dart';
 import 'library/library_screen.dart';
 import 'ui/i18n.dart';
+import 'ui/tokens.dart';
 import 'viewer_format.dart';
 
-// Design tokens mirrored from apps/viewer-desktop (Tauri) so both viewers look the same.
-const _bg = Color(0xFF09090B);
-const _bgCenter = Color(0xFF131317);
-const _topBarBg = Color(0xE00E0E12);
-const _drawerBg = Color(0xEB101014);
-const _border = Color(0x14FFFFFF);
-const _text = Color(0xFFF4F4F5);
-const _textSoft = Color(0xFFE4E4E7);
-const _textSecondary = Color(0xFFA1A1AA);
-const _textMuted = Color(0xFF71717A);
-const _chipBg = Color(0x0DFFFFFF);
-const _chipBorder = Color(0x17FFFFFF);
-const _signed = Color(0xFF38BDF8);
-const _unsigned = Color(0xFFA1A1AA);
-const _ok = Color(0xFF22C55E);
-const _mono = TextStyle(
-    fontFamily: 'Consolas', fontFamilyFallback: ['Menlo', 'monospace']);
+// Tokens shared with the library screen (ui/tokens.dart), mirrored from apps/viewer-desktop.
+const _bg = kBg;
+const _bgCenter = kBgCenter;
+const _topBarBg = kTopBarBg;
+const _drawerBg = kDrawerBg;
+const _border = kBorder;
+const _text = kText;
+const _textSoft = kTextSoft;
+const _textSecondary = kTextSecondary;
+const _textMuted = kTextMuted;
+const _chipBg = kChipBg;
+const _chipBorder = kChipBorder;
+const _signed = kSigned;
+const _unsigned = kTextSecondary;
+const _ok = kOk;
+const _mono = kMono;
 
 /// A path given on the command line ("Open with" on Windows) is opened at start.
 String? _initialPath;
@@ -246,7 +246,7 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
                             horizontal: 14, vertical: 6),
                         child: Text(_error!,
                             style: const TextStyle(
-                                color: Color(0xFFFCA5A5), fontSize: 12)),
+                                color: Color(0xFFFCA5A5), fontSize: kFontBody)),
                       ),
                     Expanded(
                       child: LayoutBuilder(
@@ -277,6 +277,7 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
                                 );
                           final drawer = drawerVisible
                               ? _InspectorDrawer(
+                                  sheet: !wide,
                                   fileName: _fileName,
                                   sizeLabel: _formatSize(_bytes!.length),
                                   meta: _meta!,
@@ -305,10 +306,10 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
                             return Row(
                                 children: [Expanded(child: stage), drawer]);
                           }
-                          return Stack(children: [
-                            stage,
-                            Positioned(
-                                top: 0, bottom: 0, right: 0, child: drawer)
+                          // Phone: a bottom panel under the work, which stays visible above it.
+                          return Column(children: [
+                            Expanded(child: stage),
+                            SizedBox(height: c.maxHeight * 0.55, child: drawer),
                           ]);
                         },
                       ),
@@ -336,13 +337,13 @@ _Badge _badgeFor(OimSecurityStatus? s) {
     case OimSecurityStatus.imageUnsealed:
       return _Badge(t('Firmado · sin sello', 'Signed · unsealed'), const Color(0xFFCBD5E1));
     case OimSecurityStatus.expiredKey:
-      return _Badge(t('Clave expirada', 'Expired key'), const Color(0xFFF59E0B));
+      return _Badge(t('Clave expirada', 'Expired key'), kWarning);
     case OimSecurityStatus.unknownKey:
-      return _Badge(t('Clave desconocida', 'Unknown key'), const Color(0xFFF59E0B));
+      return _Badge(t('Clave desconocida', 'Unknown key'), kWarning);
     case OimSecurityStatus.imageMismatch:
-      return _Badge(t('Imagen alterada', 'Image altered'), const Color(0xFFEF4444));
+      return _Badge(t('Imagen alterada', 'Image altered'), kDanger);
     case OimSecurityStatus.invalidSignature:
-      return _Badge(t('Firma inválida', 'Invalid signature'), const Color(0xFFEF4444));
+      return _Badge(t('Firma inválida', 'Invalid signature'), kDanger);
     case OimSecurityStatus.unsigned:
     case null:
       return _Badge(t('Sin firma', 'Unsigned'), _unsigned);
@@ -392,8 +393,10 @@ class _TopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final badge = _badgeFor(status);
     final color = !hasFile ? _unsigned : badge.color;
+    // On a phone the labels do not fit beside the title: icons, with the label read by TalkBack.
+    final compact = MediaQuery.sizeOf(context).width < 600;
     return Container(
-      height: 42,
+      height: 56,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: const BoxDecoration(
         color: _topBarBg,
@@ -417,11 +420,11 @@ class _TopBar extends StatelessWidget {
             child: Text(
               hasFile ? _compactTitle(fileName, 18) : 'OIM Viewer',
               overflow: TextOverflow.ellipsis,
-              style: _mono.copyWith(fontSize: 12, color: _textSoft),
+              style: const TextStyle(fontSize: kFontTitle, fontWeight: FontWeight.w600, color: _textSoft),
             ),
           ),
           const Spacer(),
-          if (sizeLabel != null) ...[
+          if (sizeLabel != null && !compact) ...[
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
               decoration: BoxDecoration(
@@ -430,7 +433,7 @@ class _TopBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(sizeLabel!,
-                  style: _mono.copyWith(fontSize: 10, color: _textSecondary)),
+                  style: _mono.copyWith(fontSize: kFontSmall, color: _textSecondary)),
             ),
             const SizedBox(width: 6),
           ],
@@ -447,7 +450,7 @@ class _TopBar extends StatelessWidget {
                 for (final p in palettes)
                   PopupMenuItem<String>(
                     value: p,
-                    height: 32,
+                    height: kMinTarget,
                     child: Row(
                       children: [
                         if (p.toLowerCase() ==
@@ -459,7 +462,7 @@ class _TopBar extends StatelessWidget {
                         Text(
                           p.toUpperCase(),
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: kFontSmall,
                             fontWeight: p.toLowerCase() ==
                                     (selectedPalette ?? '').toLowerCase()
                                 ? FontWeight.w700
@@ -472,7 +475,8 @@ class _TopBar extends StatelessWidget {
                   ),
               ],
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                constraints: const BoxConstraints(minHeight: kMinTarget),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
                   color: _chipBg,
                   border: Border.all(color: _chipBorder),
@@ -487,7 +491,7 @@ class _TopBar extends StatelessWidget {
                     Text(
                       selectedPalette?.toUpperCase() ?? t('TEMA', 'THEME'),
                       style: const TextStyle(
-                          fontSize: 11,
+                          fontSize: kFontSmall,
                           color: _textSoft,
                           fontWeight: FontWeight.w600),
                     ),
@@ -500,11 +504,13 @@ class _TopBar extends StatelessWidget {
           _BarButton(
               icon: Icons.grid_view_outlined,
               label: t('Biblioteca', 'Library'),
+              compact: compact,
               onTap: onLibrary),
-          const SizedBox(width: 6),
+          const SizedBox(width: 2),
           _BarButton(
               icon: Icons.folder_open_outlined,
-              label: t('Cargar otro', 'Load another'),
+              label: hasFile ? t('Cargar otro', 'Load another') : t('Abrir', 'Open'),
+              compact: compact,
               onTap: onOpen),
           if (hasFile) ...[
             const SizedBox(width: 6),
@@ -512,9 +518,39 @@ class _TopBar extends StatelessWidget {
                 icon: Icons.tune,
                 label: t('Ajustes', 'Settings'),
                 active: inspectorOpen,
+                compact: compact,
                 onTap: onToggleInspector),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// A 48 dp touch target around a smaller visible chip, announced as a button.
+class _Target extends StatelessWidget {
+  const _Target(
+      {required this.label, required this.onTap, required this.child, this.selected});
+
+  final String label;
+  final VoidCallback onTap;
+  final Widget child;
+  final bool? selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      excludeSemantics: true,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: kMinTarget, minWidth: kMinTarget),
+          child: Center(widthFactor: 1, child: child),
+        ),
       ),
     );
   }
@@ -525,21 +561,24 @@ class _BarButton extends StatelessWidget {
       {required this.icon,
       required this.label,
       required this.onTap,
-      this.active = false});
+      this.active = false,
+      this.compact = false});
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
   final bool active;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final fg = active ? _bg : _textSoft;
-    return InkWell(
-      borderRadius: BorderRadius.circular(7),
+    return _Target(
+      label: label,
+      selected: active,
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+        padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 10, vertical: 8),
         decoration: BoxDecoration(
           color: active ? Colors.white : _chipBg,
           border: Border.all(color: active ? Colors.white : _chipBorder),
@@ -548,13 +587,15 @@ class _BarButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 13, color: fg),
-            const SizedBox(width: 5),
-            Text(label,
-                style: TextStyle(
-                    fontSize: 11,
-                    color: fg,
-                    fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+            Icon(icon, size: 18, color: fg),
+            if (!compact) ...[
+              const SizedBox(width: 6),
+              Text(label,
+                  style: TextStyle(
+                      fontSize: kFontBody,
+                      color: fg,
+                      fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+            ],
           ],
         ),
       ),
@@ -576,28 +617,28 @@ class _EmptyState extends StatelessWidget {
         children: [
           Text(t('Abre un archivo .oim.png', 'Open a .oim.png file'),
               style: const TextStyle(
-                  fontSize: 16, color: _text, fontWeight: FontWeight.w600)),
+                  fontSize: kFontHeading, color: _text, fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
           Text(t('Se lee y se dibuja de forma nativa, sin navegador.', 'Read and drawn natively, no browser.'),
-              style: const TextStyle(fontSize: 12, color: _textMuted)),
+              style: const TextStyle(fontSize: kFontBody, color: _textMuted)),
           const SizedBox(height: 18),
-          InkWell(
-            borderRadius: BorderRadius.circular(8),
+          _Target(
+            label: t('Cargar archivo', 'Load file'),
             onTap: onOpen,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
                   color: Colors.white, borderRadius: BorderRadius.circular(8)),
               child: Text(t('Cargar archivo', 'Load file'),
                   style: const TextStyle(
-                      color: _bg, fontSize: 12, fontWeight: FontWeight.w700)),
+                      color: _bg, fontSize: kFontBody, fontWeight: FontWeight.w700)),
             ),
           ),
           const SizedBox(height: 10),
           TextButton(
               onPressed: onLibrary,
               child: Text(t('Explorar la biblioteca pública', 'Browse the public library'),
-                  style: const TextStyle(color: _textSecondary, fontSize: 12))),
+                  style: const TextStyle(color: _textSecondary, fontSize: kFontBody))),
         ],
       ),
     );
@@ -606,6 +647,7 @@ class _EmptyState extends StatelessWidget {
 
 class _InspectorDrawer extends StatelessWidget {
   const _InspectorDrawer({
+    this.sheet = false,
     required this.fileName,
     required this.sizeLabel,
     required this.meta,
@@ -624,6 +666,7 @@ class _InspectorDrawer extends StatelessWidget {
     required this.onSelectPalette,
   });
 
+  final bool sheet;
   final String fileName;
   final String sizeLabel;
   final Map<String, dynamic> meta;
@@ -662,10 +705,12 @@ class _InspectorDrawer extends StatelessWidget {
     }
 
     return Container(
-      width: 290,
-      decoration: const BoxDecoration(
-        color: _drawerBg,
-        border: Border(left: BorderSide(color: _border)),
+      width: sheet ? double.infinity : 290,
+      decoration: BoxDecoration(
+        color: sheet ? _bg : _drawerBg,
+        border: sheet
+            ? const Border(top: BorderSide(color: _border))
+            : const Border(left: BorderSide(color: _border)),
       ),
       child: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
@@ -680,12 +725,12 @@ class _InspectorDrawer extends StatelessWidget {
                   children: [
                     Text(t('Capa interactiva', 'Interactive layer'),
                         style: const TextStyle(
-                            fontSize: 12,
+                            fontSize: kFontBody,
                             color: _text,
                             fontWeight: FontWeight.w500)),
                     Text(showLayers ? t('Superposición activa', 'Overlay on') : t('Base PNG plana', 'Flat PNG base'),
                         style:
-                            const TextStyle(fontSize: 10, color: _textMuted)),
+                            const TextStyle(fontSize: kFontSmall, color: _textMuted)),
                   ],
                 ),
               ),
@@ -709,12 +754,12 @@ class _InspectorDrawer extends StatelessWidget {
                     children: [
                       Text(t('Animación Lottie', 'Lottie animation'),
                           style: const TextStyle(
-                              fontSize: 12,
+                              fontSize: kFontBody,
                               color: _text,
                               fontWeight: FontWeight.w500)),
                       Text(allowLottie ? t('Reproduciendo', 'Playing') : t('Desactivado', 'Off'),
                           style:
-                              const TextStyle(fontSize: 10, color: _textMuted)),
+                              const TextStyle(fontSize: kFontSmall, color: _textMuted)),
                     ],
                   ),
                 ),
@@ -745,12 +790,12 @@ class _InspectorDrawer extends StatelessWidget {
                     children: [
                       Text(t('Movimiento continuo', 'Continuous motion'),
                           style: const TextStyle(
-                              fontSize: 12,
+                              fontSize: kFontBody,
                               color: _text,
                               fontWeight: FontWeight.w500)),
                       Text(playMotion ? t('Bucle en vivo', 'Live loop') : t('Pausado', 'Paused'),
                           style:
-                              const TextStyle(fontSize: 10, color: _textMuted)),
+                              const TextStyle(fontSize: kFontSmall, color: _textMuted)),
                     ],
                   ),
                 ),
@@ -767,7 +812,7 @@ class _InspectorDrawer extends StatelessWidget {
             const SizedBox(height: 12),
             Text(t('Idioma', 'Language'),
                 style: const TextStyle(
-                    fontSize: 12, color: _text, fontWeight: FontWeight.w500)),
+                    fontSize: kFontBody, color: _text, fontWeight: FontWeight.w500)),
             const SizedBox(height: 6),
             Wrap(
               spacing: 4,
@@ -785,7 +830,7 @@ class _InspectorDrawer extends StatelessWidget {
             const SizedBox(height: 12),
             Text(t('Tema de color / Paleta', 'Colour theme / Palette'),
                 style: const TextStyle(
-                    fontSize: 12, color: _text, fontWeight: FontWeight.w500)),
+                    fontSize: kFontBody, color: _text, fontWeight: FontWeight.w500)),
             const SizedBox(height: 6),
             Wrap(
               spacing: 4,
@@ -823,7 +868,7 @@ class _InspectorDrawer extends StatelessWidget {
           if (counts.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(t('Desglose de capas', 'Layer breakdown'),
-                style: const TextStyle(fontSize: 10, color: _textMuted)),
+                style: const TextStyle(fontSize: kFontSmall, color: _textMuted)),
             const SizedBox(height: 5),
             Wrap(
               spacing: 4,
@@ -838,7 +883,7 @@ class _InspectorDrawer extends StatelessWidget {
                     child: Text.rich(
                       TextSpan(
                         style: _mono.copyWith(
-                            fontSize: 10, color: const Color(0xFFD4D4D8)),
+                            fontSize: kFontSmall, color: _textSoft),
                         children: [
                           TextSpan(text: '${e.key.toUpperCase()} '),
                           TextSpan(
@@ -876,12 +921,12 @@ class _SectionHeader extends StatelessWidget {
         children: [
           Text(title,
               style: const TextStyle(
-                  fontSize: 11,
+                  fontSize: kFontSmall,
                   color: _textSecondary,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.66)),
           Text(trailing,
-              style: _mono.copyWith(fontSize: 10, color: _textMuted)),
+              style: _mono.copyWith(fontSize: kFontSmall, color: _textMuted)),
         ],
       ),
     );
@@ -903,11 +948,12 @@ class _Toggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fg = active ? _bg : _textSecondary;
-    return InkWell(
-      borderRadius: BorderRadius.circular(6),
+    return _Target(
+      label: label,
+      selected: active,
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: active ? Colors.white : Colors.transparent,
           border: Border.all(
@@ -917,11 +963,11 @@ class _Toggle extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 13, color: fg),
-            const SizedBox(width: 5),
+            Icon(icon, size: 16, color: fg),
+            const SizedBox(width: 6),
             Text(label,
                 style: TextStyle(
-                    fontSize: 11, color: fg, fontWeight: FontWeight.w600)),
+                    fontSize: kFontBody, color: fg, fontWeight: FontWeight.w600)),
           ],
         ),
       ),
@@ -939,11 +985,12 @@ class _LangChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(5),
+    return _Target(
+      label: label,
+      selected: active,
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: active ? Colors.white : Colors.transparent,
           border: Border.all(color: active ? Colors.white : _chipBorder),
@@ -951,9 +998,9 @@ class _LangChip extends StatelessWidget {
         ),
         child: Text(label,
             style: TextStyle(
-                fontSize: 11,
+                fontSize: kFontSmall,
                 fontWeight: FontWeight.w600,
-                color: active ? _bg : const Color(0xFFD4D4D8))),
+                color: active ? _bg : _textSoft)),
       ),
     );
   }
@@ -974,14 +1021,14 @@ class _SpecRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = (mono ? _mono : const TextStyle())
-        .copyWith(fontSize: 11, color: valueColor ?? _text);
+        .copyWith(fontSize: kFontSmall, color: valueColor ?? _text);
     return Padding(
       padding: const EdgeInsets.only(bottom: 9),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.baseline,
         textBaseline: TextBaseline.alphabetic,
         children: [
-          Text(label, style: const TextStyle(fontSize: 11, color: _textMuted)),
+          Text(label, style: const TextStyle(fontSize: kFontSmall, color: _textMuted)),
           const SizedBox(width: 10),
           Expanded(
               child: Text(value,

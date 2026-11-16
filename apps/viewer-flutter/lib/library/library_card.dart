@@ -108,7 +108,7 @@ class _LibraryCardState extends State<LibraryCard> {
                     child: Text(widget.item.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: kText, fontSize: 12, fontWeight: FontWeight.w600)),
+                        style: const TextStyle(color: kText, fontSize: kFontBody, fontWeight: FontWeight.w600)),
                   ),
                 ),
               ),

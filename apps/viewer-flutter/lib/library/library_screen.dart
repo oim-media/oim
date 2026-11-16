@@ -101,7 +101,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         backgroundColor: kBg,
         foregroundColor: kText,
         elevation: 0,
-        title: Text(t('Biblioteca', 'Library'), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+        title: Text(t('Biblioteca', 'Library'), style: const TextStyle(fontSize: kFontTitle, fontWeight: FontWeight.w600)),
         bottom: const PreferredSize(preferredSize: Size.fromHeight(1), child: Divider(height: 1, color: kBorder)),
       ),
       body: Column(children: [
@@ -115,7 +115,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   _debounce?.cancel();
                   _debounce = Timer(const Duration(milliseconds: 300), _fetch);
                 },
-                style: const TextStyle(color: kText, fontSize: 13),
+                style: const TextStyle(color: kText, fontSize: kFontBody),
                 decoration: InputDecoration(
                   hintText: t('Buscar obra...', 'Search works...'),
                   hintStyle: const TextStyle(color: kTextMuted),
@@ -129,11 +129,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            Text(t('${shown.length} obras', '${shown.length} works'), style: kMono.copyWith(fontSize: 11, color: kTextSecondary)),
+            Text(t('${shown.length} obras', '${shown.length} works'), style: kMono.copyWith(fontSize: kFontSmall, color: kTextSecondary)),
           ]),
         ),
         SizedBox(
-          height: 36,
+          height: kMinTarget,
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -142,7 +142,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 Padding(
                   padding: const EdgeInsets.only(right: 6),
                   child: ChoiceChip(
-                    label: Text(label, style: TextStyle(fontSize: 11, color: _category == id ? kBg : kTextSecondary)),
+                    label: Text(label, style: TextStyle(fontSize: kFontSmall, color: _category == id ? kBg : kTextSecondary)),
                     selected: _category == id,
                     selectedColor: kText,
                     backgroundColor: kChipBg,
@@ -164,19 +164,19 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   Widget _body(List<LibraryItem> shown) {
     if (_loading && _items.isEmpty) {
-      return Center(child: Text(t('Cargando obras...', 'Loading works...'), style: const TextStyle(color: kTextMuted, fontSize: 12)));
+      return Center(child: Text(t('Cargando obras...', 'Loading works...'), style: const TextStyle(color: kTextMuted, fontSize: kFontBody)));
     }
     if (_error != null) {
       return Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text(t('No se pudo cargar la biblioteca. Revisa la conexión.', 'Could not load the library. Check your connection.'), style: const TextStyle(color: kTextSecondary, fontSize: 12)),
+          Text(t('No se pudo cargar la biblioteca. Revisa la conexión.', 'Could not load the library. Check your connection.'), style: const TextStyle(color: kTextSecondary, fontSize: kFontBody)),
           const SizedBox(height: 12),
           OutlinedButton(onPressed: () => _fetch(force: true), child: Text(t('Reintentar', 'Retry'))),
         ]),
       );
     }
     if (shown.isEmpty) {
-      return Center(child: Text(t('Sin resultados. Intenta buscar con otros términos.', 'No results. Try other search terms.'), style: const TextStyle(color: kTextMuted, fontSize: 12)));
+      return Center(child: Text(t('Sin resultados. Intenta buscar con otros términos.', 'No results. Try other search terms.'), style: const TextStyle(color: kTextMuted, fontSize: kFontBody)));
     }
     return LayoutBuilder(builder: (context, box) {
       const pad = 16.0, gap = 8.0;

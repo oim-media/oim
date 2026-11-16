@@ -12,11 +12,14 @@ import { ImageEngine } from './engines/ImageEngine.js';
 // Verification is the one seam mocked: each test sets the verdict the worker would
 // have given, so the real engine runs the real load, paint and reveal path.
 let verdict: any = null;
+let poster: any = null;
+let verifiedCalls = 0;
 vi.mock('./render/file-cache.js', () => ({
   fileCache: {
     sniff: () => Promise.resolve(null),
+    readPoster: () => Promise.resolve(poster),
     getBlob: () => Promise.resolve(new Blob(['oim'])),
-    getVerified: () => Promise.resolve(verdict),
+    getVerified: () => { verifiedCalls++; return Promise.resolve(verdict); },
   },
 }));
 
@@ -64,7 +67,7 @@ const shown = (el: HTMLElement) => {
 };
 
 describe('poster attribute', () => {
-  beforeEach(() => { document.body.innerHTML = ''; verdict = null; });
+  beforeEach(() => { document.body.innerHTML = ''; verdict = null; poster = null; verifiedCalls = 0; });
   afterEach(() => { vi.restoreAllMocks(); document.body.innerHTML = ''; });
 
   it('poster="only" mounts no scene: no layers, only the base image shows', async () => {
@@ -74,6 +77,14 @@ describe('poster attribute', () => {
     expect(slots(el)).toBe(0);
     expect(base(el).style.display).not.toBe('none');
     expect(shown(el)).toBe(true);
+  });
+
+  it('a poster whose seal does not verify is refused, and the metadata is never asked for', async () => {
+    poster = { png: new Blob(['png']), seal: { v: 1, alg: 'sha256-idat', image_hash: 'ab', key_version: 'v1', signature: 'AAAA' }, imageHash: 'cd' };
+    const el = make({ src: 'art.oim', poster: 'only' });
+    await until(() => !!el.shadowRoot?.querySelector('.oim-player-refused'));
+    expect(el.shadowRoot!.querySelector('.oim-player-base')).toBeNull();
+    expect(verifiedCalls).toBe(0);
   });
 
   it('a 2.0 poster (no base layer) shows its base before the scene is up, then fades it out', async () => {
@@ -127,7 +138,7 @@ describe('poster attribute', () => {
 });
 
 describe('poster="only" never paints; metadata is the file document', () => {
-  beforeEach(() => { document.body.innerHTML = ''; verdict = null; });
+  beforeEach(() => { document.body.innerHTML = ''; verdict = null; poster = null; verifiedCalls = 0; });
   afterEach(() => { vi.restoreAllMocks(); document.body.innerHTML = ''; });
 
   it('a base load and a language change after it still paint no layer', async () => {

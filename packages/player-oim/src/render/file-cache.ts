@@ -17,8 +17,69 @@
 export interface VerifiedFile { refused?: false; metadata: any; security: string; announce: boolean; }
 export interface RefusedFile { refused: true; security: string; error: string; }
 export type VerifyResult = VerifiedFile | RefusedFile;
+/** The poster read from the start of the file, before its metadata (spec 15 Nov). */
+export interface PosterRead { png: Blob; seal: any; imageHash: string; }
 
-interface Entry { blob?: Promise<Blob>; verified?: Promise<VerifyResult>; bytes: number; lastUsed: number; pending: number; }
+interface Entry {
+  blob?: Promise<Blob>; verified?: Promise<VerifyResult>; poster?: Promise<PosterRead | null>;
+  /** Bytes already read by readPoster: getBlob asks only for what follows. */
+  head?: Uint8Array;
+  bytes: number; lastUsed: number; pending: number;
+}
+
+function joined(parts: Uint8Array[], total: number): Uint8Array {
+  const out = new Uint8Array(total);
+  let at = 0;
+  for (const p of parts) { out.set(p, at); at += p.length; }
+  return out;
+}
+
+async function sha256Hex(parts: Uint8Array[]): Promise<string> {
+  const all = joined(parts, parts.reduce((n, p) => n + p.length, 0));
+  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', all as Uint8Array<ArrayBuffer>));
+  return Array.from(digest, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** Reads the file until its poster seal. Without one, reads it all and caches it as the blob. */
+async function readHead(src: string, e: Entry): Promise<PosterRead | null> {
+  const res = await fetch(src);
+  if (!res.ok) return null;
+  if (!res.body) {
+    // No streaming here: this response is the one download, so keep it as the file.
+    const blob = await res.blob();
+    e.bytes = blob.size;
+    e.blob = Promise.resolve(blob);
+    return null;
+  }
+  const reader = res.body.getReader();
+  const parts: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (value) { parts.push(value); total += value.length; }
+    const buf = joined(parts, total);
+    const head = done ? { done: true as const, seal: null } : scanPosterHead(buf);
+    if (head.done && head.seal && 'idat' in head) {
+      await reader.cancel().catch(() => {});
+      e.head = buf;
+      return { png: new Blob([posterPng(buf, head.sealStart) as Uint8Array<ArrayBuffer>], { type: 'image/png' }), seal: head.seal, imageHash: await sha256Hex(head.idat) };
+    }
+    if (done || head.done) {
+      // No seal: this is the one download, so the rest is read and kept as the file.
+      while (!done) {
+        const next = await reader.read();
+        if (next.done) break;
+        parts.push(next.value); total += next.value.length;
+      }
+      const blob = new Blob([joined(parts, total) as Uint8Array<ArrayBuffer>]);
+      e.bytes = blob.size;
+      e.blob = Promise.resolve(blob);
+      return null;
+    }
+  }
+}
+
+import { scanPosterHead, posterPng } from './poster-head.js';
 
 const MAX_ENTRIES = 20;
 const MAX_BYTES = 50 * 1024 * 1024;
@@ -77,8 +138,15 @@ export const fileCache = {
       fetches++;
       e.pending++;
       evict();
-      e.blob = fetch(src)
-        .then((res) => { if (!res.ok) throw new Error("HTTP " + res.status); return res.blob(); })
+      const head = e.head;
+      e.head = undefined;
+      e.blob = (head
+        ? fetch(src, { headers: { Range: "bytes=" + head.length + "-" } }).then(async (res) => {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          // 200: the server ignored Range and sent it all.
+          return res.status === 206 ? new Blob([head as Uint8Array<ArrayBuffer>, await res.blob()]) : res.blob();
+        })
+        : fetch(src).then((res) => { if (!res.ok) throw new Error("HTTP " + res.status); return res.blob(); }))
         .then((b) => { e.bytes = b.size; e.lastUsed = ++tick; evict(); return b; })
         .catch((err) => { dropUrl(src, "blob"); throw err; })
         .finally(() => { e.pending--; });
@@ -99,10 +167,30 @@ export const fileCache = {
     return e.verified;
   },
 
+  /** The verified-later poster from a partial read; null when the file has no seal or the read fails. */
+  readPoster(src: string): Promise<PosterRead | null> {
+    const e = entryFor(src);
+    // Already downloaded whole: no partial read to make.
+    if (!e.poster && e.blob) return Promise.resolve(null);
+    if (!e.poster) {
+      e.pending++;
+      e.poster = readHead(src, e)
+        .catch(() => null)
+        .finally(() => { e.pending--; });
+    }
+    return e.poster;
+  },
+
+  /** The first 16 bytes, from the partial read when there is one: never a second download. */
   sniff(src: string | Blob): Promise<Uint8Array | null> {
-    return fileCache.getBlob(src)
-      .then((b) => b.slice(0, 16).arrayBuffer())
-      .then((buf) => new Uint8Array(buf))
+    const fromBlob = (b: Promise<Blob>) => b.then((x) => x.slice(0, 16).arrayBuffer()).then((buf) => new Uint8Array(buf));
+    if (typeof src !== "string") return fromBlob(Promise.resolve(src)).catch(() => null);
+    return fileCache.readPoster(src)
+      .then(() => {
+        const e = entryFor(src);
+        if (e.head) return e.head.slice(0, 16);
+        return fromBlob(fileCache.getBlob(src));
+      })
       .catch(() => null);
   },
 

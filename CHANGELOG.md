@@ -3,6 +3,10 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.31.0
+
+- No format change. The 2.0 scene painter paints a layer's blur, shadow, glow and backdrop effects, through the same `effectsToStyle` as the legacy renderer. Grain, texture, colour-grade, filter and duotone are not painted by the scene yet.
+
 ## 1.30.2
 
 - No format change. The player paints a 2.0 file's canvas colour and its filled drawings, and an SVG layer keeps the colours of its resolved markup.

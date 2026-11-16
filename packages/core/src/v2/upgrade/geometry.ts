@@ -81,14 +81,19 @@ function shapeGeometry(ctx: UpgradeContext, slot: V1Slot, media: string | undefi
   const rawXml = ctx.take(style, "svgRawXml");
   const layers = ctx.take(style, "svgLayers");
 
-  // The decomposed layers carry the colours the author edited; the raw XML is the original.
+  // 1.x painted the content of a markup layer; svgRawXml is the untouched original it was edited from.
+  const content = drawsMarkup(slot) && typeof media === "string" && /<svg/i.test(media) ? media : undefined;
+  // The editor writes every colour, its per-layer ones included, into that content.
+  if (content) {
+    const parsed = svgToPaths(content);
+    if (parsed.ok) return { kind: "paths", ...parsed.value };
+  }
+  // Without content, the decomposed layers carry the colours the author edited; the raw XML is the original.
   if (Array.isArray(layers) && layers.length > 0) {
     const original = typeof rawXml === "string" && rawXml ? svgToPaths(rawXml) : undefined;
     const fromLayers = pathsFromLayers(ctx, layers, viewBox, original?.ok ? original.value.paths : []);
     if (fromLayers) return fromLayers;
   }
-  // 1.x painted the content of a markup layer; svgRawXml is the untouched original it was edited from.
-  const content = drawsMarkup(slot) && typeof media === "string" && /<svg/i.test(media) ? media : undefined;
   const xml = content ?? (typeof rawXml === "string" && rawXml ? rawXml : drawsMarkup(slot) ? media : undefined);
   if (xml) {
     const parsed = svgToPaths(xml);

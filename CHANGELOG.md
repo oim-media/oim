@@ -3,6 +3,11 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.30.2
+
+- No format change. The player paints a 2.0 file's canvas colour and its filled drawings, and an SVG layer keeps the colours of its resolved markup.
+- Centred and right-aligned text sits on its box: the 0.25em italic room no longer shifts it left (web, scene and Flutter; goldens regenerated).
+
 ## 1.30.1
 
 - No format change. The CDN player fetches generative fills and pattern tiles from `vendor/` only when a document uses them (61.4 to 53.1 KB gzip).

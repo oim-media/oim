@@ -43,7 +43,8 @@
  * the format can change without the player being touched. Tying both numbers
  * together would make an internal fix look like a format break.
  */
-export const CONTRACT_VERSION = "1.30.1";
+export const CONTRACT_VERSION = "1.30.2";
+// 1.30.2: no format change; 2.0 canvas colour, drawings and icon paint, and text centred on its box despite the italic room.
 // 1.30.1: no format change; the CDN player loads generative fills and pattern tiles on demand.
 // 1.30.0: OIM_Seal, a signed poster seal after the image, before the metadata; readers that do not know it ignore it.
 // 1.29.1: the 1.x to 2.0 upgrade retires the editor-only textRole field; no format change.

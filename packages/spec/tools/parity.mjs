@@ -36,7 +36,9 @@ export const runParity = ({
   const exceptionsFile = path.join(goldenDir, 'exceptions.json');
   const exceptions = (fs.existsSync(exceptionsFile) ? JSON.parse(fs.readFileSync(exceptionsFile, 'utf8')) : {})[renderer] ?? {};
 
-  for (const v of vectors) if (!goldens.includes(v)) failures.push(`${v}: no golden for this vector, regenerate the goldens`);
+  // A vector this renderer skips needs no golden yet: its blocks are not painted by anyone in this set.
+  const skipped = (v) => fs.existsSync(path.join(rendersDir, `${v}.skipped`));
+  for (const v of vectors) if (!goldens.includes(v) && !skipped(v)) failures.push(`${v}: no golden for this vector, regenerate the goldens`);
   for (const g of goldens) if (!vectors.includes(g)) failures.push(`${g}: orphan golden, no vector`);
   for (const e of Object.keys(exceptions)) if (!vectors.includes(e)) failures.push(`${e}: unknown vector in exceptions`);
   if (outDir) fs.mkdirSync(outDir, { recursive: true });
@@ -82,10 +84,12 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   const flag = (n) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : undefined; };
   const rendersDir = args[0], renderer = flag('--renderer');
   if (!rendersDir || !renderer) {
-    console.error('usage: parity.mjs <renders-dir> --renderer <name> [--out <diff-dir>]');
+    console.error('usage: parity.mjs <renders-dir> --renderer <name> [--out <diff-dir>] [--golden-dir <dir>] [--vectors-dir <dir>]');
     process.exit(2);
   }
-  const { failures, lines } = runParity({ rendersDir, renderer, outDir: flag('--out') });
+  // The 2.0 painters are gated by the 2.0 goldens (vectors-2/golden), not by the 1.x ones.
+  const dirs = Object.fromEntries([['goldenDir', flag('--golden-dir')], ['vectorsDir', flag('--vectors-dir')]].filter(([, v]) => v));
+  const { failures, lines } = runParity({ rendersDir, renderer, outDir: flag('--out'), ...dirs });
   lines.forEach((l) => console.log(l));
   failures.forEach((f) => console.error(`✖ ${f}`));
   console.log(failures.length ? `\n${failures.length} failure(s)` : '\nvisual parity: OK');

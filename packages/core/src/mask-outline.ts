@@ -20,6 +20,9 @@ export interface MaskOutlineInput { geoShape?: string; svgPath?: string; svgView
 /** The catalogue lives in a 0-100 space. */
 const CATALOGUE_VIEWBOX: [number, number, number, number] = [0, 0, 100, 100];
 
+/** Its shapes sit in 5..95 so strokes keep a margin. A mask fills its box with that content, so the edges land on the box. */
+const CATALOGUE_CONTENT: [number, number, number, number] = [5, 5, 90, 90];
+
 /** A line is a stroke, but as a mask it must cut a surface or it would cut nothing. */
 const LINE_SURFACE: ShapeDrawing = { kind: "polygon", points: [[5, 45], [95, 45], [95, 55], [5, 55]] };
 
@@ -59,7 +62,7 @@ export function maskOutlinePath(input: MaskOutlineInput, box: MaskBox): string |
     const d = surface.kind === "polygon"
       ? surface.points.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x} ${y}`).join(" ") + " Z"
       : surface.d;
-    return fitToBox(d, CATALOGUE_VIEWBOX, box);
+    return fitToBox(d, name === "line" ? CATALOGUE_VIEWBOX : CATALOGUE_CONTENT, box);
   }
   if (input.svgPath) {
     const viewBox = parseViewBox(input.svgViewBox);

@@ -25,7 +25,11 @@ const bboxOf = (pairs: [number, number][]) => ({
 
 // Non-square and offset, so a swapped axis or a missing offset cannot pass by accident.
 const box = { x: 10, y: 20, width: 200, height: 50 };
-const toCanvas = ([x, y]: [number, number]): [number, number] => [box.x + (x / 100) * box.width, box.y + (y / 100) * box.height];
+/** Catalogue shapes fill the content box 5..95 of their mask box; the line is a surface over the full 0-100 space. */
+const toCanvas = (name: string, [x, y]: [number, number]): [number, number] =>
+  name === "line"
+    ? [box.x + (x / 100) * box.width, box.y + (y / 100) * box.height]
+    : [box.x + ((x - 5) / 90) * box.width, box.y + ((y - 5) / 90) * box.height];
 
 /**
  * Expected geometry per catalogue shape, in the 0-100 catalogue space.
@@ -70,13 +74,25 @@ describe("maskOutlinePath", () => {
     const pairs = pairsOf(d);
     const { bbox, point } = OUTLINE_GEOMETRY[name];
     const b = bboxOf(pairs);
-    const [x0, y0] = toCanvas([bbox[0], bbox[1]]);
-    const [x1, y1] = toCanvas([bbox[2], bbox[3]]);
+    const [x0, y0] = toCanvas(name, [bbox[0], bbox[1]]);
+    const [x1, y1] = toCanvas(name, [bbox[2], bbox[3]]);
     expect(b.minX).toBeCloseTo(x0, 2);
     expect(b.minY).toBeCloseTo(y0, 2);
     expect(b.maxX).toBeCloseTo(x1, 2);
     expect(b.maxY).toBeCloseTo(y1, 2);
-    expect(pairs).toContainEqual(toCanvas(point));
+    // The path is written to two decimals, so compare within 0.01 rather than exactly.
+    const [px, py] = toCanvas(name, point);
+    expect(pairs.some(([x, y]) => Math.abs(x - px) < 0.01 && Math.abs(y - py) < 0.01)).toBe(true);
+  });
+
+  it("a circle mask touches the edges of its box, not a 5% inset", () => {
+    // The catalogue draws a circle at 5..95; the mask box must hold the circle's full extent.
+    const d = maskOutlinePath({ geoShape: "circle" }, { x: 200, y: 120, width: 300, height: 200 })!;
+    const b = bboxOf(pairsOf(d));
+    expect(b.minX).toBeCloseTo(200, 2);
+    expect(b.maxX).toBeCloseTo(500, 2);
+    expect(b.minY).toBeCloseTo(120, 2);
+    expect(b.maxY).toBeCloseTo(320, 2);
   });
 
   it("returns null for an unknown name, never a circle", () => {
@@ -84,19 +100,19 @@ describe("maskOutlinePath", () => {
   });
 
   it("fits the box: min x, max x, min y and max y land on the box edges", () => {
-    // Arch spans 5-95 in the catalogue, so its edges sit at 10% and 90% of the box.
+    // Arch spans 5-95 in the catalogue, the content box, so its edges land on the box edges.
     const d = maskOutlinePath({ geoShape: "arch" }, { x: 50, y: 20, width: 40, height: 10 })!;
     const b = bboxOf(pairsOf(d));
-    expect(b.minX).toBeCloseTo(52, 2);
-    expect(b.maxX).toBeCloseTo(88, 2);
-    expect(b.minY).toBeCloseTo(20.5, 2);
-    expect(b.maxY).toBeCloseTo(29.5, 2);
+    expect(b.minX).toBeCloseTo(50, 2);
+    expect(b.maxX).toBeCloseTo(90, 2);
+    expect(b.minY).toBeCloseTo(20, 2);
+    expect(b.maxY).toBeCloseTo(30, 2);
   });
 
   it("converts a polygon to a closed path scaled to the box", () => {
-    // Diamond in the 0-100 catalogue space, placed in a 200x100 box offset by (10,0).
+    // Diamond 5..95 in the catalogue, placed in a 200x100 box offset by (10,0): its vertices sit on the box edges.
     expect(maskOutlinePath({ geoShape: "diamond" }, { x: 10, y: 0, width: 200, height: 100 })).toBe(
-      "M110 5L200 50L110 95L20 50Z",
+      "M110 0L210 50L110 100L10 50Z",
     );
   });
 
@@ -108,7 +124,8 @@ describe("maskOutlinePath", () => {
 
   it("closes the open scribble and starts it at its own first point", () => {
     const d = maskOutlinePath({ geoShape: "scribble" }, { x: 0, y: 0, width: 100, height: 100 })!;
-    expect(pairsOf(d)[0]).toEqual([5, 80]);
+    expect(pairsOf(d)[0][0]).toBeCloseTo(0, 6);
+    expect(pairsOf(d)[0][1]).toBeCloseTo(83.333, 2);
     expect(d.endsWith("Z")).toBe(true);
   });
 
@@ -138,7 +155,7 @@ describe("maskOutlinePath", () => {
 
   it("a catalogue geoShape wins over an svgPath", () => {
     expect(maskOutlinePath({ geoShape: "diamond", svgPath: "M0 0 L10 0 L10 10 Z" }, { x: 0, y: 0, width: 100, height: 100 }))
-      .toBe("M50 5L95 50L50 95L5 50Z");
+      .toBe("M50 0L100 50L50 100L0 50Z");
   });
 
   it("returns null for a malformed svgViewBox instead of guessing", () => {

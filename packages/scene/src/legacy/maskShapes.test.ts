@@ -79,31 +79,34 @@ describe("mask outlines keep their geometry inside the box", () => {
   const hasPoint = (d: string, x: number, y: number) =>
     pointsOf(d).some(([px, py]) => Math.abs(px - x) < 1e-6 && Math.abs(py - y) < 1e-6);
 
+  // Catalogue shapes fill the box's content area (catalogue 5..95), so their extremes land on the box edges.
+  // Output is written to two decimals, hence the precision 2 on the non-terminating values.
   it("triangle: apex at the top middle, base on the bottom edge", () => {
     const d = outlineOf({ maskShape: "triangle" });
-    expect(Math.min(...xsOf(d))).toBeCloseTo(42.5, 6);
-    expect(Math.max(...xsOf(d))).toBeCloseTo(87.5, 6);
-    expect(Math.min(...ysOf(d))).toBeCloseTo(21.5, 6);
-    expect(Math.max(...ysOf(d))).toBeCloseTo(47, 6);
-    expect(hasPoint(d, 65, 21.5)).toBe(true);
+    expect(Math.min(...xsOf(d))).toBeCloseTo(40, 6);
+    expect(Math.max(...xsOf(d))).toBeCloseTo(90, 6);
+    expect(Math.min(...ysOf(d))).toBeCloseTo(20, 6);
+    expect(Math.max(...ysOf(d))).toBeCloseTo(48.33, 2);
+    expect(hasPoint(d, 65, 20)).toBe(true);
   });
 
   it("diamond: the right vertex sits on the middle row of the box", () => {
     const d = outlineOf({ maskShape: "diamond" });
-    expect(Math.min(...xsOf(d))).toBeCloseTo(42.5, 6);
-    expect(Math.max(...xsOf(d))).toBeCloseTo(87.5, 6);
-    expect(Math.min(...ysOf(d))).toBeCloseTo(21.5, 6);
-    expect(Math.max(...ysOf(d))).toBeCloseTo(48.5, 6);
-    expect(hasPoint(d, 87.5, 35)).toBe(true);
-  });
-
-  it("star: spans the full width of the box and has an inner vertex", () => {
-    const d = outlineOf({ maskShape: "star" });
     expect(Math.min(...xsOf(d))).toBeCloseTo(40, 6);
     expect(Math.max(...xsOf(d))).toBeCloseTo(90, 6);
-    expect(Math.min(...ysOf(d))).toBeCloseTo(20.6, 6);
-    expect(Math.max(...ysOf(d))).toBeCloseTo(48.5, 6);
-    expect(hasPoint(d, 71, 31.4)).toBe(true);
+    expect(Math.min(...ysOf(d))).toBeCloseTo(20, 6);
+    expect(Math.max(...ysOf(d))).toBeCloseTo(50, 6);
+    expect(hasPoint(d, 90, 35)).toBe(true);
+  });
+
+  // The star is drawn over catalogue 0-100, past the 5..95 content box, so its tips overshoot the box by 2.78 per side.
+  it("star: its tips reach the catalogue extent (0-100) and it has an inner vertex", () => {
+    const d = outlineOf({ maskShape: "star" });
+    expect(Math.min(...xsOf(d))).toBeCloseTo(37.22, 2);
+    expect(Math.max(...xsOf(d))).toBeCloseTo(92.78, 2);
+    expect(Math.min(...ysOf(d))).toBeCloseTo(19, 6);
+    expect(Math.max(...ysOf(d))).toBeCloseTo(50, 6);
+    expect(hasPoint(d, 71.67, 31)).toBe(true);
   });
 
   it("an absolute Q path is fitted into the box, control points included", () => {

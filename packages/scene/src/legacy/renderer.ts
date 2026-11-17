@@ -1686,13 +1686,7 @@ export class LegacyRenderer {
       if (hasComplexFill) {
         const fillLayer = document.createElement('div');
         fillLayer.className = 'oim-fill-layer';
-        fillLayer.style.position = 'absolute';
-        fillLayer.style.left = '0';
-        fillLayer.style.top = '0';
-        fillLayer.style.width = '100%';
-        fillLayer.style.height = '100%';
-        fillLayer.style.pointerEvents = 'none';
-        fillLayer.style.borderRadius = 'inherit';
+        fillLayer.style.cssText = 'position:absolute;inset:0;pointer-events:none;border-radius:inherit';
         const fillCss: Record<string, string> = {
           ...(v2Fill ? paintCss(v2Fill, { colors: v2Colors, width: v2Own.box.width || baseWidth, height: v2Own.box.height || baseHeight }) : {}),
           // 1.x painted the literal fillColor (never a stale palette role) under the photo, inside the silhouette.
@@ -1703,9 +1697,15 @@ export class LegacyRenderer {
         // The drawing goes above the fill: a positioned sibling paints over a
         // static one, and the absolute fill layer hid the icon's stroke.
         if (isVectorFill && !loopWrap.style.position) loopWrap.style.position = 'relative';
+        // A moving pattern's keyframes also move mask-position (the tile mask of a dynamic
+        // pattern), so the silhouette stays on this layer and the pattern moves inside it.
+        const moves = fillCss.animation && fillCss.maskImage;
+        const painted = moves ? fillLayer.appendChild(document.createElement('div')) : fillLayer;
+        if (moves) painted.style.cssText = fillLayer.style.cssText;
         for (const [prop, value] of Object.entries(fillCss)) {
-          if (prop.startsWith('--')) fillLayer.style.setProperty(prop, value);
-          else (fillLayer.style as any)[prop] = value;
+          const target = moves && /mask/i.test(prop) ? fillLayer : painted;
+          if (prop.startsWith('--')) target.style.setProperty(prop, value);
+          else (target.style as any)[prop] = value;
         }
         slotEl.insertBefore(fillLayer, slotEl.firstChild);
       }

@@ -19,6 +19,9 @@ tools/              Read-only checks: contract-summary.mjs, canonical-check.mjs,
 Published as `@oim-media/spec`. The tarball carries the schema, the vectors, both
 specifications, `keys.json`, `marks-cases.json`, this README, LICENSE and NOTICE.
 
+
+**2.0 rendering rules:** [SPEC_2.md](SPEC_2.md).
+
 ## Versioning
 
 `CONTRACT_VERSION` in `packages/core/src/compatibility.ts` is the version of the

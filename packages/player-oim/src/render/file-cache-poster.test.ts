@@ -111,3 +111,31 @@ describe('fileCache.readPoster', () => {
     expect(sent).toBeLessThan(head.length + seal.length + 2048);
   });
 });
+
+describe('fileCache: the file changes between the two reads', () => {
+  it('a cached old head and a new file on the server never get spliced', async () => {
+    // The browser answers the first read from its HTTP cache (old file); the Range read reaches the server (new file).
+    const old = cat(head, seal, text('OIM_Data', new Uint8Array(300_000).fill(1)), chunk('IEND', new Uint8Array(0)));
+    const fresh = cat(head, seal, text('OIM_Data', new Uint8Array(250_000).fill(2)), chunk('IEND', new Uint8Array(0)));
+    let call = 0;
+    global.fetch = vi.fn(async (_url: string, init?: RequestInit) => {
+      const h = (init?.headers ?? {}) as Record<string, string>;
+      if (call++ === 0) return new Response(old as BodyInit, { status: 200, headers: { ETag: '"old"' } });
+      // A real server only honours Range when If-Range still matches its file.
+      if (h.Range && h['If-Range'] === '"fresh"') {
+        const from = Number(/bytes=(\d+)-/.exec(h.Range)![1]);
+        return new Response(fresh.subarray(from) as BodyInit, { status: 206, headers: { ETag: '"fresh"' } });
+      }
+      if (h.Range && !h['If-Range']) {
+        const from = Number(/bytes=(\d+)-/.exec(h.Range)![1]);
+        return new Response(fresh.subarray(from) as BodyInit, { status: 206, headers: { ETag: '"fresh"' } });
+      }
+      return new Response(fresh as BodyInit, { status: 200, headers: { ETag: '"fresh"' } });
+    }) as any;
+    await fileCache.readPoster('/c.oim');
+    const blob = await fileCache.getBlob('/c.oim');
+    const got = new Uint8Array(await blob.arrayBuffer());
+    // Compared as a boolean: a failing toEqual on 250 KB arrays exhausts the worker.
+    expect(got.length === fresh.length && got.every((b, i) => b === fresh[i])).toBe(true);
+  });
+});

@@ -156,12 +156,13 @@ describe("lottie ships apart from the player", () => {
   // is in the main package; 58.87 KB at HEAD, 59.66 KB with it.
   // 62 KB (approved 14 Nov): 60.09 KB at 1.29.0 (image src by ref). Moving the
   // 2.0 view to a lazy chunk belongs to the player 2.0 API phase (7b).
+  // 56 KB (17 Nov, approved by Josué): a looping shape carries its silhouette in each track piece.
   // 55 KB (15 Nov, player 2.0 step 2): generative fills and pattern tiles moved
   // to vendor/ (oim-generative-*.js, oim-patterns-*.js); 53.1 KB at that commit.
-  it.skipIf(!hasBundle)("the player fits in 55 KB gzip", async () => {
+  it.skipIf(!hasBundle)("the player fits in 56 KB gzip", async () => {
     const { gzipSync } = await import("node:zlib");
     const kb = gzipSync(readFileSync(BUNDLE)).length / 1024;
-    expect(Math.round(kb)).toBeLessThanOrEqual(55);
+    expect(Math.round(kb)).toBeLessThanOrEqual(56);
   });
 
   it.skipIf(!hasBundle)("generative fills and pattern tiles ship apart, next to both player paths", () => {

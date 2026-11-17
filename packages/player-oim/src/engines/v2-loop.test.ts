@@ -38,6 +38,15 @@ describe("a layer loops from its 2.0 layer", () => {
     expect(track.style.getPropertyValue("animation-direction")).toBe("reverse");
   });
 
+  it("a looping shape draws its silhouette inside every track piece", async () => {
+    const arrow = geo("a", { style: { width: 50, height: 50, geoShape: "arrow", fillColor: "#93c5fd", fillType: "color" } });
+    const { shadow } = await render([arrow], (l) => { l.get("a").motion = { loop: { speedPxSec: 40 } }; });
+    const pieces = [...shadow.querySelector('[data-slot-id="a"] .oim-parallax-track')!.children];
+    expect(pieces.length).toBeGreaterThan(1);
+    for (const piece of pieces) expect(piece.querySelector("svg polygon, svg path")).not.toBeNull();
+    expect(shadow.querySelector('[data-slot-id="a"] > svg')).toBeNull();
+  });
+
   it("no loop in 2.0, nothing scrolls, whatever 1.x said", async () => {
     const { shadow } = await render([geo("a", { parallax: infinite })], (l) => { delete l.get("a").motion; });
     expect(shadow.querySelector('[data-slot-id="a"] .oim-parallax-track')).toBeNull();

@@ -3,6 +3,13 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.32.1
+
+- core: an SVG icon whose exported markup bakes a gradient, pattern or generative fill
+  (`<defs>`, `url()`) upgrades from its original `svgRawXml` instead of becoming a rectangle.
+- player: a 2.0 drawing with a gradient fill paints it cut to its paths, as pattern and
+  generative already did; it used to paint the gradient over the whole box.
+
 ## 1.32.0
 
 - Additive: every new field is optional, and a document without them renders as before. No `min_player` or capability is set for the new values.

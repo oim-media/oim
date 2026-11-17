@@ -19,7 +19,7 @@ import { ensureUpgrade } from './upgrade-entry.js';
 import { ensureFeatures } from './features-entry.js';
 import { featuresOf } from './features.js';
 import { geometryOutline } from '../../../core/src/v2/geometry-outline.js';
-import { v2LayersOf, anchorShift, paintColors, typographyCss, maskStyle, imageSrc, drawingSvg, drawingLink } from './v2-layers.js';
+import { v2LayersOf, anchorShift, paintColors, typographyCss, maskStyle, imageSrc, drawingSvg, drawingLink, paintedByFillLayer } from './v2-layers.js';
 import { paintCss, patternStyle } from '../../../core/src/v2/paint-css.js';
 import { sanitizeHtml, sanitizeFontFamily, isSandboxImageSrc } from './sanitize.js';
 import {
@@ -877,7 +877,7 @@ export class LegacyRenderer {
       const v2Drawing = v2Own.type === 'shape' && v2Own.geometry?.kind === 'paths' && !geometryOutline(v2Own.geometry).path ? v2Own.geometry : undefined;
       let rawText = v2Words ? resolveContent(v2Words, self.lang)
         : v2Image ? imageSrc(v2Image.src as never, self.lang)
-        : v2Drawing && !isBackground(slot) ? drawingSvg(v2Drawing, drawingLink(v2Own, v2Colors.css))
+        : v2Drawing && !isBackground(slot) ? drawingSvg(v2Drawing, paintedByFillLayer(v2Own) ? { ...drawingLink(v2Own, v2Colors.css), fill: 'none' } : drawingLink(v2Own, v2Colors.css))
         : v2Own.type === 'lottie' ? (v2Own.lottie?.src ?? '')
         : localized.content;
       // Pure geometric shapes and filter layers carry no text content but
@@ -1545,7 +1545,7 @@ export class LegacyRenderer {
       const v2Fill = v2Own.fills?.[0] as any;
       const fillKind: string | undefined = v2Fill && 'kind' in v2Fill ? v2Fill.kind : undefined;
       const shapeOutline = geometryOutline(v2Own.type === 'shape' ? v2Own.geometry : undefined);
-      const isVectorFill = (slotType === 'svg' || isSvg) && !isWindowMask && (fillKind === 'pattern' || fillKind === 'generative');
+      const isVectorFill = (slotType === 'svg' || isSvg) && !isWindowMask && (fillKind === 'pattern' || fillKind === 'generative' || (fillKind === 'gradient' && !!v2Drawing));
       // Image fill (contract 1.17.0): the same resolution as an image layer's
       // content. A network URL is refused, as there (the file carries its picture).
       const fillImageSrc = isGeoLike && !isWindowMask && fillKind === 'image' ? String(v2Fill.src || '').trim() : '';
@@ -1686,13 +1686,7 @@ export class LegacyRenderer {
       if (hasComplexFill) {
         const fillLayer = document.createElement('div');
         fillLayer.className = 'oim-fill-layer';
-        fillLayer.style.position = 'absolute';
-        fillLayer.style.left = '0';
-        fillLayer.style.top = '0';
-        fillLayer.style.width = '100%';
-        fillLayer.style.height = '100%';
-        fillLayer.style.pointerEvents = 'none';
-        fillLayer.style.borderRadius = 'inherit';
+        fillLayer.style.cssText = 'position:absolute;inset:0;pointer-events:none;border-radius:inherit';
         const fillCss: Record<string, string> = {
           ...(v2Fill ? paintCss(v2Fill, { colors: v2Colors, width: v2Own.box.width || baseWidth, height: v2Own.box.height || baseHeight }) : {}),
           // 1.x painted the literal fillColor (never a stale palette role) under the photo, inside the silhouette.
@@ -1703,9 +1697,15 @@ export class LegacyRenderer {
         // The drawing goes above the fill: a positioned sibling paints over a
         // static one, and the absolute fill layer hid the icon's stroke.
         if (isVectorFill && !loopWrap.style.position) loopWrap.style.position = 'relative';
+        // A moving pattern's keyframes also move mask-position (the tile mask of a dynamic
+        // pattern), so the silhouette stays on this layer and the pattern moves inside it.
+        const moves = fillCss.animation && fillCss.maskImage;
+        const painted = moves ? fillLayer.appendChild(document.createElement('div')) : fillLayer;
+        if (moves) painted.style.cssText = fillLayer.style.cssText;
         for (const [prop, value] of Object.entries(fillCss)) {
-          if (prop.startsWith('--')) fillLayer.style.setProperty(prop, value);
-          else (fillLayer.style as any)[prop] = value;
+          const target = moves && /mask/i.test(prop) ? fillLayer : painted;
+          if (prop.startsWith('--')) target.style.setProperty(prop, value);
+          else (target.style as any)[prop] = value;
         }
         slotEl.insertBefore(fillLayer, slotEl.firstChild);
       }

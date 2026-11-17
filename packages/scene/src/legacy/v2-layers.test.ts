@@ -39,6 +39,21 @@ describe('drawingLink and drawingSvg', () => {
     expect(drawingLink(layer([color('#f00')]), lit)).toEqual({ fill: '#f00', stroke: '#f00' });
   });
 
+  it('a gradient stroke paints every path with one gradient across the viewBox, as the editor', async () => {
+    const { drawingLink, drawingSvg } = await import('./v2-layers');
+    const gradient = { type: 'linear', angle: 180, stops: [{ color: '#7D03FC', at: 0 }, { color: '#2563EB', at: 1 }] };
+    const link = drawingLink(layer(undefined, [{ paint: { kind: 'gradient', gradient }, width: 0 }]), lit);
+    const g = { kind: 'paths', viewBox: [0, 0, 24, 24], paths: [{ d: 'M0 0H24', stroke: 'currentColor' }, { d: 'M0 4H24', fill: '#000' }] } as never;
+    const host = document.createElement('div');
+    host.innerHTML = drawingSvg(g, link);
+    const grad = host.querySelector('linearGradient')!;
+    expect([grad.getAttribute('x1'), grad.getAttribute('y1'), grad.getAttribute('x2'), grad.getAttribute('y2')]).toEqual(['12', '0', '12', '24']);
+    expect(grad.getAttribute('gradientUnits')).toBe('userSpaceOnUse');
+    expect([...grad.querySelectorAll('stop')].map((s) => s.getAttribute('stop-color'))).toEqual(['#7D03FC', '#2563EB']);
+    const paths = [...host.querySelectorAll('path')];
+    for (const p of paths) expect(p.style.getPropertyValue('stroke')).toBe(`url(#${grad.id})`);
+  });
+
   it('a tile writes literal attributes and its own size; inline goes through CSSOM', async () => {
     const { drawingSvg } = await import('./v2-layers');
     const g = { kind: 'paths', viewBox: [0, 0, 24, 24], paths: [{ d: 'M0 0H24', stroke: 'currentColor', strokeWidth: 2 }] } as never;

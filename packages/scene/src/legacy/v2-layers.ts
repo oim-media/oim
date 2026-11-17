@@ -11,6 +11,8 @@ import type { Box, Geometry, Layer, OimDocument } from '../../../core/src/v2/sch
 import { paintColors } from '../../../core/src/v2/colors.js';
 import { gradientCss, type PaintColors } from '../../../core/src/v2/paint-css.js';
 import { typographyCss } from '../../../core/src/v2/typography.js';
+import { svgGradientAttrs } from '../../../core/src/v2/svg-gradient.js';
+import type { Gradient } from '../../../core/src/v2/upgrade/gradient.js';
 export { paintColors, typographyCss };
 import { resolveByLang } from './localizedEntries.js';
 
@@ -116,7 +118,9 @@ const safeColor = (c: string | undefined) => (c && !/[;{}<>"]|url\(|expression\(
  * Colours go through CSSOM: a role is a var(), and an invalid value is dropped,
  * not injected into the markup.
  */
-export function drawingSvg(geometry: Paths, link: { fill?: string; stroke?: string }, tile = false): string {
+let gradientIds = 0;
+
+export function drawingSvg(geometry: Paths, link: DrawingLink, tile = false): string {
   const NS = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('viewBox', geometry.viewBox.join(' '));
@@ -128,11 +132,26 @@ export function drawingSvg(geometry: Paths, link: { fill?: string; stroke?: stri
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     svg.style.setProperty('display', 'block');
   }
+  // A gradient stroke goes on every path, one gradient across the viewBox, as the editor draws it.
+  let strokeUrl: string | undefined;
+  if (link.strokeGradient) {
+    const { tag, attrs, stops } = svgGradientAttrs(link.strokeGradient, geometry.viewBox);
+    const grad = svg.appendChild(document.createElementNS(NS, 'defs')).appendChild(document.createElementNS(NS, tag));
+    grad.id = `oim-sg-${++gradientIds}`;
+    grad.setAttribute('gradientUnits', 'userSpaceOnUse');
+    for (const [k, v] of Object.entries(attrs)) grad.setAttribute(k, String(v));
+    for (const st of stops) {
+      const stop = grad.appendChild(document.createElementNS(NS, 'stop'));
+      stop.setAttribute('offset', st.offset);
+      stop.setAttribute('stop-color', safeColor(st.color) ?? '#000');
+    }
+    strokeUrl = `url(#${grad.id})`;
+  }
   for (const p of geometry.paths) {
     const el = document.createElementNS(NS, 'path');
     el.setAttribute('d', p.d);
     const fill = safeColor(p.fill === 'currentColor' ? link.fill ?? 'currentColor' : p.fill);
-    const stroke = safeColor(p.stroke === 'currentColor' ? link.stroke ?? 'currentColor' : p.stroke);
+    const stroke = strokeUrl ?? safeColor(p.stroke === 'currentColor' ? link.stroke ?? 'currentColor' : p.stroke);
     if (tile) {
       // Inside a data URI an attribute cannot reach the page.
       el.setAttribute('fill', fill ?? 'none');
@@ -160,9 +179,15 @@ export function paintedByFillLayer(layer: Layer): boolean {
 }
 
 /** The colour a drawing's `currentColor` takes, as CSS or as a literal for a baked tile. */
-export function drawingLink(layer: Layer, color: (v: unknown) => string | undefined): { fill?: string; stroke?: string } {
+export type DrawingLink = { fill?: string; stroke?: string; strokeGradient?: Gradient };
+
+export function drawingLink(layer: Layer, color: (v: unknown) => string | undefined): DrawingLink {
   const flat = (paint: unknown) => (paint && typeof paint === 'object' && (paint as { kind?: unknown }).kind === 'color' ? color((paint as { value: unknown }).value) : undefined);
   const fill = flat(layer.fills?.[0]);
-  const stroke = flat(layer.strokes?.[0]?.paint);
-  return { fill: fill ?? stroke, stroke: stroke ?? fill };
+  const paint = layer.strokes?.[0]?.paint as { kind?: string; gradient?: Gradient } | undefined;
+  const stroke = flat(paint);
+  // shortcut: a conic stroke falls back to the flat colour, add it if an editor ever offers one.
+  const g = paint?.kind === 'gradient' && paint.gradient?.type !== 'conic' ? paint.gradient : undefined;
+  const strokeGradient = g && { ...g, stops: g.stops.map((s) => ({ ...s, color: color(s.color) ?? s.color })) };
+  return { fill: fill ?? stroke, stroke: stroke ?? fill, ...(strokeGradient && { strokeGradient }) };
 }

@@ -248,6 +248,13 @@ describe("1.x SVG layers", () => {
   it("strokeColor tints the drawing at any width: a colour-only stroke", () => {
     expect(svgLayer({ strokeColor: "#2563EB", strokeWidth: 2 }).strokes).toEqual([{ paint: { kind: "color", value: "#2563EB" }, width: 0 }]);
   });
+  it("a gradient stroke paints the drawing's stroke with that gradient", () => {
+    const l = svgLayer({ strokeColor: "#18181B", strokeWidth: 2, strokePaint: "gradient", strokeGradient: "linear-gradient(180deg, #7D03FC 0%, #2563EB 100%)" });
+    expect(l.strokes).toEqual([{ paint: { kind: "gradient", gradient: { type: "linear", angle: 180, stops: [{ color: "#7D03FC", at: 0 }, { color: "#2563EB", at: 1 }] } }, width: 0 }]);
+  });
+  it("a solid stroke paint ignores a leftover gradient", () => {
+    expect(svgLayer({ strokeColor: "#2563EB", strokePaint: "solid", strokeGradient: "linear-gradient(90deg, #000, #fff)" }).strokes[0].paint.kind).toBe("color");
+  });
   it("an old icon created as geo is a drawing too", () => {
     const l = svgLayer({ strokeColor: "#2563EB" }, "geo");
     expect(l.geometry.kind).toBe("paths");

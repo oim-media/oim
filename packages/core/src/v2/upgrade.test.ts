@@ -191,3 +191,13 @@ describe("upgrade: root, tree and box", () => {
     }
   });
 });
+
+describe("upgrade: a filter keeps its figure", () => {
+  // A filter is a shape with a backdrop effect; the figure it clips to is its geometry.
+  it("a filter with a catalogue shape keeps that shape and its backdrop", () => {
+    const layer = first(v1([slot({ id: "f", type: "filter", style: { filterPreset: "grayscale", geoShape: "star" } })]));
+    expect(layer.type).toBe("shape");
+    expect(layer.geometry).toEqual({ kind: "preset", name: "star" });
+    expect(layer.effects).toEqual([{ kind: "backdrop", preset: "grayscale" }]);
+  });
+});

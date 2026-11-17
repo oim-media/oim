@@ -90,3 +90,13 @@ describe('legacyView for the language switch', () => {
     expect(style.maxWidths).toBeUndefined();
   });
 });
+
+describe('legacyView: a filter', () => {
+  // A 2.0 filter is a shape with a backdrop effect; the renderer paints a filter only from a slot of type "filter".
+  it('a shape with a backdrop is a filter slot, and its 2.0 layer stays a shape', () => {
+    const layer = { id: 'f', type: 'shape', box: { x: 200, y: 120, width: 300, height: 200 }, geometry: { kind: 'preset', name: 'star' }, effects: [{ kind: 'backdrop', preset: 'grayscale' }] };
+    const view = legacyView(doc([layer]));
+    expect(view.slots[0].type).toBe('filter');
+    expect(v2LayersOf(view).get('f')?.type).toBe('shape');
+  });
+});

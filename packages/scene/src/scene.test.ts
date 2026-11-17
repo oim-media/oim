@@ -184,3 +184,15 @@ describe("layer effects", () => {
     expect(scene.elementOf("a")!.style.filter).toBe("");
   });
 });
+
+describe("a filter clips its backdrop to its figure", () => {
+  const filterOn = (layer: Partial<Layer>) => mount(document.createElement("div"), doc([shape({ effects: [{ kind: "backdrop", preset: "grayscale" }], ...layer })])).elementOf("a")!;
+
+  it("a star filter is clipped to the star, over its own box", () => {
+    expect(filterOn({ geometry: { kind: "preset", name: "star" } }).style.clipPath).toMatch(/^path\("M/);
+  });
+
+  it("a rectangle filter is not clipped: its corners are the border radius", () => {
+    expect(filterOn({ geometry: { kind: "rect" } }).style.clipPath).toBe("");
+  });
+});

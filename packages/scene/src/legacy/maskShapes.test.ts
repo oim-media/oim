@@ -12,6 +12,7 @@ import {
   getMaskSilhouetteCanvasD,
   getMaskSilhouettePath,
   getWindowMaskCanvasD,
+  maskOutlineResolves,
 } from "./layerComposition";
 
 /**
@@ -140,3 +141,25 @@ describe("a mask whose outline cannot be drawn falls back to its box", () => {
       .toBe(`M0 0H200V200H0Z ${box} ${box}`);
   });
 });
+
+describe("maskOutlineResolves decides when the player warns once", () => {
+  it("a catalogue shape, or no shape at all (the circle), resolves", () => {
+    expect(maskOutlineResolves(maskOf({ maskShape: "star" }))).toBe(true);
+    expect(maskOutlineResolves(maskOf({}))).toBe(true);
+  });
+
+  it("an unknown name does not resolve", () => {
+    expect(maskOutlineResolves(maskOf({ maskShape: "nope" }))).toBe(false);
+  });
+
+  it("a path that is not a path does not resolve, a valid one does", () => {
+    expect(maskOutlineResolves(maskOf({ maskShape: "custom", maskSvgPath: "M0 0 X9 9" }))).toBe(false);
+    expect(maskOutlineResolves(maskOf({ maskShape: "custom", maskSvgPath: "M0 0 L100 0 L50 100 Z" }))).toBe(true);
+  });
+
+  it("with cuts, one outline that cannot be drawn is enough to warn", () => {
+    expect(maskOutlineResolves(maskOf({ cuts: [{ shape: "star" }, { svgPath: "M0 0 L10 0 L5 9 Z" }] }))).toBe(true);
+    expect(maskOutlineResolves(maskOf({ cuts: [{ shape: "star" }, { shape: "nope" }] }))).toBe(false);
+  });
+});
+

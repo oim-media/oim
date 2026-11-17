@@ -30,6 +30,7 @@ import {
   getWindowMaskCanvasD,
   getMaskSilhouetteCanvasD,
   getMaskBox,
+  maskOutlineResolves,
   getMaskClipPathId,
   getMaskFeatherId,
   getDuotoneFilterId,
@@ -321,19 +322,18 @@ export interface WindowFrameFill {
  * roles come from `paintCss`, a photo from `mountImageFill`. The paint is
  * clipped by the frame-with-hole, `path(evenodd, ...)`, so the frame is painted
  * and the silhouette stays transparent. The die-cut outline is a stroke above
- * it. Null when no outline can be drawn.
+ * it. An outline that cannot be drawn leaves a hole the size of the mask's box.
  */
 export function buildWindowMaskFrame(
   slot: any,
   artboard: { width: number; height: number },
   fill: WindowFrameFill
-): HTMLElement | null {
+): HTMLElement {
   const svgNs = 'http://www.w3.org/2000/svg';
   const W = artboard.width;
   const H = artboard.height;
   const style = slot.style || {};
   const hole = getWindowMaskCanvasD(slot, artboard);
-  if (hole === null) return null;
   const { x, y } = getMaskBox(slot, artboard);
 
   // The frame lives in CANVAS coordinates, not in the slot's box: anchored at the
@@ -371,7 +371,7 @@ export function buildWindowMaskFrame(
   // The outline is not clipped: half of its stroke lies over the frame's edge.
   const thickness = style.maskStrokeWidth ?? 0;
   const outline = getMaskSilhouetteCanvasD(slot, artboard);
-  if (thickness > 0 && outline !== null) {
+  if (thickness > 0) {
     const svg = document.createElementNS(svgNs, 'svg');
     svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
     svg.setAttribute('preserveAspectRatio', 'none');
@@ -394,12 +394,12 @@ export function buildWindowMaskFrame(
   return frame;
 }
 
-// One warning per page load: a mask whose outline cannot be drawn is skipped, never guessed.
+// One warning per page load: a mask whose outline cannot be drawn falls back to its box, never to a circle.
 let outlineWarned = false;
 function warnOutlineOnce(slotId: string): void {
   if (outlineWarned) return;
   outlineWarned = true;
-  console.warn('[OimPlayer] A mask outline cannot be drawn (unknown shape and no path); the mask is skipped, slot:', slotId);
+  console.warn('[OimPlayer] A mask outline cannot be drawn (unknown shape and no path); the mask falls back to its box, slot:', slotId);
 }
 
 /**
@@ -427,10 +427,9 @@ export function buildLayerCompositionDefs(
     if (s.type === 'mask' && style.maskMode === 'cutout') {
       const feather = style.maskFeather;
       const d = getMaskClipPathD(s, artboard);
+      if (!maskOutlineResolves(s)) warnOutlineOnce(String(s.id));
 
-      if (d === null) {
-        warnOutlineOnce(String(s.id));
-      } else if (feather && feather > 0) {
+      if (feather && feather > 0) {
         const filterId = getMaskFeatherId(s) + '-blur';
 
         const filter = document.createElementNS(svgNs, 'filter');
@@ -1733,8 +1732,8 @@ export class LegacyRenderer {
             : paintCss(frameFill, { colors: v2Colors, width: baseWidth, height: baseHeight }),
           photo: photoSafe ? { paint: frameFill, src: photoSrc, underColor } : undefined,
         });
-        if (frame) slotEl.appendChild(frame);
-        else warnOutlineOnce(String(slot.id));
+        slotEl.appendChild(frame);
+        if (!maskOutlineResolves(slot)) warnOutlineOnce(String(slot.id));
       }
 
       // The padding of `.oim-slot` (`0 0.25em 0 0 !important`) exists so that the

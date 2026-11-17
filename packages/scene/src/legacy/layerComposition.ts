@@ -39,9 +39,14 @@ export function getMaskBox(slot: Slot, artboard: { width: number; height: number
   };
 }
 
+/** A box as a rectangle path: the silhouette of a rectangle mask, and the fallback of one that cannot be drawn. */
+function boxRectangle(box: MaskBox): string {
+  return `M${box.x} ${box.y}H${box.x + box.width}V${box.y + box.height}H${box.x}Z`;
+}
+
 /** The catalogue draws no rectangle (it is the box): a mask rectangle is the box itself. */
 function namedOutline(name: string, box: MaskBox): string | null {
-  if (name === "rect" || name === "rectangle") return `M${box.x} ${box.y}H${box.x + box.width}V${box.y + box.height}H${box.x}Z`;
+  if (name === "rect" || name === "rectangle") return boxRectangle(box);
   return maskOutlinePath({ geoShape: name }, box);
 }
 
@@ -60,44 +65,63 @@ function outlineIn(slot: Slot, box: MaskBox): string | null {
   return namedOutline(name || "circle", box);
 }
 
-/** One cut's outline: its own path, else its catalogue shape (a circle when it names none). */
-function cutOutline(cut: any, box: MaskBox): string | null {
-  const cutBox = {
+function cutBoxOf(cut: any, box: MaskBox): MaskBox {
+  return {
     x: box.x + (cut.x || 0),
     y: box.y + (cut.y || 0),
     width: cut.width || 0,
     height: cut.height || 0,
   };
+}
+
+/** One cut's outline: its own path, else its catalogue shape (a circle when it names none). Null when it cannot be drawn. */
+function cutOutline(cut: any, box: MaskBox): string | null {
+  const cutBox = cutBoxOf(cut, box);
   return cut.svgPath
     ? maskOutlinePath({ svgPath: cut.svgPath }, cutBox)
     : namedOutline(cut.shape || "circle", cutBox);
 }
 
-/** Every silhouette the mask cuts (its cuts, or its one outline), in canvas units. Null when none can be drawn. */
-function silhouettesIn(slot: Slot, box: MaskBox): string | null {
+function cutsOf(slot: Slot): any[] {
   const s = slot as any;
   const cuts = s.cuts || (s.style && s.style.cuts);
-  if (cuts && Array.isArray(cuts) && cuts.length > 0) {
-    const drawn = cuts
-      .map((cut: any) => cutOutline(cut, box))
-      .filter((d: string | null): d is string => d !== null);
-    return drawn.length > 0 ? drawn.join(" ") : null;
+  return Array.isArray(cuts) ? cuts : [];
+}
+
+/**
+ * Every silhouette the mask cuts (its cuts, or its one outline), in canvas units.
+ * An outline that cannot be drawn falls back to its box (or the cut's box), so the
+ * mask never disappears and never turns into a circle.
+ */
+function silhouettesIn(slot: Slot, box: MaskBox): string {
+  const cuts = cutsOf(slot);
+  if (cuts.length > 0) {
+    return cuts.map((cut) => cutOutline(cut, box) ?? boxRectangle(cutBoxOf(cut, box))).join(" ");
   }
-  return outlineIn(slot, box);
+  return outlineIn(slot, box) ?? boxRectangle(box);
+}
+
+/**
+ * True when every outline of the mask can be drawn. False means one of them falls
+ * back to its box, which is when the player warns once.
+ */
+export function maskOutlineResolves(slot: Slot): boolean {
+  const cuts = cutsOf(slot);
+  if (cuts.length > 0) return cuts.every((cut) => cutOutline(cut, UNIT_BOX) !== null);
+  return outlineIn(slot, UNIT_BOX) !== null;
 }
 
 /**
  * The cut-out silhouette in the mask's own "0 0 100 100" space, without the
- * inversion rectangle. Null when no outline can be drawn.
+ * inversion rectangle. It is the box when the outline cannot be drawn.
  */
-export function getMaskSilhouettePath(slot: Slot): string | null {
-  return outlineIn(slot, UNIT_BOX);
+export function getMaskSilhouettePath(slot: Slot): string {
+  return outlineIn(slot, UNIT_BOX) ?? boxRectangle(UNIT_BOX);
 }
 
-export function getMaskPathData(slot: Slot): string | null {
+export function getMaskPathData(slot: Slot): string {
   const style = slot.style || {};
   const path = getMaskSilhouettePath(slot);
-  if (path === null) return null;
   // The "window" mode paints the frame and leaves the silhouette hollow, so it
   // needs the same full-coverage rectangle as the inversion.
   return (style.maskInvert || style.maskMode === "window")
@@ -110,13 +134,13 @@ export function getMaskPathData(slot: Slot): string | null {
  *
  * The frame is the whole canvas by default (`maskCoverage: "canvas"`), so a
  * small mask leaves no strip; `"container"` limits it to the mask's box. Only
- * the hole follows the silhouette, with `fill-rule="evenodd"`. Null when no
- * outline can be drawn.
+ * the hole follows the silhouette, with `fill-rule="evenodd"`. An outline that
+ * cannot be drawn leaves a hole the size of the mask's box.
  */
 export function getWindowMaskCanvasD(
   slot: Slot,
   artboard: { width: number; height: number }
-): string | null {
+): string {
   const { width: W, height: H } = artboard;
   const s = slot as any;
   const box = getMaskBox(slot, artboard);
@@ -125,19 +149,19 @@ export function getWindowMaskCanvasD(
     ? "container"
     : "canvas";
   const frameBox = coverage === "container"
-    ? `M${box.x} ${box.y}H${box.x + box.width}V${box.y + box.height}H${box.x}Z`
+    ? boxRectangle(box)
     : `M0 0H${W}V${H}H0Z`;
 
-  const silhouettes = silhouettesIn(slot, box);
-  return silhouettes === null ? null : `${frameBox} ${silhouettes}`;
+  return `${frameBox} ${silhouettesIn(slot, box)}`;
 }
 
 /** Only the silhouette, in canvas coordinates. The cut-out outline traces the hole, not the frame. */
 export function getMaskSilhouetteCanvasD(
   slot: Slot,
   artboard: { width: number; height: number }
-): string | null {
-  return outlineIn(slot, getMaskBox(slot, artboard));
+): string {
+  const box = getMaskBox(slot, artboard);
+  return outlineIn(slot, box) ?? boxRectangle(box);
 }
 
 /**
@@ -183,20 +207,16 @@ export type CompositionNode =
 /**
  * The clip of a cut-out mask, in canvas units: the canvas, the mask box and the
  * silhouette, under evenodd. Outside the box the image shows; inside, only the
- * silhouette. Null when no outline can be drawn.
+ * silhouette. An outline that cannot be drawn clips to the box.
  */
 export function getMaskClipPathD(
   slot: Slot,
   artboard: { width: number; height: number }
-): string | null {
+): string {
   const { width: W, height: H } = artboard;
   const box = getMaskBox(slot, artboard);
-  const silhouettes = silhouettesIn(slot, box);
-  if (silhouettes === null) return null;
-
   const canvas = `M0 0H${W}V${H}H0Z`;
-  const boxD = `M${box.x} ${box.y}H${box.x + box.width}V${box.y + box.height}H${box.x}Z`;
-  return `${canvas} ${boxD} ${silhouettes}`;
+  return `${canvas} ${boxRectangle(box)} ${silhouettesIn(slot, box)}`;
 }
 
 /**

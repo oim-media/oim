@@ -12,8 +12,9 @@
  * gradient, a pattern, a dynamic role or a photo cannot be dropped on the way.
  */
 
-import { describe, it, expect } from "vitest";
-import { buildWindowMaskFrame } from "./renderer";
+import { describe, it, expect, vi } from "vitest";
+import { buildLayerCompositionDefs, buildWindowMaskFrame } from "./renderer";
+import { computeLayerComposition } from "./layerComposition";
 import { paintCss } from "../../../core/src/v2/paint-css.js";
 import { paintColors } from "../../../core/src/v2/colors.js";
 
@@ -76,8 +77,37 @@ describe("window frame paint", () => {
     expect(paint.style.clipPath).toMatch(/^path\(evenodd, "M0 0H800V600H0Z/);
   });
 
-  it("a mask whose outline cannot be drawn has no frame", () => {
+  it("a mask whose outline cannot be drawn keeps its frame, with a hole the size of its box", () => {
     const unknown = { ...windowMask, style: { maskMode: "window", maskShape: "nope" } };
-    expect(buildWindowMaskFrame(unknown, artboard, { css: {} })).toBeNull();
+    const frame = buildWindowMaskFrame(unknown, artboard, { css: { backgroundColor: "#123456" } })!;
+    const paint = frame.querySelector(".oim-mask-paint") as HTMLElement;
+    expect(paint.style.clipPath).toMatch(/^path\(evenodd/);
+    expect(paint.style.clipPath).toContain("M100 60H300V260H100Z");
+  });
+
+  it("a cutout mask with no drawable outline defines the clip or feather its layer references, and warns once", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const bg = { id: "bg", type: "image", x: 0, y: 0, width: 100, height: 100, style: {} } as any;
+    const cases: [number, string][] = [
+      [0, "clipPath"],
+      [4, "maskStyle"],
+    ];
+    for (const [maskFeather, prop] of cases) {
+      const cut = {
+        id: "cut",
+        type: "mask",
+        x: 10,
+        y: 10,
+        width: 50,
+        height: 50,
+        style: { maskMode: "cutout", maskShape: "nope", maskFeather },
+      } as any;
+      const defs = buildLayerCompositionDefs([bg, cut], { width: 100, height: 100 });
+      const [node] = computeLayerComposition([bg, cut]) as any[];
+      const ref = String(node[prop]).match(/url\(#([^)]+)\)/)![1];
+      expect(defs.querySelector(`#${ref}`), prop).not.toBeNull();
+    }
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
   });
 });

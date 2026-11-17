@@ -114,7 +114,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     const outline = layer.type === "shape" ? (figure ? applyGeometry(el, layer, { colors }) : geometryOutline(layer.geometry)) : geometryOutline(undefined);
     if (has("effects", "geometry")) el.style.clipPath = filterClip(layer, outline);
     if (has("corners", "geometry")) applyCorners(el, layer, !!outline.round);
-    if (has("strokes", "geometry", "fills")) applyStrokes(el, layer, { colors, isText, vector: !!outline.silhouette });
+    if (has("strokes", "geometry", "fills")) applyStrokes(el, layer, { colors, isText, vector: !!outline.silhouette, rounded: !!outline.round || [layer.corners ?? 0].flat().some((c) => c > 0) });
     if (layer.type === "image" && has("image")) {
       el.querySelectorAll(":scope > img[data-oim-fill]").forEach((node) => node.remove());
       const picture = pictureOf(layer.image, lang);

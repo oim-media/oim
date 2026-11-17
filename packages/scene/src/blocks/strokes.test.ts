@@ -19,12 +19,17 @@ const paint = (strokes: Layer["strokes"], isText = false) => {
 const css = (strokes: Layer["strokes"], isText = false) => strokeCss({ strokes }, { colors, isText });
 
 describe("applyStrokes", () => {
-  it("a centred stroke of 2 px is a border of the same width, colour and style as the player writes", () => {
-    expect(paint([stroke()]).style.border).toBe("2px solid #f00");
+  it("a centred stroke sits on the box edge, half in and half out, and never sizes the box (SPEC_2 §Strokes)", () => {
+    expect(css([stroke()])).toEqual({ outline: "2px solid #f00", outlineOffset: "-1px" });
+    expect(paint([stroke()]).style.border).toBe("");
   });
 
-  it("dashed and dotted styles reach the border", () => {
-    expect(paint([stroke({ style: "dashed" })]).style.border).toBe("2px dashed #f00");
+  it("dashed and dotted styles reach the centred outline", () => {
+    expect(css([stroke({ style: "dashed" })])).toEqual({ outline: "2px dashed #f00", outlineOffset: "-1px" });
+  });
+
+  it("a solid centred stroke on rounded corners follows them: two box shadows of half the width", () => {
+    expect(strokeCss({ strokes: [stroke()] }, { colors, isText: false, rounded: true })).toEqual({ boxShadow: "inset 0 0 0 1px #f00, 0 0 0 1px #f00" });
   });
 
   it("an inside or outside stroke is a box shadow on the inner or outer edge", () => {
@@ -43,6 +48,6 @@ describe("applyStrokes", () => {
   it("applying again replaces the earlier stroke", () => {
     const el = paint([stroke()]);
     applyStrokes(el, { strokes: [stroke({ width: 4 })] }, { colors, isText: false });
-    expect(el.style.border).toBe("4px solid #f00");
+    expect(el.style.outlineWidth).toBe("4px");
   });
 });

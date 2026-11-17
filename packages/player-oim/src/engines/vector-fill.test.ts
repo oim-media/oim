@@ -55,8 +55,11 @@ describe("pattern or generative fill on a vector", () => {
     expect(dibujo.style.position).toBe("relative");
   });
 
-  it("a gradient creates no layer: it travels inside the SVG", async () => {
+  // Changed 16 Nov: a 2.0 drawing carries its gradient as the layer's fill (the cards rocket came out a square).
+  it("gradient: fill layer clipped with the icon's silhouette, like the others", async () => {
     const el = await slotDe({ fillType: "gradient", fillGradient: "linear-gradient(90deg, #000 0%, #fff 100%)" }, ICON);
-    expect(layerItem(el)).toBeNull();
+    const capa = layerItem(el)!;
+    expect(capa).not.toBeNull();
+    expect(mascara(capa)).toContain("data:image/svg+xml");
   });
 });

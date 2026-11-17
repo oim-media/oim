@@ -98,6 +98,10 @@ function shapeGeometry(ctx: UpgradeContext, slot: V1Slot, media: string | undefi
   if (xml) {
     const parsed = svgToPaths(xml);
     if (parsed.ok) return { kind: "paths", ...parsed.value };
+    // The editor bakes a gradient or pattern fill into the content (<defs>, url()); the original
+    // drawing is still svgRawXml, and the fill travels as the layer's own.
+    const original = xml !== rawXml && typeof rawXml === "string" && rawXml ? svgToPaths(rawXml) : undefined;
+    if (original?.ok) return { kind: "paths", ...original.value };
     ctx.note(`style.svgRawXml: ${parsed.reason}`);
     return { kind: "rect" };
   }

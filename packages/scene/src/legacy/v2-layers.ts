@@ -153,6 +153,12 @@ export function drawingSvg(geometry: Paths, link: { fill?: string; stroke?: stri
   return svg.outerHTML;
 }
 
+/** A drawing whose first fill is not a flat colour: the fill layer paints it, cut to the paths. */
+export function paintedByFillLayer(layer: Layer): boolean {
+  const kind = (layer.fills?.[0] as { kind?: unknown } | undefined)?.kind;
+  return kind === 'gradient' || kind === 'pattern' || kind === 'generative';
+}
+
 /** The colour a drawing's `currentColor` takes, as CSS or as a literal for a baked tile. */
 export function drawingLink(layer: Layer, color: (v: unknown) => string | undefined): { fill?: string; stroke?: string } {
   const flat = (paint: unknown) => (paint && typeof paint === 'object' && (paint as { kind?: unknown }).kind === 'color' ? color((paint as { value: unknown }).value) : undefined);

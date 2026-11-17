@@ -4,6 +4,10 @@
 contract version. The full history, for all packages, is in the repository's
 [CHANGELOG.md](https://github.com/oim-media/oim/blob/main/CHANGELOG.md).
 
+## 1.32.1
+
+- Version aligned with the 1.32.1 release; no SDK changes.
+
 ## 1.32.0
 
 - Tracks contract 1.32.0: 12 new mask and filter silhouettes; the frame fill uses the fill* fields.

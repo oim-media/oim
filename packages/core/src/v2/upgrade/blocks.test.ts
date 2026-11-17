@@ -199,6 +199,15 @@ describe("geometry, corners and images", () => {
     expect(paths[0]).toMatchObject({ stroke: "#c84b31", strokeWidth: 2 });
   });
 
+  it("an icon whose exported markup bakes its gradient or pattern falls back to its original SVG (cards, 16 Nov)", () => {
+    const raw = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 10h14"/></svg>';
+    const baked = '<svg viewBox="0 0 24 24"><defs><linearGradient id="g"><stop offset="0" stop-color="#f00"/></linearGradient></defs><path d="M3 10h14" fill="url(#g)"/></svg>';
+    const fillGradient = "linear-gradient(135deg, #FDE68A 0%, #D97706 100%)";
+    const icon = layer({ svgRawXml: raw, fillType: "gradient", fillGradient }, "svg", { content: { "*": baked } });
+    expect(icon.geometry).toEqual({ kind: "paths", viewBox: [0, 0, 24, 24], paths: [{ d: "M3 10h14", fill: "currentColor" }] });
+    expect(icon.fills[0].kind).toBe("gradient");
+  });
+
   it("the decomposed layers win over the raw XML: they carry the edited colours", () => {
     const svgLayers = [{ d: "M0 0h1", fill: "#ff0000", animationType: "none" }, { d: "M0 0v1", stroke: "#00f", strokeWidth: 2 }];
     expect(layer({ svgLayers, svgRawXml: '<svg viewBox="0 0 9 9"><path d="M9 9"/></svg>', svgViewBox: "0 0 16 16" }, "svg").geometry).toEqual({

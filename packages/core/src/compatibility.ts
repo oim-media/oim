@@ -43,7 +43,8 @@
  * the format can change without the player being touched. Tying both numbers
  * together would make an internal fix look like a format break.
  */
-export const CONTRACT_VERSION = "1.32.2";
+export const CONTRACT_VERSION = "1.32.3";
+// 1.32.3: a drawing painted by its fill layer (or a shape silhouette) moves with its loop animation; no format change.
 // 1.32.2: an SVG layer's gradient stroke (strokePaint: gradient) upgrades to strokes[0].paint and the player paints it; a looping shape scrolls its silhouette; no format change.
 // 1.32.1: an SVG icon with a gradient, pattern or generative fill keeps its paths (upgrade falls back to svgRawXml) and the player cuts that fill to them; no format change.
 // 1.32.0: additive, no existing file changes: a mask takes any frame shape and a window frame takes the fill* paints; a filter takes a shape (geoShape) and a rounded clip; the player draws duotone in sRGB and no longer offsets window frames and filters vertically; mask silhouettes come from the shared catalogue (one changed-pixel exception, see CHANGELOG).

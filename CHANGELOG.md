@@ -3,6 +3,11 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.32.3
+
+- player: a drawing painted by its fill layer (gradient, pattern, generative) or a shape's
+  silhouette moves with its loop timeline or loop preset; it stood still (the cards rocket).
+
 ## 1.32.2
 
 - core: an SVG layer's gradient stroke (`strokePaint: "gradient"`) upgrades to a gradient

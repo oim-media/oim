@@ -63,3 +63,33 @@ describe("pattern or generative fill on a vector", () => {
     expect(mascara(capa)).toContain("data:image/svg+xml");
   });
 });
+
+describe("a drawing painted by its fill layer moves with its animation", () => {
+  it("a looping keyframe timeline also moves the fill layer (the cards rocket stood still)", async () => {
+    const targets: Element[] = [];
+    const original = HTMLElement.prototype.animate;
+    HTMLElement.prototype.animate = function (this: HTMLElement) {
+      targets.push(this);
+      return { pause() {}, play() {}, cancel() {}, playState: "running", effect: { getTiming: () => ({ iterations: Infinity }) } } as never;
+    };
+    try {
+      const host = document.createElement("div");
+      host.setAttribute("mode", "full");
+      const shadow = (host as any).attachShadow({ mode: "open" });
+      document.body.appendChild(host);
+      const motor: any = new ImageEngine(host as any);
+      motor._viewport = document.createElement("div");
+      shadow.appendChild(motor._viewport);
+      motor._overlay = document.createElement("div");
+      motor._viewport.appendChild(motor._overlay);
+      motor.metadata = { width: 800, height: 600, slots: [{ id: "v", type: "svg", position: [10, 10], width_px: 100, height_px: 100, content: { default: ICON },
+        style: { fillType: "gradient", fillGradient: "linear-gradient(90deg, #000 0%, #fff 100%)", animation: { duration: 2, keyframes: [{ t: 0, y: 0 }, { t: 1, y: 8 }, { t: 2, y: 0 }] } } }] };
+      await motor.renderSlots();
+      const fill = shadow.querySelector('[data-slot-id="v"] .oim-fill-layer');
+      expect(fill).not.toBeNull();
+      expect(targets).toContain(fill);
+    } finally {
+      HTMLElement.prototype.animate = original;
+    }
+  });
+});

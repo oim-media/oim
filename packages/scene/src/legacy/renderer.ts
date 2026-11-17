@@ -2047,6 +2047,7 @@ export class LegacyRenderer {
         : undefined;
       if (animSource && !self.disableAnimations) {
         const anim = animSource;
+        const paintedLayers = () => [...slotEl.children].filter((el): el is HTMLElement | SVGElement => el.classList.contains('oim-fill-layer') || el.tagName.toLowerCase() === 'svg') as HTMLElement[];
         
         // Structured keyframes: the new path. It runs on loopWrap,
         // NEVER on slotEl: the .oim-slot transform is the positioning anchor
@@ -2074,9 +2075,14 @@ export class LegacyRenderer {
               instance.pause();
               instance.currentTime = 0;
             } else {
-              if (self._paused) instance.pause();
-              // Only looping timelines: play() would replay a finished one-shot.
-              self._animations.push(instance);
+              // A drawing painted by its fill layer (or a shape's silhouette) sits on the
+              // slot, outside loopWrap: it gets the same loop or it stands still.
+              // shortcut: an `action` timeline still moves only loopWrap, mirror it if a painted shape needs one.
+              for (const painted of [instance, ...paintedLayers().map((el) => el.animate(frames, { duration: animDuration * 1000, iterations: Infinity, easing: 'linear' }))]) {
+                if (self._paused) painted.pause();
+                // Only looping timelines: play() would replay a finished one-shot.
+                self._animations.push(painted);
+              }
             }
             self._timelines.set(String(slot.id), instance);
           }
@@ -2088,12 +2094,10 @@ export class LegacyRenderer {
         // the rule could ping a third party or restyle the player. The editor
         // never wrote it; only the catalogue classes remain.
         if (anim.loop && anim.loop !== 'none' && anim.loop !== 'custom') {
-          loopWrap.classList.add('oim-loop-' + anim.loop);
-          if (anim.loopDuration) {
-            loopWrap.style.setProperty('--oim-loop-duration', anim.loopDuration + 's');
-          }
-          if (anim.loopDelay) {
-            loopWrap.style.setProperty('--oim-loop-delay', anim.loopDelay + 's');
+          for (const el of [loopWrap, ...paintedLayers()]) {
+            el.classList.add('oim-loop-' + anim.loop);
+            if (anim.loopDuration) el.style.setProperty('--oim-loop-duration', anim.loopDuration + 's');
+            if (anim.loopDelay) el.style.setProperty('--oim-loop-delay', anim.loopDelay + 's');
           }
         }
 

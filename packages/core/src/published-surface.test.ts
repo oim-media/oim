@@ -187,7 +187,7 @@ const SUPERFICIE = [
   "FRAME_SHAPES",
   "frameSilhouette",
   "usesFrameShapes",
-  // path-data.ts — the one SVG path parser for mask outlines (contract 1.31.0).
+  // path-data.ts — the one SVG path parser for mask outlines (contract 1.32.0).
   "normalizePathData",
   "transformPathData",
   // mask-outline.ts — the silhouette a mask cuts with (contract 1.31.0).

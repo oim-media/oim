@@ -3,6 +3,17 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.32.0
+
+- Additive: every new field is optional, and a document without them renders as before. No `min_player` or capability is set for the new values.
+- `maskShape` accepts the twelve frame shapes (`FRAME_SHAPES`) besides the eleven 1.x shapes and `custom`. A mask whose outline cannot be drawn (unknown name, invalid path) falls back to its box, not to a circle, and the player warns once.
+- A window mask (`maskMode: "window"`) paints its frame with the shape fill model: `fillType`, `fillColor`, `fillColorRole`, `fillGradient` and `fillImage`. The 1.x `maskBgColor` keeps working as a plain colour.
+- A `filter` slot accepts `geoShape` (`rectangle` by default, `circle` or a frame shape). Its clip follows `borderRadius*`, clamped to half the short side.
+- The player draws the duotone filter in sRGB (`color-interpolation-filters="sRGB"`), as the editor does. Duotone layers change pixels.
+- The player no longer shifts window frames and filters vertically.
+- Exception to the pixel guarantee: the player draws every mask silhouette from the shared catalogue (`maskOutlinePath`). Silhouettes it used to draw from its own table change, and `svgPath` cutouts with `Q`, `S`, `T` or `A` segments are fitted into their box instead of being drawn unscaled.
+- New public functions in `@oim-media/core`: `normalizePathData`, `transformPathData` (the SVG path parser shared by player and editor), `maskOutlinePath`, `maskFrameFillCss`, `filterClipPath` and `clampRadius`.
+
 ## 1.31.0
 
 - No format change. The 2.0 scene painter paints a layer's blur, shadow, glow and backdrop effects, through the same `effectsToStyle` as the legacy renderer. Grain, texture, colour-grade, filter and duotone are not painted by the scene yet.

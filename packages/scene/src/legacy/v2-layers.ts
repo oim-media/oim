@@ -9,6 +9,7 @@
 import { upgrade } from './upgrade-entry.js';
 import type { Box, Geometry, Layer, OimDocument } from '../../../core/src/v2/schema.js';
 import { paintColors } from '../../../core/src/v2/colors.js';
+import { gradientCss, type PaintColors } from '../../../core/src/v2/paint-css.js';
 import { typographyCss } from '../../../core/src/v2/typography.js';
 export { paintColors, typographyCss };
 import { resolveByLang } from './localizedEntries.js';
@@ -59,8 +60,10 @@ export { filterStyle } from '../blocks/effects.js';
  * The 1.x mask fields of a 2.0 mask layer, so the mask helpers keep one input.
  * Every field is written, absent ones as `undefined`, so nothing of 1.x shows through.
  */
-export function maskStyle(layer: Layer): Record<string, unknown> {
+export function maskStyle(layer: Layer, colors: PaintColors): Record<string, unknown> {
   const mask = layer.mask ?? {};
+  const paint = layer.fills?.[0];
+  const gradient = paint && 'gradient' in paint && paint.gradient ? gradientCss(paint.gradient, colors) : undefined;
   const geometry = layer.geometry as { kind?: string; name?: string; paths?: { d: string }[] } | undefined;
   const named: Record<string, string> = { rect: 'rectangle', ellipse: 'circle', line: 'line' };
   const shape = geometry?.kind === 'preset' ? geometry.name : geometry?.kind === 'paths' ? 'custom' : named[geometry?.kind ?? ''];
@@ -81,6 +84,8 @@ export function maskStyle(layer: Layer): Record<string, unknown> {
     svgPath: undefined,
     maskBgColor: bg.literal,
     maskBgColorRole: bg.role,
+    fillType: gradient ? 'gradient' : undefined,
+    fillGradient: gradient,
     fillColorRole: undefined,
     maskStrokeColor: line.literal,
     maskStrokeColorRole: line.role,

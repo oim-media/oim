@@ -19,6 +19,7 @@ import { generatePatternSVG } from "./patterns.js";
 import { GEO_SHAPES, pointsToAttribute } from "./geoShapes.js";
 import { isSafeCssGradient } from "./css-gradient.js";
 import { frameSilhouette } from "./frame-silhouette.js";
+import { resolveCssColor } from "./dynamic-colors.js";
 
 export interface Shape {
   width?: number;
@@ -159,6 +160,25 @@ export function getFillCss(shape: Shape): CSSProperties {
   }
 
   return res;
+}
+
+/** The fill fields a window frame reuses from shapes, plus the 1.x frame colour. */
+export type MaskFrameFillStyle = Pick<Shape,
+  "fillType" | "fillColor" | "fillColorRole" | "fillGradient" | "fillImage" |
+  "fillImageCrop" | "fillImageFlipX" | "fillImageFlipY"
+> & { maskBgColor?: string; maskBgColorRole?: string };
+
+/**
+ * The CSS of a window frame. A frame without `fillType` is the 1.x colour
+ * `maskBgColor`; with one, it takes the shape fill model through `getFillCss`.
+ * Patterns and generative fills are not frame fills. For `image` this returns only the
+ * colour underneath: the renderers paint the photo over it, as they do for shapes.
+ */
+export function maskFrameFillCss(style: MaskFrameFillStyle): CSSProperties {
+  if (!style.fillType) {
+    return getFillCss({ fillType: "color", fillColor: resolveCssColor(style.maskBgColorRole, style.maskBgColor) });
+  }
+  return getFillCss({ ...style, fillColor: resolveCssColor(style.fillColorRole, style.fillColor) });
 }
 
 /**

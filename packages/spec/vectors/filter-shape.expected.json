@@ -1,0 +1,47 @@
+{
+  "description": "Filter shape: a grayscale filter cut as a star over an orange background.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "reedit": "author_only",
+  "slots": [
+    {
+      "id": "bg",
+      "type": "container",
+      "position": [
+        0,
+        0
+      ],
+      "name": "Background",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "100.0cqw",
+        "height": "75.0cqw",
+        "fillColor": "#f97316"
+      }
+    },
+    {
+      "id": "f",
+      "type": "filter",
+      "position": [
+        25,
+        20
+      ],
+      "name": "Filter",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "37.5cqw",
+        "height": "25.0cqw",
+        "filterPreset": "grayscale",
+        "geoShape": "star"
+      }
+    }
+  ]
+}

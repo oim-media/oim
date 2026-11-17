@@ -4,6 +4,10 @@
 contract version. The full history, for all packages, is in the repository's
 [CHANGELOG.md](https://github.com/oim-media/oim/blob/main/CHANGELOG.md).
 
+## 1.32.0
+
+- Tracks contract 1.32.0: 12 new mask and filter silhouettes; the frame fill uses the fill* fields.
+
 ## 1.31.0
 
 - No change to this SDK; version follows the contract. The scene painter that gained blur, shadow, glow and backdrop effects is in the web packages (`packages/scene`).

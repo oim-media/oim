@@ -156,10 +156,12 @@ describe("Dynamic color rendering in ImageEngine", () => {
     await motor.renderSlots();
     const el = shadow.querySelector("[data-slot-id=\"mascara_ventana\"]") as HTMLElement;
     expect(el).toBeTruthy();
+    // The frame is a paint layer with the shape fill model: the role is the background's var().
+    const paint = el.querySelector(".oim-mask-paint") as HTMLElement;
+    expect(paint.style.backgroundColor).toBe("var(--oim-color-surface, var(--oim-palette-surface, #38BDF8))");
     const paths = el.querySelectorAll("path");
-    expect(paths.length).toBeGreaterThanOrEqual(2);
-    expect(paths[0]?.getAttribute("fill")).toBe("var(--oim-color-surface, var(--oim-palette-surface, #38BDF8))");
-    expect(paths[1]?.getAttribute("stroke")).toBe("var(--oim-color-outline, var(--oim-palette-outline, #FFFFFF))");
+    expect(paths.length).toBeGreaterThanOrEqual(1);
+    expect(paths[0]?.getAttribute("stroke")).toBe("var(--oim-color-outline, var(--oim-palette-outline, #FFFFFF))");
   });
 
   it("keeps the flat base colour if no semantic role is declared", async () => {

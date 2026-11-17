@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { DYNAMIC_COLOR_ROLES, resolvePalette } from "@oim-media/core";
-import { geometryOutline, paintColors, palettesOf, type Box, type Layer, type OimDocument, type PaintColors } from "@oim-media/core/v2";
+import { DYNAMIC_COLOR_ROLES, filterClipPath, resolvePalette } from "@oim-media/core";
+import { geometryOutline, paintColors, palettesOf, type Box, type Layer, type OimDocument, type Outline, type PaintColors } from "@oim-media/core/v2";
 import { applyBox, type Frame } from "./box.js";
 import { applyCorners } from "./blocks/corners.js";
 import { effectsToStyle } from "./blocks/effects.js";
@@ -92,6 +92,13 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     el.style.backdropFilter = style.backdropFilter ?? "";
   };
 
+  /** A filter (a shape with a backdrop) shows its backdrop only inside its figure: the core's clip over the layer's own box. A rectangle keeps its border radius instead. */
+  const filterClip = (layer: Layer, outline: Outline): string => {
+    if (!outline.preset || !layer.effects?.some((fx) => fx.kind === "backdrop")) return "";
+    const d = filterClipPath({ geoShape: outline.preset }, { x: 0, y: 0, width: layer.box.width ?? 0, height: layer.box.height ?? 0 });
+    return d === null ? "" : `path("${d}")`;
+  };
+
   /**
    * Paints the blocks of a layer. `only` limits the pass to the blocks that changed
    * (their field names); without it every block is painted. A figure depends on
@@ -105,6 +112,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     if (layer.type === "text" && has("text")) applyText(el, layer, { lang, canvasWidth: width });
     const figure = has("fills", "geometry", "strokes");
     const outline = layer.type === "shape" ? (figure ? applyGeometry(el, layer, { colors }) : geometryOutline(layer.geometry)) : geometryOutline(undefined);
+    if (has("effects", "geometry")) el.style.clipPath = filterClip(layer, outline);
     if (has("corners", "geometry")) applyCorners(el, layer, !!outline.round);
     if (has("strokes", "geometry", "fills")) applyStrokes(el, layer, { colors, isText, vector: !!outline.silhouette });
     if (layer.type === "image" && has("image")) {

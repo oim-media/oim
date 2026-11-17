@@ -53,8 +53,9 @@ export function legacyView(document: OimDocument): LegacyMetadata {
   const walk = (layers: Layer[], groupId?: string) => {
     for (const layer of layers) {
       // A mask is a shape that takes the role of masking its siblings (see upgrade/mask.ts);
-      // an artistic text is a text with an artistic block (see upgrade/text.ts).
-      const type = layer.mask ? 'mask' : layer.text?.artistic ? 'artistic-text' : layer.type;
+      // an artistic text is a text with an artistic block (see upgrade/text.ts); a filter is a shape with a backdrop (see upgrade/effects.ts).
+      const filter = layer.type === 'shape' && !!layer.effects?.some((fx) => fx.kind === 'backdrop');
+      const type = layer.mask ? 'mask' : layer.text?.artistic ? 'artistic-text' : filter ? 'filter' : layer.type;
       const slot: LegacySlot = { id: layer.id, type, style: groupId ? { groupId } : {} };
       if (layer.text) textFields(slot, layer.text);
       slots.push(slot);

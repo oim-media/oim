@@ -187,6 +187,14 @@ const SUPERFICIE = [
   "FRAME_SHAPES",
   "frameSilhouette",
   "usesFrameShapes",
+  // path-data.ts — the one SVG path parser for mask outlines (contract 1.32.0).
+  "normalizePathData",
+  "transformPathData",
+  // mask-outline.ts — the silhouette a mask cuts with (contract 1.31.0).
+  "maskOutlinePath",
+  // filter-shape.ts — the clip of a filter layer (contract 1.31.0).
+  "clampRadius",
+  "filterClipPath",
   // parallaxCss.ts — the parallax CSS and its endless track.
   "TRACK_CLASS",
   "LEGACY_TRACK_CLASS",
@@ -216,6 +224,7 @@ const SUPERFICIE = [
   "isMultiColorPattern",
   "resolvePatternColors",
   "getFillCss",
+  "maskFrameFillCss",
   "patternShapeMask",
   "shapeMaskCss",
   "svgSilhouetteMaskCss",

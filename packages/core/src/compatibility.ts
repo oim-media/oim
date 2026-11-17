@@ -43,7 +43,8 @@
  * the format can change without the player being touched. Tying both numbers
  * together would make an internal fix look like a format break.
  */
-export const CONTRACT_VERSION = "1.31.0";
+export const CONTRACT_VERSION = "1.32.0";
+// 1.32.0: additive, no existing file changes: a mask takes any frame shape and a window frame takes the fill* paints; a filter takes a shape (geoShape) and a rounded clip; the player draws duotone in sRGB and no longer offsets window frames and filters vertically; mask silhouettes come from the shared catalogue (one changed-pixel exception, see CHANGELOG).
 // 1.31.0: no format change; the 2.0 scene painter paints blur, shadow, glow and backdrop effects.
 // 1.30.2: no format change; 2.0 canvas colour, drawings and icon paint, and text centred on its box despite the italic room.
 // 1.30.1: no format change; the CDN player loads generative fills and pattern tiles on demand.

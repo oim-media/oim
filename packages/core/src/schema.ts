@@ -533,9 +533,13 @@ export const styleSchema = z.object({
 
   // Mask and cut-out
   maskMode: z.enum(["window", "cutout"]).optional(),
+  // The twelve frame shapes join the eleven 1.x values. Kept as literals, like
+  // geoShape above; schema-frame-shapes.test.ts fails if one drifts from FRAME_SHAPES.
   maskShape: z.enum([
     "circle", "rectangle", "triangle", "star", "line", "arrow",
-    "diamond", "hexagon", "heart", "blob", "custom"
+    "diamond", "hexagon", "heart", "blob", "custom",
+    "pill", "octagon", "pentagon", "cross", "moon", "cloud", "drop",
+    "bolt", "bubble", "flower", "burst", "arch",
   ]).optional(),
   maskBgColor: cssColor.optional(),
   maskStrokeColor: cssColor.optional(),

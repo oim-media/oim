@@ -61,7 +61,10 @@ export function convertMask(ctx: UpgradeContext, slot: V1Slot, layer: DraftLayer
     const value = isColor(literal) ? literal : fallback;
     return typeof role === "string" && ctx.hasRole(role) ? { var: role, fallback: value } : value;
   };
-  layer.fills = [{ kind: "color", value: color(bgRole || style.fillColorRole, bgLiteral, "#38BDF8") }];
+  // convertPaints already read a gradient, photo or pattern fill: it wins over the 1.x colour.
+  const own = layer.fills?.[0];
+  const kept = own !== undefined && "kind" in own && own.kind !== "color";
+  if (!kept) layer.fills = [{ kind: "color", value: color(bgRole || style.fillColorRole, bgLiteral, "#38BDF8") }];
   delete layer.strokes;
   if (typeof strokeWidth === "number" && strokeWidth > 0) {
     layer.strokes = [{ paint: { kind: "color", value: color(strokeRole || style.strokeColorRole, strokeLiteral, "#FFFFFF") }, width: strokeWidth }];

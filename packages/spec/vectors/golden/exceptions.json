@@ -1,3 +1,6 @@
 {
-  "flutter": {}
+  "flutter": {
+    "filter-shape": "Flutter SDK does not clip a filter to its geoShape yet (1.32.0).",
+    "mask-frame-fill": "Flutter SDK does not paint the mask frame fill (fill* fields) yet (1.32.0)."
+  }
 }

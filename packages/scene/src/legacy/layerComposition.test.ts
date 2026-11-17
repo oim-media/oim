@@ -5,8 +5,12 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { computeLayerComposition, getFilterCss, getMaskPathData, getMaskSilhouettePath, MASK_SHAPE_PATHS, getMaskClipPathD, getWindowMaskCanvasD } from "./layerComposition";
+import { computeLayerComposition, getFilterCss, getMaskPathData, getMaskSilhouettePath, getMaskClipPathD, getWindowMaskCanvasD, getMaskSilhouetteCanvasD, getFilterClipStyle } from "./layerComposition";
 import type { Slot } from "./layerComposition";
+import { maskOutlinePath } from "../../../core/src/mask-outline.js";
+
+/** A catalogue silhouette drawn in the unit box, the 1.x helpers' coordinate space. */
+const outlineAt = (geoShape: string) => maskOutlinePath({ geoShape }, { x: 0, y: 0, width: 100, height: 100 });
 
 function makeSlot(overrides: Partial<Slot> & { style?: Record<string, any> }): Slot {
   return {
@@ -41,26 +45,27 @@ describe("getMaskClipPathD", () => {
   }
 
   it("carries the three sub-paths in order: canvas, box, silhouette", () => {
-    const d = getMaskClipPathD(makeMask(), artboard);
+    const d = getMaskClipPathD(makeMask(), artboard)!;
     expect(d.startsWith("M0 0H800V600H0Z ")).toBe(true);
     expect(d).toContain("M100 60H300V260H100Z");
   });
 
   it("situa la silueta en la caja de la mascara, no en el origen", () => {
-    const d = getMaskClipPathD(makeMask(), artboard);
-    expect(d).toContain("100 60");
-    expect(d).toContain("300 260");
+    const d = getMaskClipPathD(makeMask(), artboard)!;
+    // The rectangle silhouette is the box itself: its corners sit at (100,60) and (300,260), not at the origin.
+    expect(d).toContain("M100 60H300V260H100Z");
+    expect(d).not.toContain("M0 0H300");
   });
 
   it("a mask covering the entire canvas leaves the box equal to the canvas", () => {
     const mask = { id: "m", type: "mask", position: [0, 0], width_px: 800, height_px: 600, style: { maskShape: "rectangle" } } as any;
-    const d = getMaskClipPathD(mask, artboard);
+    const d = getMaskClipPathD(mask, artboard)!;
     expect(d.startsWith("M0 0H800V600H0Z M0 0H800V600H0Z")).toBe(true);
   });
 
   it("uses the circular silhouette by default when there is no maskShape", () => {
     const mask = { id: "m", type: "mask", position: [0, 0], width_px: 100, height_px: 100, style: {} } as any;
-    expect(getMaskClipPathD(mask, artboard).split(" ").length).toBeGreaterThan(10);
+    expect(getMaskClipPathD(mask, artboard)!.split(" ").length).toBeGreaterThan(10);
   });
 
   it("soporta multiples recortes vectoriales en cuts", () => {
@@ -75,14 +80,14 @@ describe("getMaskClipPathD", () => {
         { id: "c2", x: 200, y: 200, width: 50, height: 50, shape: "rectangle" }
       ]
     } as any;
-    const d = getMaskClipPathD(mask, artboard);
+    const d = getMaskClipPathD(mask, artboard)!;
     expect(d).toContain("10 10");
     expect(d).toContain("200 200");
   });
 
   it("a slot without position or size does not break: it produces zeros, not NaN", () => {
     const mask = { id: "m", type: "mask", style: { maskShape: "rectangle" } } as any;
-    const d = getMaskClipPathD(mask, artboard);
+    const d = getMaskClipPathD(mask, artboard)!;
     expect(d).not.toContain("NaN");
     expect(d).not.toContain("undefined");
   });
@@ -185,30 +190,30 @@ describe("getFilterCss", () => {
 describe("getMaskPathData", () => {
   it("returns the preset path for a known geoShape", () => {
     const slot = makeSlot({ style: { geoShape: "circle" } });
-    expect(getMaskPathData(slot)).toBe(MASK_SHAPE_PATHS.circle);
+    expect(getMaskPathData(slot)).toBe(outlineAt("circle"));
   });
 
   it("returns the shape's own svgPath when geoShape is 'custom' or absent and svgPath is set", () => {
     const slot = makeSlot({ style: { geoShape: undefined, svgPath: "M0 0 L10 10 Z" } });
-    expect(getMaskPathData(slot)).toBe("M0 0 L10 10 Z");
+    expect(getMaskPathData(slot)).toBe("M0 0L10 10Z");
   });
 
   it("falls back to the circle preset when nothing else is available", () => {
     const slot = makeSlot({ style: { geoShape: undefined, svgPath: undefined } });
-    expect(getMaskPathData(slot)).toBe(MASK_SHAPE_PATHS.circle);
+    expect(getMaskPathData(slot)).toBe(outlineAt("circle"));
   });
 });
 
 describe("getMaskPathData with inversion", () => {
   it("without inverting it returns only the shape", () => {
     const slot = makeSlot({ style: { isMaskLayer: true, geoShape: "circle" } });
-    expect(getMaskPathData(slot).startsWith("M0 0H100V100H0Z")).toBe(false);
+    expect(getMaskPathData(slot)!.startsWith("M0 0H100V100H0Z")).toBe(false);
   });
 
   it("inverted prepends the canvas rectangle", () => {
     const slot = makeSlot({ style: { isMaskLayer: true, geoShape: "circle", maskInvert: true } });
-    expect(getMaskPathData(slot).startsWith("M0 0H100V100H0Z ")).toBe(true);
-    expect(getMaskPathData(slot).length).toBeGreaterThan("M0 0H100V100H0Z ".length);
+    expect(getMaskPathData(slot)!.startsWith("M0 0H100V100H0Z ")).toBe(true);
+    expect(getMaskPathData(slot)!.length).toBeGreaterThan("M0 0H100V100H0Z ".length);
   });
 });
 
@@ -302,31 +307,31 @@ describe("computeLayerComposition with a dedicated mask (type 'mask')", () => {
 describe("getMaskPathData with mode window vs cutout", () => {
   it("in mode window it prepends the canvas rectangle (evenodd parity)", () => {
     const slot = makeSlot({ type: "mask", style: { maskMode: "window", geoShape: "circle" } });
-    const d = getMaskPathData(slot);
+    const d = getMaskPathData(slot)!;
     expect(d.startsWith("M0 0H100V100H0Z ")).toBe(true);
     expect(d.length).toBeGreaterThan("M0 0H100V100H0Z ".length);
   });
 
   it("in mode cutout it returns only the silhouette without the outer rectangle", () => {
     const slot = makeSlot({ type: "mask", style: { maskMode: "cutout", geoShape: "circle" } });
-    expect(getMaskPathData(slot)).toBe(MASK_SHAPE_PATHS.circle);
+    expect(getMaskPathData(slot)).toBe(outlineAt("circle"));
   });
 });
 
 describe("getMaskSilhouettePath", () => {
   it("returns the silhouette without the outer rectangle even if the mask is window", () => {
     const slot = makeSlot({ type: "mask", style: { maskMode: "window", maskShape: "star" } });
-    expect(getMaskSilhouettePath(slot)).toBe(MASK_SHAPE_PATHS.star);
+    expect(getMaskSilhouettePath(slot)).toBe(outlineAt("star"));
   });
 
   it("prefers maskShape over geoShape", () => {
     const slot = makeSlot({ style: { geoShape: "circle", maskShape: "heart" } });
-    expect(getMaskSilhouettePath(slot)).toBe(MASK_SHAPE_PATHS.heart);
+    expect(getMaskSilhouettePath(slot)).toBe(outlineAt("heart"));
   });
 
   it("respects a custom maskSvgPath when maskShape is custom or missing", () => {
     const slot = makeSlot({ type: "mask", style: { maskSvgPath: "M0 0 L10 10 Z", maskShape: "custom" } });
-    expect(getMaskSilhouettePath(slot)).toBe("M0 0 L10 10 Z");
+    expect(getMaskSilhouettePath(slot)).toBe("M0 0L10 10Z");
   });
 });
 
@@ -340,7 +345,7 @@ describe("getWindowMaskCanvasD — frame in canvas space", () => {
       width_px: 100, height_px: 100,
       style: { maskMode: "window", maskShape: "circle" }
     };
-    const d = getWindowMaskCanvasD(slot, artboard);
+    const d = getWindowMaskCanvasD(slot, artboard)!;
     expect(d.startsWith("M0 0H800V1200H0Z ")).toBe(true);
   });
 
@@ -356,8 +361,8 @@ describe("getWindowMaskCanvasD — frame in canvas space", () => {
       style: { maskMode: "window", maskShape: "circle" }
     };
     const marco = "M0 0H800V1200H0Z ";
-    expect(getWindowMaskCanvasD(chica, artboard).startsWith(marco)).toBe(true);
-    expect(getWindowMaskCanvasD(grande, artboard).startsWith(marco)).toBe(true);
+    expect(getWindowMaskCanvasD(chica, artboard)!.startsWith(marco)).toBe(true);
+    expect(getWindowMaskCanvasD(grande, artboard)!.startsWith(marco)).toBe(true);
   });
 
   it("the gap follows the mask's position, not the canvas origin", () => {
@@ -365,7 +370,7 @@ describe("getWindowMaskCanvasD — frame in canvas space", () => {
       style: { maskMode: "window", maskShape: "rectangle" } };
     const b: any = { id: "m", type: "mask", position: [50, 50], width_px: 100, height_px: 100,
       style: { maskMode: "window", maskShape: "rectangle" } };
-    expect(getWindowMaskCanvasD(a, artboard)).not.toBe(getWindowMaskCanvasD(b, artboard));
+    expect(getWindowMaskCanvasD(a, artboard)).not.toBe(getWindowMaskCanvasD(b, artboard)!);
   });
 
   it("supports multi-cut (cuts) while keeping the canvas frame", () => {
@@ -377,7 +382,7 @@ describe("getWindowMaskCanvasD — frame in canvas space", () => {
       ],
       style: { maskMode: "window" }
     };
-    const d = getWindowMaskCanvasD(slot, artboard);
+    const d = getWindowMaskCanvasD(slot, artboard)!;
     expect(d.startsWith("M0 0H800V1200H0Z ")).toBe(true);
     // Two silhouettes => more than one sub-path after the frame
     expect(d.split("Z").length).toBeGreaterThan(3);
@@ -385,7 +390,7 @@ describe("getWindowMaskCanvasD — frame in canvas space", () => {
 
   it("does not produce NaN when position and size are missing", () => {
     const slot: any = { id: "m", type: "mask", style: { maskMode: "window", maskShape: "circle" } };
-    expect(getWindowMaskCanvasD(slot, artboard)).not.toContain("NaN");
+    expect(getWindowMaskCanvasD(slot, artboard)!).not.toContain("NaN");
   });
 });
 
@@ -397,15 +402,48 @@ describe("getWindowMaskCanvasD — reach of the frame (maskCoverage)", () => {
   } as any);
 
   it("by default covers the entire canvas even if the box is smaller", () => {
-    expect(getWindowMaskCanvasD(base(), artboard).startsWith("M0 0H800V1200H0Z ")).toBe(true);
+    expect(getWindowMaskCanvasD(base(), artboard)!.startsWith("M0 0H800V1200H0Z ")).toBe(true);
   });
 
   it("with maskCoverage 'container' it is limited to the box", () => {
-    const d = getWindowMaskCanvasD(base({ maskCoverage: "container" }), artboard);
+    const d = getWindowMaskCanvasD(base({ maskCoverage: "container" }), artboard)!;
     expect(d.startsWith("M0 0H719V1200H0Z ")).toBe(true);
   });
 
   it("an unknown value falls back to 'canvas', never leaving strips due to a typo", () => {
-    expect(getWindowMaskCanvasD(base({ maskCoverage: "vaya" }), artboard).startsWith("M0 0H800V1200H0Z ")).toBe(true);
+    expect(getWindowMaskCanvasD(base({ maskCoverage: "vaya" }), artboard)!.startsWith("M0 0H800V1200H0Z ")).toBe(true);
+  });
+});
+
+describe("absolute outlines are scaled into their box", () => {
+  const artboard = { width: 800, height: 600 };
+
+  it("an absolute Q outline lands inside the mask box, not at the origin", () => {
+    const slot = { id: "q", type: "mask", x: 40, y: 40, width: 20, height: 20, style: { maskMode: "cutout", maskSvgPath: "M0 0 Q50 100 100 0 Z" } } as any;
+    const nums = (getMaskSilhouetteCanvasD(slot, artboard)! ?? "").match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
+    expect(nums.length).toBeGreaterThan(0);
+    const xs = nums.filter((_, i) => i % 2 === 0);
+    const ys = nums.filter((_, i) => i % 2 === 1);
+    expect(Math.min(...xs)).toBeGreaterThanOrEqual(40 - 1e-6);
+    expect(Math.max(...xs)).toBeLessThanOrEqual(60 + 1e-6);
+    expect(Math.min(...ys)).toBeGreaterThanOrEqual(40 - 1e-6);
+    expect(Math.max(...ys)).toBeLessThanOrEqual(60 + 1e-6);
+  });
+});
+
+describe("getFilterClipStyle", () => {
+  const box = { x: 0, y: 0, width: 100, height: 100 };
+
+  it("a catalogue figure clips the filter to its outline", () => {
+    expect(getFilterClipStyle("star", box).clipPath).toMatch(/^path\("M/);
+  });
+
+  it("a rectangle is left to the border radius: no clip", () => {
+    expect(getFilterClipStyle("rectangle", box)).toEqual({});
+    expect(getFilterClipStyle(undefined, box)).toEqual({});
+  });
+
+  it("an open stroke cannot clip: no clip", () => {
+    expect(getFilterClipStyle("line", box)).toEqual({});
   });
 });

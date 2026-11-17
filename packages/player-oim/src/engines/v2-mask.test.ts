@@ -38,17 +38,20 @@ describe("a mask comes from its 2.0 layer", () => {
       l.fills = [{ kind: "color", value: "#ff0000" }];
       l.strokes = [{ paint: { kind: "color", value: "#00ff00" }, width: 4 }];
     });
+    // The frame is now a paint layer clipped to the frame-with-hole (the shape fill model), not an SVG fill.
+    const paint = shadow.querySelector('[data-slot-id="m"] .oim-mask-paint') as HTMLElement;
+    expect(paint.style.backgroundColor).toMatch(/#ff0000|rgb\(255, 0, 0\)/i);
     const paths = shadow.querySelectorAll('[data-slot-id="m"] path');
-    expect(paths[0].getAttribute("fill")).toBe("#ff0000");
-    expect(paths[1].getAttribute("stroke")).toBe("#00ff00");
-    expect(paths[1].getAttribute("stroke-width")).toBe("4");
+    expect(paths[0].getAttribute("stroke")).toBe("#00ff00");
+    expect(paths[0].getAttribute("stroke-width")).toBe("4");
   });
 
   it("its scope: in its own box, the frame stops at the box", async () => {
+    const frameClip = (s: ShadowRoot) => (s.querySelector('[data-slot-id="m"] .oim-mask-paint') as HTMLElement).style.clipPath;
     const shadow = await render(old, (l) => { l.mask = { scope: "group" }; });
-    expect(shadow.querySelector('[data-slot-id="m"] path')!.getAttribute("d")).not.toMatch(/^M0 0H800/);
+    expect(frameClip(shadow)).not.toMatch(/M0 0H800/);
     const canvas = await render(old, () => {});
-    expect(canvas.querySelector('[data-slot-id="m"] path')!.getAttribute("d")).toMatch(/^M0 0H800/);
+    expect(frameClip(canvas)).toMatch(/M0 0H800/);
   });
 
   it("its figure", async () => {

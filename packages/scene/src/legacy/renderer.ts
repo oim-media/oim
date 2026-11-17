@@ -29,9 +29,12 @@ import {
   getMaskSilhouettePath,
   getWindowMaskCanvasD,
   getMaskSilhouetteCanvasD,
+  getMaskBox,
+  maskOutlineResolves,
   getMaskClipPathId,
   getMaskFeatherId,
   getDuotoneFilterId,
+  getFilterClipStyle,
   DUOTONE_COLORS,
   type CompositionNode,
   type Slot as CompositionSlot
@@ -304,63 +307,99 @@ function hexChannel(hex: string, channelIndex: 0 | 1 | 2): number {
 // at least one mask or duotone-filter slot exists, so projects using neither
 // feature never get this extra <svg> node in their output.
 /**
- * Frame of a dedicated mask in "window" mode.
- *
- * Twin of the editor's equivalent block. The first <path> holds the
- * full-coverage rectangle plus the silhouette, and `fill-rule="evenodd"`
- * subtracts one from the other: the frame is painted and the hole stays
- * transparent. The second outlines the die-cut when requested.
+ * The paint of a window frame, computed by the renderer the way a shape's is:
+ * `css` from `paintCss`, and for a photo the picture with its colour underneath.
  */
-function buildWindowMaskSvg(slot: any, artboard: { width: number; height: number }): SVGSVGElement {
+export interface WindowFrameFill {
+  css: Record<string, string>;
+  photo?: { paint: any; src: string; underColor?: string };
+}
+
+/**
+ * Frame of a dedicated mask in "window" mode, in canvas coordinates.
+ *
+ * The paint is the one a shape gets: colour, gradient, pattern and dynamic
+ * roles come from `paintCss`, a photo from `mountImageFill`. The paint is
+ * clipped by the frame-with-hole, `path(evenodd, ...)`, so the frame is painted
+ * and the silhouette stays transparent. The die-cut outline is a stroke above
+ * it. An outline that cannot be drawn leaves a hole the size of the mask's box.
+ */
+export function buildWindowMaskFrame(
+  slot: any,
+  artboard: { width: number; height: number },
+  fill: WindowFrameFill
+): HTMLElement {
   const svgNs = 'http://www.w3.org/2000/svg';
-  const style = slot.style || {};
   const W = artboard.width;
   const H = artboard.height;
+  const style = slot.style || {};
+  const hole = getWindowMaskCanvasD(slot, artboard);
+  const { x, y } = getMaskBox(slot, artboard);
 
-  const pos = Array.isArray(slot.position) ? slot.position : [0, 0];
-  const x = typeof slot.x === 'number' ? slot.x : (Number(pos[0]) / 100) * W;
-  const y = typeof slot.y === 'number' ? slot.y : (Number(pos[1]) / 100) * H;
+  // The frame lives in CANVAS coordinates, not in the slot's box: anchored at the
+  // canvas origin, it is taken out of the text layout and overflows the slot on purpose.
+  const frame = document.createElement('div');
+  frame.className = 'oim-mask-frame';
+  frame.style.position = 'absolute';
+  frame.style.left = (-x) + 'px';
+  frame.style.top = (-y) + 'px';
+  frame.style.width = W + 'px';
+  frame.style.height = H + 'px';
+  frame.style.flex = 'none';
+  frame.style.display = 'block';
+  frame.style.pointerEvents = 'none';
 
-  const svg = document.createElementNS(svgNs, 'svg');
-  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
-  svg.setAttribute('preserveAspectRatio', 'none');
+  // Same box as the frame, so the canvas coordinates of `hole` are its own.
+  const paint = document.createElement('div');
+  paint.className = 'oim-mask-paint';
+  paint.style.position = 'absolute';
+  paint.style.left = '0';
+  paint.style.top = '0';
+  paint.style.width = '100%';
+  paint.style.height = '100%';
+  paint.style.pointerEvents = 'none';
+  for (const [prop, value] of Object.entries(fill.css)) {
+    if (prop.startsWith('--')) paint.style.setProperty(prop, value);
+    else (paint.style as any)[prop] = value;
+  }
+  paint.style.clipPath = `path(evenodd, "${hole}")`;
+  frame.appendChild(paint);
+  if (fill.photo) {
+    mountImageFill(paint, fill.photo.paint, { d: `M0 0H${W}V${H}H0Z`, viewBox: `0 0 ${W} ${H}` }, fill.photo.src, fill.photo.underColor);
+  }
 
-  // The frame lives in CANVAS coordinates, not in the slot's box.
-  //
-  // It used to be `width/height: 100%` inside the slot, which is a flex container
-  // with align-items/justify-content meant for text: the SVG did not fill the
-  // slot and ended up centered, leaving a strip of the canvas uncovered at the top
-  // (measured in the real viewer: 22.4px). Also, the frame could only cover what
-  // the mask measured. Taking it out of the flow with position:absolute decouples it
-  // from the text layout, and anchoring it at (-x, -y) puts it at the canvas origin.
-  svg.style.position = 'absolute';
-  svg.style.left = (-x) + 'px';
-  svg.style.top = (-y) + 'px';
-  svg.style.width = W + 'px';
-  svg.style.height = H + 'px';
-  svg.style.flex = 'none';
-  svg.style.overflow = 'visible';
-  svg.style.display = 'block';
-  svg.style.pointerEvents = 'none';
-
-  const frameBox = document.createElementNS(svgNs, 'path');
-  frameBox.setAttribute('d', getWindowMaskCanvasD(slot, artboard));
-  frameBox.setAttribute('fill', resolveCssColor(style.maskBgColorRole || style.fillColorRole, style.maskBgColor || '#38BDF8'));
-  frameBox.setAttribute('fill-rule', 'evenodd');
-  svg.appendChild(frameBox);
-
+  // The outline is not clipped: half of its stroke lies over the frame's edge.
   const thickness = style.maskStrokeWidth ?? 0;
+  const outline = getMaskSilhouetteCanvasD(slot, artboard);
   if (thickness > 0) {
+    const svg = document.createElementNS(svgNs, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.style.position = 'absolute';
+    svg.style.left = '0';
+    svg.style.top = '0';
+    svg.style.width = W + 'px';
+    svg.style.height = H + 'px';
+    svg.style.overflow = 'visible';
+    svg.style.pointerEvents = 'none';
     const border = document.createElementNS(svgNs, 'path');
-    border.setAttribute('d', getMaskSilhouetteCanvasD(slot, artboard));
+    border.setAttribute('d', outline);
     border.setAttribute('fill', 'none');
     border.setAttribute('stroke', resolveCssColor(style.maskStrokeColorRole || style.strokeColorRole, style.maskStrokeColor || '#FFFFFF'));
     border.setAttribute('stroke-width', String(thickness));
     border.setAttribute('stroke-linejoin', 'round');
     svg.appendChild(border);
+    frame.appendChild(svg);
   }
+  return frame;
+}
 
-  return svg;
+// One warning per page load: a mask whose outline cannot be drawn falls back to its box, never to a circle.
+let outlineWarned = false;
+function warnOutlineOnce(slotId: string): void {
+  if (outlineWarned) return;
+  outlineWarned = true;
+  console.warn('[OimPlayer] A mask outline cannot be drawn (unknown shape and no path); the mask falls back to its box, slot:', slotId);
 }
 
 /**
@@ -370,7 +409,7 @@ function buildWindowMaskSvg(slot: any, artboard: { width: number; height: number
  * `userSpaceOnUse`: `objectBoundingBox` stretched the silhouette over the
  * clipped layer's box and ignored the mask's own geometry.
  */
-function buildLayerCompositionDefs(
+export function buildLayerCompositionDefs(
   slots: CompositionSlot[],
   artboard: { width: number; height: number }
 ): SVGSVGElement {
@@ -388,6 +427,7 @@ function buildLayerCompositionDefs(
     if (s.type === 'mask' && style.maskMode === 'cutout') {
       const feather = style.maskFeather;
       const d = getMaskClipPathD(s, artboard);
+      if (!maskOutlineResolves(s)) warnOutlineOnce(String(s.id));
 
       if (feather && feather > 0) {
         const filterId = getMaskFeatherId(s) + '-blur';
@@ -441,6 +481,8 @@ function buildLayerCompositionDefs(
     if (s.type === 'filter' && (s as any).duotone) {
       const filter = document.createElementNS(svgNs, 'filter');
       filter.setAttribute('id', getDuotoneFilterId(s));
+      // The table is in sRGB, as the editor draws it; linearRGB (the SVG default) lightens every tone.
+      filter.setAttribute('color-interpolation-filters', 'sRGB');
       const colorMatrix = document.createElementNS(svgNs, 'feColorMatrix');
       colorMatrix.setAttribute('type', 'matrix');
       colorMatrix.setAttribute('values', '0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0 0 0 1 0');
@@ -703,7 +745,7 @@ export class LegacyRenderer {
     slots.forEach(function (s: any) {
       const v2Mask = s && s.type === 'mask' ? v2Masks.get(String(s.id)) : undefined;
       if (v2Mask) {
-        s.style = { ...s.style, ...maskStyle(v2Mask) };
+        s.style = { ...s.style, ...maskStyle(v2Mask, paintColors(self.metadata)) };
         // Its place on the canvas too: the mask helpers take x, y, width and height
         // in canvas units before the 1.x position and size.
         const { x, y, width, height } = v2Mask.box;
@@ -1677,7 +1719,21 @@ export class LegacyRenderer {
         slotEl.style.overflow = 'visible';
         slotEl.style.display = 'block';
         slotEl.style.setProperty('padding', '0', 'important');
-        slotEl.appendChild(buildWindowMaskSvg(slot, { width: baseWidth, height: baseHeight }));
+        // The frame paints the mask's own fill, read like a shape's: a missing fill is the 1.x colour.
+        const frameFill = v2Fill ?? { kind: 'color', value: '#38BDF8' };
+        const photoSrc = frameFill.kind === 'image' ? String(frameFill.src || '').trim() : '';
+        const photoSafe = !!photoSrc && isSandboxImageSrc(photoSrc);
+        if (photoSrc && !photoSafe) {
+          console.warn('[OimPlayer] Frame image not embedded in the file (network URLs are not loaded), slot:', slot.id);
+        }
+        const frame = buildWindowMaskFrame(slot, { width: baseWidth, height: baseHeight }, {
+          css: frameFill.kind === 'image'
+            ? (underColor ? { backgroundColor: underColor } : {})
+            : paintCss(frameFill, { colors: v2Colors, width: baseWidth, height: baseHeight }),
+          photo: photoSafe ? { paint: frameFill, src: photoSrc, underColor } : undefined,
+        });
+        slotEl.appendChild(frame);
+        if (!maskOutlineResolves(slot)) warnOutlineOnce(String(slot.id));
       }
 
       // The padding of `.oim-slot` (`0 0.25em 0 0 !important`) exists so that the
@@ -1886,6 +1942,11 @@ export class LegacyRenderer {
           slotEl.style.backdropFilter = filterValue;
           (slotEl.style as any).webkitBackdropFilter = filterValue;
         }
+        // A filter shaped like a catalogue figure shows its backdrop only inside that figure.
+        Object.assign(slotEl.style, getFilterClipStyle(shapeOutline.round ? 'circle' : shapeOutline.preset, {
+          width: v2Own.box.width || 0,
+          height: v2Own.box.height || 0,
+        }));
       }
 
       if (slotType === 'container') {

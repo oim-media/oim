@@ -120,17 +120,17 @@ describe('fileCache: the file changes between the two reads', () => {
     let call = 0;
     global.fetch = vi.fn(async (_url: string, init?: RequestInit) => {
       const h = (init?.headers ?? {}) as Record<string, string>;
-      if (call++ === 0) return new Response(old, { status: 200, headers: { ETag: '"old"' } });
+      if (call++ === 0) return new Response(old as BodyInit, { status: 200, headers: { ETag: '"old"' } });
       // A real server only honours Range when If-Range still matches its file.
       if (h.Range && h['If-Range'] === '"fresh"') {
         const from = Number(/bytes=(\d+)-/.exec(h.Range)![1]);
-        return new Response(fresh.subarray(from), { status: 206, headers: { ETag: '"fresh"' } });
+        return new Response(fresh.subarray(from) as BodyInit, { status: 206, headers: { ETag: '"fresh"' } });
       }
       if (h.Range && !h['If-Range']) {
         const from = Number(/bytes=(\d+)-/.exec(h.Range)![1]);
-        return new Response(fresh.subarray(from), { status: 206, headers: { ETag: '"fresh"' } });
+        return new Response(fresh.subarray(from) as BodyInit, { status: 206, headers: { ETag: '"fresh"' } });
       }
-      return new Response(fresh, { status: 200, headers: { ETag: '"fresh"' } });
+      return new Response(fresh as BodyInit, { status: 200, headers: { ETag: '"fresh"' } });
     }) as any;
     await fileCache.readPoster('/c.oim');
     const blob = await fileCache.getBlob('/c.oim');

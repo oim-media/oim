@@ -3,6 +3,11 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.32.4
+
+- player: resuming a download sends If-Range with the first response's ETag, so a head served
+  from the HTTP cache is never spliced with a newer file (HTTP 416 or a corrupt file before).
+
 ## 1.32.3
 
 - player: a drawing painted by its fill layer (gradient, pattern, generative) or a shape's

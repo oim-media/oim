@@ -24,6 +24,8 @@ interface Entry {
   blob?: Promise<Blob>; verified?: Promise<VerifyResult>; poster?: Promise<PosterRead | null>;
   /** Bytes already read by readPoster: getBlob asks only for what follows. */
   head?: Uint8Array;
+  /** ETag or Last-Modified of the response the head came from: sent as If-Range. */
+  validator?: string;
   bytes: number; lastUsed: number; pending: number;
 }
 
@@ -62,6 +64,7 @@ async function readHead(src: string, e: Entry): Promise<PosterRead | null> {
     if (head.done && head.seal && 'idat' in head) {
       await reader.cancel().catch(() => {});
       e.head = buf;
+      e.validator = res.headers.get("ETag") ?? res.headers.get("Last-Modified") ?? undefined;
       return { png: new Blob([posterPng(buf, head.sealStart) as Uint8Array<ArrayBuffer>], { type: 'image/png' }), seal: head.seal, imageHash: await sha256Hex(head.idat) };
     }
     if (done || head.done) {
@@ -139,9 +142,15 @@ export const fileCache = {
       e.pending++;
       evict();
       const head = e.head;
+      const validator = e.validator;
       e.head = undefined;
+      e.validator = undefined;
+      // The head may have come from the HTTP cache: If-Range makes a changed file come back whole (200), never spliced.
+      // shortcut: a server with neither ETag nor Last-Modified still gets a bare Range, as before.
+      const rangeHeaders: Record<string, string> = { Range: "bytes=" + (head?.length ?? 0) + "-" };
+      if (validator) rangeHeaders["If-Range"] = validator;
       e.blob = (head
-        ? fetch(src, { headers: { Range: "bytes=" + head.length + "-" } }).then(async (res) => {
+        ? fetch(src, { headers: rangeHeaders }).then(async (res) => {
           if (!res.ok) throw new Error("HTTP " + res.status);
           // 200: the server ignored Range and sent it all.
           return res.status === 206 ? new Blob([head as Uint8Array<ArrayBuffer>, await res.blob()]) : res.blob();

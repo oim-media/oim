@@ -17,3 +17,4 @@ export * from "./geometry-outline.js";
 export * from "./base-layer.js";
 export * from "./colors.js";
 export * from "./typography.js";
+export * from "./svg-gradient.js";

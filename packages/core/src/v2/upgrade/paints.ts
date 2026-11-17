@@ -200,7 +200,11 @@ export function convertPaints(ctx: UpgradeContext, slot: V1Slot, layer: DraftLay
   const markup = drawsMarkup(slot);
   const tint = markup ? colorOf(ctx, style, "strokeColor", "strokeColorRole") : undefined;
   if (markup) ctx.take(style, "strokeWidth");
-  let outline: Stroke | undefined = tint !== undefined ? { paint: { kind: "color", value: tint }, width: 0 }
+  // The editor's `strokePaint: "gradient"` paints every stroke of the drawing with a gradient.
+  const gradientStroke = markup && ctx.take(style, "strokePaint") === "gradient" ? gradientOf(ctx, style, "strokeGradient", "style") : undefined;
+  if (markup) ctx.take(style, "strokeGradient");
+  let outline: Stroke | undefined = gradientStroke ? { paint: gradientStroke, width: 0 }
+    : tint !== undefined ? { paint: { kind: "color", value: tint }, width: 0 }
     : strokeOf(ctx, style, "strokeColor", "strokeWidth", dashed, "strokeColorRole");
   // The scribble is an open stroke with no fill: 1.x gave it a stroke of its own when it had
   // none, 2 px wide and in its stroke colour, else its fill colour, else blue.

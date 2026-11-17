@@ -3,6 +3,13 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.32.2
+
+- core: an SVG layer's gradient stroke (`strokePaint: "gradient"`) upgrades to a gradient
+  `strokes[0].paint`; new `svgGradientAttrs`, the SVG gradient geometry the editor and player share.
+- player: a drawing's gradient stroke is painted on its paths; a looping shape carries its
+  silhouette in every track piece, so it scrolls. Player budget raised to 56 KB gzip.
+
 ## 1.32.1
 
 - core: an SVG icon whose exported markup bakes a gradient, pattern or generative fill

@@ -1260,6 +1260,7 @@ export class LegacyRenderer {
       const v2Scroll = v2Own.motion?.loop;
       const parallaxCfg: any = v2Scroll ? { enabled: true, speedPxSec: v2Scroll.speedPxSec, direction: v2Scroll.direction, mirror: v2Scroll.mirror ?? true, pauseOnHover: !!v2Scroll.pauseOnHover } : undefined;
       let duplicatedForInfinite = false;
+      let loopTrack: HTMLElement | undefined;
 
       if (parallaxCfg && parallaxCfg.enabled) {
         const inf = parallaxCfg.infinite || {};
@@ -1321,7 +1322,7 @@ export class LegacyRenderer {
           duplicatedForInfinite = true;
           ensureParallaxKeyframes(self.host.shadowRoot);
 
-          const track = document.createElement('div');
+          const track = (loopTrack = document.createElement('div'));
           track.className = `${TRACK_CLASS} ${LEGACY_TRACK_CLASS}`;
           for (const [k, v] of Object.entries(plan.container)) {
             track.style.setProperty(k, v);
@@ -1653,7 +1654,15 @@ export class LegacyRenderer {
           else if (outline.style === 'dotted') figure.setAttribute('stroke-dasharray', '2,3');
         }
         svg.appendChild(figure);
-        slotEl.appendChild(svg);
+        // A looping layer scrolls its track: the drawing must travel inside each piece.
+        // shortcut: an image fill still mounts on the slot and stays still, move it too if a looping photo shape shows up.
+        if (loopTrack) {
+          loopTrack.style.height = '100%';
+          for (const piece of loopTrack.children as HTMLCollectionOf<HTMLElement>) {
+            piece.style.cssText += 'position:relative;height:100%';
+            piece.append(svg.cloneNode(true));
+          }
+        } else slotEl.append(svg);
         if (imageFill) {
           const d = silhouette.d ?? 'M ' + silhouette.points!.split(' ').join(' L ') + ' Z';
           mountImageFill(slotEl, v2Fill, { d, viewBox: silhouette.viewBox }, fillImageSrc, underColor);

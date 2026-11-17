@@ -5,20 +5,15 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { MASK_SHAPE_PATHS } from "./layerComposition";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { getMaskSilhouetteCanvasD } from "./layerComposition";
 
 /**
- * The player's mask silhouette table is a literal copy of the editor's, where
- * the polygons are derived from the shared shape table.
- *
- * That copy already drifted once: the editor gained triangle, line, arrow and
- * diamond and the player did not, so a triangular mask was a triangle while
- * designing and a CIRCLE when played. The lookup silently falls back to
- * `circle` for an unknown name, so the bug only showed in the output.
- *
- * These tests cannot compare against the editor (they are separate repos), but they
- * do pin the contract: if someone adds a shape there and forgets this table, this
- * list must be updated too, and that step forces a look here.
+ * The player draws every mask silhouette from the shared catalogue in core
+ * (maskOutlinePath). A literal copy of the table here drifted once: the editor
+ * gained triangle, line, arrow and diamond, the player did not, and a triangular
+ * mask came out as a circle. The lookup must never fall back silently.
  */
 const FIGURAS_ESPERADAS = [
   "circle",
@@ -33,23 +28,27 @@ const FIGURAS_ESPERADAS = [
   "blob",
 ];
 
-describe("MASK_SHAPE_PATHS", () => {
-  it("knows all the silhouettes the editor offers", () => {
+const FULL_CANVAS = { width: 100, height: 100 };
+
+function maskOf(style: Record<string, unknown>) {
+  return { id: "m", type: "mask", x: 0, y: 0, width: 100, height: 100, style } as any;
+}
+
+describe("mask silhouettes come from the shared catalogue", () => {
+  it("the player has no literal shape table left", () => {
+    const src = readFileSync(join(__dirname, "layerComposition.ts"), "utf8");
+    expect(src).not.toMatch(/MASK_SHAPE_PATHS|function scalePath/);
+  });
+
+  it("draws every silhouette the editor offers, as a closed path", () => {
     for (const figureItem of FIGURAS_ESPERADAS) {
-      expect(MASK_SHAPE_PATHS[figureItem], `falta la silueta "${figureItem}"`).toBeTruthy();
+      const d = getMaskSilhouetteCanvasD(maskOf({ maskShape: figureItem }), FULL_CANVAS);
+      expect(d, `falta la silueta "${figureItem}"`).not.toBeNull();
+      expect(d!.startsWith("M"), `"${figureItem}" does not start with M`).toBe(true);
     }
   });
 
-  it("has no extra silhouettes that the editor cannot produce", () => {
-    // A silhouette that exists only here cannot be chosen from the editor:
-    // it is dead code that looks like an option.
-    expect(Object.keys(MASK_SHAPE_PATHS).sort()).toEqual([...FIGURAS_ESPERADAS].sort());
-  });
-
-  it("each silhouette is a closed path and not an arbitrary string", () => {
-    for (const [figureItem, d] of Object.entries(MASK_SHAPE_PATHS)) {
-      expect(d.startsWith("M"), `"${figureItem}" does not start with M`).toBe(true);
-      expect(d.trim().endsWith("Z"), `"${figureItem}" does not close with Z`).toBe(true);
-    }
+  it("an unknown shape has no silhouette: it never falls back to a circle", () => {
+    expect(getMaskSilhouetteCanvasD(maskOf({ maskShape: "nope" }), FULL_CANVAS)).toBeNull();
   });
 });

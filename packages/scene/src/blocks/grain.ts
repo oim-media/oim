@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { buildLayerGrainFilter, type LayerGrainOptions } from "@oim-media/core";
+// Relative, like the player's other shared modules: "@oim-media/core" pulls in the whole index and zod.
+import { buildLayerGrainFilter, type LayerGrainOptions } from "../../../core/src/generative/proceduralNoise.js";
 
 const SVG = "http://www.w3.org/2000/svg";
 

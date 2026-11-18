@@ -1,0 +1,9 @@
+// cdn-next.oim.media: the player built from main, served as static assets.
+// .github/workflows/player-next.yml fills ./dist and deploys it.
+{
+  "name": "oim-cdn-next",
+  "compatibility_date": "2026-11-16",
+  "workers_dev": false,
+  "routes": [{ "pattern": "cdn-next.oim.media", "custom_domain": true }],
+  "assets": { "directory": "./dist" }
+}

@@ -431,6 +431,18 @@ describe("filter effect", () => {
   });
 });
 
+describe("texture paint", () => {
+  it("the canvas texture paints on its own node, in lengths of the canvas width", () => {
+    const host = document.createElement("div");
+    const d = { ...doc([]), canvas: { width: 1000, height: 500, fills: [{ kind: "color", value: "#101010" }, { kind: "texture", texture: { type: "dots", size: 20, thickness: 2, color: "#ffffff" }, opacity: 0.5 }] } } as OimDocument;
+    mount(host, d);
+    const canvas = host.querySelector<HTMLElement>(".oim-scene > .oim-canvas")!;
+    expect(canvas.style.backgroundColor).toBe("#101010");
+    expect(canvas.style.backgroundImage).toBe("radial-gradient(circle, rgba(255, 255, 255, 0.5) 0.2cqw, transparent 0.2cqw)");
+    expect(canvas.style.backgroundSize).toBe("2cqw 2cqw");
+  });
+});
+
 describe("cutout mask", () => {
   it("clips the layers before it, in canvas units, and leaves the ones after it alone", () => {
     const host = document.createElement("div");

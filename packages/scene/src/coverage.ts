@@ -10,26 +10,18 @@
 // and textures. A vector that uses one of these is skipped by
 // the visual gate, never failed, and the renderer ignores the block (with one
 // development warning per block type).
-import type { Layer, OimDocument, Paint } from "@oim-media/core/v2";
+import type { Layer, OimDocument } from "@oim-media/core/v2";
 import { canAnimate } from "./blocks/animations.js";
 
 export const UNSUPPORTED_BLOCKS = [
   "animation:preset",
   "mask",
   "paint:pattern-tile",
-  "paint:texture",
 ] as const;
 export type UnsupportedBlock = (typeof UNSUPPORTED_BLOCKS)[number];
 
-const paintUses = (paints: readonly Paint[] | undefined): UnsupportedBlock[] =>
-  (paints ?? []).flatMap((paint): UnsupportedBlock[] => {
-    if (!("kind" in paint)) return [];
-    if (paint.kind === "texture") return ["paint:texture"];
-    return [];
-  });
-
 const layerUses = (layer: Layer, nested = false): UnsupportedBlock[] => {
-  const uses: UnsupportedBlock[] = [...paintUses(layer.fills), ...(layer.strokes ?? []).flatMap((s) => paintUses([s.paint as Paint]))];
+  const uses: UnsupportedBlock[] = [];
   // Tracks and the reveal presets run; the named loops, hovers and text entrances wait for their painter.
   if (layer.animations?.some((a) => !canAnimate(a))) uses.push("animation:preset");
   // shortcut: a draft 2.0 file kept a background's drawing as its paths, which cannot be told from an icon cut to its
@@ -43,6 +35,6 @@ const layerUses = (layer: Layer, nested = false): UnsupportedBlock[] => {
 
 /** The out-of-scope blocks a document uses, each once, sorted. Run it on a document whose references are resolved. */
 export function unsupportedUse(document: OimDocument): UnsupportedBlock[] {
-  const uses = [...paintUses(document.canvas.fills), ...document.layers.flatMap((layer) => layerUses(layer))];
+  const uses = document.layers.flatMap((layer) => layerUses(layer));
   return [...new Set(uses)].sort();
 }

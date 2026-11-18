@@ -55,11 +55,11 @@ describe("unsupportedUse", () => {
     expect(unsupportedUse(doc([rect({ fills: [{ kind: "pattern", pattern: { preset: "stars" } }] } as Partial<Layer>)]))).toEqual([]);
   });
 
-  it("looks inside groups, and into the canvas background", () => {
+  it("looks inside groups; every paint, the canvas texture too, is painted", () => {
     const group = { id: "g", type: "group", box: { x: 0, y: 0, width: 5, height: 5 }, children: [rect({ id: "m", mask: { mode: "cutout" } })] } as Layer;
     expect(unsupportedUse(doc([group]))).toEqual(["mask"]);
     // At the top level a cutout is painted: it clips the layers before it.
     expect(unsupportedUse(doc([rect({ id: "m", mask: { mode: "cutout" } })]))).toEqual([]);
-    expect(unsupportedUse(doc([], { canvas: { width: 1, height: 1, fills: [{ kind: "texture", texture: { type: "lines" } }] } as OimDocument["canvas"] }))).toEqual(["paint:texture"]);
+    expect(unsupportedUse(doc([], { canvas: { width: 1, height: 1, fills: [{ kind: "texture", texture: { type: "lines" } }] } as OimDocument["canvas"] }))).toEqual([]);
   });
 });

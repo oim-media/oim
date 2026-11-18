@@ -78,6 +78,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   letterbox.appendChild(root);
 
   // Inside the root (a size container), a canvas length is a share of its width.
+  const canvasLen = (px: number) => `${+((px / width) * 100).toFixed(4)}cqw`;
   const tileSize = (px: number) => { const v = `${+((px / width) * 100).toFixed(4)}cqw`; return `${v} ${v}`; };
   const entries = new Map<string, Entry>();
   const canvas: Frame = { x: 0, y: 0, width, height };
@@ -97,7 +98,12 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   for (const block of unsupportedUse(document)) console.warn(`[oim scene] "${block}" is not painted yet; it is ignored`);
 
   // The root is the canvas: a tile is a share of its width and height.
-  applyFills(root, document.canvas, { colors, isText: false, width, height, size: (px) => `${+((px / width) * 100).toFixed(4)}% ${+((px / height) * 100).toFixed(4)}%` });
+  // The canvas paints on its own node inside the root, so its lengths (a texture's lines and dots) can be cqw of the root.
+  const backdrop = container.ownerDocument.createElement("div");
+  backdrop.className = "oim-canvas";
+  Object.assign(backdrop.style, { position: "absolute", inset: "0", pointerEvents: "none" });
+  root.appendChild(backdrop);
+  applyFills(backdrop, document.canvas, { colors, isText: false, width, height, size: (px) => `${+((px / width) * 100).toFixed(4)}% ${+((px / height) * 100).toFixed(4)}%`, len: canvasLen });
   const lang = languageOf(document.languages, _options.language ?? (typeof navigator === "undefined" ? undefined : navigator.language));
 
   /** The effects the scene paints (blur, shadow, glow, backdrop); grain, texture and duotone wait for their own painter (see coverage). */
@@ -152,7 +158,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   const paintBlocks = (el: HTMLElement, layer: Layer, only?: ReadonlySet<string>) => {
     const has = (...keys: string[]) => !only || keys.some((k) => only.has(k));
     const isText = layer.type === "text";
-    if (has("fills", "box")) applyFills(el, layer, { colors, isText, size: tileSize, width: layer.box.width, height: layer.box.height });
+    if (has("fills", "box")) applyFills(el, layer, { colors, isText, size: tileSize, len: canvasLen, width: layer.box.width, height: layer.box.height });
     if (has("opacity", "blend")) applyCompositing(el, layer);
     if (has("visible")) el.style.display = layer.visible === false ? "none" : "";
     if (has("effects")) applyEffects(el, layer);

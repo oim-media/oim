@@ -17,6 +17,8 @@ export type PaintContext = {
   isText: boolean;
   /** A square tile of `px` canvas units as this element's background-size; without it the core's px size is kept. */
   size?: (px: number) => string;
+  /** A canvas length as CSS, for a texture's lines and dots. */
+  len?: (px: number) => string;
   /** The element's size in canvas units: a generative fill is drawn for it, as the player draws it for the slot. */
   width?: number;
   height?: number;
@@ -37,7 +39,7 @@ export function applyFills(el: HTMLElement, layer: Pick<Layer, "fills">, ctx: Pa
   for (const prop of FILL_PROPS) style[prop] = "";
   el.querySelectorAll(":scope > [data-oim-fill]").forEach((node) => node.remove());
 
-  const target: PaintTarget = { colors: ctx.colors, isText: ctx.isText, resources: ctx.resources, width: ctx.width, height: ctx.height };
+  const target: PaintTarget = { colors: ctx.colors, isText: ctx.isText, resources: ctx.resources, width: ctx.width, height: ctx.height, len: ctx.len };
   let base: string | undefined;
   const backgrounds: string[] = [];
   const sizes: string[] = [];

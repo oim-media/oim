@@ -5,7 +5,7 @@
  */
 
 import type { Layer, PaintColors } from "@oim-media/core/v2";
-import { getMaskSilhouetteCanvasD, getWindowMaskCanvasD } from "../legacy/layerComposition.js";
+import { getMaskClipPathD, getMaskSilhouetteCanvasD, getWindowMaskCanvasD } from "../legacy/layerComposition.js";
 import { maskOutlineStyle } from "./mask-outline-style.js";
 import { applyFills } from "./fills.js";
 import { silhouetteClip } from "./silhouette-clip.js";
@@ -62,3 +62,26 @@ export function applyWindowMask(el: HTMLElement, layer: Layer, ctx: { canvas: { 
   }
   el.appendChild(frame);
 }
+
+/**
+ * A cutout mask: it paints nothing of its own and clips every layer painted
+ * before it, as the player does: they show outside the mask's box and inside
+ * its figure. The layers are moved into one canvas-sized wrapper so the clip is
+ * drawn in canvas units, with the same path the player builds.
+ *
+ * shortcut: a feathered edge (maskFeather) is drawn hard; add the blurred mask when a file needs it.
+ */
+export function applyCutoutMask(parent: HTMLElement, layer: Layer, canvas: { width: number; height: number }): HTMLElement | undefined {
+  const { x = 0, y = 0, width = 0, height = 0 } = layer.box;
+  if (!width || !height || !parent.childElementCount) return undefined;
+  const slot = { id: layer.id, type: "mask", style: maskOutlineStyle(layer.geometry), x, y, width, height };
+  const doc = parent.ownerDocument;
+  const wrapper = doc.createElement("div");
+  wrapper.dataset.oimCutout = layer.id;
+  const { svg, clipPath } = silhouetteClip(doc, { d: getMaskClipPathD(slot, canvas), viewBox: `0 0 ${canvas.width} ${canvas.height}`, evenodd: true });
+  Object.assign(wrapper.style, { position: "absolute", left: "0", top: "0", width: "100%", height: "100%", clipPath });
+  wrapper.append(...parent.children);
+  parent.append(svg, wrapper);
+  return wrapper;
+}
+

@@ -1,6 +1,10 @@
 {
   "flutter": {
     "filter-shape": "Flutter SDK does not clip a filter to its geoShape yet (1.32.0).",
-    "mask-frame-fill": "Flutter SDK does not paint the mask frame fill (fill* fields) yet (1.32.0)."
+    "mask-frame-fill": "Flutter SDK does not paint the mask frame fill (fill* fields) yet (1.32.0).",
+    "duotone": "Flutter SDK does not paint the duotone backdrop yet (group C).",
+    "generative-fill": "Flutter SDK does not paint the generative fill yet (group C).",
+    "mask-cutout": "Flutter SDK does not paint a cutout mask yet (group C).",
+    "text-decorations": "Flutter SDK does not paint text marks, highlight, drop cap or decoration yet (group C)."
   }
 }

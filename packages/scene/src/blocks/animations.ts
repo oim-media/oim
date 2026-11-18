@@ -7,13 +7,20 @@
 import type { Animation } from "@oim-media/core/v2";
 import { easingToCss, revealFrames } from "../../../core/src/reveal.js";
 import type { RevealEffect } from "../../../core/src/schema.js";
+import { isEntranceEffect } from "../../../core/src/text-effects.js";
+import { presetEasing, presetFrames, presetSeconds } from "./presets.js";
 
 const REVEAL_EFFECTS: readonly string[] = ["fade", "slide-up", "slide-down", "slide-left", "slide-right", "scale"];
 
 /** The presets scene runs today: the reveals an action shows and hides with. The rest wait for their painter (see coverage). */
 export const isRevealPreset = (preset: string | undefined): preset is RevealEffect => preset !== undefined && REVEAL_EFFECTS.includes(preset);
 
-export const canAnimate = (a: Animation): boolean => a.tracks !== undefined || isRevealPreset(a.preset);
+/** A text entrance: a named effect run over the characters, words or lines of a text. */
+export const isEntrance = (a: Animation): boolean => a.target !== undefined && a.target !== "layer" && isEntranceEffect(a.preset);
+const namedFrames = (a: Animation) => (a.on === "loop" || a.on === "hover" ? presetFrames(a.on, a.preset) : undefined);
+
+export const canAnimate = (a: Animation): boolean =>
+  a.tracks !== undefined || isEntrance(a) || namedFrames(a) !== undefined || (isRevealPreset(a.preset) && !a.target);
 
 type Track = NonNullable<Animation["tracks"]>[number];
 
@@ -57,14 +64,18 @@ export function trackFrames(tracks: readonly Track[], len: (px: number) => strin
 
 /** An animation's frames: its tracks, or the reveal its preset names. */
 export function animationFrames(a: Animation, len: (px: number) => string): Keyframe[] {
-  return a.tracks ? trackFrames(a.tracks, len) : revealFrames(a.preset as RevealEffect, true);
+  if (a.tracks) return trackFrames(a.tracks, len);
+  return namedFrames(a) ?? revealFrames(a.preset as RevealEffect, true);
 }
 
 export function animationTiming(a: Animation): KeyframeAnimationOptions {
+  const loop = a.on === "loop" && !a.tracks ? a.preset : undefined;
+  // A named loop without a length of its own keeps the 1.x default.
+  const duration = loop && !a.duration ? (presetSeconds(loop) ?? 0) * 1000 : a.duration;
   return {
-    duration: a.duration,
+    duration,
     delay: a.delay ?? 0,
-    easing: easingToCss(a.easing, a.tracks ? "linear" : "ease-out"),
+    easing: easingToCss(a.easing, a.tracks ? "linear" : (loop && presetEasing(loop)) || "ease-out"),
     fill: "both",
     iterations: a.on === "loop" ? Infinity : 1,
   };

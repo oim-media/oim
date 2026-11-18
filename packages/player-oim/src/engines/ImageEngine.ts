@@ -10,7 +10,7 @@ import { playerString } from '../../../scene/src/legacy/strings.js';
 import { getDeviceProfile, type DeviceProfile } from '../../../scene/src/legacy/device-tier.js';
 import { fileCache, type VerifyResult, type VerifiedFile } from '../render/file-cache.js';
 import { injectStyles } from '../../../scene/src/legacy/styles.js';
-import { renderMarkedText, plainOf, type Marks } from '../../../scene/src/legacy/marked-text.js';
+import { renderMarkedText, plainOf, type Marks } from '../../../scene/src/blocks/marked-text.js';
 import { dropCapStyle, splitDropCap } from '../../../core/src/drop-cap.js';
 import { layerTextureMask } from '../../../core/src/effects/texture-mask.js';
 import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entranceClips, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';

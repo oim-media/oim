@@ -328,6 +328,35 @@ describe("time and interaction", () => {
     expect(calls).toEqual([]);
   });
 
+  it("paused, a named loop rests at its first frame and a load entrance at its end", () => {
+    stub();
+    const host = document.createElement("div");
+    const scene = mount(host, doc([
+      shape({ id: "p", animations: [{ on: "loop", preset: "pulse", duration: 0 }] } as Partial<Layer>),
+      shape({ id: "f", animations: [{ on: "load", preset: "fade", duration: 300 }] } as Partial<Layer>),
+    ]), { paused: true });
+    const [loop, load] = calls;
+    expect(loop.timing.iterations).toBe(Infinity);
+    expect(loop.run.cancel).toHaveBeenCalled();
+    expect(loop.run.finish).not.toHaveBeenCalled();
+    expect(load.run.finish).toHaveBeenCalled();
+    expect(scene.elementOf("p")).toBeTruthy();
+  });
+
+  it("a text entrance flows its units as one paragraph inside the text box", () => {
+    stub();
+    const host = document.createElement("div");
+    const scene = mount(host, doc([
+      { id: "t", type: "text", box: { x: 0, y: 0 }, text: { content: { es: "Hola" } }, animations: [{ on: "load", target: "chars", preset: "fade-chars", duration: 0 }] } as unknown as Layer,
+    ]));
+    const el = scene.elementOf("t")!;
+    expect(el.children).toHaveLength(1);
+    const body = el.firstElementChild as HTMLElement;
+    expect(body.style.alignSelf).toBe("stretch");
+    expect(body.querySelectorAll("span")).toHaveLength(4);
+    expect(calls).toHaveLength(4);
+  });
+
   it("play and pause reach every running animation of the scene", () => {
     const host = document.createElement("div");
     const scene = mount(host, doc([]));
@@ -347,6 +376,37 @@ describe("time and interaction", () => {
     ]));
     scene.elementOf("btn")!.click();
     expect(scene.elementOf("label")!.textContent).toContain("Adiós");
+  });
+});
+
+describe("duotone", () => {
+  it("a duotone backdrop sees the layers under it through the shared two-tone filter, defined once", () => {
+    const host = document.createElement("div");
+    const layer = shape({ id: "f", type: "shape", effects: [{ kind: "backdrop", preset: "duotone" }] } as Partial<Layer>);
+    const scene = mount(host, doc([layer]));
+    scene.update("f", { effects: [{ kind: "backdrop", preset: "duotone" }] } as Partial<Layer>);
+    expect(scene.elementOf("f")!.style.backdropFilter).toBe("url(#duotone-filter-f)");
+    const filters = host.querySelectorAll("filter#duotone-filter-f");
+    expect(filters.length).toBe(1);
+    expect(filters[0].querySelector("feFuncR")!.getAttribute("tableValues")).toBe("0.118 0.984");
+  });
+});
+
+describe("cutout mask", () => {
+  it("clips the layers before it, in canvas units, and leaves the ones after it alone", () => {
+    const host = document.createElement("div");
+    const scene = mount(host, doc([
+      shape({ id: "cover" }),
+      shape({ id: "cut", geometry: { kind: "preset", name: "star" }, mask: { mode: "cutout" }, box: { x: 250, y: 150, width: 300, height: 300 } } as Partial<Layer>),
+      shape({ id: "after" }),
+    ]));
+    const wrapper = host.querySelector<HTMLElement>('[data-oim-cutout="cut"]')!;
+    expect(wrapper.contains(scene.elementOf("cover"))).toBe(true);
+    expect(wrapper.contains(scene.elementOf("after"))).toBe(false);
+    expect(wrapper.style.clipPath).toMatch(/^url\(#/);
+    expect(scene.elementOf("cut")).toBeNull();
+    const d = host.querySelector(`${wrapper.style.clipPath.slice(4, -1).replace(/"/g, "")} path`)!.getAttribute("d")!;
+    expect(d.startsWith("M0 0H1000V500H0Z M250 150H550V450H250Z")).toBe(true); // the canvas, the box, then the figure
   });
 });
 

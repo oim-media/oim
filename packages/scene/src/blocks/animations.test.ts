@@ -37,9 +37,18 @@ describe("animations", () => {
     expect(animationFrames({ on: "enter", preset: "slide-up", duration: 400 }, px)).toEqual(revealFrames("slide-up", true));
   });
 
-  it("scene runs tracks and reveals; a named loop is not run yet", () => {
+  it("scene runs tracks, reveals, named loops and hovers and text entrances; a timer preset is not run yet", () => {
     expect(canAnimate({ on: "enter", preset: "slide-up", duration: 400 })).toBe(true);
-    expect(canAnimate({ on: "loop", preset: "pulse", duration: 0 })).toBe(false);
+    expect(canAnimate({ on: "loop", preset: "pulse", duration: 0 })).toBe(true);
+    expect(canAnimate({ on: "hover", preset: "grow", duration: 200 })).toBe(true);
+    expect(canAnimate({ on: "load", target: "chars", preset: "fade-chars", duration: 0 })).toBe(true);
+    expect(canAnimate({ on: "load", target: "chars", preset: "typewriter", duration: 0 })).toBe(false);
+    expect(canAnimate({ on: "loop", preset: "wobble", duration: 0 })).toBe(false);
+  });
+
+  it("a named loop without a length keeps the 1.x default and easing", () => {
+    expect(animationTiming({ on: "loop", preset: "pulse", duration: 0 })).toMatchObject({ duration: 2000, easing: "ease-in-out", iterations: Infinity });
+    expect(animationTiming({ on: "loop", preset: "spin", duration: 1500 })).toMatchObject({ duration: 1500, easing: "linear" });
   });
 
   it("a loop repeats forever; anything else runs once, its delay and easing kept", () => {

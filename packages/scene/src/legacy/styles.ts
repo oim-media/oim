@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { presetCss } from '../blocks/presets.js';
+
 export function getStylesText(): string {
   return [
     ':host { position: relative; display: flex !important; overflow: hidden; width: 100%; height: 100%; background: var(--oim-bg, transparent); user-select: none; content-visibility: auto; contain-intrinsic-size: auto 300px; }',
@@ -38,20 +40,7 @@ export function getStylesText(): string {
     '.oim-player-error { color: var(--oim-red, #ef4444); font-family: "JetBrains Mono", monospace; font-size: 12px; }',
     '.oim-slot-loop-wrap { display: inline-block; width: 100%; height: auto; transform-origin: center center; }',
     '.oim-slot-hover-wrap { display: inline-block; width: 100%; height: auto; transform-origin: center center; transition: transform 0.2s ease-in-out, text-shadow 0.2s ease-in-out, filter 0.2s ease-in-out; }',
-    '@keyframes oim-loop-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.95); opacity: 0.8; } }',
-    '@keyframes oim-loop-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }',
-    '@keyframes oim-loop-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }',
-    '@keyframes oim-loop-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }',
-    '@keyframes oim-loop-glow { 0%, 100% { text-shadow: 0 0 4px rgba(245, 158, 11, 0.2); } 50% { text-shadow: 0 0 16px rgba(245, 158, 11, 0.8); } }',
-    '.oim-loop-pulse { animation: oim-loop-pulse var(--oim-loop-duration, 2s) infinite ease-in-out var(--oim-loop-delay, 0s); }',
-    '.oim-loop-float { animation: oim-loop-float var(--oim-loop-duration, 3s) infinite ease-in-out var(--oim-loop-delay, 0s); }',
-    '.oim-loop-bounce { animation: oim-loop-bounce var(--oim-loop-duration, 1.2s) infinite ease-in-out var(--oim-loop-delay, 0s); }',
-    '.oim-loop-spin { animation: oim-loop-spin var(--oim-loop-duration, 4s) infinite linear var(--oim-loop-delay, 0s); }',
-    '.oim-loop-glow { animation: oim-loop-glow var(--oim-loop-duration, 2s) infinite ease-in-out var(--oim-loop-delay, 0s); }',
-    '.oim-hover-grow:hover { transform: scale(1.08); }',
-    '.oim-hover-shrink:hover { transform: scale(0.92); }',
-    '.oim-hover-lift:hover { transform: translateY(-6px); }',
-    '.oim-hover-glow:hover { text-shadow: 0 0 12px rgba(245, 158, 11, 0.8); }',
+    ...presetCss(),
     // A one-colour pattern with a colour role: the tile is an alpha mask tinted by a CSS variable (core/patternPaint.ts).
     '.oim-pat-dyn::before { content: ""; position: absolute; inset: 0; pointer-events: none; background-color: var(--oim-pat-fg); -webkit-mask-image: var(--oim-pat-mask); mask-image: var(--oim-pat-mask); -webkit-mask-size: var(--oim-pat-size, var(--oim-bg-tile, 160px) var(--oim-bg-tile, 160px)); mask-size: var(--oim-pat-size, var(--oim-bg-tile, 160px) var(--oim-bg-tile, 160px)); -webkit-mask-repeat: var(--oim-pat-repeat, repeat); mask-repeat: var(--oim-pat-repeat, repeat); -webkit-mask-position: var(--oim-pat-pos, 0 0); mask-position: var(--oim-pat-pos, 0 0); animation: inherit; }',
     '@keyframes background-animation-right { from { background-position: 0 0; -webkit-mask-position: 0 0; mask-position: 0 0; } to { background-position: var(--oim-bg-tile, 160px) 0; -webkit-mask-position: var(--oim-bg-tile, 160px) 0; mask-position: var(--oim-bg-tile, 160px) 0; } }',

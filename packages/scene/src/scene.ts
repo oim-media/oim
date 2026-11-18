@@ -11,15 +11,20 @@ import { applyCorners } from "./blocks/corners.js";
 import { effectsToStyle } from "./blocks/effects.js";
 import { applyFills, pictureNode } from "./blocks/fills.js";
 import { applyGeometry } from "./blocks/geometry.js";
-import { defineGrain } from "./blocks/grain.js";
-import { applyWindowMask } from "./blocks/mask.js";
+import { defineGrain, defsOf } from "./blocks/grain.js";
+import { duotoneFilter } from "./blocks/duotone.js";
+import { applyCutoutMask, applyWindowMask } from "./blocks/mask.js";
 import { applyArtistic } from "./blocks/artistic.js";
 import { readEmbeddedFonts, registerEmbeddedFonts } from "./blocks/fonts.js";
 import { pictureOf } from "./blocks/image.js";
 import { applyStrokes } from "./blocks/strokes.js";
 import { applyCompositing } from "./blocks/compositing.js";
 import { applyText } from "./blocks/text.js";
-import { animationFrames, animationTiming, canAnimate } from "./blocks/animations.js";
+import { applyTextureEffect } from "./blocks/texture.js";
+import { resolveLineHeight } from "../../core/src/typography.js";
+import { animationFrames, animationTiming, canAnimate, isEntrance } from "./blocks/animations.js";
+import { applyEntrance, ENTRANCE_MS, entranceFrames } from "./blocks/presets.js";
+import type { EntranceEffect } from "../../core/src/text-effects.js";
 import { bindInteractions, resolveActions, type StateAction } from "./blocks/interactions.js";
 import { applyLoop } from "./blocks/motion.js";
 import { REVEAL_DEFAULT, revealFrames } from "../../core/src/reveal.js";
@@ -89,7 +94,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   for (const block of unsupportedUse(document)) console.warn(`[oim scene] "${block}" is not painted yet; it is ignored`);
 
   // The root is the canvas: a tile is a share of its width and height.
-  applyFills(root, document.canvas, { colors, isText: false, size: (px) => `${+((px / width) * 100).toFixed(4)}% ${+((px / height) * 100).toFixed(4)}%` });
+  applyFills(root, document.canvas, { colors, isText: false, width, height, size: (px) => `${+((px / width) * 100).toFixed(4)}% ${+((px / height) * 100).toFixed(4)}%` });
   const lang = languageOf(document.languages, _options.language ?? (typeof navigator === "undefined" ? undefined : navigator.language));
 
   /** The effects the scene paints (blur, shadow, glow, backdrop); grain, texture and duotone wait for their own painter (see coverage). */
@@ -103,7 +108,28 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     el.style.filter = style.filter;
     el.style.textShadow = style.textShadow;
     el.style.backdropFilter = style.backdropFilter ?? "";
-    for (const def of style.defs) if (def.kind === "grain") defineGrain(root, def.id, def.effect);
+    if (style.defs.some((def) => def.kind === "duotone")) {
+      // One filter per layer, as the player names it; a layer with a duotone backdrop sees the layers under it through it.
+      const id = `duotone-filter-${layer.id.replace(/[^\w-]/g, "_")}`;
+      const defs = defsOf(root);
+      if (!defs.querySelector(`#${id}`)) defs.appendChild(duotoneFilter(root.ownerDocument, id));
+      el.style.backdropFilter = `url(#${id})`;
+    }
+    el.querySelectorAll(":scope > .oim-effect-texture").forEach((node) => node.remove());
+    for (const def of style.defs) {
+      if (def.kind === "grain") defineGrain(root, def.id, def.effect);
+      else if (def.kind === "texture") {
+        const color = def.effect.color === undefined ? undefined : colors.literal(def.effect.color);
+        applyTextureEffect(el, { ...def.effect, color }, {
+          text: layer.type === "text",
+          under: layer.fills?.[0],
+          colors,
+          lineHeight: resolveLineHeight({ lineHeight: layer.text?.lineHeight }),
+          mask: { type: layer.type },
+          len,
+        });
+      }
+    }
   };
 
   /** A filter (a shape with a backdrop) shows its backdrop only inside its figure: the core's clip over the layer's own box. A rectangle keeps its border radius instead. */
@@ -121,7 +147,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   const paintBlocks = (el: HTMLElement, layer: Layer, only?: ReadonlySet<string>) => {
     const has = (...keys: string[]) => !only || keys.some((k) => only.has(k));
     const isText = layer.type === "text";
-    if (has("fills")) applyFills(el, layer, { colors, isText, size: tileSize });
+    if (has("fills", "box")) applyFills(el, layer, { colors, isText, size: tileSize, width: layer.box.width, height: layer.box.height });
     if (has("opacity", "blend")) applyCompositing(el, layer);
     if (has("visible")) el.style.display = layer.visible === false ? "none" : "";
     if (has("effects")) applyEffects(el, layer);
@@ -149,14 +175,27 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   const animate = (el: HTMLElement, frames: Keyframe[], timing: KeyframeAnimationOptions): Animation | undefined => {
     if (typeof el.animate !== "function") return undefined;
     const run = el.animate(frames, timing);
-    if (paused) run.finish?.();
+    // At rest a loop is its first frame (an endless run cannot finish); anything else, its last.
+    if (paused) timing.iterations === Infinity ? run.cancel() : run.finish?.();
     return run;
   };
   const animationsOf = (layer: Layer, on: string) => (layer.animations ?? []).filter((a) => a.on === on && canAnimate(a));
   const bindAnimations = (el: HTMLElement, layer: Layer) => {
     for (const a of [...animationsOf(layer, "load"), ...animationsOf(layer, "loop")]) {
-      const run = animate(el, animationFrames(a, len), animationTiming(a));
-      if (paused && a.on === "loop") run?.cancel(); // at rest a loop is its first frame, not wherever finish() leaves an endless run
+      if (isEntrance(a)) {
+        // shortcut: an entrance replaces the text's marks with plain units; split the marked runs when a file has both.
+        // One block holds the units, so they flow as one paragraph inside the text's flex column.
+        const body = el.ownerDocument.createElement("div");
+        body.style.alignSelf = "stretch";
+        const words = el.textContent ?? "";
+        el.replaceChildren(body);
+        const frames = entranceFrames(a.preset as EntranceEffect);
+        const stagger = typeof a.params?.speed === "number" ? a.params.speed : undefined;
+        applyEntrance(body, words, a.preset as EntranceEffect, stagger, (a.delay ?? 0) / 1000, (span, start) =>
+          void animate(span, frames, { duration: ENTRANCE_MS, delay: start * 1000, easing: "linear", fill: "both" }));
+        continue;
+      }
+      animate(el, animationFrames(a, len), animationTiming(a));
     }
     const hover = animationsOf(layer, "hover");
     if (!hover.length) return;
@@ -225,7 +264,11 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     for (const child of layer.children ?? []) paint(child, el, layer.box as Frame); // only groups have children, and a group is always sized
     parent.appendChild(el);
   };
-  for (const layer of document.layers) paint(layer, root, canvas);
+  for (const layer of document.layers) {
+    // shortcut: a cutout clips the layers before it at the top level only; one inside a group is not painted yet.
+    if (layer.mask?.mode === "cutout") applyCutoutMask(root, layer, { width, height });
+    else paint(layer, root, canvas);
+  }
   container.appendChild(letterbox);
 
   // A move is written once when it starts a frame; the moves that follow in the same frame are kept and written once more, at the next frame.

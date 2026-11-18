@@ -12,7 +12,7 @@ this says what **result** comes out of a specific one.
 ## The Normative Vectors
 
 A reduced suite cannot tell apart an implementation that **reads the format**
-from one that **gets a simple case right by chance**. These 39 vectors cover the
+from one that **gets a simple case right by chance**. These 46 vectors cover the
 initial 20-vector matrix plus every capability added since contract 1.10.0:
 
 | # | Vector | What it covers |
@@ -56,6 +56,13 @@ initial 20-vector matrix plus every capability added since contract 1.10.0:
 | 37 | `artistic-text` | Artistic text (4.6): a curved 3D title with shaded extrusion, outer and inner strokes and a gradient, and a two-line word, drawn with the embedded Inter subset |
 | 38 | `zone-group` | A 1.x zone becomes a 2.0 group: background, corners and backdrop blur kept; its layers keep their own x/y, the flex flow is retired (Decision 14 Nov) |
 | 39 | `mask-window` | A window mask: a circle cut out of a dark cover with a white outline |
+| 40 | `color-grade` | Colour grade effects: `warm-vintage` on a photo frame, `cool-cinema` on a solid shape |
+| 41 | `duotone` | A duotone backdrop: a `filter` layer with `filterPreset: "duotone"` over half the base |
+| 42 | `texture` | Texture effects: halftone dots in overlay and vintage paper multiplied at scale 2 |
+| 43 | `generative-fill` | A generative fill: `stacked-waves`, seed 7, a two-stop palette over a visible background |
+| 44 | `text-decorations` | A text mark with a highlight, an underline, a boxed whole-text highlight and a two-line drop cap |
+| 45 | `mask-cutout` | A cutout mask: a star cut through the shape under it |
+| 46 | `animation-presets` | Named presets at rest: a `pulse` loop, a `grow` hover and a `fade-chars` entrance |
 
 ## How to use it from another language
 

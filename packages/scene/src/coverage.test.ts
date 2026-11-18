@@ -23,7 +23,7 @@ describe("unsupportedUse", () => {
   it("reports each out-of-scope block once, sorted", () => {
     const layers = [
       rect({ effects: [{ kind: "grain", intensity: 20 }] }),
-      rect({ id: "b", animations: [{ on: "loop", preset: "pulse", duration: 1 }] }),
+      rect({ id: "b", animations: [{ on: "load", target: "chars", preset: "typewriter", duration: 0 }] }),
       rect({ id: "d", animations: [{ on: "load", preset: "fade", duration: 1 }] }),
       rect({ id: "c", fills: [{ kind: "pattern", pattern: { preset: "dots" } }] as Layer["fills"] }),
       { id: "t", type: "text", box: { x: 0, y: 0 }, text: { content: { es: "x" }, runs: [] } } as unknown as Layer,
@@ -36,9 +36,9 @@ describe("unsupportedUse", () => {
     expect(unsupportedUse(doc([rect({ effects })]))).toEqual([]);
   });
 
-  it("a duotone backdrop, a texture, a colour grade and an image filter are not painted yet", () => {
+  it("a colour grade and an image filter are not painted yet; a texture and a duotone backdrop are", () => {
     const effects = [{ kind: "backdrop", preset: "duotone" }, { kind: "texture", preset: "paper" }, { kind: "color-grade", preset: "warm" }, { kind: "filter", blur: 1 }] as Layer["effects"];
-    expect(unsupportedUse(doc([rect({ effects })]))).toEqual(["effect:color-grade", "effect:duotone", "effect:filter", "effect:texture"]);
+    expect(unsupportedUse(doc([rect({ effects })]))).toEqual(["effect:color-grade", "effect:filter"]);
   });
 
   it("a layer's opacity and blend mode are painted; a picture on a figure is not yet", () => {
@@ -56,6 +56,8 @@ describe("unsupportedUse", () => {
   it("looks inside groups, and into the canvas background", () => {
     const group = { id: "g", type: "group", box: { x: 0, y: 0, width: 5, height: 5 }, children: [rect({ id: "m", mask: { mode: "cutout" } })] } as Layer;
     expect(unsupportedUse(doc([group]))).toEqual(["mask"]);
+    // At the top level a cutout is painted: it clips the layers before it.
+    expect(unsupportedUse(doc([rect({ id: "m", mask: { mode: "cutout" } })]))).toEqual([]);
     expect(unsupportedUse(doc([], { canvas: { width: 1, height: 1, fills: [{ kind: "texture", texture: { type: "lines" } }] } as OimDocument["canvas"] }))).toEqual(["paint:texture"]);
   });
 });

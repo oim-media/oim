@@ -1,0 +1,47 @@
+{
+  "description": "Cutout mask: a star cut through the shape under it, so the base picture shows through the star.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "reedit": "author_only",
+  "slots": [
+    {
+      "id": "cover",
+      "type": "geo",
+      "position": [
+        0,
+        0
+      ],
+      "name": "Cover",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "100.0cqw",
+        "height": "75.0cqw",
+        "fillColor": "#0f172a"
+      }
+    },
+    {
+      "id": "star-cut",
+      "type": "mask",
+      "position": [
+        31.25,
+        25
+      ],
+      "name": "Star cut",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "37.5cqw",
+        "height": "37.5cqw",
+        "maskMode": "cutout",
+        "maskShape": "star"
+      }
+    }
+  ]
+}

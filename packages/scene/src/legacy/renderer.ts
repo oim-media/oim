@@ -10,10 +10,13 @@ import { setFlag } from './attrs.js';
 import { playerString } from './strings.js';
 import { getDeviceProfile, type DeviceProfile } from './device-tier.js';
 import { injectStyles } from './styles.js';
-import { renderMarkedText, plainOf, type Marks } from './marked-text.js';
-import { dropCapStyle, splitDropCap } from '../../../core/src/drop-cap.js';
-import { layerTextureMask } from '../../../core/src/effects/texture-mask.js';
-import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entranceClips, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
+import { renderMarkedText, plainOf } from '../blocks/marked-text.js';
+import { applyDropCap, applyTextHighlight } from '../blocks/text-marks.js';
+export { applyDropCap, applyTextHighlight };
+import { applyTextureEffect } from '../blocks/texture.js';
+import { duotoneFilter } from '../blocks/duotone.js';
+import { isEntranceEffect, entranceKeyframes, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
+import { applyEntrance } from '../blocks/presets.js';
 import { loadLottie } from './lottie-loader.js';
 import { ensureUpgrade } from './upgrade-entry.js';
 import { ensureFeatures } from './features-entry.js';
@@ -35,7 +38,6 @@ import {
   getMaskFeatherId,
   getDuotoneFilterId,
   getFilterClipStyle,
-  DUOTONE_COLORS,
   type CompositionNode,
   type Slot as CompositionSlot
 } from './layerComposition.js';
@@ -117,30 +119,9 @@ export function applyWaveText(
  * the host's `oim-player-paused` class pauses it like any CSS animation.
  */
 export function applyEntranceText(el: HTMLElement, text: string, effect: EntranceEffect, speed?: number, delay?: number): void {
-  el.textContent = '';
-  entranceUnits(text, effect).forEach((unit, i) => {
-    if (/^\s+$/.test(unit)) {
-      el.appendChild(document.createTextNode(unit));
-      return;
-    }
-    const span = document.createElement('span');
-    span.textContent = unit;
+  applyEntrance(el, text, effect, speed, delay, (span, start) => {
     span.className = 'oim-entrance';
-    const st = span.style;
-    st.display = 'inline-block';
-    st.animation = `oim-entrance-${effect} ${ENTRANCE_SECONDS}s linear ${entranceStart(i, speed, delay)}s both`;
-    if (!entranceClips(effect)) {
-      el.appendChild(span);
-      return;
-    }
-    // A rectangular clip of the word's own box: the word rises into view.
-    const clip = document.createElement('span');
-    clip.className = 'oim-entrance-clip';
-    clip.style.display = 'inline-block';
-    clip.style.overflow = 'hidden';
-    clip.style.verticalAlign = 'top';
-    clip.appendChild(span);
-    el.appendChild(clip);
+    span.style.animation = `oim-entrance-${effect} ${ENTRANCE_SECONDS}s linear ${start}s both`;
   });
 }
 
@@ -235,41 +216,6 @@ export function applyGlitchText(el: HTMLElement, text: string, type: 'glitch-cyb
   return timedText(33, draw, () => draw(0));
 }
 
-export function applyTextHighlight(el: HTMLElement, hl?: any): void {
-  if (!hl?.enabled) return;
-  const c = hl.color || 'rgba(245,158,11,.35)', m = hl.style === 'underline-thick', st = el.style;
-  st.backgroundColor = m ? 'transparent' : c;
-  if (m) st.boxShadow = `inset 0 -.4em 0 ${c}`;
-  st.borderRadius = hl.style === 'pill' ? '9999px' : hl.style === 'box' ? '0' : `${hl.borderRadius ?? 3}px`;
-  st.padding = `${hl.paddingY ?? 2}px ${hl.paddingX ?? 4}px`;
-  st.boxDecorationBreak = (st as any).webkitBoxDecorationBreak = 'clone';
-}
-
-/**
- * The drop cap: the big first letter, then the rest of the text WITH its marks
- * (`text` is the stored text, tags and escapes included).
- */
-export function applyDropCap(el: HTMLElement, text: string, dc?: any, marks?: Marks): boolean {
-  if (!dc?.enabled || !text) return false;
-  const { letter, rest } = splitDropCap(text, Object.keys(marks ?? {}));
-  if (!letter) return false;
-  const s = document.createElement('span'), st = s.style;
-  // One style for the three renderers (@oim-media/core drop-cap.ts).
-  const d = dropCapStyle(dc);
-  s.textContent = letter;
-  st.float = 'left';
-  st.fontSize = `${d.scale}em`;
-  st.lineHeight = String(d.lineHeight);
-  st.marginRight = `${d.marginRight}px`;
-  if (d.fontFamily) st.fontFamily = d.fontFamily;
-  if (d.color) st.color = d.color;
-  st.fontWeight = String(d.fontWeight);
-  st.userSelect = 'none';
-  renderMarkedText(el, rest, marks);
-  el.prepend(s);
-  return true;
-}
-
 interface LottieAnimation {
   goToAndStop: (frame: number, isFrame: boolean) => void;
   play: () => void;
@@ -298,11 +244,6 @@ export function getTouchDistance(touches: TouchList): number {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-function hexChannel(hex: string, channelIndex: 0 | 1 | 2): number {
-  const clean = (hex || '').replace('#', '');
-  const value = parseInt(clean.substring(channelIndex * 2, channelIndex * 2 + 2), 16) || 0;
-  return Math.round((value / 255) * 1000) / 1000;
-}
 
 // Mirrors the editor's <LayerCompositionDefs> (React/JSX) 1:1, but built with
 // document.createElementNS since this package has no JSX. Only invoked when
@@ -480,26 +421,7 @@ export function buildLayerCompositionDefs(
         defs.appendChild(clip);
       }
     }
-    if (s.type === 'filter' && (s as any).duotone) {
-      const filter = document.createElementNS(svgNs, 'filter');
-      filter.setAttribute('id', getDuotoneFilterId(s));
-      // The table is in sRGB, as the editor draws it; linearRGB (the SVG default) lightens every tone.
-      filter.setAttribute('color-interpolation-filters', 'sRGB');
-      const colorMatrix = document.createElementNS(svgNs, 'feColorMatrix');
-      colorMatrix.setAttribute('type', 'matrix');
-      colorMatrix.setAttribute('values', '0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0 0 0 1 0');
-      filter.appendChild(colorMatrix);
-      const transfer = document.createElementNS(svgNs, 'feComponentTransfer');
-      (['R', 'G', 'B'] as const).forEach(function (ch, idx) {
-        const func = document.createElementNS(svgNs, 'feFunc' + ch);
-        func.setAttribute('type', 'table');
-        const channelIndex = idx as 0 | 1 | 2;
-        func.setAttribute('tableValues', hexChannel(DUOTONE_COLORS.shadows, channelIndex) + ' ' + hexChannel(DUOTONE_COLORS.lights, channelIndex));
-        transfer.appendChild(func);
-      });
-      filter.appendChild(transfer);
-      defs.appendChild(filter);
-    }
+    if (s.type === 'filter' && (s as any).duotone) defs.appendChild(duotoneFilter(document, getDuotoneFilterId(s)));
   });
 
   return svg;
@@ -1850,72 +1772,14 @@ export class LegacyRenderer {
       }
       // style.blendMode retired in 1.12.0: it never showed here (each slot is
       // isolated) nor in the editor; readers draw the layer as normal.
-      const applyTexture = (eff: any) => {
-        const texDef = TEXTURE_CATALOG[eff.preset as TexturePreset];
-        if (texDef) {
-          if (slotType === 'text' || slotType === 'artistic-text') {
-            const scale = eff.scale || 1.0;
-            const w = texDef.tileWidth * scale;
-            const h = texDef.tileHeight * scale;
-            // Under the grain: the layer's colour, or its gradient.
-            const under = v2Own.fills?.[0] as any;
-            const baseColor = (under?.kind === 'color' && v2Colors.css(under.value)) || '#18181b';
-            const underGradient = under?.kind === 'gradient' ? paintCss(under, { colors: v2Colors }).backgroundImage : undefined;
-            const blend = eff.blend || texDef.defaultBlend || 'overlay';
-            if (underGradient) {
-              slotEl.style.backgroundImage = 'url("' + texDef.getDataUri(eff.color, eff.intensity) + '"), ' + underGradient;
-              slotEl.style.backgroundRepeat = 'repeat, no-repeat';
-              slotEl.style.backgroundSize = w + 'px ' + h + 'px, 100% 100%';
-              slotEl.style.backgroundBlendMode = blend + ', normal';
-            } else {
-              slotEl.style.backgroundImage = 'url("' + texDef.getDataUri(eff.color, eff.intensity) + '"), linear-gradient(' + baseColor + ', ' + baseColor + ')';
-              slotEl.style.backgroundRepeat = 'repeat, no-repeat';
-              slotEl.style.backgroundSize = w + 'px ' + h + 'px, 100% 100%';
-              slotEl.style.backgroundBlendMode = blend;
-            }
-            slotEl.style.webkitBackgroundClip = 'text';
-            (slotEl.style as any).backgroundClip = 'text';
-            (slotEl.style as any).webkitTextFillColor = 'transparent';
-            slotEl.style.color = 'transparent';
-            // Same margin as a clipped fill: without it the descenders of a
-            // tight line height (a «p» at line height 1) were left unfilled
-            // while the text stroke still drew them.
-            const texInk = inkMargin(resolveLineHeight(lineHeightSource));
-            if (texInk > 0) {
-              slotEl.style.setProperty('padding-top', texInk + 'em', 'important');
-              slotEl.style.setProperty('padding-bottom', texInk + 'em', 'important');
-            }
-          } else {
-            const overlay = document.createElement('div');
-            overlay.className = 'oim-effect-texture';
-            overlay.style.position = 'absolute';
-            overlay.style.inset = '0';
-            overlay.style.pointerEvents = 'none';
-            overlay.style.borderRadius = 'inherit';
-            overlay.style.mixBlendMode = eff.blend || texDef.defaultBlend || 'overlay';
-            const opacityVal = (eff.intensity !== undefined ? eff.intensity : texDef.defaultIntensity) / 100;
-            overlay.style.opacity = String(opacityVal);
-            const scale = eff.scale || 1.0;
-            const w = texDef.tileWidth * scale;
-            const h = texDef.tileHeight * scale;
-            overlay.style.backgroundImage = `url("${texDef.getDataUri(eff.color, eff.intensity)}")`;
-            overlay.style.backgroundRepeat = 'repeat';
-            overlay.style.backgroundSize = `${w}px ${h}px`;
-            overlay.style.zIndex = '1';
-            // On the layer's own pixels, not its box (@oim-media/core layerTextureMask):
-            // an SVG with a transparent background came out as a coloured square.
-            const mask = layerTextureMask({ type: slotType, svg: isSvg ? text : undefined, image: isImageSlot ? text.trim() : undefined, fit: v2Image?.fit });
-            if (mask) {
-              const ms = overlay.style as CSSStyleDeclaration & { webkitMaskImage?: string; webkitMaskSize?: string; webkitMaskRepeat?: string; webkitMaskPosition?: string };
-              ms.maskImage = ms.webkitMaskImage = mask.image;
-              ms.maskSize = ms.webkitMaskSize = mask.size;
-              ms.maskRepeat = ms.webkitMaskRepeat = 'no-repeat';
-              ms.maskPosition = ms.webkitMaskPosition = 'center';
-            }
-            slotEl.appendChild(overlay);
-          }
-        }
-      };
+      const applyTexture = (eff: any) => applyTextureEffect(slotEl, eff, {
+        text: slotType === 'text' || slotType === 'artistic-text',
+        under: v2Own.fills?.[0],
+        colors: v2Colors,
+        lineHeight: resolveLineHeight(lineHeightSource),
+        mask: { type: slotType, svg: isSvg ? text : undefined, image: isImageSlot ? text.trim() : undefined, fit: v2Image?.fit },
+        len: (px) => px + 'px',
+      });
       const addFilter = (part: string) => { slotEl.style.filter = (slotEl.style.filter ? slotEl.style.filter + ' ' : '') + part; };
       const addTextShadow = (part: string) => { slotEl.style.textShadow = slotEl.style.textShadow ? slotEl.style.textShadow + ', ' + part : part; };
       // 2.0: the layer's effects, in their order (the shared effectsToStyle): glyph shadows on a text, the silhouette's otherwise.

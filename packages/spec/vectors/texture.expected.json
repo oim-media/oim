@@ -1,0 +1,65 @@
+{
+  "description": "Texture effect: halftone dots in overlay at 60 on a shape, and vintage paper multiplied at 40 and scale 2 on another.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "reedit": "author_only",
+  "slots": [
+    {
+      "id": "halftone",
+      "type": "geo",
+      "position": [
+        7.5,
+        16.6667
+      ],
+      "name": "Halftone",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "40.0cqw",
+        "height": "50.0cqw",
+        "fillColor": "#f59e0b",
+        "effects": [
+          {
+            "blend": "overlay",
+            "enabled": true,
+            "intensity": 60,
+            "preset": "halftone-dots",
+            "type": "texture"
+          }
+        ]
+      }
+    },
+    {
+      "id": "paper",
+      "type": "geo",
+      "position": [
+        52.5,
+        16.6667
+      ],
+      "name": "Paper",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "40.0cqw",
+        "height": "50.0cqw",
+        "fillColor": "#e7e5e4",
+        "effects": [
+          {
+            "blend": "multiply",
+            "enabled": true,
+            "intensity": 40,
+            "preset": "vintage-paper",
+            "scale": 2,
+            "type": "texture"
+          }
+        ]
+      }
+    }
+  ]
+}

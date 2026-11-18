@@ -1,0 +1,29 @@
+{
+  "description": "Duotone backdrop: a filter layer with filterPreset duotone over the left half of the base picture.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "reedit": "author_only",
+  "slots": [
+    {
+      "id": "duotone-filter",
+      "type": "filter",
+      "position": [
+        0,
+        0
+      ],
+      "name": "Duotone",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "50.0cqw",
+        "height": "75.0cqw",
+        "filterPreset": "duotone"
+      }
+    }
+  ]
+}

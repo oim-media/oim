@@ -45,10 +45,7 @@ export function applyTextureEffect(el: HTMLElement, eff: Texture, ctx: TextureCo
     el.style.backgroundRepeat = "repeat, no-repeat";
     el.style.backgroundSize = `${w} ${h}, 100% 100%`;
     el.style.backgroundBlendMode = underGradient ? `${blend}, normal` : blend;
-    el.style.webkitBackgroundClip = "text";
-    el.style.backgroundClip = "text";
-    (el.style as CSSStyleDeclaration & { webkitTextFillColor: string }).webkitTextFillColor = "transparent";
-    el.style.color = "transparent";
+    Object.assign(el.style, { webkitBackgroundClip: "text", backgroundClip: "text", webkitTextFillColor: "transparent", color: "transparent" });
     // Same margin as a clipped fill: without it the descenders of a tight line
     // height (a «p» at line height 1) were left unfilled while the stroke drew them.
     const ink = ctx.lineHeight === undefined ? 0 : inkMargin(ctx.lineHeight);
@@ -76,11 +73,12 @@ export function applyTextureEffect(el: HTMLElement, eff: Texture, ctx: TextureCo
   // a transparent background came out as a coloured square.
   const mask = layerTextureMask(ctx.mask);
   if (mask) {
-    const ms = overlay.style as CSSStyleDeclaration & { webkitMaskImage: string; webkitMaskSize: string; webkitMaskRepeat: string; webkitMaskPosition: string };
-    ms.maskImage = ms.webkitMaskImage = mask.image;
-    ms.maskSize = ms.webkitMaskSize = mask.size;
-    ms.maskRepeat = ms.webkitMaskRepeat = "no-repeat";
-    ms.maskPosition = ms.webkitMaskPosition = "center";
+    for (const prefix of ["", "-webkit-"]) {
+      overlay.style.setProperty(`${prefix}mask-image`, mask.image);
+      overlay.style.setProperty(`${prefix}mask-size`, mask.size);
+      overlay.style.setProperty(`${prefix}mask-repeat`, "no-repeat");
+      overlay.style.setProperty(`${prefix}mask-position`, "center");
+    }
   }
   el.appendChild(overlay);
 }

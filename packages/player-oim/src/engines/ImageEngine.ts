@@ -73,8 +73,8 @@ import { slotClipping } from '../../../core/src/clipping.js';
 import { whatTheReaderCannotDo, describeMissing, CONTRACT_VERSION, PLAYER_CAPABILITIES } from '../../../core/src/compatibility.js';
 import { bindStates, resolveActions, applyMinHitArea, readInteraction, type ActionRunner, type RegisterOutsideTap } from '../../../scene/src/legacy/states.js';
 import { resolveMode } from '../../../scene/src/legacy/modes.js';
-import { buildArtisticTextModelFromSlot, generateArtisticTextSvgString } from '../../../scene/src/legacy/artisticText.js';
-import { readEmbeddedFonts, registerEmbeddedFonts, embeddedFontFamily } from '../../../scene/src/legacy/embeddedFonts.js';
+import { buildArtisticTextModelFromSlot, generateArtisticTextSvgString } from '../../../scene/src/blocks/artisticText.js';
+import { readEmbeddedFonts, registerEmbeddedFonts, embeddedFontFamily } from '../../../scene/src/blocks/fonts.js';
 import { LegacyRenderer, getTouchDistance, type ImageEngineOptions } from '../../../scene/src/legacy/renderer.js';
 export * from '../../../scene/src/legacy/renderer.js';
 

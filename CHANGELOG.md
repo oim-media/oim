@@ -3,6 +3,13 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.32.5
+
+- player: a file whose poster read already held it whole loads; the resume request got HTTP 416
+  and the player gave up (small `.oim` files on oim.media showed no layers).
+- player: a 2.0 file that shows its own picture (`oim:base`) keeps it; the canvas colour was
+  painted over the base PNG and hid the photo.
+
 ## 1.32.4
 
 - player: resuming a download sends If-Range with the first response's ETag, so a head served

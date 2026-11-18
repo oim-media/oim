@@ -151,6 +151,8 @@ export const fileCache = {
       if (validator) rangeHeaders["If-Range"] = validator;
       e.blob = (head
         ? fetch(src, { headers: rangeHeaders }).then(async (res) => {
+          // 416: nothing after the head, the poster read already held the whole file.
+          if (res.status === 416) return new Blob([head as Uint8Array<ArrayBuffer>]);
           if (!res.ok) throw new Error("HTTP " + res.status);
           // 200: the server ignored Range and sent it all.
           return res.status === 206 ? new Blob([head as Uint8Array<ArrayBuffer>, await res.blob()]) : res.blob();

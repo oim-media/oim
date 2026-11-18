@@ -37,6 +37,8 @@ function serve(file: Uint8Array, ranges = true) {
   global.fetch = vi.fn(async (_url: string, init?: RequestInit) => {
     const range = (init?.headers as any)?.Range as string | undefined;
     const from = ranges && range ? Number(/bytes=(\d+)-/.exec(range)![1]) : 0;
+    // A range that starts at the end is unsatisfiable: real servers answer 416, not an empty 206.
+    if (from > 0 && from >= file.length) return new Response(null, { status: 416 });
     const body = file.subarray(from);
     let at = 0;
     const stream = new ReadableStream<Uint8Array>({
@@ -78,6 +80,14 @@ describe('fileCache.readPoster', () => {
     const blob = await fileCache.getBlob('/w.oim');
     expect(new Uint8Array(await blob.arrayBuffer())).toEqual(sealed);
     expect((global.fetch as any).mock.calls[1][1].headers.Range).toMatch(/^bytes=\d+-$/);
+  });
+
+  it('a file the poster read already holds whole is not an error (416 on the rest)', async () => {
+    const small = cat(head, seal, text('OIM_Data', new Uint8Array([123, 125])), chunk('IEND', new Uint8Array(0)));
+    serve(small);
+    await fileCache.readPoster('/s.oim');
+    const blob = await fileCache.getBlob('/s.oim');
+    expect(new Uint8Array(await blob.arrayBuffer())).toEqual(small);
   });
 
   it('a server without Range sends it all again, and that is used as is', async () => {

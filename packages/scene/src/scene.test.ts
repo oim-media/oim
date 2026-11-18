@@ -6,7 +6,7 @@
 
 import type { Layer, OimDocument } from "@oim-media/core/v2";
 import { describe, expect, it } from "vitest";
-import { DYNAMIC_COLOR_ROLES } from "@oim-media/core";
+import { DYNAMIC_COLOR_ROLES, mediaFilterCss } from "@oim-media/core";
 import { mount } from "./index.js";
 
 const shape = (o: Partial<Layer> = {}): Layer => ({
@@ -195,4 +195,15 @@ describe("a filter clips its backdrop to its figure", () => {
   it("a rectangle filter is not clipped: its corners are the border radius", () => {
     expect(filterOn({ geometry: { kind: "rect" } }).style.clipPath).toBe("");
   });
+
+  it("an image layer shows its picture, with its filters as the media-filter CSS of core", () => {
+    const host = document.createElement("div");
+    const photo = { id: "p", type: "image", box: { x: 0, y: 0, width: 100, height: 100 }, image: { src: "data:image/png;base64,AA==", filters: { preset: "noir", blur: 2, brightness: 1.2 } } } as Layer;
+    mount(host, doc([photo]));
+    const img = host.querySelector<HTMLImageElement>("img[data-oim-fill]")!;
+    expect(img.getAttribute("src")).toBe("data:image/png;base64,AA==");
+    expect(img.style.filter).toBe(mediaFilterCss({ filterPreset: "noir", filterBlur: 2, filterBrightness: 120 }));
+    expect(img.style.clipPath).toBe("inset(0)");
+  });
 });
+

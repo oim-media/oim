@@ -5,7 +5,8 @@
  */
 
 import { flipScale } from "@oim-media/core";
-import { cropCss } from "@oim-media/core";
+import { cropCss, mediaFilterCss } from "@oim-media/core";
+import { filterStyle } from "./effects.js";
 import { paintCss, type Layer, type Paint, type PaintColors, type PaintTarget } from "@oim-media/core/v2";
 
 export type PaintContext = { colors: PaintColors; resources?: Record<string, Paint>; isText: boolean };
@@ -72,5 +73,8 @@ export function pictureNode(el: HTMLElement, paint: Picture): HTMLImageElement {
   if (flip) transforms.push(`scale(${flip[0]}, ${flip[1]})`);
   if (transforms.length) img.style.transform = transforms.join(" ");
   if (paint.opacity !== undefined && paint.opacity !== 1) img.style.opacity = String(paint.opacity);
+  const filter = paint.filters && mediaFilterCss(filterStyle(paint.filters));
+  // The blur stays inside the picture's box, as the player draws it; clip-path is applied after the filter.
+  if (filter) Object.assign(img.style, { filter, clipPath: "inset(0)" });
   return img;
 }

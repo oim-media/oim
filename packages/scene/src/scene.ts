@@ -120,7 +120,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     if (layer.type === "image" && has("image")) {
       el.querySelectorAll(":scope > img[data-oim-fill]").forEach((node) => node.remove());
       const picture = pictureOf(layer.image, lang);
-      if (picture !== undefined) pictureNode(el, { src: picture, fit: layer.image?.fit, crop: layer.image?.crop });
+      if (picture !== undefined) el.appendChild(pictureNode(el, { src: picture, fit: layer.image?.fit, crop: layer.image?.crop, filters: layer.image?.filters }));
     }
   };
 

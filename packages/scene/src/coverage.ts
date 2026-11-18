@@ -26,7 +26,6 @@ export const UNSUPPORTED_BLOCKS = [
   "paint:generative",
   "paint:pattern",
   "paint:texture",
-  "image:filters",
   "text:artistic",
   "text:dropCap",
   "text:decoration",
@@ -42,7 +41,7 @@ const paintUses = (paints: readonly Paint[] | undefined): UnsupportedBlock[] =>
     if (paint.kind === "pattern") return ["paint:pattern"];
     if (paint.kind === "generative") return ["paint:generative"];
     if (paint.kind === "texture") return ["paint:texture"];
-    return paint.kind === "image" && paint.filters ? ["image:filters"] : [];
+    return [];
   });
 
 /** The effects scene paints are blur, shadow, glow and backdrop; a duotone is a backdrop's preset. */
@@ -59,7 +58,6 @@ const layerUses = (layer: Layer): UnsupportedBlock[] => {
   if (layer.motion) uses.push("motion");
   if (layer.mask) uses.push("mask");
   if (layer.interactions?.length) uses.push("interactions");
-  if (layer.image?.filters) uses.push("image:filters");
   const text = layer.text;
   if (text) {
     if (text.artistic) uses.push("text:artistic");

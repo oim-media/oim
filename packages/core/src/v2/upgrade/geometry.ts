@@ -153,6 +153,12 @@ export function convertGeometry(ctx: UpgradeContext, slot: V1Slot, layer: DraftL
     for (const path of layer.geometry.paths) path.fill = "currentColor";
   }
   else for (const key of ["geoShape", "geoType", "svgPath", "customBlobPath", "svgViewBox", "svgRawXml", "svgLayers"]) ctx.take(style, key);
+  // The canvas background repeated its own drawing: it travels as the pattern's tile, on a plain rect.
+  const canvasBackground = slot.raw.is_background_pattern === true || slot.raw.id === "background-pattern-slot";
+  if (canvasBackground && layer.geometry?.kind === "paths" && first && "kind" in first && first.kind === "pattern") {
+    first.pattern.tile = { viewBox: layer.geometry.viewBox as [number, number, number, number], paths: layer.geometry.paths.slice(0, 64) };
+    layer.geometry = { kind: "rect" };
+  }
 
   const corners = cornersOf(ctx, style);
   if (corners !== undefined && admits(layer.type, "corners")) layer.corners = corners;

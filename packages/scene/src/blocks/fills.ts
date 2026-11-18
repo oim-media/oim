@@ -7,7 +7,9 @@
 import { flipScale } from "@oim-media/core";
 import { cropCss, mediaFilterCss } from "@oim-media/core";
 import { filterStyle } from "./effects.js";
-import { paintCss, type Layer, type Paint, type PaintColors, type PaintTarget } from "@oim-media/core/v2";
+import { paintCss, patternStyle, type Layer, type Paint, type PaintColors, type PaintTarget } from "@oim-media/core/v2";
+import { patternTileUri } from "../../../core/src/patterns.js";
+import { drawingLink, drawingSvg } from "../legacy/v2-layers.js";
 
 export type PaintContext = {
   colors: PaintColors;
@@ -45,7 +47,7 @@ export function applyFills(el: HTMLElement, layer: Pick<Layer, "fills">, ctx: Pa
       if (!ctx.isText) pictures.push(paint);
       continue;
     }
-    const css = paintCss(paint, target) as Record<string, string | undefined>;
+    const css = (tileCss(paint, ctx.colors) ?? paintCss(paint, target)) as Record<string, string | undefined>;
     if (css.color) el.style.color = css.color;
     if (css.backgroundClip) Object.assign(el.style, { backgroundClip: "text", WebkitBackgroundClip: "text" });
     if (css.backgroundColor) {
@@ -96,4 +98,14 @@ export function pictureNode(el: HTMLElement, paint: Picture): HTMLImageElement {
   // The blur stays inside the picture's box, as the player draws it; clip-path is applied after the filter.
   if (filter) Object.assign(img.style, { filter, clipPath: "inset(0)" });
   return img;
+}
+
+/** A pattern whose tile is a drawing: the drawing, recoloured as the player does, 160 × scale canvas units a side. */
+function tileCss(paint: Paint, colors: PaintColors): { backgroundImage: string; backgroundSize: string } | undefined {
+  if (!("kind" in paint) || paint.kind !== "pattern" || !paint.pattern.tile) return undefined;
+  const p = paint.pattern;
+  const svg = drawingSvg({ kind: "paths", ...p.tile! } as never, drawingLink({} as Layer, colors.literal), true);
+  const uri = patternTileUri(patternStyle(p, colors) as never, svg, colors.literal(p.bg) ?? "transparent", colors.literal(p.colors?.[0]) ?? "#000000");
+  const side = 160 * (p.scale || 1);
+  return uri ? { backgroundImage: `url("${uri}")`, backgroundSize: `${side}px ${side}px` } : undefined;
 }

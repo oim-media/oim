@@ -47,9 +47,11 @@ describe("unsupportedUse", () => {
     expect(unsupportedUse(doc([figure]))).toEqual([]);
   });
 
-  it("a pattern whose tile is the layer's own drawing (a 1.x background slot) is not painted yet", () => {
-    const tile = rect({ geometry: { kind: "paths", paths: [{ d: "M0 0H160V160H0Z" }] }, fills: [{ kind: "pattern", pattern: { preset: "stars" } }] } as Partial<Layer>);
-    expect(unsupportedUse(doc([tile]))).toEqual(["paint:pattern-tile"]);
+  it("a pattern whose tile is a drawing is painted; paths with a pattern (a draft background or an icon) wait", () => {
+    const tile = rect({ fills: [{ kind: "pattern", pattern: { tile: { viewBox: [0, 0, 20, 20], paths: [{ d: "M0 0H10V10H0Z" }] } } }] } as Partial<Layer>);
+    expect(unsupportedUse(doc([tile]))).toEqual([]);
+    const icon = rect({ geometry: { kind: "paths", viewBox: [0, 0, 20, 20], paths: [{ d: "M0 0H160V160H0Z" }] }, fills: [{ kind: "pattern", pattern: { preset: "stars" } }] } as Partial<Layer>);
+    expect(unsupportedUse(doc([icon]))).toEqual(["paint:pattern-tile"]);
     expect(unsupportedUse(doc([rect({ fills: [{ kind: "pattern", pattern: { preset: "stars" } }] } as Partial<Layer>)]))).toEqual([]);
   });
 

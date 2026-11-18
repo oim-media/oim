@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { resolveActions, type StateAction } from "./states.js";
+import { resolveActions, type StateAction } from "../runtime/states.js";
 
 type Case = {
   name: string;

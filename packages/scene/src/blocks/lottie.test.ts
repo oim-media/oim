@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const calls: Array<Record<string, unknown>> = [];
 const anim = { play: vi.fn(), pause: vi.fn(), destroy: vi.fn(), goToAndStop: vi.fn() };
-vi.mock("../legacy/lottie-loader.js", () => ({
+vi.mock("../runtime/lottie-loader.js", () => ({
   loadLottie: () => Promise.resolve({ loadAnimation: (o: Record<string, unknown>) => (calls.push(o), anim) }),
 }));
 

@@ -10,7 +10,7 @@
 // editor does: it used to paint the gradient over the whole box (a coloured square).
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("../../../scene/src/legacy/features-entry.js", () => ({ ensureFeatures: () => Promise.resolve() }));
+vi.mock("../../../scene/src/runtime/features-entry.js", () => ({ ensureFeatures: () => Promise.resolve() }));
 
 import { legacyView } from "../../../scene/src/legacy/legacy-view.js";
 import { ImageEngine } from "./ImageEngine";

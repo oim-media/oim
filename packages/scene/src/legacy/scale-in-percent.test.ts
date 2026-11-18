@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { describe, it, expect } from "vitest";
-import { scaleAsFactor, stateStyles } from "./states";
+import { scaleAsFactor, stateStyles } from "../runtime/states";
 
 describe("the scale of an interactive state travels as a percentage", () => {
   it("103 enlarges by 3%, not one hundred and three times", () => {

@@ -13,7 +13,7 @@ import {
   getMaskSilhouettePath,
   getWindowMaskCanvasD,
   maskOutlineResolves,
-} from "./layerComposition";
+} from "../runtime/layerComposition";
 
 /**
  * The player draws every mask silhouette from the shared catalogue in core
@@ -42,7 +42,7 @@ function maskOf(style: Record<string, unknown>) {
 
 describe("mask silhouettes come from the shared catalogue", () => {
   it("the player has no literal shape table left", () => {
-    const src = readFileSync(join(__dirname, "layerComposition.ts"), "utf8");
+    const src = readFileSync(join(__dirname, "../runtime/layerComposition.ts"), "utf8");
     expect(src).not.toMatch(/MASK_SHAPE_PATHS|function scalePath/);
   });
 

@@ -14,7 +14,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 import { buildLayerCompositionDefs, buildWindowMaskFrame } from "./renderer";
-import { computeLayerComposition } from "./layerComposition";
+import { computeLayerComposition } from "../runtime/layerComposition";
 import { paintCss } from "../../../core/src/v2/paint-css.js";
 import { paintColors } from "../../../core/src/v2/colors.js";
 

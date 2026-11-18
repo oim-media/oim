@@ -7,7 +7,7 @@
 import { colorGradeMatrix } from "../../../core/src/color-grade.js";
 import { mediaFilterCss } from "@oim-media/core";
 import type { Effect } from "@oim-media/core/v2";
-import { shadowColorCss } from "../legacy/shadow.js";
+import { shadowColorCss } from "../runtime/shadow.js";
 
 /**
  * The CSS of a layer's effects. The 2.0 scene and the 1.x renderer both read it

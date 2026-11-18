@@ -6,10 +6,10 @@
 
 // The painting half of the 1.x player engine, moved here unchanged. The player's
 // ImageEngine extends it with loading, verification and the viewport.
-import { setFlag } from './attrs.js';
-import { playerString } from './strings.js';
-import { getDeviceProfile, type DeviceProfile } from './device-tier.js';
-import { injectStyles } from './styles.js';
+import { setFlag } from '../runtime/attrs.js';
+import { playerString } from '../runtime/strings.js';
+import { getDeviceProfile, type DeviceProfile } from '../runtime/device-tier.js';
+import { injectStyles } from '../runtime/styles.js';
 import { renderMarkedText, plainOf } from '../blocks/marked-text.js';
 import { applyDropCap, applyTextHighlight } from '../blocks/text-marks.js';
 export { applyDropCap, applyTextHighlight };
@@ -17,14 +17,14 @@ import { applyTextureEffect } from '../blocks/texture.js';
 import { duotoneFilter } from '../blocks/duotone.js';
 import { isEntranceEffect, entranceKeyframes, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
 import { applyEntrance } from '../blocks/presets.js';
-import { loadLottie } from './lottie-loader.js';
-import { ensureUpgrade } from './upgrade-entry.js';
-import { ensureFeatures } from './features-entry.js';
-import { featuresOf } from './features.js';
+import { loadLottie } from '../runtime/lottie-loader.js';
+import { ensureUpgrade } from '../runtime/upgrade-entry.js';
+import { ensureFeatures } from '../runtime/features-entry.js';
+import { featuresOf } from '../runtime/features.js';
 import { geometryOutline } from '../../../core/src/v2/geometry-outline.js';
 import { v2LayersOf, anchorShift, paintColors, typographyCss, maskStyle, imageSrc, drawingSvg, drawingLink, paintedByFillLayer } from './v2-layers.js';
 import { paintCss, patternStyle } from '../../../core/src/v2/paint-css.js';
-import { sanitizeHtml, sanitizeFontFamily, isSandboxImageSrc } from './sanitize.js';
+import { sanitizeHtml, sanitizeFontFamily, isSandboxImageSrc } from '../runtime/sanitize.js';
 import {
   computeLayerComposition,
   getMaskPathData,
@@ -40,7 +40,7 @@ import {
   getFilterClipStyle,
   type CompositionNode,
   type Slot as CompositionSlot
-} from './layerComposition.js';
+} from '../runtime/layerComposition.js';
 import {
   buildWaveKeyframesCss,
   waveCharAnimationDelay,
@@ -58,8 +58,8 @@ import { mediaFilterCss } from '../../../core/src/media-filters.js';
 import { buildSvgNoiseFilter, buildLayerGrainFilter, GRAIN_LAYER_TYPES } from '../../../core/src/generative/proceduralNoise.js';
 import { TEXTURE_CATALOG, type TexturePreset } from '../../../core/src/effects/index.js';
 import { infiniteLayerPlan, TRACK_CLASS, LEGACY_TRACK_CLASS, ensureParallaxKeyframes, type InfiniteLayer } from '../../../core/src/parallaxCss.js';
-import { localizedEntries, isImageContent, compareLangs, resolveContent, isBackground } from './localizedEntries.js';
-import { a11yNodes, artworkLabel } from './a11y.js';
+import { localizedEntries, isImageContent, compareLangs, resolveContent, isBackground } from '../runtime/localizedEntries.js';
+import { a11yNodes, artworkLabel } from '../runtime/a11y.js';
 import { effectsToStyle, filterStyle } from '../blocks/effects.js';
 import { cropCss } from '../../../core/src/crop.js';
 import { mountImageFill } from './image-fill.js';
@@ -71,8 +71,8 @@ import { resolveLineHeight, inkMargin } from '../../../core/src/typography.js';
 import { resolveDimensionToCss, resolveNumericDimension } from '../../../core/src/dimensions.js';
 import { slotClipping } from '../../../core/src/clipping.js';
 import { whatTheReaderCannotDo, describeMissing, CONTRACT_VERSION, PLAYER_CAPABILITIES } from '../../../core/src/compatibility.js';
-import { bindStates, resolveActions, applyMinHitArea, type ActionRunner, type RegisterOutsideTap } from './states.js';
-import { resolveMode } from './modes.js';
+import { bindStates, resolveActions, applyMinHitArea, type ActionRunner, type RegisterOutsideTap } from '../runtime/states.js';
+import { resolveMode } from '../runtime/modes.js';
 import { buildArtisticTextModelFromLayer, generateArtisticTextSvgString } from '../blocks/artisticText.js';
 import { readEmbeddedFonts, registerEmbeddedFonts, embeddedFontFamily } from '../blocks/fonts.js';
 

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { loadLottie } from "../legacy/lottie-loader.js";
+import { loadLottie } from "../runtime/lottie-loader.js";
 
 export type LottieRun = { play(): void; pause(): void; destroy(): void };
 

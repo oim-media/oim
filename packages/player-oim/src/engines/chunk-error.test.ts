@@ -11,7 +11,7 @@
 // the work still drawn. It used to fail in silence.
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("../../../scene/src/legacy/features-entry.js", () => ({
+vi.mock("../../../scene/src/runtime/features-entry.js", () => ({
   ensureFeatures: () => Promise.reject(new Error("Could not load https://example.test/vendor/oim-patterns-x.js")),
 }));
 

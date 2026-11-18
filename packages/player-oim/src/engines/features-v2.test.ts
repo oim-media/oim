@@ -15,7 +15,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const { ensureFeatures } = vi.hoisted(() => ({ ensureFeatures: vi.fn(() => Promise.resolve()) }));
-vi.mock("../../../scene/src/legacy/features-entry.js", () => ({ ensureFeatures }));
+vi.mock("../../../scene/src/runtime/features-entry.js", () => ({ ensureFeatures }));
 
 import { extractOIM } from "../../../core/src/binary.js";
 import { resolveRefs } from "../../../core/src/v2/resources.js";

@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildLayerGrainFilter, DYNAMIC_COLOR_ROLES, mediaFilterCss } from "@oim-media/core";
 import { mount } from "./index.js";
 import { sceneColors } from "./scene.js";
-import { getMaskSilhouetteCanvasD, getWindowMaskCanvasD } from "./legacy/layerComposition.js";
+import { getMaskSilhouetteCanvasD, getWindowMaskCanvasD } from "./runtime/layerComposition.js";
 import { buildArtisticTextModelFromLayer, generateArtisticTextSvgString } from "./blocks/artisticText.js";
 
 const shape = (o: Partial<Layer> = {}): Layer => ({

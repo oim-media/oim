@@ -5,7 +5,7 @@
  */
 
 import type { Layer, PaintColors } from "@oim-media/core/v2";
-import { getMaskClipPathD, getMaskSilhouetteCanvasD, getWindowMaskCanvasD } from "../legacy/layerComposition.js";
+import { getMaskClipPathD, getMaskSilhouetteCanvasD, getWindowMaskCanvasD } from "../runtime/layerComposition.js";
 import { maskOutlineStyle } from "./mask-outline-style.js";
 import { applyFills } from "./fills.js";
 import { silhouetteClip } from "./silhouette-clip.js";

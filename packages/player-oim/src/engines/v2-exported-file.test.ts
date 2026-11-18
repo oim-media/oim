@@ -11,7 +11,7 @@
 // vectors were all upgraded 1.x files, which never had a canvas fill or a filled drawing.
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("../../../scene/src/legacy/features-entry.js", () => ({ ensureFeatures: () => Promise.resolve() }));
+vi.mock("../../../scene/src/runtime/features-entry.js", () => ({ ensureFeatures: () => Promise.resolve() }));
 
 import { legacyView } from "../../../scene/src/legacy/legacy-view.js";
 import { ImageEngine } from "./ImageEngine";

@@ -8,7 +8,7 @@
 // ones the player produced before the delegation; they must not change.
 
 import { describe, it, expect } from "vitest";
-import { getFilterCss } from "./layerComposition";
+import { getFilterCss } from "../runtime/layerComposition";
 
 describe("getFilterCss after delegating to core", () => {
   it("keeps the strings of the presets the player always produced", () => {

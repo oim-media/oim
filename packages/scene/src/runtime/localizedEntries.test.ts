@@ -102,7 +102,7 @@ import { fileURLToPath } from "node:url";
 
 describe("the engine cannot have its own copy of the rule", () => {
   // The engine is split: the painting half in renderer.ts, the player half in ImageEngine.ts.
-  const source = [require("node:path").join(__dirname, "renderer.ts"), require("node:path").join(__dirname, "../../../player-oim/src/engines/ImageEngine.ts")].map((f) => require("node:fs").readFileSync(f, "utf8")).join("\n");
+  const source = [require("node:path").join(__dirname, "../legacy/renderer.ts"), require("node:path").join(__dirname, "../../../player-oim/src/engines/ImageEngine.ts")].map((f) => require("node:fs").readFileSync(f, "utf8")).join("\n");
 
   it("ImageEngine ya no declara resolveLangValue ni _getContent", () => {
     // The rule lives in localizedEntries.ts. A second copy here is how

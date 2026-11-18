@@ -18,7 +18,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { buildLayerCompositionDefs } from './renderer';
-import { upgrade } from './upgrade-entry.js';
+import { upgrade } from '../runtime/upgrade-entry.js';
 
 const artboard = { width: 800, height: 600 };
 

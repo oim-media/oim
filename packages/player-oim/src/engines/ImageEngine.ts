@@ -5,16 +5,15 @@
  */
 
 import { OIMRegistry } from '../render/registry.js';
-import { setFlag } from '../../../scene/src/legacy/attrs.js';
-import { playerString } from '../../../scene/src/legacy/strings.js';
-import { getDeviceProfile, type DeviceProfile } from '../../../scene/src/legacy/device-tier.js';
+import { setFlag } from '../../../scene/src/runtime/attrs.js';
+import { playerString } from '../../../scene/src/runtime/strings.js';
+import { getDeviceProfile, type DeviceProfile } from '../../../scene/src/runtime/device-tier.js';
 import { fileCache, type VerifyResult, type VerifiedFile } from '../render/file-cache.js';
-import { injectStyles } from '../../../scene/src/legacy/styles.js';
+import { injectStyles } from '../../../scene/src/runtime/styles.js';
 import { renderMarkedText, plainOf, type Marks } from '../../../scene/src/blocks/marked-text.js';
 import { dropCapStyle, splitDropCap } from '../../../core/src/drop-cap.js';
 import { layerTextureMask } from '../../../core/src/effects/texture-mask.js';
 import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entranceClips, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
-import { loadLottie } from '../../../scene/src/legacy/lottie-loader.js';
 import { normalizeRawSlots } from '../render/normalize-raw-slots.js';
 import { isV2 } from '../../../core/src/v2/upgrade.js';
 import { hasBaseLayer } from '../../../core/src/v2/base-layer.js';
@@ -39,7 +38,7 @@ import {
   DUOTONE_COLORS,
   type CompositionNode,
   type Slot as CompositionSlot
-} from '../../../scene/src/legacy/layerComposition.js';
+} from '../../../scene/src/runtime/layerComposition.js';
 import {
   buildWaveKeyframesCss,
   waveCharAnimationDelay,
@@ -60,9 +59,9 @@ import { mediaFilterCss } from '../../../core/src/media-filters.js';
 import { buildSvgNoiseFilter, buildLayerGrainFilter, GRAIN_LAYER_TYPES } from '../../../core/src/generative/proceduralNoise.js';
 import { TEXTURE_CATALOG, type TexturePreset } from '../../../core/src/effects/index.js';
 import { infiniteLayerPlan, TRACK_CLASS, LEGACY_TRACK_CLASS, ensureParallaxKeyframes, type InfiniteLayer } from '../../../core/src/parallaxCss.js';
-import { localizedEntries, isImageContent, compareLangs } from '../../../scene/src/legacy/localizedEntries.js';
-import { a11yNodes, artworkLabel } from '../../../scene/src/legacy/a11y.js';
-import { dropShadowCss, shadowColorCss, shadowFollowsGlyphs } from '../../../scene/src/legacy/shadow.js';
+import { localizedEntries, isImageContent, compareLangs } from '../../../scene/src/runtime/localizedEntries.js';
+import { a11yNodes, artworkLabel } from '../../../scene/src/runtime/a11y.js';
+import { dropShadowCss, shadowColorCss, shadowFollowsGlyphs } from '../../../scene/src/runtime/shadow.js';
 import { cropCss } from '../../../core/src/crop.js';
 import { mountImageFill } from '../../../scene/src/legacy/image-fill.js';
 import { flipScale } from '../../../core/src/flip.js';
@@ -71,8 +70,8 @@ import { resolveLineHeight, inkMargin } from '../../../core/src/typography.js';
 import { resolveDimensionToCss, resolveNumericDimension } from '../../../core/src/dimensions.js';
 import { slotClipping } from '../../../core/src/clipping.js';
 import { whatTheReaderCannotDo, describeMissing, CONTRACT_VERSION, PLAYER_CAPABILITIES } from '../../../core/src/compatibility.js';
-import { bindStates, resolveActions, applyMinHitArea, readInteraction, type ActionRunner, type RegisterOutsideTap } from '../../../scene/src/legacy/states.js';
-import { resolveMode } from '../../../scene/src/legacy/modes.js';
+import { bindStates, resolveActions, applyMinHitArea, readInteraction, type ActionRunner, type RegisterOutsideTap } from '../../../scene/src/runtime/states.js';
+import { resolveMode } from '../../../scene/src/runtime/modes.js';
 import { buildArtisticTextModelFromSlot, generateArtisticTextSvgString } from '../../../scene/src/blocks/artisticText.js';
 import { readEmbeddedFonts, registerEmbeddedFonts, embeddedFontFamily } from '../../../scene/src/blocks/fonts.js';
 import { LegacyRenderer, getTouchDistance, type ImageEngineOptions } from '../../../scene/src/legacy/renderer.js';

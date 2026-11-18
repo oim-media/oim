@@ -15,7 +15,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { getStylesText } from "./styles";
+import { getStylesText } from "../runtime/styles";
 
 describe("text wrapping matches the canvas", () => {
   it("slots do not balance their lines", () => {

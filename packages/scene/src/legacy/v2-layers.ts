@@ -6,7 +6,7 @@
 
 // The bridge of the migration: the renderer still walks the 1.x slots, and
 // reads from the 2.0 layer of each one the blocks already moved to 2.0.
-import { upgrade } from './upgrade-entry.js';
+import { upgrade } from '../runtime/upgrade-entry.js';
 import type { Box, Geometry, Layer, OimDocument } from '../../../core/src/v2/schema.js';
 import { paintColors } from '../../../core/src/v2/colors.js';
 import { gradientCss, type PaintColors } from '../../../core/src/v2/paint-css.js';
@@ -14,7 +14,7 @@ import { typographyCss } from '../../../core/src/v2/typography.js';
 import { svgGradientAttrs } from '../../../core/src/v2/svg-gradient.js';
 import type { Gradient } from '../../../core/src/v2/upgrade/gradient.js';
 export { paintColors, typographyCss };
-import { resolveByLang } from './localizedEntries.js';
+import { resolveByLang } from '../runtime/localizedEntries.js';
 import { maskOutlineStyle } from '../blocks/mask-outline-style.js';
 
 const cache = new WeakMap<object, Map<string, Layer>>();

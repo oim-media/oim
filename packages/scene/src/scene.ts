@@ -19,6 +19,8 @@ import { pictureOf } from "./blocks/image.js";
 import { applyStrokes } from "./blocks/strokes.js";
 import { applyCompositing } from "./blocks/compositing.js";
 import { applyText } from "./blocks/text.js";
+import { applyTextureEffect } from "./blocks/texture.js";
+import { resolveLineHeight } from "../../core/src/typography.js";
 import { animationFrames, animationTiming, canAnimate } from "./blocks/animations.js";
 import { bindInteractions, resolveActions, type StateAction } from "./blocks/interactions.js";
 import { applyLoop } from "./blocks/motion.js";
@@ -103,7 +105,21 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     el.style.filter = style.filter;
     el.style.textShadow = style.textShadow;
     el.style.backdropFilter = style.backdropFilter ?? "";
-    for (const def of style.defs) if (def.kind === "grain") defineGrain(root, def.id, def.effect);
+    el.querySelectorAll(":scope > .oim-effect-texture").forEach((node) => node.remove());
+    for (const def of style.defs) {
+      if (def.kind === "grain") defineGrain(root, def.id, def.effect);
+      else if (def.kind === "texture") {
+        const color = def.effect.color === undefined ? undefined : colors.literal(def.effect.color);
+        applyTextureEffect(el, { ...def.effect, color }, {
+          text: layer.type === "text",
+          under: layer.fills?.[0],
+          colors,
+          lineHeight: resolveLineHeight({ lineHeight: layer.text?.lineHeight }),
+          mask: { type: layer.type },
+          len,
+        });
+      }
+    }
   };
 
   /** A filter (a shape with a backdrop) shows its backdrop only inside its figure: the core's clip over the layer's own box. A rectangle keeps its border radius instead. */

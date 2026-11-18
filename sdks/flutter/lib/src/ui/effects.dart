@@ -4,6 +4,7 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/widgets.dart';
+import 'color_grade_presets.g.dart';
 import 'dynamic_colors.dart';
 
 /// Same table and order as `mediaFilterCss` in `@oim-media/core` (media-filters.ts):
@@ -277,10 +278,13 @@ Widget layerEffects(Widget child, Map<String, dynamic> style, OimPalette? palett
     }
     return Stack(fit: StackFit.passthrough, clipBehavior: Clip.none, children: [Transform.translate(offset: offset, child: s), src]);
   }
+  List<double>? grade;
   for (final e in effects) {
     if (e is! Map || e['enabled'] == false) continue;
     final type = e['type'];
-    if (type == 'blur') {
+    if (type == 'color-grade') {
+      grade = colorGradeFlutterMatrix(e['preset']?.toString() ?? '', n(e['intensity'], 100).toDouble()) ?? grade;
+    } else if (type == 'blur') {
       final r = n(e['radius'], 8).toDouble() * unit;
       // CSS blur() takes the standard deviation itself.
       if (r > 0) w = ImageFiltered(imageFilter: ui.ImageFilter.blur(sigmaX: r, sigmaY: r, tileMode: TileMode.decal), child: w);
@@ -295,5 +299,23 @@ Widget layerEffects(Widget child, Map<String, dynamic> style, OimPalette? palett
       w = cast(cast(w, c, Offset.zero, r * 0.4), c, Offset.zero, r);
     }
   }
+  // The web paints the grade as the last filter of the chain, wherever it sits in the list.
+  if (grade != null) w = ColorFiltered(colorFilter: ColorFilter.matrix(grade), child: w);
   return w;
+}
+
+/// A color-grade preset at an intensity (0–100, linear from the identity), as Flutter's
+/// ColorFilter.matrix takes it: the offsets times 255. Null for an unknown preset.
+List<double>? colorGradeFlutterMatrix(String preset, double intensity) {
+  final full = colorGradePresets[preset];
+  if (full == null) return null;
+  final t = intensity.clamp(0, 100) / 100;
+  return [
+    for (var i = 0; i < 20; i++)
+      () {
+        final id = (i % 6 == 0) ? 1.0 : 0.0; // the diagonal of a 4×5 row-major matrix
+        final v = id + (full[i] - id) * t;
+        return i % 5 == 4 ? v * 255 : v;
+      }(),
+  ];
 }

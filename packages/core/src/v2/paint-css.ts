@@ -11,6 +11,7 @@
 
 import { getFillCss, type CSSProperties } from "../fill.js";
 import type { Paint } from "./schema.js";
+import { textureCss } from "./texture-css.js";
 import type { Gradient } from "./upgrade/gradient.js";
 
 /** How a renderer turns a 2.0 colour value into something it can paint. */
@@ -29,6 +30,8 @@ export type PaintTarget = {
   colors: PaintColors;
   /** Shared paints of the document, for `{ ref }`. */
   resources?: Record<string, Paint>;
+  /** A canvas length as CSS; a texture's lines and dots scale with it. Default px. */
+  len?: (px: number) => string;
 };
 
 type PatternPaint = Extract<Paint, { kind: "pattern" }>["pattern"];
@@ -134,8 +137,11 @@ export function paintCss(paint: Paint, target: PaintTarget, depth = 0): CSSPrope
       });
       return withOpacity(css, paint.opacity);
     }
+    case "texture":
+      // The opacity is the colour's alpha, as the editor draws it; a texture on a text is not drawn.
+      return isText ? {} : (textureCss({ ...paint.texture, color: colors.literal(paint.texture.color) }, paint.opacity, target.len) ?? {});
     default:
-      // image and texture are drawn as their own nodes by the renderer.
+      // An image is drawn as its own node by the renderer.
       return {};
   }
 }

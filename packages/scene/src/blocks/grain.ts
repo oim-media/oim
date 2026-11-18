@@ -41,3 +41,18 @@ export function defineGrain(host: Element, id: string, fx: { intensity?: number;
   const filter = parsed.querySelector("filter");
   if (filter) defs.appendChild(doc.importNode(filter, true));
 }
+
+/** A color-grade's feColorMatrix (core colorGradeMatrix), in sRGB as the spec's numbers are. */
+export function defineGrade(host: Element, id: string, values: number[]): void {
+  const doc = host.ownerDocument;
+  const defs = defsOf(host);
+  defs.querySelector("#" + id)?.remove();
+  const filter = doc.createElementNS(SVG, "filter");
+  filter.setAttribute("id", id);
+  filter.setAttribute("color-interpolation-filters", "sRGB");
+  const matrix = doc.createElementNS(SVG, "feColorMatrix");
+  matrix.setAttribute("type", "matrix");
+  matrix.setAttribute("values", values.join(" "));
+  filter.appendChild(matrix);
+  defs.appendChild(filter);
+}

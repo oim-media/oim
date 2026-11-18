@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { colorGradeMatrix } from "../../../core/src/color-grade.js";
 import { mediaFilterCss } from "@oim-media/core";
 import type { Effect } from "@oim-media/core/v2";
 import { shadowColorCss } from "../legacy/shadow.js";
@@ -28,7 +29,8 @@ export type EffectContext = {
 export type EffectDef =
   | { kind: "grain"; id: string; effect: Extract<Effect, { kind: "grain" }> }
   | { kind: "texture"; effect: Extract<Effect, { kind: "texture" }> }
-  | { kind: "duotone" };
+  | { kind: "duotone" }
+  | { kind: "color-grade"; id: string; values: number[] };
 
 export type EffectStyle = {
   /** The CSS filter functions, in the effects' order; "" when none. */
@@ -86,6 +88,15 @@ export function effectsToStyle(effects: readonly Effect[] | undefined, ctx: Effe
     } else if (fx.kind === "texture") {
       defs.push({ kind: "texture", effect: fx });
     }
+  }
+
+  // The grade is the final colour pass, after every other filter (spec 2026-11-17).
+  const grade = effects?.find((fx) => fx.kind === "color-grade") as Extract<Effect, { kind: "color-grade" }> | undefined;
+  const values = grade && colorGradeMatrix(grade.preset, grade.intensity);
+  if (values) {
+    const id = "oim-grade-" + ctx.layerId.replace(/[^A-Za-z0-9_-]/g, "_");
+    defs.push({ kind: "color-grade", id, values });
+    filter.push(`url(#${id})`);
   }
 
   // The first backdrop is the one that counts; a duotone is an SVG filter, so the renderer draws it.

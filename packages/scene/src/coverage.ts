@@ -15,7 +15,6 @@ import { canAnimate } from "./blocks/animations.js";
 
 export const UNSUPPORTED_BLOCKS = [
   "animation:preset",
-  "effect:color-grade",
   "effect:filter",
   "lottie",
   "mask",
@@ -33,7 +32,7 @@ const paintUses = (paints: readonly Paint[] | undefined): UnsupportedBlock[] =>
 
 /** The effects scene paints are blur, shadow, glow and backdrop; a duotone is a backdrop's preset. */
 const effectUses = (fx: Effect): UnsupportedBlock[] => {
-  if (fx.kind === "color-grade" || fx.kind === "filter") return [`effect:${fx.kind}`];
+  if (fx.kind === "filter") return [`effect:${fx.kind}`];
   return [];
 };
 

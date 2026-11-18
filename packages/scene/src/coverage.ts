@@ -41,7 +41,7 @@ const effectUses = (fx: Effect): UnsupportedBlock[] => {
   return [];
 };
 
-const layerUses = (layer: Layer): UnsupportedBlock[] => {
+const layerUses = (layer: Layer, nested = false): UnsupportedBlock[] => {
   const uses: UnsupportedBlock[] = [...paintUses(layer.fills), ...(layer.strokes ?? []).flatMap((s) => paintUses([s.paint as Paint]))];
   if (layer.type === "lottie") uses.push("lottie");
   // Tracks and the reveal presets run; the named loops, hovers and text entrances wait for their painter.
@@ -49,8 +49,8 @@ const layerUses = (layer: Layer): UnsupportedBlock[] => {
   // 1.x tiled a background slot's own drawing; 2.0 has no field for a drawn tile yet, so the upgrade leaves it as paths.
   if (layer.geometry?.kind === "paths" && (layer.fills ?? []).some((p) => "kind" in p && p.kind === "pattern")) uses.push("paint:pattern-tile");
   for (const fx of layer.effects ?? []) uses.push(...effectUses(fx));
-  // A window mask is painted; a cutout (it clips the layers under it) is not yet.
-  if (layer.mask?.mode === "cutout") uses.push("mask");
+  // A window mask is painted, and a cutout at the top level; a cutout inside a group is not yet.
+  if (nested && layer.mask?.mode === "cutout") uses.push("mask");
   const text = layer.text;
   if (text) {
     if (text.dropCap) uses.push("text:dropCap");
@@ -58,12 +58,12 @@ const layerUses = (layer: Layer): UnsupportedBlock[] => {
     if (text.highlight) uses.push("text:highlight");
     if (text.marks) uses.push("text:marks");
   }
-  for (const child of layer.children ?? []) uses.push(...layerUses(child));
+  for (const child of layer.children ?? []) uses.push(...layerUses(child, true));
   return uses;
 };
 
 /** The out-of-scope blocks a document uses, each once, sorted. Run it on a document whose references are resolved. */
 export function unsupportedUse(document: OimDocument): UnsupportedBlock[] {
-  const uses = [...paintUses(document.canvas.fills), ...document.layers.flatMap(layerUses)];
+  const uses = [...paintUses(document.canvas.fills), ...document.layers.flatMap((layer) => layerUses(layer))];
   return [...new Set(uses)].sort();
 }

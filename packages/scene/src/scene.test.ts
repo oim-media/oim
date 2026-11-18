@@ -363,3 +363,21 @@ describe("duotone", () => {
   });
 });
 
+describe("cutout mask", () => {
+  it("clips the layers before it, in canvas units, and leaves the ones after it alone", () => {
+    const host = document.createElement("div");
+    const scene = mount(host, doc([
+      shape({ id: "cover" }),
+      shape({ id: "cut", geometry: { kind: "preset", name: "star" }, mask: { mode: "cutout" }, box: { x: 250, y: 150, width: 300, height: 300 } } as Partial<Layer>),
+      shape({ id: "after" }),
+    ]));
+    const wrapper = host.querySelector<HTMLElement>('[data-oim-cutout="cut"]')!;
+    expect(wrapper.contains(scene.elementOf("cover"))).toBe(true);
+    expect(wrapper.contains(scene.elementOf("after"))).toBe(false);
+    expect(wrapper.style.clipPath).toMatch(/^url\(#/);
+    expect(scene.elementOf("cut")).toBeNull();
+    const d = host.querySelector(`${wrapper.style.clipPath.slice(4, -1).replace(/"/g, "")} path`)!.getAttribute("d")!;
+    expect(d.startsWith("M0 0H1000V500H0Z M250 150H550V450H250Z")).toBe(true); // the canvas, the box, then the figure
+  });
+});
+

@@ -13,7 +13,7 @@ import { applyFills, pictureNode } from "./blocks/fills.js";
 import { applyGeometry } from "./blocks/geometry.js";
 import { defineGrain, defsOf } from "./blocks/grain.js";
 import { duotoneFilter } from "./blocks/duotone.js";
-import { applyWindowMask } from "./blocks/mask.js";
+import { applyCutoutMask, applyWindowMask } from "./blocks/mask.js";
 import { applyArtistic } from "./blocks/artistic.js";
 import { readEmbeddedFonts, registerEmbeddedFonts } from "./blocks/fonts.js";
 import { pictureOf } from "./blocks/image.js";
@@ -249,7 +249,11 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     for (const child of layer.children ?? []) paint(child, el, layer.box as Frame); // only groups have children, and a group is always sized
     parent.appendChild(el);
   };
-  for (const layer of document.layers) paint(layer, root, canvas);
+  for (const layer of document.layers) {
+    // shortcut: a cutout clips the layers before it at the top level only; one inside a group is not painted yet.
+    if (layer.mask?.mode === "cutout") applyCutoutMask(root, layer, { width, height });
+    else paint(layer, root, canvas);
+  }
   container.appendChild(letterbox);
 
   // A move is written once when it starts a frame; the moves that follow in the same frame are kept and written once more, at the next frame.

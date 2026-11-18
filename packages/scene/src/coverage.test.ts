@@ -56,6 +56,8 @@ describe("unsupportedUse", () => {
   it("looks inside groups, and into the canvas background", () => {
     const group = { id: "g", type: "group", box: { x: 0, y: 0, width: 5, height: 5 }, children: [rect({ id: "m", mask: { mode: "cutout" } })] } as Layer;
     expect(unsupportedUse(doc([group]))).toEqual(["mask"]);
+    // At the top level a cutout is painted: it clips the layers before it.
+    expect(unsupportedUse(doc([rect({ id: "m", mask: { mode: "cutout" } })]))).toEqual([]);
     expect(unsupportedUse(doc([], { canvas: { width: 1, height: 1, fills: [{ kind: "texture", texture: { type: "lines" } }] } as OimDocument["canvas"] }))).toEqual(["paint:texture"]);
   });
 });

@@ -8,6 +8,7 @@ import type { Layer, OimDocument } from "@oim-media/core/v2";
 import { describe, expect, it } from "vitest";
 import { buildLayerGrainFilter, DYNAMIC_COLOR_ROLES, mediaFilterCss } from "@oim-media/core";
 import { mount } from "./index.js";
+import { sceneColors } from "./scene.js";
 
 const shape = (o: Partial<Layer> = {}): Layer => ({
   id: "a",
@@ -214,6 +215,14 @@ describe("a filter clips its backdrop to its figure", () => {
     const filter = host.querySelector("filter#oim-grain-a")!;
     const expected = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${buildLayerGrainFilter("oim-grain-a", { intensity: 40, blend: "multiply" })}</svg>`, "image/svg+xml").querySelector("filter")!;
     expect(filter.outerHTML).toBe(expected.outerHTML);
+  });
+
+  it("a colour baked into an image is the active palette's, as the reader's colour scheme picks it", () => {
+    const variables = { defaults: { palette: "dark" }, modes: { palette: ["dark", "light"] }, values: { accent: { dark: "#a3e635", light: "#4d7c0f" } } } as OimDocument["variables"];
+    const role = { var: "accent", fallback: "#a3e635" };
+    expect(sceneColors(variables, undefined, false).colors.literal(role)).toBe("#4d7c0f");
+    expect(sceneColors(variables, undefined, true).colors.literal(role)).toBe("#a3e635");
+    expect(sceneColors(variables, "dark", false).colors.literal(role)).toBe("#a3e635");
   });
 });
 

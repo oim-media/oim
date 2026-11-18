@@ -64,13 +64,10 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
 
   const entries = new Map<string, Entry>();
   const canvas: Frame = { x: 0, y: 0, width, height };
-  const palettes = palettesOf(document.variables);
-  const defaultPalette = _options.palette ?? document.variables?.defaults?.palette;
-  const colors: PaintColors = paintColors({ palettes, defaultPalette });
-  // The active palette's roles become custom properties, so a colour bound to a role is a var() and a mode change needs no repaint.
   // With both light and dark palettes, the reader's colour scheme decides, as the player does.
   const prefersDark = typeof matchMedia === "function" && matchMedia("(prefers-color-scheme: dark)").matches;
-  const active = resolvePalette({ palettes, defaultPalette }, { requested: _options.palette ?? null, prefersDark });
+  const { colors, active } = sceneColors(document.variables, _options.palette, prefersDark);
+  // The active palette's roles become custom properties, so a colour bound to a role is a var() and a mode change needs no repaint.
   for (const role of DYNAMIC_COLOR_ROLES) {
     const value = active?.colors[role];
     if (value) root.style.setProperty(`--oim-palette-${role}`, value);
@@ -184,3 +181,16 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     },
   };
 }
+
+/**
+ * The palette a scene paints with. A role is a var() of the active palette; a colour
+ * baked into an image (a pattern tile, a drawing) is that same palette's literal, so
+ * both follow the reader's colour scheme when the document has light and dark.
+ */
+export function sceneColors(variables: OimDocument["variables"], palette: string | undefined, prefersDark: boolean): { colors: PaintColors; active: ReturnType<typeof resolvePalette> } {
+  const palettes = palettesOf(variables);
+  const defaultPalette = palette ?? variables?.defaults?.palette;
+  const active = resolvePalette({ palettes, defaultPalette }, { requested: palette ?? null, prefersDark });
+  return { colors: paintColors({ palettes, defaultPalette: active?.name ?? defaultPalette }), active };
+}
+

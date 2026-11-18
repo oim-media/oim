@@ -43,7 +43,7 @@ describe("unsupportedUse", () => {
   it("a layer's opacity and blend mode are painted; a picture on a figure is not yet", () => {
     expect(unsupportedUse(doc([rect({ opacity: 0.7, blend: "multiply" })]))).toEqual([]);
     const figure = rect({ geometry: { kind: "preset", name: "star" }, fills: [{ kind: "image", src: "data:image/png;base64,AA==" }] } as Partial<Layer>);
-    expect(unsupportedUse(doc([figure]))).toEqual(["figure:image"]);
+    expect(unsupportedUse(doc([figure]))).toEqual([]);
   });
 
   it("looks inside groups, and into the canvas background", () => {

@@ -61,6 +61,7 @@ import { a11yNodes, artworkLabel } from './a11y.js';
 import { effectsToStyle, filterStyle } from '../blocks/effects.js';
 import { cropCss } from '../../../core/src/crop.js';
 import { mountImageFill } from './image-fill.js';
+import { silhouettePath } from '../blocks/silhouette-clip.js';
 import { flipScale } from '../../../core/src/flip.js';
 import { isGroup, childrenByGroup, wrapperStyle } from './groups.js';
 import { resolveLineHeight, inkMargin } from '../../../core/src/typography.js';
@@ -1664,7 +1665,7 @@ export class LegacyRenderer {
           }
         } else slotEl.append(svg);
         if (imageFill) {
-          const d = silhouette.d ?? 'M ' + silhouette.points!.split(' ').join(' L ') + ' Z';
+          const d = silhouettePath(silhouette);
           mountImageFill(slotEl, v2Fill, { d, viewBox: silhouette.viewBox }, fillImageSrc, underColor);
         }
 

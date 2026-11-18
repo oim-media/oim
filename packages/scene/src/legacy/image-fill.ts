@@ -8,9 +8,8 @@ import { cropCss } from '../../../core/src/crop.js';
 import { mediaFilterCss } from '../../../core/src/media-filters.js';
 import { flipScale } from '../../../core/src/flip.js';
 import { filterStyle } from './v2-layers.js';
+import { silhouetteClip } from '../blocks/silhouette-clip.js';
 
-const SVG_NS = 'http://www.w3.org/2000/svg';
-let sequence = 0;
 
 /**
  * Image fill of a shape (contract 1.17.0). The photo sits in a box clipped by
@@ -25,11 +24,7 @@ export function mountImageFill(
   resolvedUrl: string,
   fallbackColor?: string
 ): void {
-  const id = `oim-image-fill-${++sequence}`;
-  // The clip is in objectBoundingBox units: the silhouette maps onto the unit box.
-  const [x0, y0, width, height] = silhouette.viewBox.trim().split(/\s+/).map(Number);
-  const scale = width === height ? `scale(${1 / width})` : `scale(${1 / width} ${1 / height})`;
-  const transform = x0 || y0 ? `${scale} translate(${-x0} ${-y0})` : scale;
+  const { svg, clipPath } = silhouetteClip(document, silhouette);
 
   const box = document.createElement('div');
   box.className = 'oim-image-fill';
@@ -40,30 +35,7 @@ export function mountImageFill(
   box.style.height = '100%';
   box.style.overflow = 'hidden';
   box.style.pointerEvents = 'none';
-  box.style.clipPath = `url(#${id})`;
-
-  const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('width', '0');
-  svg.setAttribute('height', '0');
-  svg.style.position = 'absolute';
-  const clip = document.createElementNS(SVG_NS, 'clipPath');
-  clip.setAttribute('id', id);
-  clip.setAttribute('clipPathUnits', 'objectBoundingBox');
-  // A rectangle takes its corner radius as a fraction of the box (rx, ry are in objectBoundingBox units).
-  const shape = document.createElementNS(SVG_NS, silhouette.rect ? 'rect' : 'path');
-  if (silhouette.rect) {
-    shape.setAttribute('x', '0');
-    shape.setAttribute('y', '0');
-    shape.setAttribute('width', '1');
-    shape.setAttribute('height', '1');
-    shape.setAttribute('rx', String(silhouette.rect.rx));
-    shape.setAttribute('ry', String(silhouette.rect.ry));
-  } else {
-    shape.setAttribute('d', silhouette.d);
-    shape.setAttribute('transform', transform);
-  }
-  clip.appendChild(shape);
-  svg.appendChild(clip);
+  box.style.clipPath = clipPath;
   box.appendChild(svg);
 
   const crop = cropCss(paint.crop ?? { x: 50, y: 50, zoom: 1 });

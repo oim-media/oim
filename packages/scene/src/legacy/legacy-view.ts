@@ -10,6 +10,7 @@
 import type { Layer, OimDocument, Variables } from '../../../core/src/v2/schema.js';
 import { rememberDocument } from './v2-layers.js';
 import { palettesOf } from '../../../core/src/v2/colors.js';
+import { hasBaseLayer } from '../../../core/src/v2/base-layer.js';
 
 export type LegacySlot = { id: string; type: string; style: Record<string, unknown>; content?: Record<string, string> };
 
@@ -70,7 +71,8 @@ export function legacyView(document: OimDocument): LegacyMetadata {
     slots,
   };
   // The embedded fonts are the file's own; the palettes are the variables, one mode per palette name.
-  if (document.canvas.fills?.length) view.canvasFills = document.canvas.fills;
+  // The overlay sits over the base PNG: a file that shows its own picture already holds its canvas.
+  if (document.canvas.fills?.length && !hasBaseLayer(document)) view.canvasFills = document.canvas.fills;
   if (document.fonts) view.fonts = document.fonts;
   const palettes = palettesOf(document.variables);
   if (palettes) view.palettes = palettes;

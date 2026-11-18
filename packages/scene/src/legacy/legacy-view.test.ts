@@ -33,6 +33,15 @@ describe('legacyView', () => {
     expect(view.languages).toEqual(['es', 'en']);
   });
 
+  it('paints the canvas colour, except over a file that shows its own picture', () => {
+    const fills = [{ kind: 'color', value: '#ffffff' }];
+    const withFill = (layers: unknown[]) => ({ ...doc(layers), canvas: { width: 800, height: 600, fills } }) as OimDocument;
+    expect(legacyView(withFill([text('t')])).canvasFills).toEqual(fills);
+    // The base PNG already holds the canvas; painting it on the overlay hid the photo (la-luz.oim.png).
+    const base = { id: 'oim:base', type: 'image', box: { x: 0, y: 0, width: 800, height: 600 }, image: { src: 'oim:base' } };
+    expect(legacyView(withFill([base, text('t')])).canvasFills).toBeUndefined();
+  });
+
   it('lets v2LayersOf read the document without upgrading again', () => {
     const d = doc([group('g', [text('a')]), text('c')]);
     expect(v2LayersOf(legacyView(d)).get('a')).toBe((d.layers[0] as { children: unknown[] }).children[0]);

@@ -15,7 +15,7 @@ import { svgGradientAttrs } from '../../../core/src/v2/svg-gradient.js';
 import type { Gradient } from '../../../core/src/v2/upgrade/gradient.js';
 export { paintColors, typographyCss };
 import { resolveByLang } from './localizedEntries.js';
-import { maskOutlineStyle } from './layerComposition.js';
+import { maskOutlineStyle } from '../blocks/mask-outline-style.js';
 
 const cache = new WeakMap<object, Map<string, Layer>>();
 

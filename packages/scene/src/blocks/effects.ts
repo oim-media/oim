@@ -87,6 +87,10 @@ export function effectsToStyle(effects: readonly Effect[] | undefined, ctx: Effe
       filter.push(`url(#${id})`);
     } else if (fx.kind === "texture") {
       defs.push({ kind: "texture", effect: fx });
+    } else if (fx.kind === "filter") {
+      // The layer's own image filters, as a backdrop reads them but on the layer itself.
+      const css = mediaFilterCss(filterStyle(fx));
+      if (css) filter.push(css);
     }
   }
 

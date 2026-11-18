@@ -408,6 +408,16 @@ describe("color-grade", () => {
   });
 });
 
+describe("filter effect", () => {
+  it("paints the layer's own image filters in the effects' order", () => {
+    const host = document.createElement("div");
+    const effects = [{ kind: "filter", brightness: 1.2, saturate: 0 }, { kind: "blur", radius: 3 }];
+    const scene = mount(host, doc([shape({ id: "p", effects } as Partial<Layer>)]));
+    scene.update("p", { effects } as Partial<Layer>);
+    expect(scene.elementOf("p")!.style.filter).toBe("brightness(120%) saturate(0%) blur(3px)");
+  });
+});
+
 describe("cutout mask", () => {
   it("clips the layers before it, in canvas units, and leaves the ones after it alone", () => {
     const host = document.createElement("div");

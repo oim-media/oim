@@ -13,6 +13,7 @@ import { applyFills, pictureNode } from "./blocks/fills.js";
 import { applyGeometry } from "./blocks/geometry.js";
 import { pictureOf } from "./blocks/image.js";
 import { applyStrokes } from "./blocks/strokes.js";
+import { applyCompositing } from "./blocks/compositing.js";
 import { applyText } from "./blocks/text.js";
 import { unsupportedUse } from "./coverage.js";
 
@@ -57,7 +58,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   Object.assign(letterbox.style, { position: "relative", width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" });
   const root = container.ownerDocument.createElement("div");
   root.className = "oim-scene";
-  Object.assign(root.style, { position: "relative", width: "100%", maxHeight: "100%", aspectRatio: `${width} / ${height}`, containerType: "inline-size" });
+  Object.assign(root.style, { position: "relative", width: "100%", maxHeight: "100%", aspectRatio: `${width} / ${height}`, containerType: "inline-size", isolation: "isolate" });
   letterbox.appendChild(root);
 
   const entries = new Map<string, Entry>();
@@ -108,6 +109,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     const has = (...keys: string[]) => !only || keys.some((k) => only.has(k));
     const isText = layer.type === "text";
     if (has("fills")) applyFills(el, layer, { colors, isText });
+    if (has("opacity", "blend")) applyCompositing(el, layer);
     if (has("effects")) applyEffects(el, layer);
     if (layer.type === "text" && has("text")) applyText(el, layer, { lang, canvasWidth: width });
     const figure = has("fills", "geometry", "strokes");

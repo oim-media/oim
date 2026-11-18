@@ -40,9 +40,8 @@ describe("unsupportedUse", () => {
     expect(unsupportedUse(doc([rect({ effects })]))).toEqual(["effect:color-grade", "effect:duotone", "effect:filter", "effect:texture"]);
   });
 
-  it("a layer's own opacity, its blend mode, and a picture on a figure are not painted yet", () => {
-    expect(unsupportedUse(doc([rect({ opacity: 0.7 })]))).toEqual(["layer:opacity"]);
-    expect(unsupportedUse(doc([rect({ blend: "multiply" })]))).toEqual(["layer:blend"]);
+  it("a layer's opacity and blend mode are painted; a picture on a figure is not yet", () => {
+    expect(unsupportedUse(doc([rect({ opacity: 0.7, blend: "multiply" })]))).toEqual([]);
     const figure = rect({ geometry: { kind: "preset", name: "star" }, fills: [{ kind: "image", src: "data:image/png;base64,AA==" }] } as Partial<Layer>);
     expect(unsupportedUse(doc([figure]))).toEqual(["figure:image"]);
   });

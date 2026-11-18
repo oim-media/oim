@@ -34,3 +34,9 @@ Example: a 400 × 200 box at (80, 80) with a 10 px stroke. The stroke's outer ed
 ## Text without runs
 
 A text with no `textRuns` is aligned by `text.align` and centred vertically in its box.
+
+## Opacity and blend
+
+`opacity` and `blend` apply to the layer as a whole. A layer blends with the layers
+painted under it inside the canvas, never with the page behind the reader. (The 1.x web
+player lost `blend` inside its stacking wrappers; 2.0 readers paint it.)

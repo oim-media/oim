@@ -14,7 +14,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 import ImageEngine from "./ImageEngine";
-import { renderMarkedText } from "../../../scene/src/legacy/marked-text";
+import { renderMarkedText } from "../../../scene/src/blocks/marked-text";
 import { PLAYER_CAPABILITIES } from "../../../core/src/compatibility.js";
 
 const MARKS = {

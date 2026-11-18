@@ -8,6 +8,8 @@ import { resolveLineHeight } from "@oim-media/core";
 import { typographyCss, type Layer } from "@oim-media/core/v2";
 
 import { embeddedFontFamily } from "./fonts.js";
+import { renderMarkedText } from "./marked-text.js";
+import { applyDropCap, applyTextHighlight } from "./text-marks.js";
 
 export type TextContext = {
   lang: string;
@@ -31,7 +33,18 @@ const inCanvas = canvasLength;
  */
 export function applyText(el: HTMLElement, layer: Pick<Layer, "text">, ctx: TextContext): void {
   const text = layer.text;
-  el.textContent = text?.content?.[ctx.lang] ?? "";
+  const words = text?.content?.[ctx.lang] ?? "";
+  if (!text?.marks && !text?.highlight && !text?.dropCap) el.textContent = words;
+  else {
+    // One block holds the runs, so the marks' spans flow as one paragraph inside the flex column.
+    // shortcut: highlight padding and the drop cap's margin are px, right at 1:1; write them in cqw when a scaled file shows it.
+    el.textContent = "";
+    const body = el.ownerDocument.createElement("div");
+    body.style.alignSelf = "stretch"; // the whole box, as the player's text wrapper: a block highlight spans it
+    applyTextHighlight(body, text.highlight);
+    if (!applyDropCap(body, words, text.dropCap, text.marks)) renderMarkedText(body, words, text.marks);
+    el.appendChild(body);
+  }
   const css = typographyCss(layer, ctx.lang) ?? {};
   const style = el.style;
   style.whiteSpace = "pre-wrap";
@@ -55,4 +68,5 @@ export function applyText(el: HTMLElement, layer: Pick<Layer, "text">, ctx: Text
   style.fontStyle = css.fontStyle ?? "";
   style.letterSpacing = inCanvas(css.letterSpacing, ctx.canvasWidth) ?? "";
   style.textTransform = css.textTransform ?? "";
+  style.textDecoration = css.textDecoration ?? "";
 }

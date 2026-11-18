@@ -79,3 +79,29 @@ describe("applyText", () => {
     expect(el.style.maxWidth).toBe(kept("37.5cqw", "maxWidth"));
   });
 });
+
+describe("applyText marks, highlight, drop cap and decoration", () => {
+  it("a marked run is its own span with the mark's colour", () => {
+    const el = paint(textLayer({ content: { es: "Fuente {key}incrustada{/key}" }, marks: { key: { color: "#7c3aed" } } }));
+    expect(el.textContent).toBe("Fuente incrustada");
+    const span = [...el.querySelectorAll("span")].find((s) => s.textContent === "incrustada");
+    expect(span?.style.color).toBe("#7c3aed");
+  });
+
+  it("a block highlight paints the full-width body behind the text", () => {
+    const el = paint(textLayer({ highlight: { color: "#bae6fd", enabled: true, style: "box" } }));
+    const body = el.firstElementChild as HTMLElement;
+    expect(body.style.alignSelf).toBe("stretch");
+    expect(body.style.background + body.style.backgroundColor + body.style.backgroundImage).toMatch(/186, 230, 253|bae6fd/i);
+  });
+
+  it("a drop cap sets the first letter apart", () => {
+    const el = paint(textLayer({ content: { es: "Hola mundo" }, dropCap: { enabled: true, lines: 2 } }));
+    expect(el.textContent).toBe("Hola mundo");
+    expect(el.querySelector("span")?.textContent).toBe("H");
+  });
+
+  it("the decoration the file declares is drawn", () => {
+    expect(paint(textLayer({ decoration: "underline" })).style.textDecoration).toBe("underline");
+  });
+});

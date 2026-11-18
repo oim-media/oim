@@ -9,7 +9,7 @@
 // scene loop are not read twice and nothing here runs per frame.
 
 import { resolveByLang, resolveContent } from "./localizedEntries.js";
-import { plainOf } from "./marked-text.js";
+import { plainOf } from "../blocks/marked-text.js";
 import { playerString } from "./strings.js";
 
 export type A11yNode =

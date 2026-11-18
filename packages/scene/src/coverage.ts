@@ -21,10 +21,6 @@ export const UNSUPPORTED_BLOCKS = [
   "mask",
   "paint:pattern-tile",
   "paint:texture",
-  "text:dropCap",
-  "text:decoration",
-  "text:highlight",
-  "text:marks",
 ] as const;
 export type UnsupportedBlock = (typeof UNSUPPORTED_BLOCKS)[number];
 
@@ -51,13 +47,6 @@ const layerUses = (layer: Layer, nested = false): UnsupportedBlock[] => {
   for (const fx of layer.effects ?? []) uses.push(...effectUses(fx));
   // A window mask is painted, and a cutout at the top level; a cutout inside a group is not yet.
   if (nested && layer.mask?.mode === "cutout") uses.push("mask");
-  const text = layer.text;
-  if (text) {
-    if (text.dropCap) uses.push("text:dropCap");
-    if (text.decoration) uses.push("text:decoration");
-    if (text.highlight) uses.push("text:highlight");
-    if (text.marks) uses.push("text:marks");
-  }
   for (const child of layer.children ?? []) uses.push(...layerUses(child, true));
   return uses;
 };

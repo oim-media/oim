@@ -3,6 +3,14 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.33.0
+
+- format: `OIM_Seal` is retired. Writers stop emitting it; readers ignore it. The image stays
+  sealed by the metadata's `image_hash`.
+- player: a file is read once, whole. Its PNG is painted while it arrives (a PNG runs nothing);
+  layers mount only after the whole file is verified. No more Range requests or partial reads
+  (-1.3 KB gzip).
+
 ## 1.32.5
 
 - player: a file whose poster read already held it whole loads; the resume request got HTTP 416

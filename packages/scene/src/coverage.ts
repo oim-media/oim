@@ -17,7 +17,6 @@ export const UNSUPPORTED_BLOCKS = [
   "effect:color-grade",
   "effect:duotone",
   "effect:filter",
-  "effect:grain",
   "effect:texture",
   "interactions",
   "lottie",
@@ -46,7 +45,7 @@ const paintUses = (paints: readonly Paint[] | undefined): UnsupportedBlock[] =>
 
 /** The effects scene paints are blur, shadow, glow and backdrop; a duotone is a backdrop's preset. */
 const effectUses = (fx: Effect): UnsupportedBlock[] => {
-  if (fx.kind === "color-grade" || fx.kind === "filter" || fx.kind === "grain" || fx.kind === "texture") return [`effect:${fx.kind}`];
+  if (fx.kind === "color-grade" || fx.kind === "filter" || fx.kind === "texture") return [`effect:${fx.kind}`];
   return fx.kind === "backdrop" && fx.preset === "duotone" ? ["effect:duotone"] : [];
 };
 

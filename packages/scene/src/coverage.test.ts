@@ -27,7 +27,7 @@ describe("unsupportedUse", () => {
       rect({ id: "c", fills: [{ kind: "pattern", pattern: { preset: "dots" } }] as Layer["fills"] }),
       { id: "t", type: "text", box: { x: 0, y: 0 }, text: { content: { es: "x" }, runs: [] } } as unknown as Layer,
     ];
-    expect(unsupportedUse(doc(layers))).toEqual(["animations", "effect:grain", "paint:pattern", "text:runs"]);
+    expect(unsupportedUse(doc(layers))).toEqual(["animations", "paint:pattern", "text:runs"]);
   });
 
   it("the effects scene paints (blur, shadow, glow, backdrop) are not out of scope", () => {

@@ -6,7 +6,7 @@
 
 import type { Layer, OimDocument } from "@oim-media/core/v2";
 import { describe, expect, it } from "vitest";
-import { DYNAMIC_COLOR_ROLES, mediaFilterCss } from "@oim-media/core";
+import { buildLayerGrainFilter, DYNAMIC_COLOR_ROLES, mediaFilterCss } from "@oim-media/core";
 import { mount } from "./index.js";
 
 const shape = (o: Partial<Layer> = {}): Layer => ({
@@ -204,6 +204,16 @@ describe("a filter clips its backdrop to its figure", () => {
     expect(img.getAttribute("src")).toBe("data:image/png;base64,AA==");
     expect(img.style.filter).toBe(mediaFilterCss({ filterPreset: "noir", filterBlur: 2, filterBrightness: 120 }));
     expect(img.style.clipPath).toBe("inset(0)");
+  });
+
+  it("a grain is core's grain filter, defined once in the scene and applied to the layer", () => {
+    const host = document.createElement("div");
+    mount(host, doc([shape({ effects: [{ kind: "grain", intensity: 40, blend: "multiply" }] } as Partial<Layer>)]));
+    const el = host.querySelector<HTMLElement>('[data-oim-id="a"]')!;
+    expect(el.style.filter).toContain("url(#oim-grain-a)");
+    const filter = host.querySelector("filter#oim-grain-a")!;
+    const expected = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${buildLayerGrainFilter("oim-grain-a", { intensity: 40, blend: "multiply" })}</svg>`, "image/svg+xml").querySelector("filter")!;
+    expect(filter.outerHTML).toBe(expected.outerHTML);
   });
 });
 

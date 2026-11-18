@@ -4,13 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { DYNAMIC_COLOR_ROLES, filterClipPath, resolvePalette } from "@oim-media/core";
+import { DYNAMIC_COLOR_ROLES, filterClipPath, GRAIN_LAYER_TYPES, resolvePalette } from "@oim-media/core";
 import { geometryOutline, paintColors, palettesOf, type Box, type Layer, type OimDocument, type Outline, type PaintColors } from "@oim-media/core/v2";
 import { applyBox, type Frame } from "./box.js";
 import { applyCorners } from "./blocks/corners.js";
 import { effectsToStyle } from "./blocks/effects.js";
 import { applyFills, pictureNode } from "./blocks/fills.js";
 import { applyGeometry } from "./blocks/geometry.js";
+import { defineGrain } from "./blocks/grain.js";
 import { pictureOf } from "./blocks/image.js";
 import { applyStrokes } from "./blocks/strokes.js";
 import { applyCompositing } from "./blocks/compositing.js";
@@ -84,13 +85,14 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   const applyEffects = (el: HTMLElement, layer: Layer) => {
     const style = effectsToStyle(layer.effects, {
       isText: layer.type === "text",
-      grainable: false,
+      grainable: (GRAIN_LAYER_TYPES as readonly string[]).includes(layer.type),
       layerId: layer.id,
       colorCss: (color) => colors.css(color),
     });
     el.style.filter = style.filter;
     el.style.textShadow = style.textShadow;
     el.style.backdropFilter = style.backdropFilter ?? "";
+    for (const def of style.defs) if (def.kind === "grain") defineGrain(root, def.id, def.effect);
   };
 
   /** A filter (a shape with a backdrop) shows its backdrop only inside its figure: the core's clip over the layer's own box. A rectangle keeps its border radius instead. */

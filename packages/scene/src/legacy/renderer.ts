@@ -61,6 +61,7 @@ import { a11yNodes, artworkLabel } from './a11y.js';
 import { effectsToStyle, filterStyle } from '../blocks/effects.js';
 import { cropCss } from '../../../core/src/crop.js';
 import { mountImageFill } from './image-fill.js';
+import { defineGrain } from '../blocks/grain.js';
 import { silhouettePath } from '../blocks/silhouette-clip.js';
 import { flipScale } from '../../../core/src/flip.js';
 import { isGroup, childrenByGroup, wrapperStyle } from './groups.js';
@@ -2506,43 +2507,10 @@ export class LegacyRenderer {
     }
   }
 
-  /**
-   * Puts the core's grain filter for one layer into this player's own defs.
-   * Parsed as SVG, never assigned as HTML: the markup is built from a
-   * sanitised id, clamped numbers and a fixed list of blend modes.
-   */
+  /** The grain filter of one layer, in the viewport (not the overlay: a full render empties the overlay and took the defs with it). */
   private _defineLayerGrain(id: string, fx: NonNullable<Parameters<typeof buildLayerGrainFilter>[1]>): void {
-    // In the viewport, NOT in the overlay: a full render empties the overlay
-    // (innerHTML = '') after the slots are styled, and took the defs with it.
-    // Same shadow root, so url(#id) still resolves.
     const layer = this._viewport || this._overlay;
-    if (!layer || typeof DOMParser === 'undefined') return;
-    let defs = layer.querySelector(':scope > svg.oim-grain-defs > defs');
-    if (!defs) {
-      const svgNs = 'http://www.w3.org/2000/svg';
-      const svg = document.createElementNS(svgNs, 'svg');
-      svg.setAttribute('class', 'oim-grain-defs');
-      svg.setAttribute('width', '0');
-      svg.setAttribute('height', '0');
-      svg.setAttribute('aria-hidden', 'true');
-      svg.setAttribute('style', 'position:absolute;pointer-events:none');
-      defs = document.createElementNS(svgNs, 'defs');
-      svg.appendChild(defs);
-      layer.appendChild(svg);
-    }
-    const existing = defs.querySelector('#' + id);
-    if (existing) existing.remove();
-    const markup = buildLayerGrainFilter(id, {
-      intensity: fx.intensity,
-      size: fx.size,
-      blend: fx.blend,
-    });
-    const doc = new DOMParser().parseFromString(
-      '<svg xmlns="http://www.w3.org/2000/svg"><defs>' + markup + '</defs></svg>',
-      'image/svg+xml'
-    );
-    const filter = doc.querySelector('filter');
-    if (filter) defs.appendChild(document.importNode(filter, true));
+    if (layer) defineGrain(layer, id, fx);
   }
 
   /** True once the veil has lifted for the first time. */

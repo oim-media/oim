@@ -46,6 +46,12 @@ describe("unsupportedUse", () => {
     expect(unsupportedUse(doc([figure]))).toEqual([]);
   });
 
+  it("a pattern whose tile is the layer's own drawing (a 1.x background slot) is not painted yet", () => {
+    const tile = rect({ geometry: { kind: "paths", paths: [{ d: "M0 0H160V160H0Z" }] }, fills: [{ kind: "pattern", pattern: { preset: "stars" } }] } as Partial<Layer>);
+    expect(unsupportedUse(doc([tile]))).toEqual(["paint:pattern-tile"]);
+    expect(unsupportedUse(doc([rect({ fills: [{ kind: "pattern", pattern: { preset: "stars" } }] } as Partial<Layer>)]))).toEqual([]);
+  });
+
   it("looks inside groups, and into the canvas background", () => {
     const group = { id: "g", type: "group", box: { x: 0, y: 0, width: 5, height: 5 }, children: [rect({ id: "m", mask: { mode: "cutout" } })] } as Layer;
     expect(unsupportedUse(doc([group]))).toEqual(["mask"]);

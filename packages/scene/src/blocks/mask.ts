@@ -37,7 +37,7 @@ export function applyWindowMask(el: HTMLElement, layer: Layer, ctx: { canvas: { 
 
   const paint = doc.createElement("div");
   paint.dataset.oimMaskPaint = "";
-  applyFills(paint, layer, { colors: ctx.colors, isText: false });
+  applyFills(paint, layer, { colors: ctx.colors, isText: false, size: (px) => `${+((px / W) * 100).toFixed(4)}cqw ${+((px / W) * 100).toFixed(4)}cqw` });
   const { svg, clipPath } = silhouetteClip(doc, { d: getWindowMaskCanvasD(slot, ctx.canvas), viewBox: `0 0 ${W} ${H}`, evenodd: true });
   Object.assign(paint.style, { position: "absolute", left: "0", top: "0", width: "100%", height: "100%", clipPath });
   frame.append(svg, paint);

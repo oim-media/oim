@@ -65,6 +65,8 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   Object.assign(root.style, { position: "relative", width: "100%", maxHeight: "100%", aspectRatio: `${width} / ${height}`, containerType: "inline-size", isolation: "isolate" });
   letterbox.appendChild(root);
 
+  // Inside the root (a size container), a canvas length is a share of its width.
+  const tileSize = (px: number) => { const v = `${+((px / width) * 100).toFixed(4)}cqw`; return `${v} ${v}`; };
   const entries = new Map<string, Entry>();
   const canvas: Frame = { x: 0, y: 0, width, height };
   // With both light and dark palettes, the reader's colour scheme decides, as the player does.
@@ -82,7 +84,8 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   // A block scene does not paint yet is ignored, and said once per block type, not per layer.
   for (const block of unsupportedUse(document)) console.warn(`[oim scene] "${block}" is not painted yet; it is ignored`);
 
-  applyFills(root, document.canvas, { colors, isText: false });
+  // The root is the canvas: a tile is a share of its width and height.
+  applyFills(root, document.canvas, { colors, isText: false, size: (px) => `${+((px / width) * 100).toFixed(4)}% ${+((px / height) * 100).toFixed(4)}%` });
   const lang = languageOf(document.languages, _options.language ?? (typeof navigator === "undefined" ? undefined : navigator.language));
 
   /** The effects the scene paints (blur, shadow, glow, backdrop); grain, texture and duotone wait for their own painter (see coverage). */
@@ -114,7 +117,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   const paintBlocks = (el: HTMLElement, layer: Layer, only?: ReadonlySet<string>) => {
     const has = (...keys: string[]) => !only || keys.some((k) => only.has(k));
     const isText = layer.type === "text";
-    if (has("fills")) applyFills(el, layer, { colors, isText });
+    if (has("fills")) applyFills(el, layer, { colors, isText, size: tileSize });
     if (has("opacity", "blend")) applyCompositing(el, layer);
     if (has("effects")) applyEffects(el, layer);
     if (layer.type === "text" && has("text")) {

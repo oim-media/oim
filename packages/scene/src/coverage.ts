@@ -23,6 +23,7 @@ export const UNSUPPORTED_BLOCKS = [
   "mask",
   "motion",
   "paint:generative",
+  "paint:pattern-tile",
   "paint:texture",
   "text:dropCap",
   "text:decoration",
@@ -48,6 +49,8 @@ const effectUses = (fx: Effect): UnsupportedBlock[] => {
 const layerUses = (layer: Layer): UnsupportedBlock[] => {
   const uses: UnsupportedBlock[] = [...paintUses(layer.fills), ...(layer.strokes ?? []).flatMap((s) => paintUses([s.paint as Paint]))];
   if (layer.type === "lottie") uses.push("lottie");
+  // 1.x tiled a background slot's own drawing; 2.0 has no field for a drawn tile yet, so the upgrade leaves it as paths.
+  if (layer.geometry?.kind === "paths" && (layer.fills ?? []).some((p) => "kind" in p && p.kind === "pattern")) uses.push("paint:pattern-tile");
   for (const fx of layer.effects ?? []) uses.push(...effectUses(fx));
   if (layer.animations?.length) uses.push("animations");
   if (layer.motion) uses.push("motion");

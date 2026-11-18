@@ -11,17 +11,16 @@
 // the visual gate, never failed, and the renderer ignores the block (with one
 // development warning per block type).
 import type { Effect, Layer, OimDocument, Paint } from "@oim-media/core/v2";
+import { canAnimate } from "./blocks/animations.js";
 
 export const UNSUPPORTED_BLOCKS = [
-  "animations",
+  "animation:preset",
   "effect:color-grade",
   "effect:duotone",
   "effect:filter",
   "effect:texture",
-  "interactions",
   "lottie",
   "mask",
-  "motion",
   "paint:generative",
   "paint:pattern-tile",
   "paint:texture",
@@ -49,14 +48,13 @@ const effectUses = (fx: Effect): UnsupportedBlock[] => {
 const layerUses = (layer: Layer): UnsupportedBlock[] => {
   const uses: UnsupportedBlock[] = [...paintUses(layer.fills), ...(layer.strokes ?? []).flatMap((s) => paintUses([s.paint as Paint]))];
   if (layer.type === "lottie") uses.push("lottie");
+  // Tracks and the reveal presets run; the named loops, hovers and text entrances wait for their painter.
+  if (layer.animations?.some((a) => !canAnimate(a))) uses.push("animation:preset");
   // 1.x tiled a background slot's own drawing; 2.0 has no field for a drawn tile yet, so the upgrade leaves it as paths.
   if (layer.geometry?.kind === "paths" && (layer.fills ?? []).some((p) => "kind" in p && p.kind === "pattern")) uses.push("paint:pattern-tile");
   for (const fx of layer.effects ?? []) uses.push(...effectUses(fx));
-  if (layer.animations?.length) uses.push("animations");
-  if (layer.motion) uses.push("motion");
   // A window mask is painted; a cutout (it clips the layers under it) is not yet.
   if (layer.mask?.mode === "cutout") uses.push("mask");
-  if (layer.interactions?.length) uses.push("interactions");
   const text = layer.text;
   if (text) {
     if (text.dropCap) uses.push("text:dropCap");

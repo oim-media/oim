@@ -19,6 +19,10 @@ import { pictureOf } from "./blocks/image.js";
 import { applyStrokes } from "./blocks/strokes.js";
 import { applyCompositing } from "./blocks/compositing.js";
 import { applyText } from "./blocks/text.js";
+import { animationFrames, animationTiming, canAnimate } from "./blocks/animations.js";
+import { bindInteractions, resolveActions, type StateAction } from "./blocks/interactions.js";
+import { applyLoop } from "./blocks/motion.js";
+import { REVEAL_DEFAULT, revealFrames } from "../../core/src/reveal.js";
 import { unsupportedUse } from "./coverage.js";
 
 export type SceneOptions = {
@@ -119,6 +123,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     const isText = layer.type === "text";
     if (has("fills")) applyFills(el, layer, { colors, isText, size: tileSize });
     if (has("opacity", "blend")) applyCompositing(el, layer);
+    if (has("visible")) el.style.display = layer.visible === false ? "none" : "";
     if (has("effects")) applyEffects(el, layer);
     if (layer.type === "text" && has("text")) {
       if (layer.text?.artistic) applyArtistic(el, layer, { lang, literal: colors.literal, fonts });
@@ -138,6 +143,73 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     }
   };
 
+  // --- time: every animation is WAAPI or CSS, so play/pause reach them all and no frame loop is left running.
+  let paused = !!_options.paused;
+  const len = (px: number) => `${+((px / width) * 100).toFixed(4)}cqw`;
+  const animate = (el: HTMLElement, frames: Keyframe[], timing: KeyframeAnimationOptions): Animation | undefined => {
+    if (typeof el.animate !== "function") return undefined;
+    const run = el.animate(frames, timing);
+    if (paused) run.finish?.();
+    return run;
+  };
+  const animationsOf = (layer: Layer, on: string) => (layer.animations ?? []).filter((a) => a.on === on && canAnimate(a));
+  const bindAnimations = (el: HTMLElement, layer: Layer) => {
+    for (const a of [...animationsOf(layer, "load"), ...animationsOf(layer, "loop")]) {
+      const run = animate(el, animationFrames(a, len), animationTiming(a));
+      if (paused && a.on === "loop") run?.cancel(); // at rest a loop is its first frame, not wherever finish() leaves an endless run
+    }
+    const hover = animationsOf(layer, "hover");
+    if (!hover.length) return;
+    const runs: Animation[] = [];
+    el.addEventListener("pointerenter", () => {
+      if (paused) return;
+      if (runs.length) for (const r of runs) { r.playbackRate = 1; r.play(); }
+      else for (const a of hover) { const r = animate(el, animationFrames(a, len), { ...animationTiming(a), duration: a.duration || 200 }); if (r) runs.push(r); }
+    });
+    el.addEventListener("pointerleave", () => { for (const r of runs) r.reverse(); });
+  };
+
+  /** Shows or hides a layer with its `enter` animation (the 1.x fade when it has none); paused, at once. */
+  const setVisible = (id: string, visible: boolean) => {
+    const entry = entries.get(id);
+    if (!entry || (entry.layer.visible !== false) === visible) return;
+    entry.layer = { ...entry.layer, visible } as Layer;
+    const { el } = entry;
+    const enter = animationsOf(entry.layer, "enter")[0];
+    const frames = enter ? animationFrames(enter, len) : revealFrames(REVEAL_DEFAULT.effect, true);
+    const timing: KeyframeAnimationOptions = enter
+      ? { ...animationTiming(enter), fill: "none" }
+      : { duration: visible ? REVEAL_DEFAULT.durationIn : REVEAL_DEFAULT.durationOut, easing: REVEAL_DEFAULT.easing };
+    if (visible) {
+      el.style.display = "";
+      if (!paused) animate(el, frames, timing);
+      return;
+    }
+    const run = paused ? undefined : animate(el, [...frames].reverse(), timing);
+    const done = () => { if (entry.layer.visible === false) el.style.display = "none"; };
+    if (run) run.onfinish = done; else done();
+  };
+
+  /** Runs a chain of actions in order; a hover's leave reverts its show/hide/toggle. */
+  const runActions = (actions: StateAction[], revert: boolean) => {
+    const flip: Record<string, string> = { show: "hide", hide: "show" };
+    const list = revert ? actions.filter((a) => a.type !== "setText" && a.type !== "play").map((a) => ({ ...a, type: flip[a.type] ?? a.type })).reverse() : actions;
+    for (const action of list) {
+      const entry = entries.get(action.target);
+      if (!entry) continue;
+      if (action.type === "play") {
+        for (const a of animationsOf(entry.layer, "action")) if (!paused) animate(entry.el, animationFrames(a, len), { ...animationTiming(a), fill: "none" });
+        continue;
+      }
+      const { visibility, texts } = resolveActions([action], { [action.target]: entry.layer.visible !== false });
+      for (const [id, v] of Object.entries(visibility)) setVisible(id, v);
+      for (const [id, value] of Object.entries(texts)) {
+        const t = entries.get(id)?.layer.text;
+        if (t) api.update(id, { text: { ...t, content: { ...t.content, [lang]: value } } } as Partial<Layer>);
+      }
+    }
+  };
+
   const paint = (layer: Layer, parent: HTMLElement, frame: Frame) => {
     // An image layer with no picture of its own is not painted: the file's base picture is the page's, behind the layers.
     if (layer.type === "image" && pictureOf(layer.image, lang) === undefined) return;
@@ -147,6 +219,9 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     applyBox(el, layer.box, frame);
     paintBlocks(el, layer);
     entries.set(layer.id, { el, layer, frame });
+    applyLoop(el, layer, width, len);
+    bindInteractions(el, layer.interactions, runActions);
+    bindAnimations(el, layer);
     for (const child of layer.children ?? []) paint(child, el, layer.box as Frame); // only groups have children, and a group is always sized
     parent.appendChild(el);
   };
@@ -165,7 +240,10 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     pendingMoves.clear();
   };
 
-  return {
+  const animations = () => root.getAnimations?.({ subtree: true }) ?? [];
+  // A paused scene also stills its CSS loops, which started with the element.
+  if (paused) for (const a of animations()) a.pause();
+  const api: Scene = {
     elementOf: (id) => entries.get(id)?.el ?? null,
     update(id, changes) {
       const entry = entries.get(id);
@@ -184,8 +262,8 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
       } else pendingMoves.set(id, box);
     },
     setMode: notYet("setMode"),
-    play: notYet("play"),
-    pause: notYet("pause"),
+    play() { paused = false; for (const a of animations()) a.play(); },
+    pause() { paused = true; for (const a of animations()) a.pause(); },
     seek: notYet("seek"),
     destroy() {
       if (frame !== undefined) cancelAnimationFrame(frame);
@@ -195,6 +273,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
       entries.clear();
     },
   };
+  return api;
 }
 
 /**

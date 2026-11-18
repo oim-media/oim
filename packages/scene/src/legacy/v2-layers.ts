@@ -15,6 +15,7 @@ import { svgGradientAttrs } from '../../../core/src/v2/svg-gradient.js';
 import type { Gradient } from '../../../core/src/v2/upgrade/gradient.js';
 export { paintColors, typographyCss };
 import { resolveByLang } from './localizedEntries.js';
+import { maskOutlineStyle } from './layerComposition.js';
 
 const cache = new WeakMap<object, Map<string, Layer>>();
 
@@ -66,9 +67,6 @@ export function maskStyle(layer: Layer, colors: PaintColors): Record<string, unk
   const mask = layer.mask ?? {};
   const paint = layer.fills?.[0];
   const gradient = paint && 'gradient' in paint && paint.gradient ? gradientCss(paint.gradient, colors) : undefined;
-  const geometry = layer.geometry as { kind?: string; name?: string; paths?: { d: string }[] } | undefined;
-  const named: Record<string, string> = { rect: 'rectangle', ellipse: 'circle', line: 'line' };
-  const shape = geometry?.kind === 'preset' ? geometry.name : geometry?.kind === 'paths' ? 'custom' : named[geometry?.kind ?? ''];
   const color = (value: unknown) => (typeof value === 'string'
     ? { role: undefined, literal: value }
     : value && typeof value === 'object' ? { role: (value as { var?: string }).var, literal: (value as { fallback?: string }).fallback } : { role: undefined, literal: undefined });
@@ -80,8 +78,7 @@ export function maskStyle(layer: Layer, colors: PaintColors): Record<string, unk
     maskMode: mask.mode === 'cutout' ? 'cutout' : 'window',
     maskFeather: mask.feather,
     maskCoverage: mask.scope === 'group' ? 'container' : 'canvas',
-    maskShape: shape,
-    maskSvgPath: geometry?.kind === 'paths' ? geometry.paths?.map((p) => p.d).join(' ') : undefined,
+    ...maskOutlineStyle(layer.geometry),
     geoShape: undefined,
     svgPath: undefined,
     maskBgColor: bg.literal,

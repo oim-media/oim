@@ -51,7 +51,8 @@ const layerUses = (layer: Layer): UnsupportedBlock[] => {
   for (const fx of layer.effects ?? []) uses.push(...effectUses(fx));
   if (layer.animations?.length) uses.push("animations");
   if (layer.motion) uses.push("motion");
-  if (layer.mask) uses.push("mask");
+  // A window mask is painted; a cutout (it clips the layers under it) is not yet.
+  if (layer.mask?.mode === "cutout") uses.push("mask");
   if (layer.interactions?.length) uses.push("interactions");
   const text = layer.text;
   if (text) {

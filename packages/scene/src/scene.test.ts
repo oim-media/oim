@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest";
 import { buildLayerGrainFilter, DYNAMIC_COLOR_ROLES, mediaFilterCss } from "@oim-media/core";
 import { mount } from "./index.js";
 import { sceneColors } from "./scene.js";
+import { getMaskSilhouetteCanvasD, getWindowMaskCanvasD } from "./legacy/layerComposition.js";
 import { buildArtisticTextModelFromLayer, generateArtisticTextSvgString } from "./blocks/artisticText.js";
 
 const shape = (o: Partial<Layer> = {}): Layer => ({
@@ -242,6 +243,25 @@ describe("a filter clips its backdrop to its figure", () => {
     const markup = generateArtisticTextSvgString(buildArtisticTextModelFromLayer(art as never, "es", (v) => v as string), "w");
     expect(svg.outerHTML).toBe(new DOMParser().parseFromString(markup, "image/svg+xml").documentElement.outerHTML);
     expect(host.querySelector<HTMLElement>('[data-oim-id="w"]')!.childNodes[0].nodeType).not.toBe(Node.TEXT_NODE);
+  });
+
+  it("a window mask is a canvas-wide frame in its paint with the core's hole cut out, and its stroke on the outline", () => {
+    const host = document.createElement("div");
+    const m = shape({ id: "m", box: { x: 200, y: 120, width: 300, height: 200 }, geometry: { kind: "ellipse" }, fills: [{ kind: "color", value: "#111111" }], strokes: [{ paint: { kind: "color", value: "#ffffff" }, width: 6 }], mask: {} } as Partial<Layer>);
+    mount(host, doc([m]));
+    const slot = { id: "m", type: "mask", style: { maskShape: "circle" }, x: 200, y: 120, width: 300, height: 200 };
+    const canvas = { width: 1000, height: 500 };
+    const frame = host.querySelector<HTMLElement>('[data-oim-id="m"] > [data-oim-mask-frame]')!;
+    const paint = frame.querySelector<HTMLElement>("[data-oim-mask-paint]")!;
+    const id = /url\(#(.+)\)/.exec(paint.style.clipPath)![1];
+    const hole = frame.querySelector(`clipPath#${id} path`)!;
+    expect(hole.getAttribute("d")).toBe(getWindowMaskCanvasD(slot, canvas));
+    expect(hole.getAttribute("clip-rule")).toBe("evenodd");
+    expect(paint.style.backgroundColor).toBe("#111111");
+    const ring = frame.querySelector("svg[data-oim-mask-outline] path")!;
+    expect(ring.getAttribute("d")).toBe(getMaskSilhouetteCanvasD(slot, canvas));
+    expect(ring.getAttribute("stroke-width")).toBe("6");
+    expect(host.querySelector<HTMLElement>('[data-oim-id="m"]')!.style.backgroundColor).toBe("transparent");
   });
 });
 

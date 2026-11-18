@@ -8,7 +8,7 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 let sequence = 0;
 
 /** A silhouette as path data, its viewBox, and for a rectangle its corner radius as a fraction of the box. */
-export type ClipSilhouette = { d: string; viewBox: string; rect?: { rx: number; ry: number } };
+export type ClipSilhouette = { d: string; viewBox: string; rect?: { rx: number; ry: number }; evenodd?: boolean };
 
 /** Path data for a silhouette given as polygon points or as a path. */
 export const silhouettePath = (figure: { d?: string; points?: string }): string =>
@@ -38,6 +38,7 @@ export function silhouetteClip(doc: Document, silhouette: ClipSilhouette): { svg
   } else {
     shape.setAttribute("d", silhouette.d);
     shape.setAttribute("transform", transform);
+    if (silhouette.evenodd) shape.setAttribute("clip-rule", "evenodd");
   }
   clip.appendChild(shape);
   svg.appendChild(clip);

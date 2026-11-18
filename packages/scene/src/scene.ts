@@ -12,6 +12,7 @@ import { effectsToStyle } from "./blocks/effects.js";
 import { applyFills, pictureNode } from "./blocks/fills.js";
 import { applyGeometry } from "./blocks/geometry.js";
 import { defineGrain } from "./blocks/grain.js";
+import { applyWindowMask } from "./blocks/mask.js";
 import { applyArtistic } from "./blocks/artistic.js";
 import { readEmbeddedFonts, registerEmbeddedFonts } from "./blocks/fonts.js";
 import { pictureOf } from "./blocks/image.js";
@@ -125,6 +126,8 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     if (has("effects", "geometry")) el.style.clipPath = filterClip(layer, outline);
     if (has("corners", "geometry")) applyCorners(el, layer, !!outline.round);
     if (has("strokes", "geometry", "fills")) applyStrokes(el, layer, { colors, isText, vector: !!outline.silhouette, rounded: !!outline.round || [layer.corners ?? 0].flat().some((c) => c > 0) });
+    // A window mask paints a frame around its outline instead of its own box; a cutout is not painted yet.
+    if (layer.mask && layer.mask.mode !== "cutout" && has("mask", "fills", "strokes", "geometry", "box")) applyWindowMask(el, layer, { canvas: { width, height }, colors });
     if (layer.type === "image" && has("image")) {
       el.querySelectorAll(":scope > img[data-oim-fill]").forEach((node) => node.remove());
       const picture = pictureOf(layer.image, lang);

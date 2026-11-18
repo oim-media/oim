@@ -392,6 +392,22 @@ describe("duotone", () => {
   });
 });
 
+describe("color-grade", () => {
+  it("paints the preset's matrix as the last filter, once per layer, and drops it when removed", () => {
+    const host = document.createElement("div");
+    const grade = { kind: "color-grade", preset: "sepia", intensity: 50 };
+    const scene = mount(host, doc([shape({ id: "g", effects: [{ kind: "blur", radius: 2 }, grade] } as Partial<Layer>)]));
+    scene.update("g", { effects: [{ kind: "blur", radius: 2 }, grade] } as Partial<Layer>);
+    expect(scene.elementOf("g")!.style.filter).toBe("blur(2px) url(#oim-grade-g)");
+    const filters = host.querySelectorAll("filter#oim-grade-g");
+    expect(filters.length).toBe(1);
+    expect(filters[0].getAttribute("color-interpolation-filters")).toBe("sRGB");
+    expect(filters[0].querySelector("feColorMatrix")!.getAttribute("values")!.split(" ")[0]).toBe("0.6965");
+    scene.update("g", { effects: [{ kind: "color-grade", preset: "nope" }] } as Partial<Layer>);
+    expect(scene.elementOf("g")!.style.filter).toBe("");
+  });
+});
+
 describe("cutout mask", () => {
   it("clips the layers before it, in canvas units, and leaves the ones after it alone", () => {
     const host = document.createElement("div");

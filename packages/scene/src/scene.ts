@@ -11,7 +11,7 @@ import { applyCorners } from "./blocks/corners.js";
 import { effectsToStyle } from "./blocks/effects.js";
 import { applyFills, pictureNode } from "./blocks/fills.js";
 import { applyGeometry } from "./blocks/geometry.js";
-import { defineGrain, defsOf } from "./blocks/grain.js";
+import { defineGrade, defineGrain, defsOf } from "./blocks/grain.js";
 import { duotoneFilter } from "./blocks/duotone.js";
 import { applyCutoutMask, applyWindowMask } from "./blocks/mask.js";
 import { applyArtistic } from "./blocks/artistic.js";
@@ -118,6 +118,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     el.querySelectorAll(":scope > .oim-effect-texture").forEach((node) => node.remove());
     for (const def of style.defs) {
       if (def.kind === "grain") defineGrain(root, def.id, def.effect);
+      else if (def.kind === "color-grade") defineGrade(root, def.id, def.values);
       else if (def.kind === "texture") {
         const color = def.effect.color === undefined ? undefined : colors.literal(def.effect.color);
         applyTextureEffect(el, { ...def.effect, color }, {

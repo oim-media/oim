@@ -36,9 +36,9 @@ describe("unsupportedUse", () => {
     expect(unsupportedUse(doc([rect({ effects })]))).toEqual([]);
   });
 
-  it("a colour grade and an image filter are not painted yet; a texture and a duotone backdrop are", () => {
+  it("an image filter is not painted yet; a colour grade, a texture and a duotone backdrop are", () => {
     const effects = [{ kind: "backdrop", preset: "duotone" }, { kind: "texture", preset: "paper" }, { kind: "color-grade", preset: "warm" }, { kind: "filter", blur: 1 }] as Layer["effects"];
-    expect(unsupportedUse(doc([rect({ effects })]))).toEqual(["effect:color-grade", "effect:filter"]);
+    expect(unsupportedUse(doc([rect({ effects })]))).toEqual(["effect:filter"]);
   });
 
   it("a layer's opacity and blend mode are painted; a picture on a figure is not yet", () => {

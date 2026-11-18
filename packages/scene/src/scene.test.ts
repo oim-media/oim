@@ -328,6 +328,35 @@ describe("time and interaction", () => {
     expect(calls).toEqual([]);
   });
 
+  it("paused, a named loop rests at its first frame and a load entrance at its end", () => {
+    stub();
+    const host = document.createElement("div");
+    const scene = mount(host, doc([
+      shape({ id: "p", animations: [{ on: "loop", preset: "pulse", duration: 0 }] } as Partial<Layer>),
+      shape({ id: "f", animations: [{ on: "load", preset: "fade", duration: 300 }] } as Partial<Layer>),
+    ]), { paused: true });
+    const [loop, load] = calls;
+    expect(loop.timing.iterations).toBe(Infinity);
+    expect(loop.run.cancel).toHaveBeenCalled();
+    expect(loop.run.finish).not.toHaveBeenCalled();
+    expect(load.run.finish).toHaveBeenCalled();
+    expect(scene.elementOf("p")).toBeTruthy();
+  });
+
+  it("a text entrance flows its units as one paragraph inside the text box", () => {
+    stub();
+    const host = document.createElement("div");
+    const scene = mount(host, doc([
+      { id: "t", type: "text", box: { x: 0, y: 0 }, text: { content: { es: "Hola" } }, animations: [{ on: "load", target: "chars", preset: "fade-chars", duration: 0 }] } as unknown as Layer,
+    ]));
+    const el = scene.elementOf("t")!;
+    expect(el.children).toHaveLength(1);
+    const body = el.firstElementChild as HTMLElement;
+    expect(body.style.alignSelf).toBe("stretch");
+    expect(body.querySelectorAll("span")).toHaveLength(4);
+    expect(calls).toHaveLength(4);
+  });
+
   it("play and pause reach every running animation of the scene", () => {
     const host = document.createElement("div");
     const scene = mount(host, doc([]));

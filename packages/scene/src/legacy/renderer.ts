@@ -15,7 +15,8 @@ import { applyDropCap, applyTextHighlight } from '../blocks/text-marks.js';
 export { applyDropCap, applyTextHighlight };
 import { applyTextureEffect } from '../blocks/texture.js';
 import { duotoneFilter } from '../blocks/duotone.js';
-import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entranceClips, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
+import { isEntranceEffect, entranceKeyframes, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
+import { applyEntrance } from '../blocks/presets.js';
 import { loadLottie } from './lottie-loader.js';
 import { ensureUpgrade } from './upgrade-entry.js';
 import { ensureFeatures } from './features-entry.js';
@@ -118,30 +119,9 @@ export function applyWaveText(
  * the host's `oim-player-paused` class pauses it like any CSS animation.
  */
 export function applyEntranceText(el: HTMLElement, text: string, effect: EntranceEffect, speed?: number, delay?: number): void {
-  el.textContent = '';
-  entranceUnits(text, effect).forEach((unit, i) => {
-    if (/^\s+$/.test(unit)) {
-      el.appendChild(document.createTextNode(unit));
-      return;
-    }
-    const span = document.createElement('span');
-    span.textContent = unit;
+  applyEntrance(el, text, effect, speed, delay, (span, start) => {
     span.className = 'oim-entrance';
-    const st = span.style;
-    st.display = 'inline-block';
-    st.animation = `oim-entrance-${effect} ${ENTRANCE_SECONDS}s linear ${entranceStart(i, speed, delay)}s both`;
-    if (!entranceClips(effect)) {
-      el.appendChild(span);
-      return;
-    }
-    // A rectangular clip of the word's own box: the word rises into view.
-    const clip = document.createElement('span');
-    clip.className = 'oim-entrance-clip';
-    clip.style.display = 'inline-block';
-    clip.style.overflow = 'hidden';
-    clip.style.verticalAlign = 'top';
-    clip.appendChild(span);
-    el.appendChild(clip);
+    span.style.animation = `oim-entrance-${effect} ${ENTRANCE_SECONDS}s linear ${start}s both`;
   });
 }
 

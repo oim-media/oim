@@ -22,7 +22,9 @@ import { applyCompositing } from "./blocks/compositing.js";
 import { applyText } from "./blocks/text.js";
 import { applyTextureEffect } from "./blocks/texture.js";
 import { resolveLineHeight } from "../../core/src/typography.js";
-import { animationFrames, animationTiming, canAnimate } from "./blocks/animations.js";
+import { animationFrames, animationTiming, canAnimate, isEntrance } from "./blocks/animations.js";
+import { applyEntrance, ENTRANCE_MS, entranceFrames } from "./blocks/presets.js";
+import type { EntranceEffect } from "../../core/src/text-effects.js";
 import { bindInteractions, resolveActions, type StateAction } from "./blocks/interactions.js";
 import { applyLoop } from "./blocks/motion.js";
 import { REVEAL_DEFAULT, revealFrames } from "../../core/src/reveal.js";
@@ -173,14 +175,27 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   const animate = (el: HTMLElement, frames: Keyframe[], timing: KeyframeAnimationOptions): Animation | undefined => {
     if (typeof el.animate !== "function") return undefined;
     const run = el.animate(frames, timing);
-    if (paused) run.finish?.();
+    // At rest a loop is its first frame (an endless run cannot finish); anything else, its last.
+    if (paused) timing.iterations === Infinity ? run.cancel() : run.finish?.();
     return run;
   };
   const animationsOf = (layer: Layer, on: string) => (layer.animations ?? []).filter((a) => a.on === on && canAnimate(a));
   const bindAnimations = (el: HTMLElement, layer: Layer) => {
     for (const a of [...animationsOf(layer, "load"), ...animationsOf(layer, "loop")]) {
-      const run = animate(el, animationFrames(a, len), animationTiming(a));
-      if (paused && a.on === "loop") run?.cancel(); // at rest a loop is its first frame, not wherever finish() leaves an endless run
+      if (isEntrance(a)) {
+        // shortcut: an entrance replaces the text's marks with plain units; split the marked runs when a file has both.
+        // One block holds the units, so they flow as one paragraph inside the text's flex column.
+        const body = el.ownerDocument.createElement("div");
+        body.style.alignSelf = "stretch";
+        const words = el.textContent ?? "";
+        el.replaceChildren(body);
+        const frames = entranceFrames(a.preset as EntranceEffect);
+        const stagger = typeof a.params?.speed === "number" ? a.params.speed : undefined;
+        applyEntrance(body, words, a.preset as EntranceEffect, stagger, (a.delay ?? 0) / 1000, (span, start) =>
+          void animate(span, frames, { duration: ENTRANCE_MS, delay: start * 1000, easing: "linear", fill: "both" }));
+        continue;
+      }
+      animate(el, animationFrames(a, len), animationTiming(a));
     }
     const hover = animationsOf(layer, "hover");
     if (!hover.length) return;

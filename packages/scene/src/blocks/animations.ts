@@ -19,8 +19,12 @@ export const isRevealPreset = (preset: string | undefined): preset is RevealEffe
 export const isEntrance = (a: Animation): boolean => a.target !== undefined && a.target !== "layer" && isEntranceEffect(a.preset);
 const namedFrames = (a: Animation) => (a.on === "loop" || a.on === "hover" ? presetFrames(a.on, a.preset) : undefined);
 
+/** Text presets drawn on a timer or a per-char CSS loop (the 1.x player's helpers). */
+export const isTimedText = (a: Animation): boolean =>
+  a.target !== undefined && a.target !== "layer" && (a.preset === "typewriter" || a.preset === "wave-chars" || a.preset === "glitch-cyberpunk" || a.preset === "glitch-slice");
+
 export const canAnimate = (a: Animation): boolean =>
-  a.tracks !== undefined || isEntrance(a) || namedFrames(a) !== undefined || (isRevealPreset(a.preset) && !a.target);
+  a.tracks !== undefined || isEntrance(a) || isTimedText(a) || namedFrames(a) !== undefined || (isRevealPreset(a.preset) && !a.target);
 
 type Track = NonNullable<Animation["tracks"]>[number];
 

@@ -370,6 +370,55 @@ describe("time and interaction", () => {
     expect(el.querySelector("svg[data-oim-figure]")).toBeNull();
   });
 
+  const textLayer = (preset: string, params?: Record<string, unknown>) =>
+    ({ id: "t", type: "text", box: { x: 0, y: 0 }, text: { content: { es: "Hola" } }, animations: [{ on: "load", target: "chars", preset, duration: 0, ...(params ? { params } : {}) }] }) as unknown as Layer;
+
+  it("the typewriter types its text on a timer that play, pause and destroy reach", () => {
+    vi.useFakeTimers();
+    try {
+      const host = document.createElement("div");
+      const scene = mount(host, doc([textLayer("typewriter", { speed: 20, cursor: false })]));
+      const body = scene.elementOf("t")!.firstElementChild as HTMLElement;
+      expect(body.textContent).toBe("");
+      vi.advanceTimersByTime(1000);
+      expect(body.textContent).toBe("Hola");
+      scene.pause();
+      const frozen = body.textContent;
+      vi.advanceTimersByTime(1000);
+      expect(body.textContent).toBe(frozen);
+      expect(vi.getTimerCount()).toBe(0);
+      scene.play();
+      expect(vi.getTimerCount()).toBe(1);
+      scene.destroy();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("a scene born paused starts no text timer", () => {
+    vi.useFakeTimers();
+    try {
+      mount(document.createElement("div"), doc([textLayer("glitch-cyberpunk")]), { paused: true });
+      expect(vi.getTimerCount()).toBe(0);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("the glitch draws its copies around the text", () => {
+    const scene = mount(document.createElement("div"), doc([textLayer("glitch-slice")]));
+    const body = scene.elementOf("t")!.firstElementChild as HTMLElement;
+    expect(body.querySelectorAll("span").length).toBeGreaterThan(1);
+    expect([...body.querySelectorAll("span")].every((s) => s.textContent === "Hola")).toBe(true);
+    scene.destroy();
+  });
+
+  it("the wave splits the text into chars that share one keyframes rule", () => {
+    const host = document.createElement("div");
+    const scene = mount(host, doc([textLayer("wave-chars"), { ...textLayer("wave-chars"), id: "u" } as Layer]));
+    const spans = scene.elementOf("t")!.querySelectorAll("span");
+    expect(spans).toHaveLength(4);
+    expect((spans[0] as HTMLElement).style.animationName).toBe("oim-wave-chars");
+    expect(host.querySelectorAll("style#oim-wave-keyframes")).toHaveLength(1);
+  });
+
   it("play and pause reach every running animation of the scene", () => {
     const host = document.createElement("div");
     const scene = mount(host, doc([]));

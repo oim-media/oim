@@ -23,7 +23,9 @@ import { applyCompositing } from "./blocks/compositing.js";
 import { applyText } from "./blocks/text.js";
 import { applyTextureEffect } from "./blocks/texture.js";
 import { resolveLineHeight } from "../../core/src/typography.js";
-import { animationFrames, animationTiming, canAnimate, isEntrance } from "./blocks/animations.js";
+import { animationFrames, animationTiming, canAnimate, isEntrance, isTimedText } from "./blocks/animations.js";
+import { applyGlitchText, applyTypewriterText, applyWaveText, type TimedTextAnimation } from "./legacy/renderer.js";
+import { buildWaveKeyframesCss } from "./legacy/waveText.js";
 import { applyEntrance, ENTRANCE_MS, entranceFrames } from "./blocks/presets.js";
 import type { EntranceEffect } from "../../core/src/text-effects.js";
 import { bindInteractions, resolveActions, type StateAction } from "./blocks/interactions.js";
@@ -182,6 +184,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
 
   // --- time: every animation is WAAPI or CSS, so play/pause reach them all and no frame loop is left running.
   let paused = !!_options.paused;
+  const timers: TimedTextAnimation[] = [];
   const len = (px: number) => `${+((px / width) * 100).toFixed(4)}cqw`;
   const animate = (el: HTMLElement, frames: Keyframe[], timing: KeyframeAnimationOptions): Animation | undefined => {
     if (typeof el.animate !== "function") return undefined;
@@ -193,6 +196,33 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   const animationsOf = (layer: Layer, on: string) => (layer.animations ?? []).filter((a) => a.on === on && canAnimate(a));
   const bindAnimations = (el: HTMLElement, layer: Layer) => {
     for (const a of [...animationsOf(layer, "load"), ...animationsOf(layer, "loop")]) {
+      if (isTimedText(a)) {
+        // Same as an entrance: the text's marks give way to plain units in one block.
+        const body = el.ownerDocument.createElement("div");
+        body.style.alignSelf = "stretch";
+        const words = el.textContent ?? "";
+        el.replaceChildren(body);
+        const p = a.params ?? {};
+        const num = (k: string) => (typeof p[k] === "number" ? (p[k] as number) : undefined);
+        const delay = (a.delay ?? 0) / 1000;
+        if (a.preset === "wave-chars") {
+          if (!root.querySelector("style#oim-wave-keyframes")) {
+            const style = el.ownerDocument.createElement("style");
+            style.id = "oim-wave-keyframes";
+            style.textContent = buildWaveKeyframesCss();
+            root.prepend(style);
+          }
+          applyWaveText(body, words, num("speed") ?? 0.05, delay);
+          continue;
+        }
+        // shortcut: the glitch's offsets are px of the 1.x player, not scaled with the canvas; move to cqw when a file needs it.
+        const run = a.preset === "typewriter"
+          ? applyTypewriterText(body, words, num("speed"), delay, typeof p.cursor === "boolean" ? p.cursor : undefined)
+          : applyGlitchText(body, words, a.preset as "glitch-cyberpunk" | "glitch-slice", num("speed"), delay, num("intensity"));
+        if (paused) run.pause();
+        timers.push(run);
+        continue;
+      }
       if (isEntrance(a)) {
         // shortcut: an entrance replaces the text's marks with plain units; split the marked runs when a file has both.
         // One block holds the units, so they flow as one paragraph inside the text's flex column.
@@ -316,8 +346,8 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
       } else pendingMoves.set(id, box);
     },
     setMode: notYet("setMode"),
-    play() { paused = false; for (const a of animations()) a.play(); lotties.forEach((l) => l.play()); },
-    pause() { paused = true; for (const a of animations()) a.pause(); lotties.forEach((l) => l.pause()); },
+    play() { paused = false; for (const a of animations()) a.play(); lotties.forEach((l) => l.play()); for (const t of timers) t.play(); },
+    pause() { paused = true; for (const a of animations()) a.pause(); lotties.forEach((l) => l.pause()); for (const t of timers) t.pause(); },
     seek: notYet("seek"),
     destroy() {
       if (frame !== undefined) cancelAnimationFrame(frame);
@@ -325,6 +355,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
       pendingMoves.clear();
       lotties.forEach((l) => l.destroy());
       lotties.clear();
+      for (const t of timers.splice(0)) t.stop();
       letterbox.remove();
       entries.clear();
     },

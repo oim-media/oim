@@ -4,15 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { DYNAMIC_COLOR_ROLES, filterClipPath, resolvePalette } from "@oim-media/core";
+import { DYNAMIC_COLOR_ROLES, filterClipPath, GRAIN_LAYER_TYPES, resolvePalette } from "@oim-media/core";
 import { geometryOutline, paintColors, palettesOf, type Box, type Layer, type OimDocument, type Outline, type PaintColors } from "@oim-media/core/v2";
 import { applyBox, type Frame } from "./box.js";
 import { applyCorners } from "./blocks/corners.js";
 import { effectsToStyle } from "./blocks/effects.js";
 import { applyFills, pictureNode } from "./blocks/fills.js";
 import { applyGeometry } from "./blocks/geometry.js";
+import { defineGrain } from "./blocks/grain.js";
+import { applyWindowMask } from "./blocks/mask.js";
+import { applyArtistic } from "./blocks/artistic.js";
+import { readEmbeddedFonts, registerEmbeddedFonts } from "./blocks/fonts.js";
 import { pictureOf } from "./blocks/image.js";
 import { applyStrokes } from "./blocks/strokes.js";
+import { applyCompositing } from "./blocks/compositing.js";
 import { applyText } from "./blocks/text.js";
 import { unsupportedUse } from "./coverage.js";
 
@@ -57,18 +62,21 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   Object.assign(letterbox.style, { position: "relative", width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" });
   const root = container.ownerDocument.createElement("div");
   root.className = "oim-scene";
-  Object.assign(root.style, { position: "relative", width: "100%", maxHeight: "100%", aspectRatio: `${width} / ${height}`, containerType: "inline-size" });
+  Object.assign(root.style, { position: "relative", width: "100%", maxHeight: "100%", aspectRatio: `${width} / ${height}`, containerType: "inline-size", isolation: "isolate" });
   letterbox.appendChild(root);
 
+  // Inside the root (a size container), a canvas length is a share of its width.
+  const tileSize = (px: number) => { const v = `${+((px / width) * 100).toFixed(4)}cqw`; return `${v} ${v}`; };
   const entries = new Map<string, Entry>();
   const canvas: Frame = { x: 0, y: 0, width, height };
-  const palettes = palettesOf(document.variables);
-  const defaultPalette = _options.palette ?? document.variables?.defaults?.palette;
-  const colors: PaintColors = paintColors({ palettes, defaultPalette });
-  // The active palette's roles become custom properties, so a colour bound to a role is a var() and a mode change needs no repaint.
   // With both light and dark palettes, the reader's colour scheme decides, as the player does.
   const prefersDark = typeof matchMedia === "function" && matchMedia("(prefers-color-scheme: dark)").matches;
-  const active = resolvePalette({ palettes, defaultPalette }, { requested: _options.palette ?? null, prefersDark });
+  const { colors, active } = sceneColors(document.variables, _options.palette, prefersDark);
+  // The file's own fonts, under their own names; a face that fails to load falls back to the family.
+  const embedded = readEmbeddedFonts(document);
+  void registerEmbeddedFonts(embedded);
+  const fonts = new Map(embedded.map((e) => [e.family, e.name]));
+  // The active palette's roles become custom properties, so a colour bound to a role is a var() and a mode change needs no repaint.
   for (const role of DYNAMIC_COLOR_ROLES) {
     const value = active?.colors[role];
     if (value) root.style.setProperty(`--oim-palette-${role}`, value);
@@ -76,20 +84,22 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   // A block scene does not paint yet is ignored, and said once per block type, not per layer.
   for (const block of unsupportedUse(document)) console.warn(`[oim scene] "${block}" is not painted yet; it is ignored`);
 
-  applyFills(root, document.canvas, { colors, isText: false });
+  // The root is the canvas: a tile is a share of its width and height.
+  applyFills(root, document.canvas, { colors, isText: false, size: (px) => `${+((px / width) * 100).toFixed(4)}% ${+((px / height) * 100).toFixed(4)}%` });
   const lang = languageOf(document.languages, _options.language ?? (typeof navigator === "undefined" ? undefined : navigator.language));
 
   /** The effects the scene paints (blur, shadow, glow, backdrop); grain, texture and duotone wait for their own painter (see coverage). */
   const applyEffects = (el: HTMLElement, layer: Layer) => {
     const style = effectsToStyle(layer.effects, {
       isText: layer.type === "text",
-      grainable: false,
+      grainable: (GRAIN_LAYER_TYPES as readonly string[]).includes(layer.type),
       layerId: layer.id,
       colorCss: (color) => colors.css(color),
     });
     el.style.filter = style.filter;
     el.style.textShadow = style.textShadow;
     el.style.backdropFilter = style.backdropFilter ?? "";
+    for (const def of style.defs) if (def.kind === "grain") defineGrain(root, def.id, def.effect);
   };
 
   /** A filter (a shape with a backdrop) shows its backdrop only inside its figure: the core's clip over the layer's own box. A rectangle keeps its border radius instead. */
@@ -107,18 +117,24 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   const paintBlocks = (el: HTMLElement, layer: Layer, only?: ReadonlySet<string>) => {
     const has = (...keys: string[]) => !only || keys.some((k) => only.has(k));
     const isText = layer.type === "text";
-    if (has("fills")) applyFills(el, layer, { colors, isText });
+    if (has("fills")) applyFills(el, layer, { colors, isText, size: tileSize });
+    if (has("opacity", "blend")) applyCompositing(el, layer);
     if (has("effects")) applyEffects(el, layer);
-    if (layer.type === "text" && has("text")) applyText(el, layer, { lang, canvasWidth: width });
+    if (layer.type === "text" && has("text")) {
+      if (layer.text?.artistic) applyArtistic(el, layer, { lang, literal: colors.literal, fonts });
+      else applyText(el, layer, { lang, canvasWidth: width, fonts });
+    }
     const figure = has("fills", "geometry", "strokes");
     const outline = layer.type === "shape" ? (figure ? applyGeometry(el, layer, { colors }) : geometryOutline(layer.geometry)) : geometryOutline(undefined);
     if (has("effects", "geometry")) el.style.clipPath = filterClip(layer, outline);
     if (has("corners", "geometry")) applyCorners(el, layer, !!outline.round);
     if (has("strokes", "geometry", "fills")) applyStrokes(el, layer, { colors, isText, vector: !!outline.silhouette, rounded: !!outline.round || [layer.corners ?? 0].flat().some((c) => c > 0) });
+    // A window mask paints a frame around its outline instead of its own box; a cutout is not painted yet.
+    if (layer.mask && layer.mask.mode !== "cutout" && has("mask", "fills", "strokes", "geometry", "box")) applyWindowMask(el, layer, { canvas: { width, height }, colors });
     if (layer.type === "image" && has("image")) {
       el.querySelectorAll(":scope > img[data-oim-fill]").forEach((node) => node.remove());
       const picture = pictureOf(layer.image, lang);
-      if (picture !== undefined) pictureNode(el, { src: picture, fit: layer.image?.fit, crop: layer.image?.crop });
+      if (picture !== undefined) el.appendChild(pictureNode(el, { src: picture, fit: layer.image?.fit, crop: layer.image?.crop, filters: layer.image?.filters }));
     }
   };
 
@@ -180,3 +196,16 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     },
   };
 }
+
+/**
+ * The palette a scene paints with. A role is a var() of the active palette; a colour
+ * baked into an image (a pattern tile, a drawing) is that same palette's literal, so
+ * both follow the reader's colour scheme when the document has light and dark.
+ */
+export function sceneColors(variables: OimDocument["variables"], palette: string | undefined, prefersDark: boolean): { colors: PaintColors; active: ReturnType<typeof resolvePalette> } {
+  const palettes = palettesOf(variables);
+  const defaultPalette = palette ?? variables?.defaults?.palette;
+  const active = resolvePalette({ palettes, defaultPalette }, { requested: palette ?? null, prefersDark });
+  return { colors: paintColors({ palettes, defaultPalette: active?.name ?? defaultPalette }), active };
+}
+

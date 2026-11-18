@@ -5,13 +5,20 @@
  */
 
 import { flipScale } from "@oim-media/core";
-import { cropCss } from "@oim-media/core";
+import { cropCss, mediaFilterCss } from "@oim-media/core";
+import { filterStyle } from "./effects.js";
 import { paintCss, type Layer, type Paint, type PaintColors, type PaintTarget } from "@oim-media/core/v2";
 
-export type PaintContext = { colors: PaintColors; resources?: Record<string, Paint>; isText: boolean };
+export type PaintContext = {
+  colors: PaintColors;
+  resources?: Record<string, Paint>;
+  isText: boolean;
+  /** A square tile of `px` canvas units as this element's background-size; without it the core's px size is kept. */
+  size?: (px: number) => string;
+};
 
 /** Set by applyFills on the element; cleared before every new paint so an update never stacks old fills. */
-const FILL_PROPS = ["backgroundColor", "backgroundImage", "backgroundClip", "WebkitBackgroundClip", "color"] as const;
+const FILL_PROPS = ["backgroundColor", "backgroundImage", "backgroundSize", "backgroundClip", "WebkitBackgroundClip", "color"] as const;
 
 /**
  * The fills of a layer. They are painted bottom to top: the first paint is the
@@ -28,6 +35,7 @@ export function applyFills(el: HTMLElement, layer: Pick<Layer, "fills">, ctx: Pa
   const target: PaintTarget = { colors: ctx.colors, isText: ctx.isText, resources: ctx.resources };
   let base: string | undefined;
   const backgrounds: string[] = [];
+  const sizes: string[] = [];
   const pictures: Extract<Paint, { kind: "image" }>[] = [];
   for (const paint of layer.fills ?? []) {
     if ("kind" in paint && paint.kind === "image") {
@@ -40,12 +48,21 @@ export function applyFills(el: HTMLElement, layer: Pick<Layer, "fills">, ctx: Pa
     if (css.backgroundColor) {
       // The lowest colour is the background colour itself; a colour above a layer is a layer of its own.
       if (base === undefined && backgrounds.length === 0) base = css.backgroundColor;
-      else backgrounds.unshift(`linear-gradient(${css.backgroundColor}, ${css.backgroundColor})`);
+      else {
+        backgrounds.unshift(`linear-gradient(${css.backgroundColor}, ${css.backgroundColor})`);
+        sizes.unshift("auto");
+      }
     }
-    if (css.backgroundImage) backgrounds.unshift(css.backgroundImage);
+    if (css.backgroundImage) {
+      backgrounds.unshift(css.backgroundImage);
+      // A pattern's tile is a size in canvas units (160 × its scale): kept, so the tiles match the player's.
+      const tile = /^([\d.]+)px [\d.]+px$/.exec(css.backgroundSize ?? "");
+      sizes.unshift(tile && ctx.size ? ctx.size(+tile[1]) : (css.backgroundSize ?? "auto"));
+    }
   }
   if (base) el.style.backgroundColor = base;
   if (backgrounds.length) el.style.backgroundImage = backgrounds.join(", ");
+  if (sizes.some((v) => v !== "auto")) el.style.backgroundSize = sizes.join(", ");
   for (const paint of pictures) el.appendChild(pictureNode(el, paint));
 }
 
@@ -72,5 +89,8 @@ export function pictureNode(el: HTMLElement, paint: Picture): HTMLImageElement {
   if (flip) transforms.push(`scale(${flip[0]}, ${flip[1]})`);
   if (transforms.length) img.style.transform = transforms.join(" ");
   if (paint.opacity !== undefined && paint.opacity !== 1) img.style.opacity = String(paint.opacity);
+  const filter = paint.filters && mediaFilterCss(filterStyle(paint.filters));
+  // The blur stays inside the picture's box, as the player draws it; clip-path is applied after the filter.
+  if (filter) Object.assign(img.style, { filter, clipPath: "inset(0)" });
   return img;
 }

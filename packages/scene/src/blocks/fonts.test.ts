@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import { readEmbeddedFonts, registerEmbeddedFonts, embeddedFontFamily } from "./embeddedFonts";
+import { readEmbeddedFonts, registerEmbeddedFonts, embeddedFontFamily } from "./fonts";
 
 const WOFF2 = btoa("wOF2" + "x".repeat(40));
 const entry = (changes: Record<string, unknown> = {}) => ({

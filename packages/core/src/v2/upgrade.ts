@@ -132,6 +132,13 @@ export function upgrade(input: unknown): UpgradeResult {
     if (typeof zone === "string" && zone) zoneOf.set(layers[i], zone);
   });
   document.layers = convertZones(ctx, meta, buildTree(ctx, slots, layers), zoneOf);
+  // 1.x painted the canvas background slot at z-index 0, under every other slot whatever its place in the list;
+  // in 2.0 the list order is the paint order, so it moves to the bottom (above the poster, which stays first).
+  const backgroundIds = new Set(slots.filter((slot) => slot.raw.is_background_pattern === true || slot.raw.id === "background-pattern-slot").map((slot) => String(slot.raw.id)));
+  if (backgroundIds.size) {
+    const rank = (layer: { id: string }) => (layer.id === "oim-base" ? 0 : backgroundIds.has(layer.id) ? 1 : 2);
+    document.layers = [...document.layers].sort((a, b) => rank(a) - rank(b));
+  }
 
   const variables = convertVariables(ctx, meta, document.languages);
   if (variables) document.variables = variables;

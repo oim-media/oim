@@ -6,8 +6,11 @@
 
 import type { Layer, OimDocument } from "@oim-media/core/v2";
 import { describe, expect, it } from "vitest";
-import { DYNAMIC_COLOR_ROLES } from "@oim-media/core";
+import { buildLayerGrainFilter, DYNAMIC_COLOR_ROLES, mediaFilterCss } from "@oim-media/core";
 import { mount } from "./index.js";
+import { sceneColors } from "./scene.js";
+import { getMaskSilhouetteCanvasD, getWindowMaskCanvasD } from "./legacy/layerComposition.js";
+import { buildArtisticTextModelFromLayer, generateArtisticTextSvgString } from "./blocks/artisticText.js";
 
 const shape = (o: Partial<Layer> = {}): Layer => ({
   id: "a",
@@ -195,4 +198,70 @@ describe("a filter clips its backdrop to its figure", () => {
   it("a rectangle filter is not clipped: its corners are the border radius", () => {
     expect(filterOn({ geometry: { kind: "rect" } }).style.clipPath).toBe("");
   });
+
+  it("an image layer shows its picture, with its filters as the media-filter CSS of core", () => {
+    const host = document.createElement("div");
+    const photo = { id: "p", type: "image", box: { x: 0, y: 0, width: 100, height: 100 }, image: { src: "data:image/png;base64,AA==", filters: { preset: "noir", blur: 2, brightness: 1.2 } } } as Layer;
+    mount(host, doc([photo]));
+    const img = host.querySelector<HTMLImageElement>("img[data-oim-fill]")!;
+    expect(img.getAttribute("src")).toBe("data:image/png;base64,AA==");
+    expect(img.style.filter).toBe(mediaFilterCss({ filterPreset: "noir", filterBlur: 2, filterBrightness: 120 }));
+    expect(img.style.clipPath).toBe("inset(0)");
+  });
+
+  it("a grain is core's grain filter, defined once in the scene and applied to the layer", () => {
+    const host = document.createElement("div");
+    mount(host, doc([shape({ effects: [{ kind: "grain", intensity: 40, blend: "multiply" }] } as Partial<Layer>)]));
+    const el = host.querySelector<HTMLElement>('[data-oim-id="a"]')!;
+    expect(el.style.filter).toContain("url(#oim-grain-a)");
+    const filter = host.querySelector("filter#oim-grain-a")!;
+    const expected = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${buildLayerGrainFilter("oim-grain-a", { intensity: 40, blend: "multiply" })}</svg>`, "image/svg+xml").querySelector("filter")!;
+    expect(filter.outerHTML).toBe(expected.outerHTML);
+  });
+
+  it("a colour baked into an image is the active palette's, as the reader's colour scheme picks it", () => {
+    const variables = { defaults: { palette: "dark" }, modes: { palette: ["dark", "light"] }, values: { accent: { dark: "#a3e635", light: "#4d7c0f" } } } as OimDocument["variables"];
+    const role = { var: "accent", fallback: "#a3e635" };
+    expect(sceneColors(variables, undefined, false).colors.literal(role)).toBe("#4d7c0f");
+    expect(sceneColors(variables, undefined, true).colors.literal(role)).toBe("#a3e635");
+    expect(sceneColors(variables, "dark", false).colors.literal(role)).toBe("#a3e635");
+  });
+
+  it("a text in an embedded font asks for the font's own registered name first, then its family", () => {
+    const host = document.createElement("div");
+    const fonts = [{ family: "Inter", name: "oim-f8947d8f-Inter", weight: 400, style: "normal", format: "woff", data: "d09GRgABAAAA" }];
+    const text = { id: "t", type: "text", box: { x: 0, y: 0, width: 100, height: 20 }, text: { content: { es: "Hola" }, font: { family: "Inter", size: 16 } } } as Layer;
+    mount(host, { ...doc([text]), fonts } as OimDocument);
+    expect(host.querySelector<HTMLElement>('[data-oim-id="t"]')!.style.fontFamily.replace(/["']/g, "")).toBe("oim-f8947d8f-Inter, Inter, sans-serif");
+  });
+
+  it("an artistic text is the SVG the artistic-text painter writes for it", () => {
+    const host = document.createElement("div");
+    const art = { id: "w", type: "text", box: { x: 0, y: 0, width: 400, height: 200 }, text: { content: { es: "Hola" }, font: { family: "Inter", size: 40 }, artistic: { curve: { type: "arc", amount: 30 } } } } as Layer;
+    mount(host, doc([art]));
+    const svg = host.querySelector('[data-oim-id="w"] svg')!;
+    const markup = generateArtisticTextSvgString(buildArtisticTextModelFromLayer(art as never, "es", (v) => v as string), "w");
+    expect(svg.outerHTML).toBe(new DOMParser().parseFromString(markup, "image/svg+xml").documentElement.outerHTML);
+    expect(host.querySelector<HTMLElement>('[data-oim-id="w"]')!.childNodes[0].nodeType).not.toBe(Node.TEXT_NODE);
+  });
+
+  it("a window mask is a canvas-wide frame in its paint with the core's hole cut out, and its stroke on the outline", () => {
+    const host = document.createElement("div");
+    const m = shape({ id: "m", box: { x: 200, y: 120, width: 300, height: 200 }, geometry: { kind: "ellipse" }, fills: [{ kind: "color", value: "#111111" }], strokes: [{ paint: { kind: "color", value: "#ffffff" }, width: 6 }], mask: {} } as Partial<Layer>);
+    mount(host, doc([m]));
+    const slot = { id: "m", type: "mask", style: { maskShape: "circle" }, x: 200, y: 120, width: 300, height: 200 };
+    const canvas = { width: 1000, height: 500 };
+    const frame = host.querySelector<HTMLElement>('[data-oim-id="m"] > [data-oim-mask-frame]')!;
+    const paint = frame.querySelector<HTMLElement>("[data-oim-mask-paint]")!;
+    const id = /url\(#(.+)\)/.exec(paint.style.clipPath)![1];
+    const hole = frame.querySelector(`clipPath#${id} path`)!;
+    expect(hole.getAttribute("d")).toBe(getWindowMaskCanvasD(slot, canvas));
+    expect(hole.getAttribute("clip-rule")).toBe("evenodd");
+    expect(paint.style.backgroundColor).toBe("#111111");
+    const ring = frame.querySelector("svg[data-oim-mask-outline] path")!;
+    expect(ring.getAttribute("d")).toBe(getMaskSilhouetteCanvasD(slot, canvas));
+    expect(ring.getAttribute("stroke-width")).toBe("6");
+    expect(host.querySelector<HTMLElement>('[data-oim-id="m"]')!.style.backgroundColor).toBe("transparent");
+  });
 });
+

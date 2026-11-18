@@ -74,4 +74,11 @@ describe("applyFills", () => {
     expect(img.style.objectFit).toBe("contain");
     expect(img.style.position).toBe("absolute");
   });
+
+  it("a pattern tile keeps the core's size, in the element's own units, under its scale", () => {
+    const el = document.createElement("div");
+    applyFills(el, { fills: [{ kind: "pattern", pattern: { preset: "stars", scale: 1.5, colors: ["#1d4ed8"] } }] }, { ...ctx, size: (px) => `${px / 8}% ${px / 6}%` });
+    expect(el.style.backgroundSize).toBe("30% 40%");
+  });
 });
+

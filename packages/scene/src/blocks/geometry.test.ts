@@ -41,4 +41,18 @@ describe("applyGeometry", () => {
     applyGeometry(el, shape({ kind: "preset", name: "star" }), { colors });
     expect(el.querySelectorAll("svg")).toHaveLength(1);
   });
+
+  it("a picture on a figure is clipped to the figure's silhouette, in the box's own units", () => {
+    const el = document.createElement("div");
+    const img = el.appendChild(document.createElement("img"));
+    img.dataset.oimFill = "";
+    applyGeometry(el, shape({ kind: "preset", name: "star" }, { fills: [{ kind: "image", src: "data:image/png;base64,AA==" }] }), { colors });
+    const box = img.parentElement!;
+    expect(box).not.toBe(el);
+    const id = /url\(#(.+)\)/.exec(box.style.clipPath)![1];
+    const clip = el.querySelector(`clipPath#${id}`)!;
+    expect(clip.getAttribute("clipPathUnits")).toBe("objectBoundingBox");
+    const expected = geometryOutline({ kind: "preset", name: "star" } as Layer["geometry"]).silhouette!;
+    expect(clip.firstElementChild!.getAttribute("d")).toBe(expected.d ?? "M " + expected.points!.split(" ").join(" L ") + " Z");
+  });
 });

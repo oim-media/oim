@@ -27,7 +27,7 @@ describe("unsupportedUse", () => {
       rect({ id: "c", fills: [{ kind: "pattern", pattern: { preset: "dots" } }] as Layer["fills"] }),
       { id: "t", type: "text", box: { x: 0, y: 0 }, text: { content: { es: "x" }, runs: [] } } as unknown as Layer,
     ];
-    expect(unsupportedUse(doc(layers))).toEqual(["animations", "effect:grain", "paint:pattern", "text:runs"]);
+    expect(unsupportedUse(doc(layers))).toEqual(["animations"]);
   });
 
   it("the effects scene paints (blur, shadow, glow, backdrop) are not out of scope", () => {
@@ -40,11 +40,16 @@ describe("unsupportedUse", () => {
     expect(unsupportedUse(doc([rect({ effects })]))).toEqual(["effect:color-grade", "effect:duotone", "effect:filter", "effect:texture"]);
   });
 
-  it("a layer's own opacity, its blend mode, and a picture on a figure are not painted yet", () => {
-    expect(unsupportedUse(doc([rect({ opacity: 0.7 })]))).toEqual(["layer:opacity"]);
-    expect(unsupportedUse(doc([rect({ blend: "multiply" })]))).toEqual(["layer:blend"]);
+  it("a layer's opacity and blend mode are painted; a picture on a figure is not yet", () => {
+    expect(unsupportedUse(doc([rect({ opacity: 0.7, blend: "multiply" })]))).toEqual([]);
     const figure = rect({ geometry: { kind: "preset", name: "star" }, fills: [{ kind: "image", src: "data:image/png;base64,AA==" }] } as Partial<Layer>);
-    expect(unsupportedUse(doc([figure]))).toEqual(["figure:image"]);
+    expect(unsupportedUse(doc([figure]))).toEqual([]);
+  });
+
+  it("a pattern whose tile is the layer's own drawing (a 1.x background slot) is not painted yet", () => {
+    const tile = rect({ geometry: { kind: "paths", paths: [{ d: "M0 0H160V160H0Z" }] }, fills: [{ kind: "pattern", pattern: { preset: "stars" } }] } as Partial<Layer>);
+    expect(unsupportedUse(doc([tile]))).toEqual(["paint:pattern-tile"]);
+    expect(unsupportedUse(doc([rect({ fills: [{ kind: "pattern", pattern: { preset: "stars" } }] } as Partial<Layer>)]))).toEqual([]);
   });
 
   it("looks inside groups, and into the canvas background", () => {

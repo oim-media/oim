@@ -5,6 +5,7 @@
  */
 
 import { geometryOutline, type Layer, type Outline, type PaintColors } from "@oim-media/core/v2";
+import { silhouetteClip, silhouettePath } from "./silhouette-clip.js";
 import { colorStrokeOf } from "./strokes.js";
 
 const SVG = "http://www.w3.org/2000/svg";
@@ -18,6 +19,8 @@ const SVG = "http://www.w3.org/2000/svg";
  */
 export function applyGeometry(el: HTMLElement, layer: Pick<Layer, "geometry" | "fills" | "strokes">, ctx: { colors: PaintColors }): Outline {
   el.querySelectorAll(":scope > svg[data-oim-figure]").forEach((node) => node.remove());
+  // A picture clipped earlier goes back to the layer before the figure is drawn again.
+  el.querySelectorAll(":scope > [data-oim-figure-clip]").forEach((box) => box.replaceWith(...box.querySelectorAll(":scope > img")));
   const outline = geometryOutline(layer.geometry);
   if (outline.round && !outline.silhouette) el.style.borderRadius = "50%";
   const figure = outline.silhouette;
@@ -49,5 +52,18 @@ export function applyGeometry(el: HTMLElement, layer: Pick<Layer, "geometry" | "
   }
   svg.appendChild(shape);
   el.appendChild(svg);
+  clipPictures(el, figure);
   return outline;
+}
+
+/** The pictures of a figure sit in a box clipped by its silhouette, under the stroke drawing. The crop transform stays on the picture, inside the clip. */
+function clipPictures(el: HTMLElement, figure: { d?: string; points?: string; viewBox: string }): void {
+  const pictures = el.querySelectorAll<HTMLImageElement>(":scope > img[data-oim-fill]");
+  if (!pictures.length) return;
+  const { svg, clipPath } = silhouetteClip(el.ownerDocument, { d: silhouettePath(figure), viewBox: figure.viewBox });
+  const box = el.ownerDocument.createElement("div");
+  box.dataset.oimFigureClip = "";
+  Object.assign(box.style, { position: "absolute", left: "0", top: "0", width: "100%", height: "100%", overflow: "hidden", pointerEvents: "none", clipPath });
+  box.append(svg, ...pictures);
+  el.insertBefore(box, el.firstChild);
 }

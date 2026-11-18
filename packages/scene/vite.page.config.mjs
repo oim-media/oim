@@ -21,5 +21,7 @@ export default defineConfig({
     emptyOutDir: false,
     minify: false,
     lib: { entry: 'bench/scene-page.ts', formats: ['es'], fileName: () => 'scene-page.js' },
+    // One file: the gate's page server serves only scene-page.js, and Lottie is a dynamic import.
+    rolldownOptions: { output: { codeSplitting: false } },
   },
 });

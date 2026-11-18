@@ -24,7 +24,7 @@ import type { OimDocument } from '../../../core/src/v2/schema.js';
 import { sanitizeHtml, sanitizeFontFamily } from '../render/security.js';
 import { verifyInWorker, type WorkerReply } from '../render/verify-worker.js';
 import { extractOIM } from '../../../core/src/binary.js';
-import { validateOimMetadata, verifyMetadataSignature, securityVerdict, isRefused, ALTERED_FILE_ERROR, isSandboxImageSrc, keyExpiredForFile, verifyPosterSeal } from '../render/security.js';
+import { validateOimMetadata, verifyMetadataSignature, securityVerdict, isRefused, ALTERED_FILE_ERROR, isSandboxImageSrc, keyExpiredForFile } from '../render/security.js';
 import {
   computeLayerComposition,
   getFilterCss,
@@ -196,8 +196,7 @@ export class ImageEngine extends LegacyRenderer {
       // Render the image canvas instantly so the base PNG displays with no delay
       shadow.innerHTML =
         '<div class="oim-player-viewport oim-fit-' + this.fit + '" part="viewport">' +
-          // A URL gets its src below, once the poster is read and verified.
-          '<img class="oim-player-base" crossorigin="anonymous"' + (typeof src === 'string' ? '' : ' src="' + this.imageUrl + '"') + ' alt="" aria-hidden="true" part="base" />' +
+          '<img class="oim-player-base" crossorigin="anonymous" alt="" aria-hidden="true" part="base" />' +
           '<div class="oim-layer-overlay" aria-hidden="true" part="overlay"></div>' +
         '</div>';
 
@@ -282,39 +281,9 @@ export class ImageEngine extends LegacyRenderer {
       this.updateScale();
       this._bindViewportEvents();
 
-      if (typeof src === 'string' && imgNode) {
-        // Poster first (spec 15 Nov): read the file up to its OIM_Seal, verify the
-        // image against it, paint it. Without a seal (older files) the whole file
-        // is read and verified as before.
-        const poster = await fileCache.readPoster(src);
-        if (poster) {
-          const verdict = await verifyPosterSeal(poster.seal, poster.imageHash);
-          if (verdict === 'invalid') {
-            shadow.innerHTML = '<div class="oim-player-error oim-player-refused" part="error"></div>';
-            injectStyles(shadow);
-            const box = shadow.querySelector('.oim-player-error') as HTMLElement | null;
-            if (box) box.textContent = playerString('tampered', self.lang);
-            host.dispatchEvent(new CustomEvent('error', { detail: new Error(ALTERED_FILE_ERROR) }));
-            return false;
-          }
-          if (verdict === 'expired_key') {
-            try { setFlag(host, 'data-oim-key-retired', 'data-oim-clave-retirada'); } catch (e) {}
-          }
-          this.imageUrl = URL.createObjectURL(poster.png);
-          imgNode.src = this.imageUrl;
-          if (this.poster === 'only') {
-            // The metadata is never downloaded: a still poster needs none.
-            this.securityStatus = verdict === 'ok' ? 'verified' : 'expired_key';
-            viewportNode?.classList.add('oim-viewport--poster', 'oim-viewport--ready');
-            host.dispatchEvent(new CustomEvent('oim:loaded', {
-              detail: { type: 'image', metadata: null, security: this.securityStatus },
-            }));
-            return true;
-          }
-        } else {
-          imgNode.src = src;
-        }
-      }
+      // The base is the file itself: the browser paints a PNG as it arrives and runs
+      // nothing in it. Layers come only after the whole file is verified.
+      if (imgNode) imgNode.src = this.imageUrl ?? '';
 
       // Fetch the blob and extract OIM metadata in the background
       const blobPromise = fileCache.getBlob(src);

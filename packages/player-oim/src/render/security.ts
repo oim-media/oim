@@ -404,35 +404,3 @@ export function validateOimMetadata(json: any): string[] {
 
 export { sanitizeHtml, isSandboxImageSrc, neutralizeExternalCssUrls, requestsOutsideByCss, isSafeImageDataUri, sanitizeFontFamily } from '../../../scene/src/legacy/sanitize.js';
 
-/**
- * The poster seal (OIM_Seal, spec 15 Nov): the image hash signed on its own,
- * read before the metadata so the poster can be verified from a partial read.
- * Same rules as a full file: an altered image is refused, an expired key says so.
- */
-export async function verifyPosterSeal(seal: any, imageHash: string): Promise<'ok' | 'expired_key' | 'invalid'> {
-  if (!seal || seal.v !== 1 || seal.alg !== IMAGE_HASH_ALG) return 'invalid';
-  if (typeof seal.image_hash !== 'string' || typeof seal.signature !== 'string' || typeof seal.key_version !== 'string') return 'invalid';
-  if (!imageHash || seal.image_hash.toLowerCase() !== imageHash.toLowerCase()) return 'invalid';
-  // Sorted keys, as the backend writes the canonical form.
-  const bytes = new TextEncoder().encode(JSON.stringify({ alg: seal.alg, image_hash: seal.image_hash, key_version: seal.key_version, v: seal.v }));
-  try {
-    const raw = atob(seal.signature);
-    const sig = new Uint8Array(raw.length);
-    for (let i = 0; i < raw.length; i++) sig[i] = raw.charCodeAt(i);
-    const check = async (jwk: any) => {
-      const key = await crypto.subtle.importKey('jwk', jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']);
-      return crypto.subtle.verify({ name: 'ECDSA', hash: { name: 'SHA-256' } }, key, sig, bytes);
-    };
-    const jwk = await getPublicKey(seal.key_version);
-    let valid = !!jwk && await check(jwk);
-    if (!valid) {
-      // The pinned key may be stale under the same kid: same retry as full files.
-      const serverJwk = await getServerPublicKey(seal.key_version).catch(() => null);
-      if (serverJwk && (!jwk || serverJwk.x !== jwk.x || serverJwk.y !== jwk.y)) valid = await check(serverJwk);
-    }
-    if (!valid) return 'invalid';
-  } catch {
-    return 'invalid';
-  }
-  return (await keyExpiredForFile({ key_version: seal.key_version })) ? 'expired_key' : 'ok';
-}

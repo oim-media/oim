@@ -37,12 +37,13 @@ describe("animations", () => {
     expect(animationFrames({ on: "enter", preset: "slide-up", duration: 400 }, px)).toEqual(revealFrames("slide-up", true));
   });
 
-  it("scene runs tracks, reveals, named loops and hovers and text entrances; a timer preset is not run yet", () => {
+  it("scene runs tracks, reveals, named loops and hovers and text entrances and timed text; an unknown preset is not run", () => {
     expect(canAnimate({ on: "enter", preset: "slide-up", duration: 400 })).toBe(true);
     expect(canAnimate({ on: "loop", preset: "pulse", duration: 0 })).toBe(true);
     expect(canAnimate({ on: "hover", preset: "grow", duration: 200 })).toBe(true);
     expect(canAnimate({ on: "load", target: "chars", preset: "fade-chars", duration: 0 })).toBe(true);
-    expect(canAnimate({ on: "load", target: "chars", preset: "typewriter", duration: 0 })).toBe(false);
+    expect(canAnimate({ on: "load", target: "chars", preset: "typewriter", duration: 0 })).toBe(true);
+    expect(canAnimate({ on: "load", target: "layer", preset: "typewriter", duration: 0 })).toBe(false);
     expect(canAnimate({ on: "loop", preset: "wobble", duration: 0 })).toBe(false);
   });
 

@@ -63,7 +63,7 @@ describe('unsigned, fixed image', () => {
     const engine = montarConVeredicto('unsigned');
     createdHosts.push(engine.host);
     await engine.load(blobDePrueba());
-    expect(engine.shadow.querySelectorAll('[data-slot-id]')).toHaveLength(0);
+    expect(engine.shadow.querySelectorAll('[data-oim-id]')).toHaveLength(0);
     expect(engine.shadow.querySelector('img')).not.toBeNull();
     expect(engine.host.getAttribute('data-oim-sin-firma')).not.toBeNull();
     expect(engine.host.getAttribute('data-oim-unsigned')).not.toBeNull();
@@ -73,6 +73,6 @@ describe('unsigned, fixed image', () => {
     const engine = montarConVeredicto('image_unsealed');
     createdHosts.push(engine.host);
     await engine.load(blobDePrueba());
-    expect(engine.shadow.querySelectorAll('[data-slot-id]').length).toBeGreaterThan(0);
+    expect(engine.shadow.querySelectorAll('[data-oim-id]').length).toBeGreaterThan(0);
   });
 });

@@ -205,6 +205,8 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     if (typeof el.animate !== "function") return undefined;
     const run = el.animate(frames, timing);
     // At rest a loop is its first frame (an endless run cannot finish); anything else, its last.
+    // A cancelled run rejects its `finished`; nobody awaits it here.
+    run.finished?.catch(() => {});
     if (paused) timing.iterations === Infinity ? run.cancel() : run.finish?.();
     return run;
   };

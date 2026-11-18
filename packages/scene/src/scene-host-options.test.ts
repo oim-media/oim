@@ -33,6 +33,7 @@ describe("what the host decides", () => {
     expect(scene.elementOf("panel")!.style.display).toBe("none");
     expect(onAction).not.toHaveBeenCalled();
     expect(scene.elementOf("btn")!.style.cursor).toBe("");
+    expect(scene.elementOf("btn")!.style.minWidth).toBe("");
   });
 
   it("the host hears each action and can veto it", () => {

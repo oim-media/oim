@@ -2582,7 +2582,7 @@ export class LegacyRenderer {
         el.textContent = n.label;
         // Same action as clicking the painted layer: forward the click to it.
         const fire = function () {
-          const target = self._overlay && self._overlay.querySelector('[data-slot-id="' + CSS.escape(n.slotId) + '"]');
+          const target = self._overlay && self._overlay.querySelector('[data-oim-id="' + CSS.escape(n.slotId) + '"], [data-slot-id="' + CSS.escape(n.slotId) + '"]');
           if (target) (target as HTMLElement).click();
         };
         el.addEventListener('click', fire);

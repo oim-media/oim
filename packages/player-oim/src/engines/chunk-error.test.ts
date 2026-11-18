@@ -39,7 +39,7 @@ describe("a part that does not load", () => {
 
     expect(errors).toEqual([{ code: "chunk", message: expect.stringContaining("vendor/oim-patterns") }]);
     expect(quiet).toHaveBeenCalledWith(expect.any(String), expect.stringContaining("vendor/oim-patterns"));
-    expect(engine._overlay!.querySelector('[data-slot-id="a"]')).not.toBeNull();
+    expect(engine._overlay!.querySelector('[data-oim-id="a"]')).not.toBeNull();
     quiet.mockRestore();
   });
 });

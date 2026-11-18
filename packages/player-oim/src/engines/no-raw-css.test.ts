@@ -56,14 +56,16 @@ const HOSTIL = {
 };
 
 describe("the player does not apply raw CSS from a .oim", () => {
-  it("control: a catalogue animation IS applied", async () => {
-    // Without this, the test below could pass because the animation block
-    // never ran at all.
-    const { host, motor } = mount({ loop: "pulse", hover: "grow" });
+  it("control: the layer IS painted, so the checks below ran on a real render", async () => {
+    const { host, motor } = mount(HOSTIL);
     await motor.renderSlots();
-    const shadow = host.shadowRoot!;
-    expect(shadow.querySelector(".oim-loop-pulse")).not.toBeNull();
-    expect(shadow.querySelector(".oim-hover-grow")).not.toBeNull();
+    expect(host.shadowRoot!.querySelector('[data-oim-id="a"]')?.textContent).toBe("hola");
+  });
+
+  it("nothing of the hostile CSS is anywhere in the player's DOM", async () => {
+    const { host, motor } = mount(HOSTIL);
+    await motor.renderSlots();
+    expect(host.shadowRoot!.innerHTML).not.toContain("tercero.example");
   });
 
   it("custom_keyframes and custom_hover_css do not reach any stylesheet", async () => {

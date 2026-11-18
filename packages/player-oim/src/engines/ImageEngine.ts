@@ -75,12 +75,31 @@ import { resolveMode } from '../../../scene/src/runtime/modes.js';
 import { buildArtisticTextModelFromSlot, generateArtisticTextSvgString } from '../../../scene/src/blocks/artisticText.js';
 import { readEmbeddedFonts, registerEmbeddedFonts, embeddedFontFamily } from '../../../scene/src/blocks/fonts.js';
 import { LegacyRenderer, getTouchDistance, type ImageEngineOptions } from '../../../scene/src/legacy/renderer.js';
+import { mount, type Scene } from '../../../scene/src/scene.js';
+import { upgrade, ensureUpgrade } from '../../../scene/src/runtime/upgrade-entry.js';
+import { ensureFeatures } from '../../../scene/src/runtime/features-entry.js';
+import { featuresOf } from '../../../scene/src/runtime/features.js';
+import type { Layer } from '../../../core/src/v2/schema.js';
 export * from '../../../scene/src/legacy/renderer.js';
 
 /**
  * What the renderer paints: a 2.0 document through its 1.x view, with its references resolved.
  * Built on the page, not in the worker: the view's cache lives on the page's own objects.
  */
+/** The 2.0 document the scene paints: a 2.0 file with its references resolved, a 1.x file upgraded. */
+function sceneDocument(metadata: any): OimDocument {
+  if (!isV2(metadata)) return upgrade(structuredClone(metadata)).document;
+  const resolved = resolveRefs(structuredClone(metadata) as OimDocument);
+  resolved.missing.forEach((id) => console.warn(`[OimPlayer] resource "${id}" is not in the document`));
+  return resolved.document;
+}
+
+/** Every layer by id, groups' children included: what an oim:action names. */
+function layersById(layers: Layer[], into = new Map<string, Layer>()): Map<string, Layer> {
+  for (const l of layers) { into.set(l.id, l); if (l.children) layersById(l.children, into); }
+  return into;
+}
+
 function paintable(metadata: any): any {
   if (!isV2(metadata)) return metadata;
   const resolved = resolveRefs(metadata as OimDocument);
@@ -96,6 +115,82 @@ export class ImageEngine extends LegacyRenderer {
   fileMetadata: any = null;
   // Set for a 2.0 poster (no base layer) until its scene is up: its base picture then fades out.
   private _posterFade = false;
+  /** What paints the layers. The 1.x renderer above it keeps only the shell until it is removed. */
+  _scene: Scene | null = null;
+
+  // A partial repaint (onlyIds) is a full one: the scene updates its layers itself.
+  async renderSlots(_options?: { onlyIds?: Set<string> }): Promise<void> {
+    // What the file holds; a host that set only `metadata` (the 1.x view) gets that, upgraded.
+    const file = this.fileMetadata ?? this.metadata;
+    if (!file || !this.host || this.poster === 'only' || !this._overlay) return;
+    const overlay = this._overlay;
+    if (this.showSlots) {
+      const report = (err: unknown) => {
+        const message = String((err as Error)?.message ?? err);
+        console.error('[OimPlayer] A part of the player did not load; the work is shown without it.', message);
+        this.host.dispatchEvent(new CustomEvent('oim:error', { detail: { code: 'chunk', message } }));
+      };
+      await ensureUpgrade().catch(report);
+      const doc = sceneDocument(file);
+      await ensureFeatures(featuresOf([file, doc.layers])).catch(report);
+      const byId = layersById(doc.layers);
+      this._scene?.destroy();
+      overlay.innerHTML = '';
+      this._scene = mount(overlay, doc, {
+        language: this.lang,
+        palette: this.allowDynamicColors ? this.host.getAttribute('palette') ?? undefined : undefined,
+        paused: this._paused,
+        allowLottie: this.allowLottie,
+        disableActions: this.disableActions,
+        disableAnimations: this.disableAnimations,
+        registerFonts: false,
+        onAction: ({ source, trigger, actions }) => {
+          // The detail carries only identifiers the author put in the file; preventDefault() vetoes the local effect.
+          const event = new CustomEvent('oim:action', {
+            cancelable: true,
+            detail: { slot: source, name: byId.get(source)?.name, trigger: trigger === 'press' ? 'click' : trigger, targets: actions.map((a) => a.target), types: actions.map((a) => a.type) },
+          });
+          this.host.dispatchEvent(event);
+          return !event.defaultPrevented;
+        },
+      });
+    } else {
+      this._scene?.destroy();
+      this._scene = null;
+      overlay.innerHTML = '';
+    }
+    this._buildA11y();
+    this.updateViewportSize();
+    this.updateScale();
+    this._viewport?.classList.add('oim-viewport--ready');
+    this.sceneReady();
+  }
+
+  applyPalette(): void {
+    super.applyPalette();
+    // The scene bakes the palette into its root and its images: a new palette is a new scene.
+    if (this._scene) void this.renderSlots();
+  }
+
+  setLang(lang: string): void {
+    if (!this._scene) return super.setLang(lang);
+    if (this.lang === lang) return;
+    this.lang = lang;
+    this.host.setAttribute('lang', lang);
+    this._buildA11y();
+    this._scene.setMode({ language: lang });
+    this.host.dispatchEvent(new CustomEvent('oim:langchange', { detail: { lang } }));
+  }
+
+  play(): void {
+    super.play();
+    if (!this._isStill()) this._scene?.play();
+  }
+
+  pause(): void {
+    super.pause();
+    this._scene?.pause();
+  }
 
   constructor(host: HTMLElement, opts?: ImageEngineOptions) {
     super();
@@ -134,6 +229,8 @@ export class ImageEngine extends LegacyRenderer {
   }
 
   destroy(): void {
+    this._scene?.destroy();
+    this._scene = null;
     if (this.imageUrl) URL.revokeObjectURL(this.imageUrl);
     if (this._resizeObserver) {
       this._resizeObserver.disconnect();

@@ -1,0 +1,49 @@
+{
+  "description": "Generative fill: stacked waves, seed 7, five layers, a two-stop palette over a visible dark background.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "reedit": "author_only",
+  "slots": [
+    {
+      "id": "waves",
+      "type": "geo",
+      "position": [
+        12.5,
+        16.6667
+      ],
+      "name": "Waves",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "75.0cqw",
+        "height": "50.0cqw",
+        "fillType": "generative",
+        "geoShape": "rectangle",
+        "fillGenerative": {
+          "colors": {
+            "background": "#0f172a",
+            "backgroundVisible": true,
+            "direction": "forward",
+            "mode": "palette",
+            "stops": [
+              "#f59e0b",
+              "#7c3aed"
+            ]
+          },
+          "generatorId": "stacked-waves",
+          "params": {
+            "amplitude": 0.5,
+            "frequency": 4,
+            "layers": 5
+          },
+          "seed": 7
+        }
+      }
+    }
+  ]
+}

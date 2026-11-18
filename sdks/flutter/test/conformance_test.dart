@@ -29,6 +29,9 @@ const delEstilo = [
   // 4.6 artistic text, vector artistic-text.
   'artisticPreset', 'extrusionDepth', 'extrusionAngle', 'extrusionColor', 'extrusionShading', 'curveAmount', 'curveType',
   'outerStrokeColor', 'outerStrokeWidth', 'innerStrokeColor', 'innerStrokeWidth', 'textGradientType',
+  // Phase 2 group C: the blocks scene learns to paint.
+  'effects', 'fillGenerative', 'marks', 'textDecoration', 'textHighlight', 'dropCap',
+  'maskMode', 'maskShape', 'textAnimationType',
 ];
 
 Map<String, dynamic> projectCanonicalOutput(Map<String, dynamic> m) {

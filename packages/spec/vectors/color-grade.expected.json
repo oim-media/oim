@@ -1,0 +1,64 @@
+{
+  "description": "Colour grade (4.x effects): a warm-vintage grade at 80 on a photo frame and a cool-cinema grade at 50 on a solid shape.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "reedit": "author_only",
+  "slots": [
+    {
+      "id": "graded-photo",
+      "type": "geo",
+      "position": [
+        7.5,
+        13.3333
+      ],
+      "name": "Graded photo",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "40.0cqw",
+        "height": "55.0cqw",
+        "fillImage": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGN4nh8IRwzEcQC5Ehpxr683xgAAAABJRU5ErkJggg==",
+        "fillType": "image",
+        "geoShape": "rectangle",
+        "effects": [
+          {
+            "enabled": true,
+            "intensity": 80,
+            "preset": "warm-vintage",
+            "type": "color-grade"
+          }
+        ]
+      }
+    },
+    {
+      "id": "graded-shape",
+      "type": "geo",
+      "position": [
+        55,
+        13.3333
+      ],
+      "name": "Graded shape",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "37.5cqw",
+        "height": "55.0cqw",
+        "fillColor": "#3b82f6",
+        "effects": [
+          {
+            "enabled": true,
+            "intensity": 50,
+            "preset": "cool-cinema",
+            "type": "color-grade"
+          }
+        ]
+      }
+    }
+  ]
+}

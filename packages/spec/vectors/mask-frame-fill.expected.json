@@ -39,7 +39,9 @@
       "style": {
         "width": "37.5cqw",
         "height": "25.0cqw",
-        "fillType": "gradient"
+        "fillType": "gradient",
+        "maskMode": "window",
+        "maskShape": "arch"
       }
     }
   ]

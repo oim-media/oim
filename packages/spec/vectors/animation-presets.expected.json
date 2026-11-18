@@ -1,0 +1,82 @@
+{
+  "description": "Named animation presets at rest: a pulse loop, a grow hover and a fade-chars text entrance; painted with animations disabled, each shows its resting frame.",
+  "canvas": {
+    "natural_height": 600,
+    "natural_width": 800
+  },
+  "signed": true,
+  "key_version": "v1",
+  "reedit": "author_only",
+  "fonts": [
+    {
+      "family": "Inter",
+      "name": "oim-26dd479f-Inter",
+      "weight": 700,
+      "style": "normal",
+      "format": "woff"
+    }
+  ],
+  "slots": [
+    {
+      "id": "pulse",
+      "type": "geo",
+      "position": [
+        10,
+        13.3333
+      ],
+      "name": "Pulse",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "25.0cqw",
+        "height": "25.0cqw",
+        "fillColor": "#22c55e",
+        "animation": {
+          "loop": "pulse"
+        }
+      }
+    },
+    {
+      "id": "grow",
+      "type": "geo",
+      "position": [
+        65,
+        13.3333
+      ],
+      "name": "Grow",
+      "content": {
+        "es": ""
+      },
+      "style": {
+        "width": "25.0cqw",
+        "height": "25.0cqw",
+        "fillColor": "#3b82f6",
+        "animation": {
+          "hover": "grow"
+        }
+      }
+    },
+    {
+      "id": "chars",
+      "type": "text",
+      "position": [
+        10,
+        63.3333
+      ],
+      "name": "Chars",
+      "content": {
+        "es": "Fuente"
+      },
+      "style": {
+        "width": "80.0cqw",
+        "height": "12.5cqw",
+        "fontSize": "8.0cqw",
+        "fillColor": "#18181b",
+        "fontFamily": "Inter",
+        "fontWeight": "700",
+        "textAnimationType": "fade-chars"
+      }
+    }
+  ]
+}

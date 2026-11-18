@@ -15,7 +15,6 @@ import { canAnimate } from "./blocks/animations.js";
 
 export const UNSUPPORTED_BLOCKS = [
   "animation:preset",
-  "lottie",
   "mask",
   "paint:pattern-tile",
   "paint:texture",
@@ -31,7 +30,6 @@ const paintUses = (paints: readonly Paint[] | undefined): UnsupportedBlock[] =>
 
 const layerUses = (layer: Layer, nested = false): UnsupportedBlock[] => {
   const uses: UnsupportedBlock[] = [...paintUses(layer.fills), ...(layer.strokes ?? []).flatMap((s) => paintUses([s.paint as Paint]))];
-  if (layer.type === "lottie") uses.push("lottie");
   // Tracks and the reveal presets run; the named loops, hovers and text entrances wait for their painter.
   if (layer.animations?.some((a) => !canAnimate(a))) uses.push("animation:preset");
   // 1.x tiled a background slot's own drawing; 2.0 has no field for a drawn tile yet, so the upgrade leaves it as paths.

@@ -12,6 +12,7 @@ import { effectsToStyle } from "./blocks/effects.js";
 import { applyFills, pictureNode } from "./blocks/fills.js";
 import { applyGeometry } from "./blocks/geometry.js";
 import { defineGrade, defineGrain, defsOf } from "./blocks/grain.js";
+import { lottieData, playLottie, type LottieRun } from "./blocks/lottie.js";
 import { duotoneFilter } from "./blocks/duotone.js";
 import { applyCutoutMask, applyWindowMask } from "./blocks/mask.js";
 import { applyArtistic } from "./blocks/artistic.js";
@@ -36,6 +37,8 @@ export type SceneOptions = {
   /** Until 2.0 files carry a poster, the 1.x base image the layers compose on. */
   base?: { src: string } | null;
   paused?: boolean;
+  /** Lottie runs third-party JSON: off unless the host allows it, as the player's allow-lottie. */
+  allowLottie?: boolean;
 };
 
 export type Scene = {
@@ -145,6 +148,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
    * (their field names); without it every block is painted. A figure depends on
    * its fills, geometry and strokes together, so any of them repaints the figure.
    */
+  const lotties = new Map<string, LottieRun>();
   const paintBlocks = (el: HTMLElement, layer: Layer, only?: ReadonlySet<string>) => {
     const has = (...keys: string[]) => !only || keys.some((k) => only.has(k));
     const isText = layer.type === "text";
@@ -163,6 +167,12 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     if (has("strokes", "geometry", "fills")) applyStrokes(el, layer, { colors, isText, vector: !!outline.silhouette, rounded: !!outline.round || [layer.corners ?? 0].flat().some((c) => c > 0) });
     // A window mask paints a frame around its outline instead of its own box; a cutout is not painted yet.
     if (layer.mask && layer.mask.mode !== "cutout" && has("mask", "fills", "strokes", "geometry", "box")) applyWindowMask(el, layer, { canvas: { width, height }, colors });
+    if (layer.type === "lottie" && has("lottie")) {
+      lotties.get(layer.id)?.destroy();
+      lotties.delete(layer.id);
+      const data = _options.allowLottie ? lottieData(layer.lottie?.src) : undefined;
+      if (data) lotties.set(layer.id, playLottie(el, data, { loop: layer.lottie?.loop ?? true, paused: () => paused }));
+    }
     if (layer.type === "image" && has("image")) {
       el.querySelectorAll(":scope > img[data-oim-fill]").forEach((node) => node.remove());
       const picture = pictureOf(layer.image, lang);
@@ -306,13 +316,15 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
       } else pendingMoves.set(id, box);
     },
     setMode: notYet("setMode"),
-    play() { paused = false; for (const a of animations()) a.play(); },
-    pause() { paused = true; for (const a of animations()) a.pause(); },
+    play() { paused = false; for (const a of animations()) a.play(); lotties.forEach((l) => l.play()); },
+    pause() { paused = true; for (const a of animations()) a.pause(); lotties.forEach((l) => l.pause()); },
     seek: notYet("seek"),
     destroy() {
       if (frame !== undefined) cancelAnimationFrame(frame);
       frame = undefined;
       pendingMoves.clear();
+      lotties.forEach((l) => l.destroy());
+      lotties.clear();
       letterbox.remove();
       entries.clear();
     },

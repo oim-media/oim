@@ -4,6 +4,10 @@
 contract version. The full history, for all packages, is in the repository's
 [CHANGELOG.md](https://github.com/oim-media/oim/blob/main/CHANGELOG.md).
 
+## 1.32.5
+
+- Version aligned with the 1.32.5 release; no SDK changes.
+
 ## 1.32.4
 
 - Version aligned with the 1.32.4 release; no SDK changes.

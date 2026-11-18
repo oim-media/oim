@@ -41,6 +41,14 @@ export type SceneOptions = {
   paused?: boolean;
   /** Lottie runs third-party JSON: off unless the host allows it, as the player's allow-lottie. */
   allowLottie?: boolean;
+  /** The host's disable-actions: layers take no press or hover. */
+  disableActions?: boolean;
+  /** The host's disable-animations (or the reader's reduced motion): every animation rests and play does not start it. */
+  disableAnimations?: boolean;
+  /** Off when the host registers the file's fonts itself. */
+  registerFonts?: boolean;
+  /** Each action before it runs, with the layer that fired it; false vetoes it (the player's cancelable oim:action). */
+  onAction?: (action: StateAction, source: string) => boolean;
 };
 
 export type Scene = {
@@ -89,7 +97,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   const { colors, active } = sceneColors(document.variables, _options.palette, prefersDark);
   // The file's own fonts, under their own names; a face that fails to load falls back to the family.
   const embedded = readEmbeddedFonts(document);
-  void registerEmbeddedFonts(embedded);
+  if (_options.registerFonts !== false) void registerEmbeddedFonts(embedded);
   const fonts = new Map(embedded.map((e) => [e.family, e.name]));
   // The active palette's roles become custom properties, so a colour bound to a role is a var() and a mode change needs no repaint.
   for (const role of DYNAMIC_COLOR_ROLES) {
@@ -106,7 +114,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   Object.assign(backdrop.style, { position: "absolute", inset: "0", pointerEvents: "none" });
   root.appendChild(backdrop);
   applyFills(backdrop, document.canvas, { colors, isText: false, width, height, size: (px) => `${+((px / width) * 100).toFixed(4)}% ${+((px / height) * 100).toFixed(4)}%`, len: canvasLen });
-  const lang = languageOf(document.languages, _options.language ?? (typeof navigator === "undefined" ? undefined : navigator.language));
+  let lang = languageOf(document.languages, _options.language ?? (typeof navigator === "undefined" ? undefined : navigator.language));
 
   /** The effects the scene paints (blur, shadow, glow, backdrop); grain, texture and duotone wait for their own painter (see coverage). */
   const applyEffects = (el: HTMLElement, layer: Layer) => {
@@ -189,7 +197,8 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   };
 
   // --- time: every animation is WAAPI or CSS, so play/pause reach them all and no frame loop is left running.
-  let paused = !!_options.paused;
+  const still = !!_options.disableAnimations;
+  let paused = still || !!_options.paused;
   const timers: TimedTextAnimation[] = [];
   const len = (px: number) => `${+((px / width) * 100).toFixed(4)}cqw`;
   const animate = (el: HTMLElement, frames: Keyframe[], timing: KeyframeAnimationOptions): Animation | undefined => {
@@ -277,12 +286,13 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   };
 
   /** Runs a chain of actions in order; a hover's leave reverts its show/hide/toggle. */
-  const runActions = (actions: StateAction[], revert: boolean) => {
+  const runActions = (source: string) => (actions: StateAction[], revert: boolean) => {
     const flip: Record<string, string> = { show: "hide", hide: "show" };
     const list = revert ? actions.filter((a) => a.type !== "setText" && a.type !== "play").map((a) => ({ ...a, type: flip[a.type] ?? a.type })).reverse() : actions;
     for (const action of list) {
       const entry = entries.get(action.target);
       if (!entry) continue;
+      if (!revert && _options.onAction && _options.onAction(action, source) === false) continue;
       if (action.type === "play") {
         for (const a of animationsOf(entry.layer, "action")) if (!paused) animate(entry.el, animationFrames(a, len), { ...animationTiming(a), fill: "none" });
         continue;
@@ -306,7 +316,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     paintBlocks(el, layer);
     entries.set(layer.id, { el, layer, frame });
     applyLoop(el, layer, width, len);
-    bindInteractions(el, layer.interactions, runActions);
+    if (!_options.disableActions) bindInteractions(el, layer.interactions, runActions(layer.id));
     bindAnimations(el, layer);
     for (const child of layer.children ?? []) paint(child, el, layer.box as Frame); // only groups have children, and a group is always sized
     parent.appendChild(el);
@@ -351,8 +361,13 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
         frame = requestAnimationFrame(flushMoves);
       } else pendingMoves.set(id, box);
     },
-    setMode: notYet("setMode"),
-    play() { paused = false; for (const a of animations()) a.play(); lotties.forEach((l) => l.play()); for (const t of timers) t.play(); },
+    setMode({ language }) {
+      // shortcut: only the language; a palette change still needs a new mount (baked colours), until a host asks for it live.
+      if (language === undefined) return;
+      lang = languageOf(document.languages, language);
+      for (const { el, layer } of entries.values()) if (layer.type === "text" || layer.type === "image") paintBlocks(el, layer, new Set(["text", "image"]));
+    },
+    play() { if (still) return; paused = false; for (const a of animations()) a.play(); lotties.forEach((l) => l.play()); for (const t of timers) t.play(); },
     pause() { paused = true; for (const a of animations()) a.pause(); lotties.forEach((l) => l.pause()); for (const t of timers) t.pause(); },
     seek: notYet("seek"),
     destroy() {

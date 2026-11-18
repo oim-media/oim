@@ -24,7 +24,6 @@ export const UNSUPPORTED_BLOCKS = [
   "motion",
   "paint:generative",
   "paint:texture",
-  "text:artistic",
   "text:dropCap",
   "text:decoration",
   "text:highlight",
@@ -56,7 +55,6 @@ const layerUses = (layer: Layer): UnsupportedBlock[] => {
   if (layer.interactions?.length) uses.push("interactions");
   const text = layer.text;
   if (text) {
-    if (text.artistic) uses.push("text:artistic");
     if (text.dropCap) uses.push("text:dropCap");
     if (text.decoration) uses.push("text:decoration");
     if (text.highlight) uses.push("text:highlight");

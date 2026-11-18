@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest";
 import { buildLayerGrainFilter, DYNAMIC_COLOR_ROLES, mediaFilterCss } from "@oim-media/core";
 import { mount } from "./index.js";
 import { sceneColors } from "./scene.js";
+import { buildArtisticTextModelFromLayer, generateArtisticTextSvgString } from "./blocks/artisticText.js";
 
 const shape = (o: Partial<Layer> = {}): Layer => ({
   id: "a",
@@ -231,6 +232,16 @@ describe("a filter clips its backdrop to its figure", () => {
     const text = { id: "t", type: "text", box: { x: 0, y: 0, width: 100, height: 20 }, text: { content: { es: "Hola" }, font: { family: "Inter", size: 16 } } } as Layer;
     mount(host, { ...doc([text]), fonts } as OimDocument);
     expect(host.querySelector<HTMLElement>('[data-oim-id="t"]')!.style.fontFamily.replace(/["']/g, "")).toBe("oim-f8947d8f-Inter, Inter, sans-serif");
+  });
+
+  it("an artistic text is the SVG the artistic-text painter writes for it", () => {
+    const host = document.createElement("div");
+    const art = { id: "w", type: "text", box: { x: 0, y: 0, width: 400, height: 200 }, text: { content: { es: "Hola" }, font: { family: "Inter", size: 40 }, artistic: { curve: { type: "arc", amount: 30 } } } } as Layer;
+    mount(host, doc([art]));
+    const svg = host.querySelector('[data-oim-id="w"] svg')!;
+    const markup = generateArtisticTextSvgString(buildArtisticTextModelFromLayer(art as never, "es", (v) => v as string), "w");
+    expect(svg.outerHTML).toBe(new DOMParser().parseFromString(markup, "image/svg+xml").documentElement.outerHTML);
+    expect(host.querySelector<HTMLElement>('[data-oim-id="w"]')!.childNodes[0].nodeType).not.toBe(Node.TEXT_NODE);
   });
 });
 

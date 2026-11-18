@@ -71,7 +71,7 @@ import { slotClipping } from '../../../core/src/clipping.js';
 import { whatTheReaderCannotDo, describeMissing, CONTRACT_VERSION, PLAYER_CAPABILITIES } from '../../../core/src/compatibility.js';
 import { bindStates, resolveActions, applyMinHitArea, type ActionRunner, type RegisterOutsideTap } from './states.js';
 import { resolveMode } from './modes.js';
-import { buildArtisticTextModelFromLayer, generateArtisticTextSvgString } from './artisticText.js';
+import { buildArtisticTextModelFromLayer, generateArtisticTextSvgString } from '../blocks/artisticText.js';
 import { readEmbeddedFonts, registerEmbeddedFonts, embeddedFontFamily } from '../blocks/fonts.js';
 
 /**

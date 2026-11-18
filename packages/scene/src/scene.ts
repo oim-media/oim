@@ -12,6 +12,7 @@ import { effectsToStyle } from "./blocks/effects.js";
 import { applyFills, pictureNode } from "./blocks/fills.js";
 import { applyGeometry } from "./blocks/geometry.js";
 import { defineGrain } from "./blocks/grain.js";
+import { applyArtistic } from "./blocks/artistic.js";
 import { readEmbeddedFonts, registerEmbeddedFonts } from "./blocks/fonts.js";
 import { pictureOf } from "./blocks/image.js";
 import { applyStrokes } from "./blocks/strokes.js";
@@ -115,7 +116,10 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     if (has("fills")) applyFills(el, layer, { colors, isText });
     if (has("opacity", "blend")) applyCompositing(el, layer);
     if (has("effects")) applyEffects(el, layer);
-    if (layer.type === "text" && has("text")) applyText(el, layer, { lang, canvasWidth: width, fonts });
+    if (layer.type === "text" && has("text")) {
+      if (layer.text?.artistic) applyArtistic(el, layer, { lang, literal: colors.literal, fonts });
+      else applyText(el, layer, { lang, canvasWidth: width, fonts });
+    }
     const figure = has("fills", "geometry", "strokes");
     const outline = layer.type === "shape" ? (figure ? applyGeometry(el, layer, { colors }) : geometryOutline(layer.geometry)) : geometryOutline(undefined);
     if (has("effects", "geometry")) el.style.clipPath = filterClip(layer, outline);

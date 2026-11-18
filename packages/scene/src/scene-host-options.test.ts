@@ -39,7 +39,7 @@ describe("what the host decides", () => {
     const onAction = vi.fn(() => false);
     const scene = mount(document.createElement("div"), showOnPress(), { onAction });
     scene.elementOf("btn")!.click();
-    expect(onAction).toHaveBeenCalledWith({ type: "show", target: "panel" }, "btn");
+    expect(onAction).toHaveBeenCalledWith({ source: "btn", trigger: "press", actions: [{ type: "show", target: "panel" }] });
     expect(scene.elementOf("panel")!.style.display).toBe("none");
     onAction.mockReturnValue(true);
     scene.elementOf("btn")!.click();

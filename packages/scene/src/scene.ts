@@ -47,8 +47,8 @@ export type SceneOptions = {
   disableAnimations?: boolean;
   /** Off when the host registers the file's fonts itself. */
   registerFonts?: boolean;
-  /** Each action before it runs, with the layer that fired it; false vetoes it (the player's cancelable oim:action). */
-  onAction?: (action: StateAction, source: string) => boolean;
+  /** Each press or hover before its actions run, with the layer that fired it; false vetoes them (the player's cancelable oim:action). */
+  onAction?: (fired: { source: string; trigger: string; actions: StateAction[] }) => boolean;
 };
 
 export type Scene = {
@@ -286,13 +286,13 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   };
 
   /** Runs a chain of actions in order; a hover's leave reverts its show/hide/toggle. */
-  const runActions = (source: string) => (actions: StateAction[], revert: boolean) => {
+  const runActions = (source: string) => (actions: StateAction[], revert: boolean, trigger = "press") => {
+    if (!revert && _options.onAction && _options.onAction({ source, trigger, actions }) === false) return;
     const flip: Record<string, string> = { show: "hide", hide: "show" };
     const list = revert ? actions.filter((a) => a.type !== "setText" && a.type !== "play").map((a) => ({ ...a, type: flip[a.type] ?? a.type })).reverse() : actions;
     for (const action of list) {
       const entry = entries.get(action.target);
       if (!entry) continue;
-      if (!revert && _options.onAction && _options.onAction(action, source) === false) continue;
       if (action.type === "play") {
         for (const a of animationsOf(entry.layer, "action")) if (!paused) animate(entry.el, animationFrames(a, len), { ...animationTiming(a), fill: "none" });
         continue;

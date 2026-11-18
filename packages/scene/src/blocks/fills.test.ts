@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Layer, Paint } from "@oim-media/core/v2";
+import { paintColors, type Layer, type Paint } from "@oim-media/core/v2";
 import { describe, expect, it } from "vitest";
 import { applyFills, type PaintContext } from "./fills.js";
 
@@ -79,6 +79,19 @@ describe("applyFills", () => {
     const el = document.createElement("div");
     applyFills(el, { fills: [{ kind: "pattern", pattern: { preset: "stars", scale: 1.5, colors: ["#1d4ed8"] } }] }, { ...ctx, size: (px) => `${px / 8}% ${px / 6}%` });
     expect(el.style.backgroundSize).toBe("30% 40%");
+  });
+});
+
+describe("generative fill", () => {
+  it("is drawn for the layer's own size, so a wide layer is not a cropped square", () => {
+    const generative = { generatorId: "stacked-waves", seed: 7, params: {}, colors: { mode: "palette", stops: ["#f59e0b", "#7c3aed"], direction: "forward", background: "#0f172a", backgroundVisible: true } };
+    const paint = (width: number, height: number) => {
+      const el = document.createElement("div");
+      applyFills(el, { fills: [{ kind: "generative", generative }] } as never, { colors: paintColors({}), isText: false, width, height });
+      return decodeURIComponent(el.style.backgroundImage);
+    };
+    expect(paint(600, 400)).toContain(`width="600"`);
+    expect(paint(600, 400)).not.toBe(paint(400, 400));
   });
 });
 

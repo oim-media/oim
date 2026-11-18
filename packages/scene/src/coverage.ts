@@ -19,7 +19,6 @@ export const UNSUPPORTED_BLOCKS = [
   "effect:filter",
   "lottie",
   "mask",
-  "paint:generative",
   "paint:pattern-tile",
   "paint:texture",
   "text:dropCap",
@@ -32,7 +31,6 @@ export type UnsupportedBlock = (typeof UNSUPPORTED_BLOCKS)[number];
 const paintUses = (paints: readonly Paint[] | undefined): UnsupportedBlock[] =>
   (paints ?? []).flatMap((paint): UnsupportedBlock[] => {
     if (!("kind" in paint)) return [];
-    if (paint.kind === "generative") return ["paint:generative"];
     if (paint.kind === "texture") return ["paint:texture"];
     return [];
   });

@@ -92,7 +92,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   for (const block of unsupportedUse(document)) console.warn(`[oim scene] "${block}" is not painted yet; it is ignored`);
 
   // The root is the canvas: a tile is a share of its width and height.
-  applyFills(root, document.canvas, { colors, isText: false, size: (px) => `${+((px / width) * 100).toFixed(4)}% ${+((px / height) * 100).toFixed(4)}%` });
+  applyFills(root, document.canvas, { colors, isText: false, width, height, size: (px) => `${+((px / width) * 100).toFixed(4)}% ${+((px / height) * 100).toFixed(4)}%` });
   const lang = languageOf(document.languages, _options.language ?? (typeof navigator === "undefined" ? undefined : navigator.language));
 
   /** The effects the scene paints (blur, shadow, glow, backdrop); grain, texture and duotone wait for their own painter (see coverage). */
@@ -145,7 +145,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   const paintBlocks = (el: HTMLElement, layer: Layer, only?: ReadonlySet<string>) => {
     const has = (...keys: string[]) => !only || keys.some((k) => only.has(k));
     const isText = layer.type === "text";
-    if (has("fills")) applyFills(el, layer, { colors, isText, size: tileSize });
+    if (has("fills", "box")) applyFills(el, layer, { colors, isText, size: tileSize, width: layer.box.width, height: layer.box.height });
     if (has("opacity", "blend")) applyCompositing(el, layer);
     if (has("visible")) el.style.display = layer.visible === false ? "none" : "";
     if (has("effects")) applyEffects(el, layer);

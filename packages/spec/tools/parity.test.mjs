@@ -34,6 +34,9 @@ test('orphan golden fails', () => assert.match(why(setup({ vectors: ['a'], rende
 
 test('vector without golden fails', () => assert.match(why(setup({ goldens: ['a'] })), /b: no golden for/));
 
+test('a vector the renderer skips needs no golden yet', () =>
+  assert.deepEqual(setup({ goldens: ['a'], renders: { a: white() }, skipped: { b: ['mask'] } }).failures, []));
+
 test('mismatch fails and writes a diff png', () => {
   const r = setup({ renders: { a: white(), b: black() } });
   assert.match(why(r), /^b: /);

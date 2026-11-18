@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { verifyPosterSeal } from './security';
 import { EMBEDDED_KEYS } from './keys';
 
@@ -27,8 +27,10 @@ beforeAll(async () => {
   const pair = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
   priv = pair.privateKey;
   EMBEDDED_KEYS.push({ kid: KID, jwk: await crypto.subtle.exportKey('jwk', pair.publicKey) } as any);
+  // A refused seal retries with the server's key: offline here, or CI waits on the real network and times out.
+  vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('offline'); }));
 });
-afterAll(() => { EMBEDDED_KEYS.pop(); });
+afterAll(() => { EMBEDDED_KEYS.pop(); vi.unstubAllGlobals(); });
 
 describe('verifyPosterSeal', () => {
   it('a seal signed for this image is valid', async () => {

@@ -97,7 +97,7 @@ jobs:
         run: |
           cd packages/spec
           OIM_VECTORS=vectors-2 node tools/render-web-goldens.mjs "$RUNNER_TEMP/parity/scene" --renderer scene --suffix ""
-          node tools/parity.mjs "$RUNNER_TEMP/parity/scene" --renderer scene --out "$RUNNER_TEMP/parity/diff/scene"
+          node tools/parity.mjs "$RUNNER_TEMP/parity/scene" --renderer scene --golden-dir vectors-2/golden --vectors-dir vectors-2 --out "$RUNNER_TEMP/parity/diff/scene"
       - uses: ./.github/actions/setup-flutter
       - name: Flutter against the goldens
         run: |

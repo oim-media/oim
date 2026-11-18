@@ -92,6 +92,8 @@ export const patternSchema = z
     svgs: z.array(z.string()).max(16).optional(),
     fit: z.string().max(32).optional(),
     motion: patternMotion.optional(),
+    /** The tile is this drawing (a 1.x background's own SVG); with it, preset and svgs are ignored. */
+    tile: z.lazy(() => z.object({ viewBox: z.array(z.number()).length(4), paths: z.array(pathEntry).min(1).max(64) }).strict()).optional(),
   })
   .strict();
 

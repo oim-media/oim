@@ -41,7 +41,8 @@ const layerUses = (layer: Layer, nested = false): UnsupportedBlock[] => {
   if (layer.type === "lottie") uses.push("lottie");
   // Tracks and the reveal presets run; the named loops, hovers and text entrances wait for their painter.
   if (layer.animations?.some((a) => !canAnimate(a))) uses.push("animation:preset");
-  // 1.x tiled a background slot's own drawing; 2.0 has no field for a drawn tile yet, so the upgrade leaves it as paths.
+  // shortcut: a draft 2.0 file kept a background's drawing as its paths, which cannot be told from an icon cut to its
+  // paths; both wait until the vectors carry `pattern.tile` (re-signed), then this rule goes.
   if (layer.geometry?.kind === "paths" && (layer.fills ?? []).some((p) => "kind" in p && p.kind === "pattern")) uses.push("paint:pattern-tile");
   for (const fx of layer.effects ?? []) uses.push(...effectUses(fx));
   // A window mask is painted, and a cutout at the top level; a cutout inside a group is not yet.

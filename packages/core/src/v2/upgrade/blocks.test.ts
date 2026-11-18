@@ -184,6 +184,20 @@ describe("geometry, corners and images", () => {
     expect(layer({ svgRawXml: '<svg viewBox="0 0 24 24"><path d="M3 10h14"/></svg>', fillColor: "transparent" }, "svg")).not.toHaveProperty("fills");
   });
 
+  it("the canvas background's drawing becomes its pattern's tile, on a plain rect", () => {
+    const xml = '<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="4" fill="#ff0000"/></svg>';
+    const bg = layer({ svgRawXml: xml, backgroundType: "pattern", backgroundPatternColor: "#ff0000", backgroundPatternBgColor: "#ffffff" }, "svg", { slot: { id: "background-pattern-slot" } });
+    expect(bg.geometry).toEqual({ kind: "rect" });
+    const paint = bg.fills?.[0] as { pattern: { tile?: { viewBox: number[]; paths: unknown[] } } };
+    expect(paint.pattern.tile?.viewBox).toEqual([0, 0, 20, 20]);
+    expect(paint.pattern.tile?.paths.length).toBe(1);
+    expect(valid({ svgRawXml: xml, backgroundType: "pattern", backgroundPatternColor: "#ff0000" }, "svg", { slot: { id: "background-pattern-slot" } })).toEqual([]);
+    // Any other SVG with a pattern is an icon: the fill is cut to its paths.
+    const icon = layer({ svgRawXml: xml, fillType: "pattern", fillPatternType: "dots" }, "svg");
+    expect(icon.geometry?.kind).toBe("paths");
+    expect((icon.fills?.[0] as { pattern: object }).pattern).not.toHaveProperty("tile");
+  });
+
   it("an SVG layer becomes paths, from svgRawXml or from its content", () => {
     const xml = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M8 1a2 2 0 0 1 2 2"/></svg>';
     const expected = { kind: "paths", viewBox: [0, 0, 24, 24], paths: [{ d: "M8 1a2 2 0 0 1 2 2", fill: "currentColor" }] };

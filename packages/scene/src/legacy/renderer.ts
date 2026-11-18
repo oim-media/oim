@@ -903,7 +903,9 @@ export class LegacyRenderer {
         // 1:1 with the editor: the pattern is a repeating SVG tile
         // (160px * scale in design px) animated via background-position.
         // Baked into a tile: the drawing's colours are the literals the active palette gives.
-        const tileSvg = v2Drawing ? drawingSvg(v2Drawing, drawingLink(v2Own, v2Colors.literal), true) : '';
+        // A 2.0 file carries the tile in its pattern; an older 2.0 view still has it as the layer's paths.
+        const tileGeo = layerPattern?.tile ? { kind: 'paths' as const, ...layerPattern.tile } : v2Drawing;
+        const tileSvg = tileGeo ? drawingSvg(tileGeo, drawingLink(v2Own, v2Colors.literal), true) : '';
         if (tileSvg || layerPattern) {
           paintPattern(slotEl, patternFields, tileSvg);
 

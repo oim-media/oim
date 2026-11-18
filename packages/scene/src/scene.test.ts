@@ -357,6 +357,19 @@ describe("time and interaction", () => {
     expect(calls).toHaveLength(4);
   });
 
+  it("a pattern whose tile is a drawing repeats that drawing, recoloured, at 160 canvas units a side", () => {
+    const scene = mount(document.createElement("div"), doc([
+      { id: "bg", type: "shape", box: { x: 0, y: 0, width: 1000, height: 1000 }, geometry: { kind: "rect" },
+        fills: [{ kind: "pattern", pattern: { colors: ["#00ff00"], bg: "#ffffff", tile: { viewBox: [0, 0, 20, 20], paths: [{ d: "M5 5H15V15H5Z", fill: "#ff0000" }] } } }] } as unknown as Layer,
+    ]));
+    const el = scene.elementOf("bg")!;
+    const image = decodeURIComponent(el.style.backgroundImage);
+    expect(image).toContain("data:image/svg+xml");
+    expect(image).toContain("M5 5H15V15H5Z");
+    expect(el.style.backgroundSize).toMatch(/cqw/);
+    expect(el.querySelector("svg[data-oim-figure]")).toBeNull();
+  });
+
   it("play and pause reach every running animation of the scene", () => {
     const host = document.createElement("div");
     const scene = mount(host, doc([]));

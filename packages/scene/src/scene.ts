@@ -11,7 +11,8 @@ import { applyCorners } from "./blocks/corners.js";
 import { effectsToStyle } from "./blocks/effects.js";
 import { applyFills, pictureNode } from "./blocks/fills.js";
 import { applyGeometry } from "./blocks/geometry.js";
-import { defineGrain } from "./blocks/grain.js";
+import { defineGrain, defsOf } from "./blocks/grain.js";
+import { duotoneFilter } from "./blocks/duotone.js";
 import { applyWindowMask } from "./blocks/mask.js";
 import { applyArtistic } from "./blocks/artistic.js";
 import { readEmbeddedFonts, registerEmbeddedFonts } from "./blocks/fonts.js";
@@ -105,6 +106,13 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     el.style.filter = style.filter;
     el.style.textShadow = style.textShadow;
     el.style.backdropFilter = style.backdropFilter ?? "";
+    if (style.defs.some((def) => def.kind === "duotone")) {
+      // One filter per layer, as the player names it; a layer with a duotone backdrop sees the layers under it through it.
+      const id = `duotone-filter-${layer.id.replace(/[^\w-]/g, "_")}`;
+      const defs = defsOf(root);
+      if (!defs.querySelector(`#${id}`)) defs.appendChild(duotoneFilter(root.ownerDocument, id));
+      el.style.backdropFilter = `url(#${id})`;
+    }
     el.querySelectorAll(":scope > .oim-effect-texture").forEach((node) => node.remove());
     for (const def of style.defs) {
       if (def.kind === "grain") defineGrain(root, def.id, def.effect);

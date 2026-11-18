@@ -13,6 +13,7 @@ import { injectStyles } from './styles.js';
 import { renderMarkedText, plainOf, type Marks } from './marked-text.js';
 import { dropCapStyle, splitDropCap } from '../../../core/src/drop-cap.js';
 import { applyTextureEffect } from '../blocks/texture.js';
+import { duotoneFilter } from '../blocks/duotone.js';
 import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entranceClips, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
 import { loadLottie } from './lottie-loader.js';
 import { ensureUpgrade } from './upgrade-entry.js';
@@ -35,7 +36,6 @@ import {
   getMaskFeatherId,
   getDuotoneFilterId,
   getFilterClipStyle,
-  DUOTONE_COLORS,
   type CompositionNode,
   type Slot as CompositionSlot
 } from './layerComposition.js';
@@ -298,11 +298,6 @@ export function getTouchDistance(touches: TouchList): number {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-function hexChannel(hex: string, channelIndex: 0 | 1 | 2): number {
-  const clean = (hex || '').replace('#', '');
-  const value = parseInt(clean.substring(channelIndex * 2, channelIndex * 2 + 2), 16) || 0;
-  return Math.round((value / 255) * 1000) / 1000;
-}
 
 // Mirrors the editor's <LayerCompositionDefs> (React/JSX) 1:1, but built with
 // document.createElementNS since this package has no JSX. Only invoked when
@@ -480,26 +475,7 @@ export function buildLayerCompositionDefs(
         defs.appendChild(clip);
       }
     }
-    if (s.type === 'filter' && (s as any).duotone) {
-      const filter = document.createElementNS(svgNs, 'filter');
-      filter.setAttribute('id', getDuotoneFilterId(s));
-      // The table is in sRGB, as the editor draws it; linearRGB (the SVG default) lightens every tone.
-      filter.setAttribute('color-interpolation-filters', 'sRGB');
-      const colorMatrix = document.createElementNS(svgNs, 'feColorMatrix');
-      colorMatrix.setAttribute('type', 'matrix');
-      colorMatrix.setAttribute('values', '0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0 0 0 1 0');
-      filter.appendChild(colorMatrix);
-      const transfer = document.createElementNS(svgNs, 'feComponentTransfer');
-      (['R', 'G', 'B'] as const).forEach(function (ch, idx) {
-        const func = document.createElementNS(svgNs, 'feFunc' + ch);
-        func.setAttribute('type', 'table');
-        const channelIndex = idx as 0 | 1 | 2;
-        func.setAttribute('tableValues', hexChannel(DUOTONE_COLORS.shadows, channelIndex) + ' ' + hexChannel(DUOTONE_COLORS.lights, channelIndex));
-        transfer.appendChild(func);
-      });
-      filter.appendChild(transfer);
-      defs.appendChild(filter);
-    }
+    if (s.type === 'filter' && (s as any).duotone) defs.appendChild(duotoneFilter(document, getDuotoneFilterId(s)));
   });
 
   return svg;

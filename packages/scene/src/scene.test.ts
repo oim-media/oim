@@ -350,3 +350,16 @@ describe("time and interaction", () => {
   });
 });
 
+describe("duotone", () => {
+  it("a duotone backdrop sees the layers under it through the shared two-tone filter, defined once", () => {
+    const host = document.createElement("div");
+    const layer = shape({ id: "f", type: "shape", effects: [{ kind: "backdrop", preset: "duotone" }] } as Partial<Layer>);
+    const scene = mount(host, doc([layer]));
+    scene.update("f", { effects: [{ kind: "backdrop", preset: "duotone" }] } as Partial<Layer>);
+    expect(scene.elementOf("f")!.style.backdropFilter).toBe("url(#duotone-filter-f)");
+    const filters = host.querySelectorAll("filter#duotone-filter-f");
+    expect(filters.length).toBe(1);
+    expect(filters[0].querySelector("feFuncR")!.getAttribute("tableValues")).toBe("0.118 0.984");
+  });
+});
+

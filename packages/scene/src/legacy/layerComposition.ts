@@ -190,7 +190,7 @@ export function getFilterClipStyle(
   return d === null ? {} : { clipPath: `path("${d}")` };
 }
 
-export const DUOTONE_COLORS = { shadows: "#1e1b4b", lights: "#fbbf24" };
+export { DUOTONE_COLORS } from "../blocks/duotone.js";
 
 export function getDuotoneFilterId(slot: Slot): string {
   return `duotone-filter-${slot.id}`;

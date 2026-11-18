@@ -12,6 +12,7 @@ import { effectsToStyle } from "./blocks/effects.js";
 import { applyFills, pictureNode } from "./blocks/fills.js";
 import { applyGeometry } from "./blocks/geometry.js";
 import { defineGrain } from "./blocks/grain.js";
+import { readEmbeddedFonts, registerEmbeddedFonts } from "./blocks/fonts.js";
 import { pictureOf } from "./blocks/image.js";
 import { applyStrokes } from "./blocks/strokes.js";
 import { applyCompositing } from "./blocks/compositing.js";
@@ -67,6 +68,10 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   // With both light and dark palettes, the reader's colour scheme decides, as the player does.
   const prefersDark = typeof matchMedia === "function" && matchMedia("(prefers-color-scheme: dark)").matches;
   const { colors, active } = sceneColors(document.variables, _options.palette, prefersDark);
+  // The file's own fonts, under their own names; a face that fails to load falls back to the family.
+  const embedded = readEmbeddedFonts(document);
+  void registerEmbeddedFonts(embedded);
+  const fonts = new Map(embedded.map((e) => [e.family, e.name]));
   // The active palette's roles become custom properties, so a colour bound to a role is a var() and a mode change needs no repaint.
   for (const role of DYNAMIC_COLOR_ROLES) {
     const value = active?.colors[role];
@@ -110,7 +115,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     if (has("fills")) applyFills(el, layer, { colors, isText });
     if (has("opacity", "blend")) applyCompositing(el, layer);
     if (has("effects")) applyEffects(el, layer);
-    if (layer.type === "text" && has("text")) applyText(el, layer, { lang, canvasWidth: width });
+    if (layer.type === "text" && has("text")) applyText(el, layer, { lang, canvasWidth: width, fonts });
     const figure = has("fills", "geometry", "strokes");
     const outline = layer.type === "shape" ? (figure ? applyGeometry(el, layer, { colors }) : geometryOutline(layer.geometry)) : geometryOutline(undefined);
     if (has("effects", "geometry")) el.style.clipPath = filterClip(layer, outline);

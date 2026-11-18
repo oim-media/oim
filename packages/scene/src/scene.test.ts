@@ -224,5 +224,13 @@ describe("a filter clips its backdrop to its figure", () => {
     expect(sceneColors(variables, undefined, true).colors.literal(role)).toBe("#a3e635");
     expect(sceneColors(variables, "dark", false).colors.literal(role)).toBe("#a3e635");
   });
+
+  it("a text in an embedded font asks for the font's own registered name first, then its family", () => {
+    const host = document.createElement("div");
+    const fonts = [{ family: "Inter", name: "oim-f8947d8f-Inter", weight: 400, style: "normal", format: "woff", data: "d09GRgABAAAA" }];
+    const text = { id: "t", type: "text", box: { x: 0, y: 0, width: 100, height: 20 }, text: { content: { es: "Hola" }, font: { family: "Inter", size: 16 } } } as Layer;
+    mount(host, { ...doc([text]), fonts } as OimDocument);
+    expect(host.querySelector<HTMLElement>('[data-oim-id="t"]')!.style.fontFamily.replace(/["']/g, "")).toBe("oim-f8947d8f-Inter, Inter, sans-serif");
+  });
 });
 

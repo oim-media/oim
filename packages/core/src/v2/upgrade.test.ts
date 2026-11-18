@@ -100,6 +100,12 @@ describe("upgrade: root, tree and box", () => {
     expect(unhandled).toEqual([]);
   });
 
+  it("the canvas background slot goes under every other layer, as 1.x painted it at z-index 0", () => {
+    const slots = [slot({ id: "card" }), slot({ id: "background-pattern-slot", type: "pattern" }), slot({ id: "other", is_background_pattern: true }), slot({ id: "top" })];
+    const ids = upgrade(v1(slots)).document.layers.map((l) => l.id).filter((id) => id !== "oim-base");
+    expect(ids).toEqual(["background-pattern-slot", "other", "card", "top"]);
+  });
+
   it("when groupId and childIds disagree, the core's membership rule decides", () => {
     const slots = [
       { id: "g1", type: "group", position: [0, 0], style: { width: 1, height: 1 } },

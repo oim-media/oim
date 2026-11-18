@@ -29,7 +29,6 @@ export const UNSUPPORTED_BLOCKS = [
   "text:decoration",
   "text:highlight",
   "text:marks",
-  "text:runs",
 ] as const;
 export type UnsupportedBlock = (typeof UNSUPPORTED_BLOCKS)[number];
 
@@ -62,7 +61,6 @@ const layerUses = (layer: Layer): UnsupportedBlock[] => {
     if (text.decoration) uses.push("text:decoration");
     if (text.highlight) uses.push("text:highlight");
     if (text.marks) uses.push("text:marks");
-    if (text.runs) uses.push("text:runs");
   }
   for (const child of layer.children ?? []) uses.push(...layerUses(child));
   return uses;

@@ -7,7 +7,15 @@
 import { resolveLineHeight } from "@oim-media/core";
 import { typographyCss, type Layer } from "@oim-media/core/v2";
 
-export type TextContext = { lang: string; /** The canvas width in canvas units: sizes are written against it, so they scale with the canvas. */ canvasWidth: number };
+import { embeddedFontFamily } from "./fonts.js";
+
+export type TextContext = {
+  lang: string;
+  /** The canvas width in canvas units: sizes are written against it, so they scale with the canvas. */
+  canvasWidth: number;
+  /** Family -> the registered name of the font embedded in the file. */
+  fonts?: Map<string, string>;
+};
 
 /** A length in canvas px, as a share of the canvas width (cqw is measured on the scene root). */
 export const canvasLength = (px: string | undefined, canvasWidth: number): string | undefined =>
@@ -41,7 +49,8 @@ export function applyText(el: HTMLElement, layer: Pick<Layer, "text">, ctx: Text
   style.lineHeight = String(resolveLineHeight({ lineHeight: text?.lineHeight }));
   style.maxWidth = inCanvas(css.maxWidth, ctx.canvasWidth) ?? "80%";
   style.fontSize = inCanvas(css.fontSize ?? "16px", ctx.canvasWidth) ?? "";
-  style.fontFamily = css.fontFamily ?? "";
+  const family = layer.text?.font?.family;
+  style.fontFamily = (family && ctx.fonts && embeddedFontFamily(family, ctx.fonts)) || (css.fontFamily ?? "");
   style.fontWeight = css.fontWeight ?? "";
   style.fontStyle = css.fontStyle ?? "";
   style.letterSpacing = inCanvas(css.letterSpacing, ctx.canvasWidth) ?? "";

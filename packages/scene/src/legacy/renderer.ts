@@ -72,7 +72,7 @@ import { whatTheReaderCannotDo, describeMissing, CONTRACT_VERSION, PLAYER_CAPABI
 import { bindStates, resolveActions, applyMinHitArea, type ActionRunner, type RegisterOutsideTap } from './states.js';
 import { resolveMode } from './modes.js';
 import { buildArtisticTextModelFromLayer, generateArtisticTextSvgString } from './artisticText.js';
-import { readEmbeddedFonts, registerEmbeddedFonts, embeddedFontFamily } from './embeddedFonts.js';
+import { readEmbeddedFonts, registerEmbeddedFonts, embeddedFontFamily } from '../blocks/fonts.js';
 
 /**
  * Replaces the content of `hoverWrap` with one <span> per character, each

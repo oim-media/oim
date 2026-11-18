@@ -4,11 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export interface StateAction {
-  target: string;
-  type: string;
-  value?: unknown;
-}
+import type { StateAction } from "../blocks/interactions.js";
+export { applyMinHitArea, MIN_HIT_AREA_PX, resolveActions, type ResolvedActions, type StateAction } from "../blocks/interactions.js";
 
 export interface InteractiveState {
   scale?: number;
@@ -31,10 +28,6 @@ export interface SlotStates {
   active?: InteractiveState;
 }
 
-export interface ResolvedActions {
-  visibility: Record<string, boolean>;
-  texts: Record<string, string>;
-}
 
 /**
  * Where a slot's interaction fields are read from.
@@ -116,24 +109,6 @@ function warnIncompleteInteraction(
   }
 }
 
-/**
- * WCAG 2.5.8: the contact area of something interactive never drops below 24x24 px.
- *
- * It lives here, and not loose in `renderSlots`, for a concrete reason: it was
- * written in both places at once (here and in the engine), and that is the kind of
- * duplication this project has spent a whole day closing. Only the engine applies it,
- * when it builds the slot's box; `bindStates` does not touch the size, which is not
- * its concern.
- *
- * It applies because the slot is interactive, not because it has states: a trigger
- * layer can exist without `states` and still needs a surface to touch.
- */
-export const MIN_HIT_AREA_PX = 24;
-
-export function applyMinHitArea(el: HTMLElement): void {
-  el.style.minWidth = `${MIN_HIT_AREA_PX}px`;
-  el.style.minHeight = `${MIN_HIT_AREA_PX}px`;
-}
 
 export interface ActionRunner {
   /**
@@ -282,39 +257,4 @@ export function stateStyles(e: InteractiveState): Record<string, string> {
     s["--oim-transition-duration"] = `${e.transitionDuration}s`;
   }
   return s;
-}
-
-/**
- * Resolves a list of actions against the current visibility of the slots.
- * Pure function: it does not touch the DOM. Same semantics as the editor's visibility resolver.
- */
-export function resolveActions(
-  actions: StateAction[] | undefined,
-  currentVisibility: Record<string, boolean>
-): ResolvedActions {
-  const visibility: Record<string, boolean> = {};
-  const texts: Record<string, string> = {};
-
-  if (!actions || actions.length === 0) {
-    return { visibility, texts };
-  }
-
-  for (const act of actions) {
-    const targetId = act.target;
-    if (!targetId) continue;
-
-    const currentVis = currentVisibility[targetId] !== undefined ? currentVisibility[targetId] : true;
-
-    if (act.type === "show") {
-      visibility[targetId] = true;
-    } else if (act.type === "hide") {
-      visibility[targetId] = false;
-    } else if (act.type === "toggle") {
-      visibility[targetId] = !currentVis;
-    } else if (act.type === "setText") {
-      texts[targetId] = act.value !== undefined && act.value !== null ? String(act.value) : "";
-    }
-  }
-
-  return { visibility, texts };
 }

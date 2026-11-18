@@ -23,11 +23,12 @@ describe("unsupportedUse", () => {
   it("reports each out-of-scope block once, sorted", () => {
     const layers = [
       rect({ effects: [{ kind: "grain", intensity: 20 }] }),
-      rect({ id: "b", animations: [{ on: "load", preset: "fade", duration: 1 }] }),
+      rect({ id: "b", animations: [{ on: "loop", preset: "pulse", duration: 1 }] }),
+      rect({ id: "d", animations: [{ on: "load", preset: "fade", duration: 1 }] }),
       rect({ id: "c", fills: [{ kind: "pattern", pattern: { preset: "dots" } }] as Layer["fills"] }),
       { id: "t", type: "text", box: { x: 0, y: 0 }, text: { content: { es: "x" }, runs: [] } } as unknown as Layer,
     ];
-    expect(unsupportedUse(doc(layers))).toEqual(["animations"]);
+    expect(unsupportedUse(doc(layers))).toEqual(["animation:preset"]);
   });
 
   it("the effects scene paints (blur, shadow, glow, backdrop) are not out of scope", () => {

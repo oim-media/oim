@@ -5,7 +5,7 @@
  */
 
 import type { Layer, OimDocument } from "@oim-media/core/v2";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildLayerGrainFilter, DYNAMIC_COLOR_ROLES, mediaFilterCss } from "@oim-media/core";
 import { mount } from "./index.js";
 import { sceneColors } from "./scene.js";
@@ -262,6 +262,91 @@ describe("a filter clips its backdrop to its figure", () => {
     expect(ring.getAttribute("d")).toBe(getMaskSilhouetteCanvasD(slot, canvas));
     expect(ring.getAttribute("stroke-width")).toBe("6");
     expect(host.querySelector<HTMLElement>('[data-oim-id="m"]')!.style.backgroundColor).toBe("transparent");
+  });
+
+  it("a hidden layer takes no room and no pointer until something shows it", () => {
+    const host = document.createElement("div");
+    const scene = mount(host, doc([shape({ visible: false } as Partial<Layer>)]));
+    const el = host.querySelector<HTMLElement>('[data-oim-id="a"]')!;
+    expect(el.style.display).toBe("none");
+    scene.update("a", { visible: true } as Partial<Layer>);
+    expect(el.style.display).toBe("");
+  });
+});
+
+describe("time and interaction", () => {
+  const calls: { id: string; frames: Keyframe[]; timing: KeyframeAnimationOptions; run: Record<string, unknown> }[] = [];
+  const realAnimate = HTMLElement.prototype.animate;
+  const stub = () => {
+    HTMLElement.prototype.animate = function (this: HTMLElement, frames: Keyframe[], timing: KeyframeAnimationOptions) {
+      const run = { finish: vi.fn(), cancel: vi.fn(), play: vi.fn(), reverse: vi.fn(), onfinish: null as null | (() => void) };
+      calls.push({ id: this.dataset.oimId ?? "", frames, timing, run });
+      return run as unknown as Animation;
+    } as typeof HTMLElement.prototype.animate;
+  };
+  afterEach(() => { HTMLElement.prototype.animate = realAnimate; calls.length = 0; });
+
+  const reveal = () => doc([
+    shape({ id: "panel", visible: false, animations: [{ on: "enter", preset: "slide-up", duration: 400 }] } as Partial<Layer>),
+    shape({ id: "icon", animations: [{ on: "action", tracks: [{ property: "scale", keyframes: [{ t: 0, v: 1 }, { t: 1, v: 1.2 }] }], duration: 600 }] } as Partial<Layer>),
+    shape({ id: "btn", interactions: [{ on: "press", actions: [{ type: "show", target: "panel" }, { type: "play", target: "icon" }] }] } as Partial<Layer>),
+  ]);
+
+  it("a press shows the panel with its entrance, then plays the icon, in that order", () => {
+    stub();
+    const host = document.createElement("div");
+    const scene = mount(host, reveal());
+    scene.elementOf("btn")!.click();
+    expect(scene.elementOf("panel")!.style.display).toBe("");
+    expect(calls.map((c) => c.id)).toEqual(["panel", "icon"]);
+    expect(calls[0].timing.duration).toBe(400);
+    expect(calls[1].frames.at(-1)).toMatchObject({ scale: "1.2" });
+  });
+
+  it("a toggle hides what it showed, and the layer leaves the layout once its exit ends", () => {
+    stub();
+    const host = document.createElement("div");
+    const scene = mount(host, doc([
+      shape({ id: "card" }),
+      shape({ id: "btn", interactions: [{ on: "press", actions: [{ type: "toggle", target: "card" }] }] } as Partial<Layer>),
+    ]));
+    const card = scene.elementOf("card")!;
+    scene.elementOf("btn")!.click();
+    expect(card.style.display).toBe(""); // still leaving
+    (calls[0].run.onfinish as () => void)();
+    expect(card.style.display).toBe("none");
+    scene.elementOf("btn")!.click();
+    expect(card.style.display).toBe("");
+  });
+
+  it("paused, an action lands at once and nothing is animated", () => {
+    stub();
+    const host = document.createElement("div");
+    const scene = mount(host, reveal(), { paused: true });
+    scene.elementOf("btn")!.click();
+    expect(scene.elementOf("panel")!.style.display).toBe("");
+    expect(calls).toEqual([]);
+  });
+
+  it("play and pause reach every running animation of the scene", () => {
+    const host = document.createElement("div");
+    const scene = mount(host, doc([]));
+    const run = { play: vi.fn(), pause: vi.fn() };
+    (host.querySelector(".oim-scene") as HTMLElement).getAnimations = () => [run as unknown as Animation];
+    scene.pause();
+    scene.play();
+    expect(run.pause).toHaveBeenCalledTimes(1);
+    expect(run.play).toHaveBeenCalledTimes(1);
+  });
+
+  it("setText replaces the words in the reader's language", () => {
+    const host = document.createElement("div");
+    const scene = mount(host, doc([
+      { id: "label", type: "text", box: { x: 0, y: 0, width: 200, height: 40 }, text: { content: { es: "Hola" }, runs: [] } } as unknown as Layer,
+      shape({ id: "btn", interactions: [{ on: "press", actions: [{ type: "setText", target: "label", value: "Adiós" }] }] } as Partial<Layer>),
+    ]));
+    scene.elementOf("btn")!.click();
+    expect(scene.elementOf("label")!.textContent).toContain("Adiós");
   });
 });
 

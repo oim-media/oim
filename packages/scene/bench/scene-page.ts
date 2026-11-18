@@ -31,7 +31,8 @@ async function run(): Promise<void> {
       return;
     }
     if (hasBaseLayer(document)) host.style.background = `url(${URL.createObjectURL(image)}) 0 0 / 100% 100% no-repeat`;
-    mount(host, document);
+    // Paused, as the player is painted with disable-animations: the golden is the resting frame.
+    mount(host, document, { paused: true });
     window.__oimSettled = "loaded";
   } catch (err) {
     console.error(err);

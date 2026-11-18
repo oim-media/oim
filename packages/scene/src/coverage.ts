@@ -10,12 +10,11 @@
 // and textures. A vector that uses one of these is skipped by
 // the visual gate, never failed, and the renderer ignores the block (with one
 // development warning per block type).
-import type { Effect, Layer, OimDocument, Paint } from "@oim-media/core/v2";
+import type { Layer, OimDocument, Paint } from "@oim-media/core/v2";
 import { canAnimate } from "./blocks/animations.js";
 
 export const UNSUPPORTED_BLOCKS = [
   "animation:preset",
-  "effect:filter",
   "lottie",
   "mask",
   "paint:pattern-tile",
@@ -30,12 +29,6 @@ const paintUses = (paints: readonly Paint[] | undefined): UnsupportedBlock[] =>
     return [];
   });
 
-/** The effects scene paints are blur, shadow, glow and backdrop; a duotone is a backdrop's preset. */
-const effectUses = (fx: Effect): UnsupportedBlock[] => {
-  if (fx.kind === "filter") return [`effect:${fx.kind}`];
-  return [];
-};
-
 const layerUses = (layer: Layer, nested = false): UnsupportedBlock[] => {
   const uses: UnsupportedBlock[] = [...paintUses(layer.fills), ...(layer.strokes ?? []).flatMap((s) => paintUses([s.paint as Paint]))];
   if (layer.type === "lottie") uses.push("lottie");
@@ -43,7 +36,6 @@ const layerUses = (layer: Layer, nested = false): UnsupportedBlock[] => {
   if (layer.animations?.some((a) => !canAnimate(a))) uses.push("animation:preset");
   // 1.x tiled a background slot's own drawing; 2.0 has no field for a drawn tile yet, so the upgrade leaves it as paths.
   if (layer.geometry?.kind === "paths" && (layer.fills ?? []).some((p) => "kind" in p && p.kind === "pattern")) uses.push("paint:pattern-tile");
-  for (const fx of layer.effects ?? []) uses.push(...effectUses(fx));
   // A window mask is painted, and a cutout at the top level; a cutout inside a group is not yet.
   if (nested && layer.mask?.mode === "cutout") uses.push("mask");
   for (const child of layer.children ?? []) uses.push(...layerUses(child, true));

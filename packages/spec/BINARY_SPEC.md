@@ -50,9 +50,9 @@ OIM metadata is preferably stored in an ancillary text chunk:
 
   Writers since 1.30.0 put it **after** the last `IDAT`, so the image arrives first.
 
-### 2.3. Poster seal (`OIM_Seal`, 1.30.0 to 1.32.x, retired in 1.33.0)
+### 2.3. Poster seal (`OIM_Seal`, 1.30.0 to 1.32.x, retired in 1.34.0)
 
-Writers from 1.30.0 to 1.32.x put a `tEXt` chunk `OIM_Seal` between the last `IDAT` and the metadata: a signed hash of the image, so a reader could show it as a verified poster before reading the rest. It is retired in 1.33.0: writers no longer emit it and readers **must ignore** it. The image is still sealed by the metadata's `image_hash` (see section 4), and a PNG shown before verification runs nothing, so a poster needs no seal of its own.
+Writers from 1.30.0 to 1.32.x put a `tEXt` chunk `OIM_Seal` between the last `IDAT` and the metadata: a signed hash of the image, so a reader could show it as a verified poster before reading the rest. It is retired in 1.34.0: writers no longer emit it and readers **must ignore** it. The image is still sealed by the metadata's `image_hash` (see section 4), and a PNG shown before verification runs nothing, so a poster needs no seal of its own.
 
 > **Critical note on injection:** The metadata chunk must be inserted **surgically at byte level** into the PNG binary stream, without re-rendering or re-encoding the `IDAT` blocks, preserving the exact cryptographic hash of the canvas.
 

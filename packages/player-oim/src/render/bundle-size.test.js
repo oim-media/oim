@@ -160,13 +160,14 @@ describe("lottie ships apart from the player", () => {
   // 56 KB (17 Nov, approved by Josué): a looping shape carries its silhouette in each track piece.
   // 55 KB (15 Nov, player 2.0 step 2): generative fills and pattern tiles moved
   // to vendor/ (oim-generative-*.js, oim-patterns-*.js); 53.1 KB at that commit.
+  // 52 KB (19 Nov): +0.35 KB for the SRI hashes of the on-demand scripts.
   // 51 KB (18 Nov, phase 3 plan: measured + 1 KB): the scene paints every document and the
   // 1.x renderer is gone; 50.50 KB at that commit (the vite alias also missed the
   // scene/src/runtime path, which had inlined `upgrade` and the features).
-  it.skipIf(!hasBundle)("the player fits in 51 KB gzip", async () => {
+  it.skipIf(!hasBundle)("the player fits in 52 KB gzip", async () => {
     const { gzipSync } = await import("node:zlib");
     const kb = gzipSync(readFileSync(BUNDLE)).length / 1024;
-    expect(Math.round(kb)).toBeLessThanOrEqual(51);
+    expect(Math.round(kb)).toBeLessThanOrEqual(52);
   });
 
   it.skipIf(!hasBundle)("generative fills and pattern tiles ship apart, next to both player paths", () => {

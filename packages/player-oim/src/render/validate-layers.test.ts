@@ -6,7 +6,7 @@
 
 /**
  * 2.0 documents carry `layers` (groups nest more layers in `children`). The
- * player's pre-paint validation must cap the total count and the nesting depth,
+ * player's pre-paint validation must cap the total count (MAX_TOTAL_LAYERS), each list (MAX_SLOTS) and the nesting depth,
  * or a crafted file exhausts the renderer.
  */
 
@@ -25,7 +25,7 @@ function chain(depth: number) {
 }
 
 describe("validateOimMetadata: 2.0 layer count", () => {
-  it("rejects 151 flat layers", () => {
+  it("rejects 151 flat top-level layers (the schema caps each list at 150)", () => {
     const layers = Array.from({ length: 151 }, shape);
     const errs = validateOimMetadata(doc2(layers));
     expect(errs.length).toBeGreaterThan(0);
@@ -39,10 +39,26 @@ describe("validateOimMetadata: 2.0 layer count", () => {
     expect(errs).toEqual([]);
   });
 
-  it("counts children recursively: 100 groups with 1 child each (200 total) is rejected", () => {
-    const layers = Array.from({ length: 100 }, () => group([shape()]));
+  it("counts children recursively: 10 groups x 100 children (1010 total) is rejected at the total cap", () => {
+    const layers = Array.from({ length: 10 }, () => group(Array.from({ length: 100 }, shape)));
     const errs = validateOimMetadata(doc2(layers));
     expect(errs.length).toBeGreaterThan(0);
+    expect(errs.join(" ")).toMatch(/1000/);
+  });
+
+  it("accepts schema-valid documents with several full groups (7 groups x 140 children + 7 = 987)", () => {
+    const layers = Array.from({ length: 7 }, () => group(Array.from({ length: 140 }, shape)));
+    const errs = validateOimMetadata(doc2(layers));
+    expect(errs).toEqual([]);
+  });
+
+  it("accepts 100 groups with 1 child each (200 total): the cap is per list, not 150 in total", () => {
+    const layers = Array.from({ length: 100 }, () => group([shape()]));
+    expect(validateOimMetadata(doc2(layers))).toEqual([]);
+  });
+
+  it("rejects a children list over 150, like the schema", () => {
+    const errs = validateOimMetadata(doc2([group(Array.from({ length: 151 }, shape))]));
     expect(errs.join(" ")).toMatch(/150/);
   });
 });

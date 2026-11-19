@@ -30,6 +30,9 @@
  */
 export const MAX_SLOTS = 150;
 
+/** Total layers in a 2.0 document, groups included: an abuse guard, the schema already caps each list at 150. */
+export const MAX_TOTAL_LAYERS = 1000;
+
 /** How deeply layers may nest inside groups (`children`). The top level is depth 1. */
 export const MAX_LAYER_DEPTH = 32;
 

@@ -269,7 +269,7 @@ export async function verifyMetadataSignature(metadata: any, origin?: string): P
 
 import { permissionOf, signatureStamp } from '../../../core/src/reeditPermission.js';
 // The format limit, not a copied literal: `limits.js` does not pull in zod.
-import { MAX_SLOTS, MAX_LAYER_DEPTH } from '../../../core/src/limits.js';
+import { MAX_SLOTS, MAX_TOTAL_LAYERS, MAX_LAYER_DEPTH } from '../../../core/src/limits.js';
 
 /**
  * What the player can say about a file, from strongest to weakest claim.
@@ -363,8 +363,10 @@ export function validateOimMetadata(json: any): string[] {
     let total = 0;
     // Counted on discovery, so an oversized list stops before it is copied in full.
     const discover = (list: any[], depth: number): boolean => {
+      // Per list, as the schema does: a list the schema would refuse is refused here too.
+      if (list.length > MAX_SLOTS) { fail(`max ${MAX_SLOTS} layers per list`); return false; }
       for (const node of list) {
-        if (++total > MAX_SLOTS) { fail(`max ${MAX_SLOTS} layers`); return false; }
+        if (++total > MAX_TOTAL_LAYERS) { fail(`max ${MAX_TOTAL_LAYERS} layers in total`); return false; }
         stack.push({ node, depth });
       }
       return true;

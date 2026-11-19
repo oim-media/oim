@@ -72,6 +72,9 @@ export class ImageEngine extends EngineShell {
       await ensureFeatures(featuresOf([file, doc.layers])).catch(report);
       const byId = layersById(doc.layers);
       this._doc = doc;
+      // The overlay is the canvas at its own size; `--oim-fit` scales it to the host.
+      overlay.style.setProperty('--oim-overlay-w', doc.canvas.width + 'px');
+      overlay.style.setProperty('--oim-overlay-h', doc.canvas.height + 'px');
       this._scene?.destroy();
       overlay.innerHTML = '';
       this._scene = mount(overlay, doc, {
@@ -573,7 +576,7 @@ export class ImageEngine extends EngineShell {
     // parent's), so nothing to divide back out.
     const untransformedWidth = this._viewport.offsetWidth;
     const canvasWidth = this.metadata && this.metadata.canvas ? (this.metadata.canvas.natural_width || this.metadata.canvas.width) : 0;
-    const designWidth = (this.metadata && (this.metadata.artboardWidth || this.metadata.canvasWidth || this.metadata.canvas_width)) || canvasWidth || (this._baseImg && this._baseImg.naturalWidth) || 1080;
+    const designWidth = this._doc?.canvas.width || (this.metadata && (this.metadata.artboardWidth || this.metadata.canvasWidth || this.metadata.canvas_width)) || canvasWidth || (this._baseImg && this._baseImg.naturalWidth) || 1080;
     const scale = untransformedWidth / designWidth;
     // `--oim-fit`, not `--oim-scale`.
     //

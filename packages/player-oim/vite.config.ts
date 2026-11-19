@@ -108,8 +108,8 @@ export default defineConfig(({ command, mode }) => VENDOR_PARTS[mode] ? {
   resolve: command === 'build'
     ? { alias: [
         { find: 'lottie-web/build/player/lottie_light', replacement: resolve(import.meta.dirname, '../scene/src/runtime/lottie-external.ts') },
-        { find: /^(\.|\.\.\/runtime)\/upgrade-entry\.js$/, replacement: resolve(RUNTIME, 'upgrade-external.ts') },
-        { find: /^(\.|\.\.\/runtime)\/features-entry\.js$/, replacement: resolve(RUNTIME, 'features-external.ts') },
+        { find: /^(\.|\.\.\/runtime|(\.\.\/)+scene\/src\/runtime)\/upgrade-entry\.js$/, replacement: resolve(RUNTIME, 'upgrade-external.ts') },
+        { find: /^(\.|\.\.\/runtime|(\.\.\/)+scene\/src\/runtime)\/features-entry\.js$/, replacement: resolve(RUNTIME, 'features-external.ts') },
         { find: /^\.\/generative\/index\.js$/, replacement: resolve(RUNTIME, 'generative-external.ts') },
         { find: /^(\.\/|(\.\.\/)+core\/src\/)patterns\.js$/, replacement: resolve(RUNTIME, 'patterns-external.ts') },
       ] }

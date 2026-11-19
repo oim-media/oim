@@ -6,5 +6,8 @@
     "generative-fill": "Flutter SDK does not paint the generative fill yet (group C).",
     "mask-cutout": "Flutter SDK does not paint a cutout mask yet (group C).",
     "text-decorations": "Flutter SDK does not paint text marks, highlight, drop cap or decoration yet (group C)."
+  },
+  "web": {
+    "color-blending-opacity": "This golden predates multiply blending; the vector asks for multiply and vectors-2/golden paints it. Kept for Flutter until its blend is checked (phase 3)."
   }
 }

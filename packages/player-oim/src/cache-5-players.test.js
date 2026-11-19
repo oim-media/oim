@@ -29,6 +29,11 @@ describe("five players of the same file", () => {
       arrayBuffer: () => Promise.resolve(oim.buffer.slice(oim.byteOffset, oim.byteOffset + oim.byteLength)),
       blob: () => Promise.resolve(new Blob([oim], { type: "image/png" })),
     }));
+    // A 1.x file needs the separate `upgrade` script the CDN serves next to the player;
+    // happy-dom does not run a <script src>, so it is evaluated here as the page would.
+    const vendor = `${__dirname}/../dist/vendor/`;
+    const file = fs.readdirSync(vendor).find((f) => f.startsWith("oim-upgrade-"));
+    if (!window.__oimUpgrade) (0, eval)(fs.readFileSync(vendor + file, "utf8"));
     if (!customElements.get("oim-player")) await import("../dist/oim-player.js");
   });
 

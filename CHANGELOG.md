@@ -3,6 +3,17 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.34.0
+
+- format: 2.0 ids (layers, `ref` targets, document) and font `family` reject `<`, `>`, `"` and
+  control characters.
+- player: the CDN build pins `lottie_light`, `upgrade`, `generative` and `patterns` with SRI
+  (+0.35 KB gzip).
+- player: 2.0 documents are capped at 1000 layers in total and 150 per list, nesting at 32 levels.
+- player: the retirement window comes from the key that verified the signature.
+- scene: artistic text escapes every SVG attribute; embedded font data must be strict base64.
+- ci: wrangler pinned in the player-next deploy.
+
 ## 1.33.0
 
 - format: `OIM_Seal` is retired. Writers stop emitting it; readers ignore it. The image stays

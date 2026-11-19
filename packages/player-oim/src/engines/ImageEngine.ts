@@ -45,6 +45,8 @@ function layersById(layers: Layer[], into = new Map<string, Layer>()): Map<strin
 }
 
 export class ImageEngine extends EngineShell {
+  /** Bumped by each render and by destroy(): a render that awaited a script checks it is still the latest. */
+  _renderTicket = 0;
   /**
    * The document as the file holds it: what `getMetadata()` and `oim:loaded` return.
    * `metadata` is the 1.x view the renderer paints; the two never swap places.
@@ -61,15 +63,23 @@ export class ImageEngine extends EngineShell {
     const file = this.fileMetadata ?? this.metadata;
     if (!file || !this.host || this.poster === 'only' || !this._overlay) return;
     const overlay = this._overlay;
-    if (this.showSlots) {
-      const report = (err: unknown) => {
-        const message = String((err as Error)?.message ?? err);
-        console.error('[OimPlayer] A part of the player did not load; the work is shown without it.', message);
-        this.host.dispatchEvent(new CustomEvent('oim:error', { detail: { code: 'chunk', message } }));
-      };
-      if (!isV2(file)) await ensureUpgrade().catch(report);
+    // A newer render, or destroy(), supersedes this one while it awaits a script.
+    const ticket = ++this._renderTicket;
+    const empty = !isV2(file) && !file.slots?.length && !file.elements?.length && !file.layers?.length;
+    let paints = this.showSlots && !empty;
+    const report = (err: unknown) => {
+      const message = String((err as Error)?.message ?? err);
+      console.error('[OimPlayer] A part of the player did not load; the work is shown without it.', message);
+      this.host.dispatchEvent(new CustomEvent('oim:error', { detail: { code: 'chunk', message } }));
+    };
+    if (paints) {
+      if (!isV2(file)) await ensureUpgrade().catch((err) => { paints = false; report(err); });
+      if (ticket !== this._renderTicket) return;
+    }
+    if (paints) {
       const doc = sceneDocument(file);
       await ensureFeatures(featuresOf([file, doc.layers])).catch(report);
+      if (ticket !== this._renderTicket) return;
       const byId = layersById(doc.layers);
       this._doc = doc;
       // The overlay is the canvas at its own size; `--oim-fit` scales it to the host.
@@ -170,6 +180,7 @@ export class ImageEngine extends EngineShell {
   }
 
   destroy(): void {
+    this._renderTicket++;
     this._scene?.destroy();
     this._scene = null;
     if (this.imageUrl) URL.revokeObjectURL(this.imageUrl);

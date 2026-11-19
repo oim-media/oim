@@ -266,7 +266,7 @@ export async function verifyMetadataSignature(metadata: any, origin?: string): P
 
 import { permissionOf, signatureStamp } from '../../../core/src/reeditPermission.js';
 // The format limit, not a copied literal: `limits.js` does not pull in zod.
-import { MAX_SLOTS } from '../../../core/src/limits.js';
+import { MAX_SLOTS, MAX_LAYER_DEPTH } from '../../../core/src/limits.js';
 
 /**
  * What the player can say about a file, from strongest to weakest claim.
@@ -350,6 +350,33 @@ export function validateOimMetadata(json: any): string[] {
   function okNum(v: any) { return typeof v === 'number' && isFinite(v); }
 
   if (typeof json !== 'object' || json === null) { fail('metadata must be object'); return errors; }
+
+  // 2.0 documents carry `layers`, and groups nest more layers in `children`.
+  // Walk them with an explicit stack: recursion would overflow on a crafted chain.
+  if (typeof json.oim === 'string' && json.oim.startsWith('2.')) {
+    const layers = json.layers ?? [];
+    if (!Array.isArray(layers)) { fail('layers must be array'); return errors; }
+    const stack: Array<{ node: any; depth: number }> = [];
+    let total = 0;
+    // Counted on discovery, so an oversized list stops before it is copied in full.
+    const discover = (list: any[], depth: number): boolean => {
+      for (const node of list) {
+        if (++total > MAX_SLOTS) { fail(`max ${MAX_SLOTS} layers`); return false; }
+        stack.push({ node, depth });
+      }
+      return true;
+    };
+    if (discover(layers, 1)) {
+      while (stack.length > 0) {
+        const { node, depth } = stack.pop()!;
+        if (depth > MAX_LAYER_DEPTH) { fail(`layer nesting deeper than ${MAX_LAYER_DEPTH}`); break; }
+        if (typeof node !== 'object' || node === null || Array.isArray(node)) { fail('layer must be object'); break; }
+        if (node.children === undefined) continue;
+        if (!Array.isArray(node.children)) { fail('layer children must be array'); break; }
+        if (!discover(node.children, depth + 1)) break;
+      }
+    }
+  }
 
   const slots = json.slots || json.elements || [];
   if (!Array.isArray(slots)) { fail('slots must be array'); return errors; }

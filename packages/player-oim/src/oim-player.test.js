@@ -109,29 +109,15 @@ describe('oim-player Web Component', () => {
     document.body.removeChild(player);
   });
 
-  it('should style slots with user-select: none to prevent selectability', async () => {
+  it('nothing painted in the player can be selected as text', async () => {
     const player = document.createElement('oim-player');
     document.body.appendChild(player);
-
     player.setAttribute('src', 'example.oim');
-    
-    // Wait for load and rendering
     await new Promise(resolve => setTimeout(resolve, 100));
-
-    const styleEl = player.shadowRoot.getElementById('oim-player-styles');
-    const cssText = styleEl.textContent;
-
-    expect(cssText).toContain('.oim-slot {');
-    expect(cssText).toContain('user-select: none');
-    expect(cssText).toContain('-webkit-user-select: none');
-
-    expect(cssText).toContain('.oim-slot:hover {');
-    // Hover MULTIPLIES by `--oim-scale`: if it replaced it, moving the pointer
-    // over an oversized layer would snap it back to its size and expose the
-    // parallax clipping.
-    expect(cssText).toContain('scale(calc(var(--oim-scale, 1) * var(--oim-slot-hover-scale, 1)))');
-
-    document.body.removeChild(player);
+    const cssText = player.shadowRoot.getElementById('oim-player-styles').textContent;
+    const host = cssText.split(String.fromCharCode(10)).find((r) => r.startsWith(':host {'));
+    expect(host).toContain('user-select: none');
+    expect(host).toContain('-webkit-user-select: none');
   });
 
   it('should auto-rotate languages when auto-rotate-lang attribute is set', async () => {

@@ -36,6 +36,17 @@ describe("what the host decides", () => {
     expect(scene.elementOf("btn")!.style.minWidth).toBe("");
   });
 
+  it("an action whose target does not exist warns once, not on every press", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const scene = mount(document.createElement("div"), doc([
+      shape({ id: "btn", interactions: [{ on: "press", actions: [{ type: "show", target: "ghost" }] }] } as Partial<Layer>),
+    ]));
+    scene.elementOf("btn")!.click();
+    scene.elementOf("btn")!.click();
+    expect(warn.mock.calls.filter((c) => String(c[0]).includes("ghost"))).toHaveLength(1);
+    warn.mockRestore();
+  });
+
   it("the host hears each action and can veto it", () => {
     const onAction = vi.fn(() => false);
     const scene = mount(document.createElement("div"), showOnPress(), { onAction });
@@ -63,7 +74,7 @@ describe("what the host decides", () => {
       runs.push(run);
       return run as unknown as Animation;
     } as typeof HTMLElement.prototype.animate;
-    const loop = shape({ id: "a", animations: [{ on: "loop", tracks: [{ property: "opacity", keyframes: [{ t: 0, v: 0 }, { t: 1, v: 1 }] }], duration: 500, iterations: Infinity }] } as Partial<Layer>);
+    const loop = shape({ id: "a", animations: [{ on: "loop", tracks: [{ property: "opacity", keyframes: [{ t: 0, v: 0 }, { t: 1, v: 1 }] }], duration: 500, iterations: Infinity }] } as unknown as Partial<Layer>);
     const scene = mount(document.createElement("div"), doc([loop]), { disableAnimations: true });
     const root = scene.elementOf("a")!.parentElement!;
     root.getAnimations = () => runs as unknown as Animation[];

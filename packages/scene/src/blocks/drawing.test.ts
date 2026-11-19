@@ -5,27 +5,6 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { maskStyle, paintColors, typographyCss } from './v2-layers';
-
-const text = (t: object) => ({ id: 't', type: 'text', box: { x: 0, y: 0 }, text: { content: { es: 'x' }, ...t } }) as never;
-
-describe('typographyCss', () => {
-  it('a size with per-language exceptions takes the one of the language', () => {
-    const layer = text({ font: { size: { value: 40, modes: { de: 32 } } } });
-    expect(typographyCss(layer, 'de')!.fontSize).toBe('32px');
-    expect(typographyCss(layer, 'es')!.fontSize).toBe('40px');
-  });
-
-  it('every typography field becomes its CSS', () => {
-    expect(typographyCss(text({ font: { family: 'Inter', weight: 700, italic: true }, letterSpacing: 2, transform: 'uppercase', decoration: 'underline', maxWidth: 400 }), 'es')).toEqual({
-      fontFamily: 'Inter', fontWeight: '700', fontStyle: 'italic', letterSpacing: '2px', textTransform: 'uppercase', textDecoration: 'underline', maxWidth: '400px',
-    });
-  });
-
-  it('a layer that is not a text has no typography', () => {
-    expect(typographyCss({ id: 's', type: 'shape' } as never, 'es')).toBeUndefined();
-  });
-});
 
 describe('drawingLink and drawingSvg', () => {
   const lit = (v: unknown) => (typeof v === 'string' ? v : undefined);
@@ -33,14 +12,14 @@ describe('drawingLink and drawingSvg', () => {
   const color = (value: string) => ({ kind: 'color', value });
 
   it('currentColor is the fill, else the stroke, and the other way round', async () => {
-    const { drawingLink } = await import('./v2-layers');
+    const { drawingLink } = await import('./drawing');
     expect(drawingLink(layer([color('#f00')], [{ paint: color('#00f'), width: 0 }]), lit)).toEqual({ fill: '#f00', stroke: '#00f' });
     expect(drawingLink(layer(undefined, [{ paint: color('#00f'), width: 0 }]), lit)).toEqual({ fill: '#00f', stroke: '#00f' });
     expect(drawingLink(layer([color('#f00')]), lit)).toEqual({ fill: '#f00', stroke: '#f00' });
   });
 
   it('a gradient stroke paints every path with one gradient across the viewBox, as the editor', async () => {
-    const { drawingLink, drawingSvg } = await import('./v2-layers');
+    const { drawingLink, drawingSvg } = await import('./drawing');
     const gradient = { type: 'linear', angle: 180, stops: [{ color: '#7D03FC', at: 0 }, { color: '#2563EB', at: 1 }] };
     const link = drawingLink(layer(undefined, [{ paint: { kind: 'gradient', gradient }, width: 0 }]), lit);
     const g = { kind: 'paths', viewBox: [0, 0, 24, 24], paths: [{ d: 'M0 0H24', stroke: 'currentColor' }, { d: 'M0 4H24', fill: '#000' }] } as never;
@@ -55,7 +34,7 @@ describe('drawingLink and drawingSvg', () => {
   });
 
   it('a tile writes literal attributes and its own size; inline goes through CSSOM', async () => {
-    const { drawingSvg } = await import('./v2-layers');
+    const { drawingSvg } = await import('./drawing');
     const g = { kind: 'paths', viewBox: [0, 0, 24, 24], paths: [{ d: 'M0 0H24', stroke: 'currentColor', strokeWidth: 2 }] } as never;
     const tile = drawingSvg(g, { stroke: '#a3e635' }, true);
     expect(tile).toContain('width="24"');
@@ -63,30 +42,5 @@ describe('drawingLink and drawingSvg', () => {
     const inline = drawingSvg(g, { stroke: 'red; background-image: url(x)' });
     expect(inline).toContain('width="100%"');
     expect(inline).not.toContain('background-image');
-  });
-});
-
-describe('imageSrc', () => {
-  it('the base picture paints nothing: the player already shows it under the layers', async () => {
-    const { imageSrc } = await import('./v2-layers');
-    expect(imageSrc('oim:base', 'es')).toBe('');
-    expect(imageSrc({ value: 'oim:base', modes: { es: 'https://x.test/es.png' } }, 'es')).toBe('https://x.test/es.png');
-  });
-
-  it("returns '' for an unresolved ref object instead of crashing", async () => {
-    const { imageSrc } = await import('./v2-layers');
-    expect(imageSrc({ ref: 'res_1' } as never, 'es')).toBe('');
-  });
-});
-
-describe('maskStyle', () => {
-  const window = (fills: unknown[]) => ({ id: 'm', type: 'shape', box: { x: 0, y: 0, width: 100, height: 50 }, geometry: { kind: 'preset', name: 'window' }, mask: { mode: 'window' }, fills }) as never;
-
-  it("writes a window mask's gradient fill back as 1.x fillType and fillGradient", () => {
-    const gradient = { kind: 'gradient', gradient: { type: 'linear', angle: 90, stops: [{ color: '#000' }, { color: '#fff' }] } };
-    const style = maskStyle(window([gradient]), paintColors({}));
-    expect(style.fillType).toBe('gradient');
-    expect(style.fillGradient).toBe('linear-gradient(90deg, #000, #fff)');
-    expect(style.maskBgColor).toBeUndefined();
   });
 });

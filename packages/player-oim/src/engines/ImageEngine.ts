@@ -7,85 +7,29 @@
 import { OIMRegistry } from '../render/registry.js';
 import { setFlag } from '../../../scene/src/runtime/attrs.js';
 import { playerString } from '../../../scene/src/runtime/strings.js';
-import { getDeviceProfile, type DeviceProfile } from '../../../scene/src/runtime/device-tier.js';
+import { getDeviceProfile } from '../../../scene/src/runtime/device-tier.js';
 import { fileCache, type VerifyResult, type VerifiedFile } from '../render/file-cache.js';
 import { injectStyles } from '../../../scene/src/runtime/styles.js';
-import { renderMarkedText, plainOf, type Marks } from '../../../scene/src/blocks/marked-text.js';
-import { dropCapStyle, splitDropCap } from '../../../core/src/drop-cap.js';
-import { layerTextureMask } from '../../../core/src/effects/texture-mask.js';
-import { isEntranceEffect, entranceUnits, entranceStart, entranceKeyframes, entranceClips, ENTRANCE_SECONDS, type EntranceEffect } from '../../../core/src/text-effects.js';
 import { normalizeRawSlots } from '../render/normalize-raw-slots.js';
 import { isV2 } from '../../../core/src/v2/upgrade.js';
 import { hasBaseLayer } from '../../../core/src/v2/base-layer.js';
 import { resolveRefs } from '../../../core/src/v2/resources.js';
-import { legacyView } from '../../../scene/src/legacy/legacy-view.js';
-import type { OimDocument } from '../../../core/src/v2/schema.js';
-import { sanitizeHtml, sanitizeFontFamily } from '../render/security.js';
+import type { Layer, OimDocument } from '../../../core/src/v2/schema.js';
 import { verifyInWorker, type WorkerReply } from '../render/verify-worker.js';
 import { extractOIM } from '../../../core/src/binary.js';
-import { validateOimMetadata, verifyMetadataSignature, securityVerdict, isRefused, ALTERED_FILE_ERROR, isSandboxImageSrc, keyExpiredForFile } from '../render/security.js';
-import {
-  computeLayerComposition,
-  getFilterCss,
-  getMaskPathData,
-  getMaskClipPathD,
-  getMaskSilhouettePath,
-  getWindowMaskCanvasD,
-  getMaskSilhouetteCanvasD,
-  getMaskClipPathId,
-  getMaskFeatherId,
-  getDuotoneFilterId,
-  DUOTONE_COLORS,
-  type CompositionNode,
-  type Slot as CompositionSlot
-} from '../../../scene/src/runtime/layerComposition.js';
-import {
-  buildWaveKeyframesCss,
-  waveCharAnimationDelay,
-  WAVE_PERIOD_SECONDS,
-  WAVE_KEYFRAMES_NAME,
-} from '../../../scene/src/legacy/waveText.js';
-import { calculateGlitchState, glitchLayers } from '../../../core/src/glitch.js';
-import { easingToCss, revealFrames, revealTiming } from '../../../core/src/reveal.js';
-import { calculateTypewriterState } from '../../../scene/src/legacy/typewriterText.js';
-import { getFillCss, patternLayerCss, shapeMaskCss, svgSilhouetteMaskCss } from '../../../core/src/fill.js';
-import { paintPattern } from '../../../scene/src/legacy/patternPaint.js';
-import { resolveCssColor, resolvePalette, DYNAMIC_COLOR_ROLES } from '../../../core/src/dynamic-colors.js';
+import { validateOimMetadata, verifyMetadataSignature, securityVerdict, isRefused, ALTERED_FILE_ERROR, keyExpiredForFile } from '../render/security.js';
+import { DYNAMIC_COLOR_ROLES } from '../../../core/src/dynamic-colors.js';
 import { nextWheelZoom, MIN_ZOOM, MAX_ZOOM } from '../render/wheelZoom.js';
-import { applyTrimToSvgPaths, ensureTrimKeyframes } from '../../../scene/src/legacy/trimPath.js';
-import { shapeDrawing } from '../../../core/src/geoShapes.js';
-import { frameSilhouette } from '../../../core/src/frame-silhouette.js';
-import { mediaFilterCss } from '../../../core/src/media-filters.js';
-import { buildSvgNoiseFilter, buildLayerGrainFilter, GRAIN_LAYER_TYPES } from '../../../core/src/generative/proceduralNoise.js';
-import { TEXTURE_CATALOG, type TexturePreset } from '../../../core/src/effects/index.js';
-import { infiniteLayerPlan, TRACK_CLASS, LEGACY_TRACK_CLASS, ensureParallaxKeyframes, type InfiniteLayer } from '../../../core/src/parallaxCss.js';
-import { localizedEntries, isImageContent, compareLangs } from '../../../scene/src/runtime/localizedEntries.js';
-import { a11yNodes, artworkLabel } from '../../../scene/src/runtime/a11y.js';
-import { dropShadowCss, shadowColorCss, shadowFollowsGlyphs } from '../../../scene/src/runtime/shadow.js';
-import { cropCss } from '../../../core/src/crop.js';
-import { mountImageFill } from '../../../scene/src/legacy/image-fill.js';
-import { flipScale } from '../../../core/src/flip.js';
-import { isGroup, childrenByGroup, wrapperStyle } from '../../../scene/src/legacy/groups.js';
-import { resolveLineHeight, inkMargin } from '../../../core/src/typography.js';
-import { resolveDimensionToCss, resolveNumericDimension } from '../../../core/src/dimensions.js';
-import { slotClipping } from '../../../core/src/clipping.js';
 import { whatTheReaderCannotDo, describeMissing, CONTRACT_VERSION, PLAYER_CAPABILITIES } from '../../../core/src/compatibility.js';
-import { bindStates, resolveActions, applyMinHitArea, readInteraction, type ActionRunner, type RegisterOutsideTap } from '../../../scene/src/runtime/states.js';
 import { resolveMode } from '../../../scene/src/runtime/modes.js';
-import { buildArtisticTextModelFromSlot, generateArtisticTextSvgString } from '../../../scene/src/blocks/artisticText.js';
-import { readEmbeddedFonts, registerEmbeddedFonts, embeddedFontFamily } from '../../../scene/src/blocks/fonts.js';
-import { LegacyRenderer, getTouchDistance, type ImageEngineOptions } from '../../../scene/src/legacy/renderer.js';
+import { readEmbeddedFonts, registerEmbeddedFonts } from '../../../scene/src/blocks/fonts.js';
 import { mount, type Scene } from '../../../scene/src/scene.js';
 import { upgrade, ensureUpgrade } from '../../../scene/src/runtime/upgrade-entry.js';
 import { ensureFeatures } from '../../../scene/src/runtime/features-entry.js';
 import { featuresOf } from '../../../scene/src/runtime/features.js';
-import type { Layer } from '../../../core/src/v2/schema.js';
-export * from '../../../scene/src/legacy/renderer.js';
+import { EngineShell, getTouchDistance, type ImageEngineOptions } from './EngineShell.js';
+export { getTouchDistance, type ImageEngineOptions } from './EngineShell.js';
 
-/**
- * What the renderer paints: a 2.0 document through its 1.x view, with its references resolved.
- * Built on the page, not in the worker: the view's cache lives on the page's own objects.
- */
 /** The 2.0 document the scene paints: a 2.0 file with its references resolved, a 1.x file upgraded. */
 function sceneDocument(metadata: any): OimDocument {
   if (!isV2(metadata)) return upgrade(structuredClone(metadata)).document;
@@ -100,14 +44,7 @@ function layersById(layers: Layer[], into = new Map<string, Layer>()): Map<strin
   return into;
 }
 
-function paintable(metadata: any): any {
-  if (!isV2(metadata)) return metadata;
-  const resolved = resolveRefs(metadata as OimDocument);
-  resolved.missing.forEach((id) => console.warn(`[OimPlayer] resource "${id}" is not in the document`));
-  return legacyView(resolved.document);
-}
-
-export class ImageEngine extends LegacyRenderer {
+export class ImageEngine extends EngineShell {
   /**
    * The document as the file holds it: what `getMetadata()` and `oim:loaded` return.
    * `metadata` is the 1.x view the renderer paints; the two never swap places.
@@ -134,6 +71,7 @@ export class ImageEngine extends LegacyRenderer {
       const doc = sceneDocument(file);
       await ensureFeatures(featuresOf([file, doc.layers])).catch(report);
       const byId = layersById(doc.layers);
+      this._doc = doc;
       this._scene?.destroy();
       overlay.innerHTML = '';
       this._scene = mount(overlay, doc, {
@@ -151,6 +89,8 @@ export class ImageEngine extends LegacyRenderer {
             detail: { slot: source, name: byId.get(source)?.name, trigger: trigger === 'press' ? 'click' : trigger, targets: actions.map((a) => a.target), types: actions.map((a) => a.type) },
           });
           this.host.dispatchEvent(event);
+          // What an action shows or hides is read as such: the reading is rebuilt once it ran.
+          if (!event.defaultPrevented) queueMicrotask(() => this._buildA11y());
           return !event.defaultPrevented;
         },
       });
@@ -167,28 +107,26 @@ export class ImageEngine extends LegacyRenderer {
   }
 
   applyPalette(): void {
-    super.applyPalette();
     // The scene bakes the palette into its root and its images: a new palette is a new scene.
     if (this._scene) void this.renderSlots();
   }
 
   setLang(lang: string): void {
-    if (!this._scene) return super.setLang(lang);
     if (this.lang === lang) return;
     this.lang = lang;
     this.host.setAttribute('lang', lang);
+    this._scene?.setMode({ language: lang });
     this._buildA11y();
-    this._scene.setMode({ language: lang });
     this.host.dispatchEvent(new CustomEvent('oim:langchange', { detail: { lang } }));
   }
 
   play(): void {
-    super.play();
+    this._paused = false;
     if (!this._isStill()) this._scene?.play();
   }
 
   pause(): void {
-    super.pause();
+    this._paused = true;
     this._scene?.pause();
   }
 
@@ -242,23 +180,6 @@ export class ImageEngine extends LegacyRenderer {
       document.removeEventListener('mozfullscreenchange', this._onFullscreenChange);
       document.removeEventListener('MSFullscreenChange', this._onFullscreenChange);
     }
-    if (this._lottieInstances) {
-      this._lottieInstances.forEach(function (reg) {
-        try { reg.inst.destroy(); } catch (e) {}
-      });
-      this._lottieInstances = [];
-    }
-    this._animations.forEach(function (a) {
-      try { a.cancel(); } catch (e) { /* the animation already died with its node */ }
-    });
-    this._animations = [];
-    this._timelines.clear();
-    this._revealAnims.clear();
-    this._heldTimelines.clear();
-    this._textAnimations.forEach(function (a) {
-      try { a.stop(); } catch (e) {}
-    });
-    this._textAnimations = [];
     if (this._onDragMove) {
       window.removeEventListener('mousemove', this._onDragMove);
       this._onDragMove = null;
@@ -505,7 +426,7 @@ export class ImageEngine extends LegacyRenderer {
     const file = structuredClone(v.metadata);
     this.fileMetadata = file;
     // Converted after its own copy: the view's cache is keyed on the object the renderer keeps.
-    this.metadata = only ? structuredClone(file) : paintable(structuredClone(file));
+    this.metadata = structuredClone(file);
     // The palette is first applied before the file is read; only now are its palettes known.
     if (!only) this.applyPalette();
 
@@ -537,7 +458,7 @@ export class ImageEngine extends LegacyRenderer {
 
     // Fonts shipped inside the file are registered before the first paint, so
     // no layer asks Google for a family the file already carries.
-    this.embeddedFontFamilies = await registerEmbeddedFonts(readEmbeddedFonts(this.metadata));
+    await registerEmbeddedFonts(readEmbeddedFonts(this.metadata));
 
     if (this._posterFade) this._viewport?.classList.add('oim-viewport--poster');
     this.updateViewportSize();
@@ -549,13 +470,6 @@ export class ImageEngine extends LegacyRenderer {
         if (self.host && self._overlay) {
           self.updateViewportSize();
           self.updateScale();
-          const nodes = self._overlay.querySelectorAll('.oim-slot');
-          nodes.forEach((node: any) => {
-            const oldTransition = node.style.transition;
-            node.style.setProperty('transition', 'none', 'important');
-            const voidOffset = node.offsetWidth; 
-            node.style.transition = oldTransition;
-          });
         }
       });
     }
@@ -738,25 +652,6 @@ export class ImageEngine extends LegacyRenderer {
     const stage = this._stage;
     if (!stage) return;
 
-    // A touch outside the slot on touch screens deactivates the currently active slot (a single listener)
-    stage.addEventListener('pointerdown', function (e) {
-      if (e.pointerType === 'mouse') return;
-      if (!self._activeTouchSlot) return;
-      // `e.target` does NOT work here: this listener lives on the host, outside the
-      // shadow root, and when it crosses that boundary the browser rewrites the target
-      // to the host itself so as not to leak the internals. The check saw the
-      // host, concluded "it was outside", and left the state just after the slot had
-      // just entered: the touch switched on and off in the same gesture.
-      // `composedPath()` does cross the boundary.
-      const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
-      const hitSlot = path.indexOf(self._activeTouchSlot.el) !== -1;
-      if (!hitSlot) {
-        const active = self._activeTouchSlot;
-        self._activeTouchSlot = null;
-        active.leave();
-      }
-    });
-
     let isDragging = false;
     let startX = 0;
     let startY = 0;
@@ -766,7 +661,7 @@ export class ImageEngine extends LegacyRenderer {
     stage.addEventListener('mousedown', function (e) {
       if (!self.allowZoom) return; 
       if (self.zoom <= 1.0) return;
-      if ((e.target as HTMLElement).closest('.oim-slot')) {
+      if ((e.target as HTMLElement).closest('[data-oim-id]')) {
         return;
       }
       isDragging = true;
@@ -824,7 +719,7 @@ export class ImageEngine extends LegacyRenderer {
         isTouchPanning = false;
         if (self._viewport) self._viewport.style.transition = 'none';
       } else if (e.touches.length === 1 && self.zoom > 1.0) {
-        if ((e.target as HTMLElement).closest('.oim-slot')) {
+        if ((e.target as HTMLElement).closest('[data-oim-id]')) {
           return;
         }
         isTouchPanning = true;

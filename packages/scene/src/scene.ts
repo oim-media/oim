@@ -24,8 +24,8 @@ import { applyText } from "./blocks/text.js";
 import { applyTextureEffect } from "./blocks/texture.js";
 import { resolveLineHeight } from "../../core/src/typography.js";
 import { animationFrames, animationTiming, canAnimate, isEntrance, isTimedText } from "./blocks/animations.js";
-import { applyGlitchText, applyTypewriterText, applyWaveText, type TimedTextAnimation } from "./legacy/renderer.js";
-import { buildWaveKeyframesCss } from "./legacy/waveText.js";
+import { applyGlitchText, applyTypewriterText, applyWaveText, type TimedTextAnimation } from "./blocks/text-timed.js";
+import { buildWaveKeyframesCss } from "./blocks/waveText.js";
 import { applyEntrance, ENTRANCE_MS, entranceFrames } from "./blocks/presets.js";
 import type { EntranceEffect } from "../../core/src/text-effects.js";
 import { bindInteractions, resolveActions, type StateAction } from "./blocks/interactions.js";
@@ -165,16 +165,27 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
    * its fills, geometry and strokes together, so any of them repaints the figure.
    */
   const lotties = new Map<string, LottieRun>();
+  // A block may set its own display (a text is a flex box): hiding keeps it, showing gives it back.
+  const shownDisplay = new WeakMap<HTMLElement, string>();
+  const hide = (el: HTMLElement) => {
+    if (el.style.display !== "none") shownDisplay.set(el, el.style.display);
+    el.style.display = "none";
+  };
+  const show = (el: HTMLElement) => { if (el.style.display === "none") el.style.display = shownDisplay.get(el) ?? ""; };
   const paintBlocks = (el: HTMLElement, layer: Layer, only?: ReadonlySet<string>) => {
     const has = (...keys: string[]) => !only || keys.some((k) => only.has(k));
     const isText = layer.type === "text";
     if (has("fills", "box")) applyFills(el, layer, { colors, isText, size: tileSize, len: canvasLen, width: layer.box.width, height: layer.box.height });
     if (has("opacity", "blend")) applyCompositing(el, layer);
-    if (has("visible")) el.style.display = layer.visible === false ? "none" : "";
     if (has("effects")) applyEffects(el, layer);
     if (layer.type === "text" && has("text")) {
       if (layer.text?.artistic) applyArtistic(el, layer, { lang, literal: colors.literal, fonts });
       else applyText(el, layer, { lang, canvasWidth: width, fonts });
+    }
+    if (has("visible", "text")) {
+      el.toggleAttribute("data-oim-hidden", layer.visible === false);
+      if (layer.visible === false) hide(el);
+      else show(el);
     }
     const figure = has("fills", "geometry", "strokes");
     const outline = layer.type === "shape" ? (figure ? applyGeometry(el, layer, { colors }) : geometryOutline(layer.geometry)) : geometryOutline(undefined);
@@ -272,29 +283,36 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     if (!entry || (entry.layer.visible !== false) === visible) return;
     entry.layer = { ...entry.layer, visible } as Layer;
     const { el } = entry;
+    // Hidden from the moment the action runs; the exit animation is only how it leaves.
+    el.toggleAttribute("data-oim-hidden", !visible);
     const enter = animationsOf(entry.layer, "enter")[0];
     const frames = enter ? animationFrames(enter, len) : revealFrames(REVEAL_DEFAULT.effect, true);
     const timing: KeyframeAnimationOptions = enter
       ? { ...animationTiming(enter), fill: "none" }
       : { duration: visible ? REVEAL_DEFAULT.durationIn : REVEAL_DEFAULT.durationOut, easing: REVEAL_DEFAULT.easing };
     if (visible) {
-      el.style.display = "";
+      show(el);
       if (!paused) animate(el, frames, timing);
       return;
     }
     const run = paused ? undefined : animate(el, [...frames].reverse(), timing);
-    const done = () => { if (entry.layer.visible === false) el.style.display = "none"; };
+    const done = () => { if (entry.layer.visible === false) hide(el); };
     if (run) run.onfinish = done; else done();
   };
 
   /** Runs a chain of actions in order; a hover's leave reverts its show/hide/toggle. */
+  const warnedTargets = new Set<string>();
   const runActions = (source: string) => (actions: StateAction[], revert: boolean, trigger = "press") => {
     if (!revert && _options.onAction && _options.onAction({ source, trigger, actions }) === false) return;
     const flip: Record<string, string> = { show: "hide", hide: "show" };
     const list = revert ? actions.filter((a) => a.type !== "setText" && a.type !== "play").map((a) => ({ ...a, type: flip[a.type] ?? a.type })).reverse() : actions;
     for (const action of list) {
       const entry = entries.get(action.target);
-      if (!entry) continue;
+      if (!entry) {
+        if (!warnedTargets.has(action.target)) console.warn(`[oim scene] an action of "${source}" targets "${action.target}", which does not exist`);
+        warnedTargets.add(action.target);
+        continue;
+      }
       if (action.type === "play") {
         for (const a of animationsOf(entry.layer, "action")) if (!paused) animate(entry.el, animationFrames(a, len), { ...animationTiming(a), fill: "none" });
         continue;

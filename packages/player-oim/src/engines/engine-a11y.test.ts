@@ -12,6 +12,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 import ImageEngine from "./ImageEngine";
+import { doc2, shape2, text2, paintedEngine } from "./scene-engine.fixture";
 import { readingOrder, a11yNodes, artworkLabel } from "../../../scene/src/runtime/a11y";
 
 function mount(slots: any[], extra: any = {}) {
@@ -177,17 +178,21 @@ describe("hidden layers", () => {
 });
 
 describe("toggle actions", () => {
-  it("a slot hidden or shown by an action changes what is read", () => {
-    const { host, motor } = mount([
-      textItem("t1", 10, 10, { es: "Antes" }),
-      textItem("t2", 10, 50, { es: "Después" }, { isVisible: false }),
-    ]);
-    motor._buildA11y();
-    expect(a11y(host).textContent).toBe("Antes");
-    motor.executeToggleState({ hide_slots: ["t1"], show_slots: ["t2"] });
-    expect(a11y(host).textContent).toBe("Después");
-    motor.executeToggleState({ hide_slots: ["t2"], show_slots: ["t1"] });
-    expect(a11y(host).textContent).toBe("Antes");
+  it("a layer hidden or shown by an action changes what is read", async () => {
+    const { host, engine, el } = await paintedEngine(doc2([
+      text2("t1", { es: "Antes" }),
+      text2("t2", { es: "Después" }, { visible: false }),
+      shape2("btn", { interactions: [{ on: "press", actions: [{ type: "hide", target: "t1" }, { type: "show", target: "t2" }] }] }),
+    ]), { lang: "es", mode: "full" });
+    engine.lang = "es";
+    engine._buildA11y();
+    const read = () => (host.shadowRoot!.querySelector(".oim-a11y")!.textContent ?? "");
+    expect(read()).toContain("Antes");
+    expect(read()).not.toContain("Después");
+    el("btn")!.click();
+    await Promise.resolve();
+    expect(read()).toContain("Después");
+    expect(read()).not.toContain("Antes");
   });
 });
 

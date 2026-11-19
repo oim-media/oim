@@ -71,26 +71,6 @@ describe("the two scalings do not share a name", () => {
     expect(regla(".oim-layer-overlay")).not.toContain("--oim-scale");
   });
 
-  it("the slot scale with --oim-scale, which is the shape's scale", () => {
-    expect(regla(".oim-slot")).toContain("scale(var(--oim-scale, 1))");
-  });
-
-  it("el slot NO consume el factor de ajuste", () => {
-    // If it consumed it, it would multiply again by what the overlay already applied.
-    expect(regla(".oim-slot")).not.toContain("--oim-fit");
-  });
-
-  it("the slot's variants keep the same separation", () => {
-    // `:hover` composes over the shape's scale; if the fitting factor slipped
-    // in, the slot would jump in size when the pointer passes over it. (The
-    // per-layer entry that was also checked here no longer exists: the veil is
-    // the only entry.)
-    for (const sel of [".oim-slot:hover"]) {
-      expect(regla(sel)).toContain("--oim-scale");
-      expect(regla(sel)).not.toContain("--oim-fit");
-    }
-    expect(css).not.toContain("oimSlotFadeIn");
-  });
 });
 
 /**

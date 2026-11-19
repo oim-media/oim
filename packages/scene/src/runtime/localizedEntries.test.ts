@@ -101,18 +101,14 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 describe("the engine cannot have its own copy of the rule", () => {
-  // The engine is split: the painting half in renderer.ts, the player half in ImageEngine.ts.
-  const source = [require("node:path").join(__dirname, "../legacy/renderer.ts"), require("node:path").join(__dirname, "../../../player-oim/src/engines/ImageEngine.ts")].map((f) => require("node:fs").readFileSync(f, "utf8")).join("\n");
+  // The painting half is the scene, the player half ImageEngine.ts.
+  const source = [require("node:path").join(__dirname, "../scene.ts"), require("node:path").join(__dirname, "../../../player-oim/src/engines/ImageEngine.ts")].map((f) => require("node:fs").readFileSync(f, "utf8")).join("\n");
 
   it("ImageEngine ya no declara resolveLangValue ni _getContent", () => {
     // The rule lives in localizedEntries.ts. A second copy here is how
     // the parallax broke: two places deciding the same thing and diverging.
     expect(source).not.toMatch(/function\s+resolveLangValue/);
     expect(source).not.toMatch(/function\s+_getContent/);
-  });
-
-  it("ImageEngine asks the module for the entries per language", () => {
-    expect(source).toMatch(/localizedEntries\s*\(/);
   });
 });
 

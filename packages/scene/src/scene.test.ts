@@ -272,6 +272,31 @@ describe("a filter clips its backdrop to its figure", () => {
     scene.update("a", { visible: true } as Partial<Layer>);
     expect(el.style.display).toBe("");
   });
+
+  it("a hidden text stays hidden, and shown again it keeps its own layout", () => {
+    const host = document.createElement("div");
+    const t = { id: "t", type: "text", box: { x: 0, y: 0 }, visible: false, text: { content: { es: "Hola" } } } as unknown as Layer;
+    const scene = mount(host, doc([t, shape({ id: "btn", interactions: [{ on: "press", actions: [{ type: "toggle", target: "t" }] }] } as Partial<Layer>)]), { paused: true });
+    const el = scene.elementOf("t")!;
+    expect(el.style.display).toBe("none");
+    scene.elementOf("btn")!.click();
+    expect(el.style.display).toBe("flex");
+    scene.elementOf("btn")!.click();
+    expect(el.style.display).toBe("none");
+    scene.update("t", { text: { content: { es: "Adiós" } } } as Partial<Layer>);
+    expect(el.style.display).toBe("none");
+  });
+
+  it("a layer an action hides is marked hidden at once, before its exit animation ends", () => {
+    const host = document.createElement("div");
+    const scene = mount(host, doc([shape({ id: "p" }), shape({ id: "btn", interactions: [{ on: "press", actions: [{ type: "toggle", target: "p" }] }] } as Partial<Layer>)]));
+    const el = scene.elementOf("p")!;
+    expect(el.hasAttribute("data-oim-hidden")).toBe(false);
+    scene.elementOf("btn")!.click();
+    expect(el.hasAttribute("data-oim-hidden")).toBe(true);
+    scene.elementOf("btn")!.click();
+    expect(el.hasAttribute("data-oim-hidden")).toBe(false);
+  });
 });
 
 describe("time and interaction", () => {

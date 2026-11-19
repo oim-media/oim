@@ -204,6 +204,8 @@ export async function verifyMetadataSignature(metadata: any, origin?: string): P
     };
 
     let isValid = await verifyWithJwk(keyJwk, canonicalBytes);
+    // The key that actually verified decides the retirement window.
+    let verifyingJwk = keyJwk;
 
     // Backward-compatibility fallback: files published before the
     // creator_user_id exclusion change were signed keeping that field at the root.
@@ -240,14 +242,15 @@ export async function verifyMetadataSignature(metadata: any, origin?: string): P
         if (serverJwk && (serverJwk.x !== keyJwk.x || serverJwk.y !== keyJwk.y)) {
           console.warn('[OimPlayer::Security] Pinned key failed; retrying with the key published by the server for kid:', metadata.key_version);
           isValid = await verifyWithJwk(serverJwk, canonicalBytes);
+          if (isValid) verifyingJwk = serverJwk;
         }
       } catch (_) { /* network failure — keep pinned-key result */ }
     }
 
     if (isValid) {
-      // Both sources count: the key we ship and the one the server published.
-      const not_after = effectiveNotAfter(metadata.key_version, keyJwk);
-      const key = { kid: metadata.key_version, jwk: keyJwk, not_after };
+      // The window of the key that verified; the embedded one still caps it.
+      const not_after = effectiveNotAfter(metadata.key_version, verifyingJwk);
+      const key = { kid: metadata.key_version, jwk: verifyingJwk, not_after };
       if (!signatureIsWithinKeyWindow(key, metadata.signed_at)) {
         console.error('[OimPlayer::Security] Signature made after this key was retired.');
         return false;

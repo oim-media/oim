@@ -41,6 +41,16 @@ export interface ArtisticTextRenderModel {
 type V2Layer = import('../../../core/src/v2/schema.js').Layer;
 type Literal = (value: unknown) => string | undefined;
 
+// Every value written inside an SVG attribute goes through this: a font family,
+// layer id or colour from the file must not close the quote and add markup.
+const escapeAttr = (v: unknown): string =>
+  String(v)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+
 /**
  * The same model from a 2.0 text layer with `text.artistic`. Colours are
  * literals: an SVG presentation attribute cannot hold a `var()`. The defaults
@@ -163,8 +173,8 @@ export function generateArtisticTextSvgString(
   model: ArtisticTextRenderModel,
   id: string = "artistic-text"
 ): string {
-  const pathId = `curve-path-${id}`;
-  const gradId = `artistic-grad-${id}`;
+  const pathId = escapeAttr(`curve-path-${id}`);
+  const gradId = escapeAttr(`artistic-grad-${id}`);
 
   let frontFill = model.fillColor;
   let gradientSvg = "";
@@ -197,9 +207,9 @@ export function generateArtisticTextSvgString(
       </linearGradient>`;
   }
 
-  const fontFamily = `${model.fontFamily}, sans-serif`;
+  const fontFamily = `${escapeAttr(model.fontFamily)}, sans-serif`;
   const fontWeight = model.bold ? "bold" : "normal";
-  const letterSpacing = model.letterSpacing ? `letter-spacing="${model.letterSpacing}px"` : "";
+  const letterSpacing = model.letterSpacing ? `letter-spacing="${escapeAttr(model.letterSpacing)}px"` : "";
 
   const escapeText = (t: string) =>
     t
@@ -219,32 +229,32 @@ export function generateArtisticTextSvgString(
     const extSvg = model.extrusionLayers
       .map(
         (l) =>
-          `<text font-family="${fontFamily}" font-size="${model.fontSize}" font-weight="${fontWeight}" ${letterSpacing} fill="${l.color}" stroke="${l.color}" stroke-width="${model.outerStrokeWidth > 0 ? model.outerStrokeWidth : 1}" stroke-linejoin="round" transform="translate(${l.dx}, ${l.dy})" opacity="${l.opacity}"><textPath href="#${pathId}" startOffset="50%" text-anchor="middle">${escapedText}</textPath></text>`
+          `<text font-family="${fontFamily}" font-size="${model.fontSize}" font-weight="${fontWeight}" ${letterSpacing} fill="${escapeAttr(l.color)}" stroke="${escapeAttr(l.color)}" stroke-width="${model.outerStrokeWidth > 0 ? model.outerStrokeWidth : 1}" stroke-linejoin="round" transform="translate(${l.dx}, ${l.dy})" opacity="${l.opacity}"><textPath href="#${pathId}" startOffset="50%" text-anchor="middle">${escapedText}</textPath></text>`
       )
       .join("\n");
 
     const outerStrokeSvg =
       model.outerStrokeWidth > 0 && model.outerStrokeColor
-        ? `<text font-family="${fontFamily}" font-size="${model.fontSize}" font-weight="${fontWeight}" ${letterSpacing} fill="none" stroke="${model.outerStrokeColor}" stroke-width="${model.outerStrokeWidth * 2}" stroke-linejoin="round"><textPath href="#${pathId}" startOffset="50%" text-anchor="middle">${escapedText}</textPath></text>`
+        ? `<text font-family="${fontFamily}" font-size="${model.fontSize}" font-weight="${fontWeight}" ${letterSpacing} fill="none" stroke="${escapeAttr(model.outerStrokeColor)}" stroke-width="${model.outerStrokeWidth * 2}" stroke-linejoin="round"><textPath href="#${pathId}" startOffset="50%" text-anchor="middle">${escapedText}</textPath></text>`
         : "";
 
-    const frontSvg = `<text font-family="${fontFamily}" font-size="${model.fontSize}" font-weight="${fontWeight}" ${letterSpacing} fill="${frontFill}" stroke="${model.innerStrokeWidth > 0 ? (model.innerStrokeColor || "#FFFFFF") : "none"}" stroke-width="${model.innerStrokeWidth > 0 ? model.innerStrokeWidth : 0}" paint-order="stroke fill" stroke-linejoin="round"><textPath href="#${pathId}" startOffset="50%" text-anchor="middle">${escapedText}</textPath></text>`;
+    const frontSvg = `<text font-family="${fontFamily}" font-size="${model.fontSize}" font-weight="${fontWeight}" ${letterSpacing} fill="${escapeAttr(frontFill)}" stroke="${escapeAttr(model.innerStrokeWidth > 0 ? (model.innerStrokeColor || "#FFFFFF") : "none")}" stroke-width="${model.innerStrokeWidth > 0 ? model.innerStrokeWidth : 0}" paint-order="stroke fill" stroke-linejoin="round"><textPath href="#${pathId}" startOffset="50%" text-anchor="middle">${escapedText}</textPath></text>`;
 
     contentSvg = `${extSvg}\n${outerStrokeSvg}\n${frontSvg}`;
   } else {
     const extSvg = model.extrusionLayers
       .map(
         (l) =>
-          `<text x="50%" y="50%" font-family="${fontFamily}" font-size="${model.fontSize}" font-weight="${fontWeight}" ${letterSpacing} text-anchor="middle" dominant-baseline="central" fill="${l.color}" stroke="${l.color}" stroke-width="${model.outerStrokeWidth > 0 ? model.outerStrokeWidth : 1}" stroke-linejoin="round" transform="translate(${l.dx}, ${l.dy})" opacity="${l.opacity}">${escapedText}</text>`
+          `<text x="50%" y="50%" font-family="${fontFamily}" font-size="${model.fontSize}" font-weight="${fontWeight}" ${letterSpacing} text-anchor="middle" dominant-baseline="central" fill="${escapeAttr(l.color)}" stroke="${escapeAttr(l.color)}" stroke-width="${model.outerStrokeWidth > 0 ? model.outerStrokeWidth : 1}" stroke-linejoin="round" transform="translate(${l.dx}, ${l.dy})" opacity="${l.opacity}">${escapedText}</text>`
       )
       .join("\n");
 
     const outerStrokeSvg =
       model.outerStrokeWidth > 0 && model.outerStrokeColor
-        ? `<text x="50%" y="50%" font-family="${fontFamily}" font-size="${model.fontSize}" font-weight="${fontWeight}" ${letterSpacing} text-anchor="middle" dominant-baseline="central" fill="none" stroke="${model.outerStrokeColor}" stroke-width="${model.outerStrokeWidth * 2}" stroke-linejoin="round">${escapedText}</text>`
+        ? `<text x="50%" y="50%" font-family="${fontFamily}" font-size="${model.fontSize}" font-weight="${fontWeight}" ${letterSpacing} text-anchor="middle" dominant-baseline="central" fill="none" stroke="${escapeAttr(model.outerStrokeColor)}" stroke-width="${model.outerStrokeWidth * 2}" stroke-linejoin="round">${escapedText}</text>`
         : "";
 
-    const frontSvg = `<text x="50%" y="50%" font-family="${fontFamily}" font-size="${model.fontSize}" font-weight="${fontWeight}" ${letterSpacing} text-anchor="middle" dominant-baseline="central" fill="${frontFill}" stroke="${model.innerStrokeWidth > 0 ? (model.innerStrokeColor || "#FFFFFF") : "none"}" stroke-width="${model.innerStrokeWidth > 0 ? model.innerStrokeWidth : 0}" paint-order="stroke fill" stroke-linejoin="round">${escapedText}</text>`;
+    const frontSvg = `<text x="50%" y="50%" font-family="${fontFamily}" font-size="${model.fontSize}" font-weight="${fontWeight}" ${letterSpacing} text-anchor="middle" dominant-baseline="central" fill="${escapeAttr(frontFill)}" stroke="${escapeAttr(model.innerStrokeWidth > 0 ? (model.innerStrokeColor || "#FFFFFF") : "none")}" stroke-width="${model.innerStrokeWidth > 0 ? model.innerStrokeWidth : 0}" paint-order="stroke fill" stroke-linejoin="round">${escapedText}</text>`;
 
     contentSvg = `${extSvg}\n${outerStrokeSvg}\n${frontSvg}`;
   }
@@ -258,7 +268,7 @@ export function generateArtisticTextSvgString(
   return `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 ${model.width} ${model.height}" preserveAspectRatio="xMidYMid meet" overflow="visible" style="pointer-events:none;">
   <defs>
     ${gradientSvg}
-    ${model.isCurved ? `<path id="${pathId}" d="${model.curvePathD}" fill="none" />` : ""}
+    ${model.isCurved ? `<path id="${pathId}" d="${escapeAttr(model.curvePathD)}" fill="none" />` : ""}
   </defs>
   <g>
     ${contentSvg}

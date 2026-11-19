@@ -67,7 +67,7 @@ export class ImageEngine extends EngineShell {
         console.error('[OimPlayer] A part of the player did not load; the work is shown without it.', message);
         this.host.dispatchEvent(new CustomEvent('oim:error', { detail: { code: 'chunk', message } }));
       };
-      await ensureUpgrade().catch(report);
+      if (!isV2(file)) await ensureUpgrade().catch(report);
       const doc = sceneDocument(file);
       await ensureFeatures(featuresOf([file, doc.layers])).catch(report);
       const byId = layersById(doc.layers);

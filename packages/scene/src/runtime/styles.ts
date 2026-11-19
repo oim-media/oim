@@ -29,6 +29,8 @@ export function getStylesText(): string {
     '.oim-player-viewport.oim-fit-cover { min-width: 100%; min-height: 100%; max-width: none; max-height: none; }',
     '.oim-player-base { display: block; width: 100%; height: 100%; object-fit: fill; pointer-events: none; transition: filter 0.5s ease-in-out; image-rendering: high-quality; image-rendering: -webkit-optimize-contrast; }',
     '.oim-layer-overlay { position: absolute; top: 50%; left: 50%; width: var(--oim-overlay-w, 1080px); height: var(--oim-overlay-h, 1920px); transform: translate(-50%, -50%) scale(var(--oim-fit, 1)); transform-origin: center center; z-index: 10; pointer-events: none; transition: opacity 0.5s ease-in-out; container-type: inline-size !important; container-name: oim-viewport; }',
+    // The overlay lets the pointer reach the base picture; each painted layer takes it back (a layer's own inline style still wins).
+    '.oim-layer-overlay [data-oim-id] { pointer-events: auto; }',
     '.oim-player-loading { color: var(--oim-text-muted, #8a8a96); font-family: "JetBrains Mono", monospace; font-size: 12px; }',
     '.oim-player-error { color: var(--oim-red, #ef4444); font-family: "JetBrains Mono", monospace; font-size: 12px; }',
   ].join('\n');

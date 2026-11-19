@@ -67,6 +67,12 @@ describe("the two scalings do not share a name", () => {
    * value would travel by inheritance to every `.oim-slot` and be applied twice.
    * That is exactly the fault this closes.
    */
+  it("the overlay lets the pointer through and its layers take it back", () => {
+    // The overlay is pointer-events: none so the base picture can be dragged; a press on a layer must still land.
+    expect(regla(".oim-layer-overlay")).toContain("pointer-events: none");
+    expect(regla(".oim-layer-overlay [data-oim-id]")).toContain("pointer-events: auto");
+  });
+
   it("el overlay NO define ni consume --oim-scale", () => {
     expect(regla(".oim-layer-overlay")).not.toContain("--oim-scale");
   });

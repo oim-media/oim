@@ -6,6 +6,7 @@
 
 import { geometryOutline, type Layer, type Outline, type PaintColors } from "@oim-media/core/v2";
 import { silhouetteClip, silhouettePath } from "./silhouette-clip.js";
+import { drawingElement, drawingLink, paintedByFillLayer } from "./drawing.js";
 import { colorStrokeOf } from "./strokes.js";
 
 const SVG = "http://www.w3.org/2000/svg";
@@ -24,7 +25,19 @@ export function applyGeometry(el: HTMLElement, layer: Pick<Layer, "geometry" | "
   const outline = geometryOutline(layer.geometry);
   if (outline.round && !outline.silhouette) el.style.borderRadius = "50%";
   const figure = outline.silhouette;
-  if (!figure) return outline;
+  if (!figure) {
+    // Paths that paint themselves (an icon, an SVG) are no silhouette: each path brings its own colours.
+    if (layer.geometry?.kind === "paths" && !outline.path) {
+      el.style.backgroundColor = "transparent";
+      el.style.backgroundImage = "";
+      // shortcut: a gradient, pattern or generative fill is not painted on a drawing yet, only its paths' own colours.
+      const link = drawingLink(layer as Layer, ctx.colors.css);
+      const svg = drawingElement(el.ownerDocument, layer.geometry, paintedByFillLayer(layer as Layer) ? { ...link, fill: "none" } : link);
+      svg.dataset.oimFigure = "";
+      el.appendChild(svg);
+    }
+    return outline;
+  }
 
   const first = layer.fills?.[0];
   const fill = outline.fillable && first && "kind" in first && first.kind === "color" ? ctx.colors.css(first.value) : undefined;

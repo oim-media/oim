@@ -41,6 +41,19 @@ describe("mount", () => {
     expect(letterbox.querySelector(".oim-scene")).not.toBeNull();
   });
 
+  it("an icon of paths with their own stroke is painted, and its zero-width layer stroke draws no outline", () => {
+    const icon = shape({
+      id: "p2-card-icon", box: { x: 792, y: 476, width: 48, height: 48, rotation: -2 },
+      geometry: { kind: "paths", viewBox: [0, 0, 24, 24], paths: [{ d: "M16 18a2 2 0 0 1 2 2", stroke: "#090a0d", strokeWidth: 2.2, cap: "round", join: "round" }] },
+      strokes: [{ paint: { kind: "color", value: "#090a0d" }, width: 0 }],
+    } as Partial<Layer>);
+    const el = mount(document.createElement("div"), doc([icon])).elementOf("p2-card-icon")!;
+    const path = el.querySelector("svg[data-oim-figure] path")!;
+    expect(path.getAttribute("d")).toBe("M16 18a2 2 0 0 1 2 2");
+    expect((path as SVGElement).style.getPropertyValue("stroke")).toBe("#090a0d");
+    expect(el.style.outline).toBe("");
+  });
+
   it("a layer sits at its box, as shares of the canvas", () => {
     const host = document.createElement("div");
     const scene = mount(host, doc([shape()]));

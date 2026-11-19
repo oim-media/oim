@@ -11,6 +11,7 @@ import { OWN_SCRIPT_SRC } from './own-script.js';
 import { createExternalScriptLoader } from './lottie-external.js';
 
 declare const __OIM_UPGRADE_FILE__: string;
+declare const __OIM_UPGRADE_SRI__: string;
 
 const GLOBAL = '__oimUpgrade';
 const loaded = () => (globalThis as any)[GLOBAL] as typeof Upgrade | undefined;
@@ -19,6 +20,7 @@ const load = createExternalScriptLoader({
   scriptUrl: OWN_SCRIPT_SRC,
   file: `vendor/${typeof __OIM_UPGRADE_FILE__ !== 'undefined' ? __OIM_UPGRADE_FILE__ : 'oim-upgrade.js'}`,
   marker: 'data-oim-upgrade',
+  integrity: typeof __OIM_UPGRADE_SRI__ !== 'undefined' ? __OIM_UPGRADE_SRI__ : undefined,
   read: () => loaded(),
 });
 

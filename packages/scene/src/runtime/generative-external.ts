@@ -11,6 +11,7 @@ import { OWN_SCRIPT_SRC } from './own-script.js';
 import { createExternalScriptLoader } from './lottie-external.js';
 
 declare const __OIM_GENERATIVE_FILE__: string;
+declare const __OIM_GENERATIVE_SRI__: string;
 
 const loaded = () => (globalThis as any).__oimGenerative as { renderGenerativeSVG: typeof Render } | undefined;
 
@@ -18,6 +19,7 @@ export const loadGenerative = createExternalScriptLoader({
   scriptUrl: OWN_SCRIPT_SRC,
   file: `vendor/${typeof __OIM_GENERATIVE_FILE__ !== 'undefined' ? __OIM_GENERATIVE_FILE__ : 'oim-generative.js'}`,
   marker: 'data-oim-generative',
+  integrity: typeof __OIM_GENERATIVE_SRI__ !== 'undefined' ? __OIM_GENERATIVE_SRI__ : undefined,
   read: () => loaded(),
 });
 

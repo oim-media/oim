@@ -7,6 +7,7 @@
 import { OWN_SCRIPT_SRC } from './own-script.js';
 
 declare const __OIM_LOTTIE_VERSION__: string;
+declare const __OIM_LOTTIE_SRI__: string;
 
 /** Where Lottie lives when the player is served without a CDN URL to resolve against. */
 const FALLBACK_BASE = 'https://cdn.oim.media/player/v1/';
@@ -20,7 +21,7 @@ export function vendorUrl(scriptUrl: string | null, version: string): string {
 }
 
 /** Loads one script that lives next to the player, once per page; `read` says what it defined. */
-export function createExternalScriptLoader(opts: { scriptUrl: string | null; file: string; marker: string; read: () => any; doc?: Document }): () => Promise<any> {
+export function createExternalScriptLoader(opts: { scriptUrl: string | null; file: string; marker: string; read: () => any; doc?: Document; integrity?: string }): () => Promise<any> {
   let pending: Promise<any> | null = null;
   return function load() {
     const existing = opts.read();
@@ -36,6 +37,10 @@ export function createExternalScriptLoader(opts: { scriptUrl: string | null; fil
       script.src = url;
       script.async = true;
       script.setAttribute(opts.marker, '');
+      if (opts.integrity) {
+        script.integrity = opts.integrity;
+        script.crossOrigin = 'anonymous';
+      }
       script.onload = () => {
         const lib = opts.read();
         if (lib) resolve(lib);
@@ -61,12 +66,13 @@ export function createExternalScriptLoader(opts: { scriptUrl: string | null; fil
  * without Lottie. The package build aliases lottie_light to this module, so the
  * library is only downloaded when a Lottie layer is actually painted.
  */
-export function createExternalLottieLoader(opts: { scriptUrl: string | null; version: string; doc?: Document }): () => Promise<any> {
+export function createExternalLottieLoader(opts: { scriptUrl: string | null; version: string; doc?: Document; integrity?: string }): () => Promise<any> {
   return createExternalScriptLoader({
     scriptUrl: opts.scriptUrl,
     file: `vendor/lottie_light-${opts.version}.js`,
     marker: 'data-oim-lottie',
     doc: opts.doc,
+    integrity: opts.integrity,
     read: () => {
       const lib = (globalThis as any).lottie;
       return lib && typeof lib.loadAnimation === 'function' ? lib : undefined;
@@ -77,6 +83,7 @@ export function createExternalLottieLoader(opts: { scriptUrl: string | null; ver
 const load = createExternalLottieLoader({
   scriptUrl: OWN_SCRIPT_SRC,
   version: typeof __OIM_LOTTIE_VERSION__ !== 'undefined' ? __OIM_LOTTIE_VERSION__ : '',
+  integrity: typeof __OIM_LOTTIE_SRI__ !== 'undefined' ? __OIM_LOTTIE_SRI__ : undefined,
 });
 
 /** Shape `lottie-loader.ts` recognises: an external loader instead of the library itself. */

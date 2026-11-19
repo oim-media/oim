@@ -11,6 +11,7 @@ import { OWN_SCRIPT_SRC } from './own-script.js';
 import { createExternalScriptLoader } from './lottie-external.js';
 
 declare const __OIM_PATTERNS_FILE__: string;
+declare const __OIM_PATTERNS_SRI__: string;
 
 type Lib = Pick<typeof Patterns, 'generatePatternSVG' | 'patternTileUri' | 'isMultiColorPattern' | 'resolvePatternColors'>;
 const loaded = () => (globalThis as any).__oimPatterns as Lib | undefined;
@@ -19,6 +20,7 @@ export const loadPatterns = createExternalScriptLoader({
   scriptUrl: OWN_SCRIPT_SRC,
   file: `vendor/${typeof __OIM_PATTERNS_FILE__ !== 'undefined' ? __OIM_PATTERNS_FILE__ : 'oim-patterns.js'}`,
   marker: 'data-oim-patterns',
+  integrity: typeof __OIM_PATTERNS_SRI__ !== 'undefined' ? __OIM_PATTERNS_SRI__ : undefined,
   read: () => loaded(),
 });
 

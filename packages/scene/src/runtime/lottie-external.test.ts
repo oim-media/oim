@@ -68,6 +68,20 @@ describe("cargador externo de lottie", () => {
     expect(await second).toBe(fakeLottie);
   });
 
+  it("with integrity the script carries it and crossorigin=anonymous", () => {
+    const load = createExternalLottieLoader({ scriptUrl: null, version: "5.13.0", integrity: "sha384-abc" });
+    void load();
+    expect(scripts()[0].getAttribute("integrity")).toBe("sha384-abc");
+    expect(scripts()[0].getAttribute("crossorigin")).toBe("anonymous");
+  });
+
+  it("without integrity the script has neither attribute", () => {
+    const load = createExternalLottieLoader({ scriptUrl: null, version: "5.13.0" });
+    void load();
+    expect(scripts()[0].hasAttribute("integrity")).toBe(false);
+    expect(scripts()[0].hasAttribute("crossorigin")).toBe(false);
+  });
+
   it("if the script loads but does not define lottie, it rejects instead of hanging", async () => {
     const load = createExternalLottieLoader({ scriptUrl: null, version: "5.13.0" });
     const p = load();

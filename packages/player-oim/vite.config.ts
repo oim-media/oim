@@ -6,7 +6,7 @@
 
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
-import { mkdirSync, copyFileSync, readFileSync, readdirSync, statSync } from 'fs';
+import { mkdirSync, copyFileSync, existsSync, readFileSync, readdirSync, statSync } from 'fs';
 import { createHash } from 'crypto';
 import { createRequire } from 'module';
 
@@ -71,6 +71,24 @@ function versionedCopyPlugin() {
   };
 }
 
+// Subresource Integrity for the on-demand scripts. The hashes are pinned in the
+// bundle, so changing a file on the CDN breaks the load instead of running in
+// every page. Only the CDN build computes them (the vendor files must exist by
+// then); serve and test get "", which the loaders treat as "no integrity".
+function sriOf(file: string): string {
+  if (!existsSync(file)) throw new Error(`SRI: ${file} is missing. Build the vendor files before the player.`);
+  return 'sha384-' + createHash('sha384').update(readFileSync(file)).digest('base64');
+}
+function sriDefines(build: boolean): Record<string, string> {
+  const pin = (file: string) => JSON.stringify(build ? sriOf(resolve(import.meta.dirname, 'dist/vendor', file)) : '');
+  return {
+    __OIM_LOTTIE_SRI__: JSON.stringify(build ? sriOf(LOTTIE_LIGHT) : ''),
+    __OIM_UPGRADE_SRI__: pin(UPGRADE_FILE),
+    __OIM_GENERATIVE_SRI__: pin(GENERATIVE_FILE),
+    __OIM_PATTERNS_SRI__: pin(PATTERNS_FILE)
+  };
+}
+
 // `--mode esm` builds the npm package: ES module, Lottie and core left as
 // real imports for the consumer's bundler (it code-splits the dynamic import),
 // no CDN files. The default build is the single-file iife served by the CDN.
@@ -100,7 +118,8 @@ export default defineConfig(({ command, mode }) => VENDOR_PARTS[mode] ? {
     __OIM_LOTTIE_VERSION__: JSON.stringify(LOTTIE_VERSION),
     __OIM_UPGRADE_FILE__: JSON.stringify(UPGRADE_FILE),
     __OIM_GENERATIVE_FILE__: JSON.stringify(GENERATIVE_FILE),
-    __OIM_PATTERNS_FILE__: JSON.stringify(PATTERNS_FILE)
+    __OIM_PATTERNS_FILE__: JSON.stringify(PATTERNS_FILE),
+    ...sriDefines(command === 'build' && !process.argv.includes('--watch')) // watch builds skip SRI: vendor files may not exist yet
   },
   // Only in `vite build`: an `iife` inlines every import(), so the real
   // lottie_light would land in the bundle. vitest runs as `serve` and keeps
@@ -122,7 +141,9 @@ export default defineConfig(({ command, mode }) => VENDOR_PARTS[mode] ? {
       formats: ['iife']
     },
     outDir: 'dist',
-    emptyOutDir: true,
+    // Not emptied: the vendor files were built before this and are hashed below.
+    // The build script removes dist/ first.
+    emptyOutDir: false,
     minify: true
   },
   worker: {

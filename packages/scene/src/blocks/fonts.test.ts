@@ -28,6 +28,32 @@ describe("readEmbeddedFonts", () => {
     expect(readEmbeddedFonts({ fonts: malas })).toEqual([]);
   });
 
+  it("drops data that breaks out of the url() after a valid header", () => {
+    const injected = entry({ data: WOFF2 + ") , url(https://evil.example/x.woff2" });
+    expect(readEmbeddedFonts({ fonts: [injected] })).toEqual([]);
+  });
+
+  it("drops data with whitespace, a quote or a semicolon inside the base64", () => {
+    const at = (i: number, c: string) => WOFF2.slice(0, i) + c + WOFF2.slice(i + 1);
+    const malas = [" ", "\n", "'", '"', ";"].map((c) => entry({ data: at(20, c) }));
+    expect(readEmbeddedFonts({ fonts: malas })).toEqual([]);
+  });
+
+  it("drops data whose length is not a multiple of 4", () => {
+    expect(readEmbeddedFonts({ fonts: [entry({ data: WOFF2 + "A" })] })).toEqual([]);
+  });
+
+  it("drops data with an = in the middle", () => {
+    const eq = WOFF2.slice(0, 20) + "=" + WOFF2.slice(21);
+    expect(readEmbeddedFonts({ fonts: [entry({ data: eq })] })).toEqual([]);
+  });
+
+  it("accepts valid base64 with trailing padding", () => {
+    const padded = btoa("wOF2" + "x".repeat(39));
+    expect(padded.endsWith("==")).toBe(true);
+    expect(readEmbeddedFonts({ fonts: [entry({ data: padded })] })).toHaveLength(1);
+  });
+
   it("1.27.0: takes woff, whose content must start wOFF", () => {
     const woff = entry({ format: "woff", data: btoa("wOFF" + "x".repeat(40)) });
     expect(readEmbeddedFonts({ fonts: [woff] })).toEqual([expect.objectContaining({ format: "woff" })]);

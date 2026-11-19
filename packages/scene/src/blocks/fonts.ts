@@ -31,6 +31,9 @@ const MAX_BASE64 = Math.ceil(EMBEDDED_FONT_MAX_BYTES / 3) * 4;
 
 const MAGIC = { woff: 'wOFF', woff2: 'wOF2' } as const;
 
+// data is interpolated into url(data:...;base64,...): anything outside the alphabet could close the url().
+const STRICT_BASE64 = /^[A-Za-z0-9+/]*={0,2}$/;
+
 function hasMagic(base64: string, format: 'woff' | 'woff2'): boolean {
   try {
     return atob(base64.slice(0, 8)).startsWith(MAGIC[format]);
@@ -49,7 +52,8 @@ export function readEmbeddedFonts(metadata: any): EmbeddedFontEntry[] {
     if (typeof f.name !== 'string' || !EMBEDDED_FONT_NAME.test(f.name)) continue;
     if (f.style !== 'normal' && f.style !== 'italic') continue;
     if (typeof f.weight !== 'number' || f.weight < 100 || f.weight > 900) continue;
-    if (f.data.length > MAX_BASE64 || !hasMagic(f.data, f.format)) continue;
+    if (f.data.length > MAX_BASE64 || f.data.length % 4 !== 0 || !STRICT_BASE64.test(f.data)) continue;
+    if (!hasMagic(f.data, f.format)) continue;
     out.push({ family: f.family, name: f.name, weight: f.weight, style: f.style, format: f.format, data: f.data });
   }
   return out;

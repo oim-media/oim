@@ -35,7 +35,7 @@ jobs:
           mkdir -p "$out/player/v1"
           cp -r packages/player-oim/dist/. "$out/"
           cp -r packages/player-oim/dist/oim-player.js packages/player-oim/dist/vendor packages/player-oim/dist/THIRD_PARTY_NOTICES "$out/player/v1/"
-          printf '/*\n  Cache-Control: public, max-age=0, must-revalidate\n  X-Robots-Tag: noindex\n' > "$out/_headers"
+          printf '/*\n  Cache-Control: public, max-age=0, must-revalidate\n  X-Robots-Tag: noindex\n  Access-Control-Allow-Origin: *\n' > "$out/_headers"
           printf "${GITHUB_SHA}\n" > "$out/commit.txt"
       - run: cd tools/player-next && pnpm dlx wrangler@4.156.0 deploy
         env:

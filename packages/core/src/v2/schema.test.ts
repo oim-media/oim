@@ -86,3 +86,21 @@ describe("image src by ref", () => {
   it("accepts an image src by ref", () =>
     ok(doc([{ id: "photo", type: "image", box, image: { src: { ref: "res_photo" } } }])));
 });
+
+describe("markup-breaking characters in ids and font families", () => {
+  const text = (family: string | undefined, layerId = "t") =>
+    doc([{ id: layerId, type: "text", box, text: { content: { es: "Hola" }, font: { family } } }]);
+
+  it("rejects a layer id with a double quote", () => bad(doc([{ ...rect, id: 'a"b' }])));
+  it("rejects a layer id with a less-than sign", () => bad(doc([{ ...rect, id: "a<b" }])));
+  it("rejects a layer id with a newline", () => bad(doc([{ ...rect, id: "a\nb" }])));
+  it("rejects a ref target with a greater-than sign", () =>
+    bad(doc([{ ...rect, fills: [{ ref: "res>x" }] }])));
+  it("rejects a font family with markup characters", () => bad(text('Inter"><x')));
+  it("accepts a font family with quotes inside its name", () => ok(text("'Open Sans'")));
+  it("accepts ordinary ids: kebab, UUID, spaces and unicode", () => {
+    ok(doc([{ ...rect, id: "layer-1" }]));
+    ok(doc([{ ...rect, id: "3f2504e0-4f89-11d3-9a0c-0305e82c3301" }]));
+    ok(doc([{ ...rect, id: "título 1" }]));
+  });
+});

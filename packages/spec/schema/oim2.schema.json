@@ -77,7 +77,8 @@
     },
     "__schema1": {
       "type": "string",
-      "maxLength": 128
+      "maxLength": 128,
+      "pattern": "^[^<>\"\\x00-\\x1f\\x7f]*$"
     },
     "__schema2": {
       "type": "string",
@@ -756,7 +757,8 @@
     "__schema31": {
       "type": "string",
       "minLength": 1,
-      "maxLength": 128
+      "maxLength": 128,
+      "pattern": "^[^<>\"\\x00-\\x1f\\x7f]*$"
     },
     "__schema32": {
       "minItems": 1,
@@ -1002,7 +1004,8 @@
                   "properties": {
                     "family": {
                       "type": "string",
-                      "maxLength": 256
+                      "maxLength": 256,
+                      "pattern": "^[^<>\"\\x00-\\x1f\\x7f]*$"
                     },
                     "size": {
                       "$ref": "#/$defs/__schema45"

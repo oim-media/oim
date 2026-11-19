@@ -26,7 +26,10 @@ import { LAYER_BLOCKS, type Block, type LayerType } from "./layer-blocks.js";
 export { DOCUMENT_VERSION } from "./version.js";
 import { DOCUMENT_VERSION } from "./version.js";
 
-const id = z.string().min(1).max(128);
+// Ids and names end up in markup and attributes: no angle brackets, quotes or control characters.
+const NO_MARKUP = /^[^<>"\x00-\x1f\x7f]*$/;
+const NO_MARKUP_MESSAGE = "must not contain <, >, \" or control characters";
+const id = z.string().min(1).max(128).regex(NO_MARKUP, NO_MARKUP_MESSAGE);
 const unit = z.number().min(0).max(1);
 const extensions = z.record(z.string(), z.unknown());
 
@@ -197,7 +200,7 @@ export const textSchema = z
     content: z.record(z.string(), z.string()),
     font: z
       .object({
-        family: z.string().max(256).optional(),
+        family: z.string().max(256).regex(NO_MARKUP, NO_MARKUP_MESSAGE).optional(),
         size: length.optional(),
         weight: z.union([z.number(), z.string().max(16)]).optional(),
         italic: z.boolean().optional(),
@@ -467,7 +470,7 @@ function duplicatedIds(layers: unknown, seen: Set<string>, out: string[]): void 
 export const documentSchema = z
   .object({
     oim: z.string().regex(/^2\.\d+\.\d+(-[\w.]+)?$/),
-    id: z.string().max(128).optional(),
+    id: z.string().max(128).regex(NO_MARKUP, NO_MARKUP_MESSAGE).optional(),
     name: z.string().max(256).optional(),
     // What the whole work shows, per language, for screen readers.
     description: z.record(z.string(), z.string().max(1000)).optional(),

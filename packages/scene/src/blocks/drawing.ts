@@ -24,8 +24,13 @@ const safeColor = (c: string | undefined) => (c && !/[;{}<>"]|url\(|expression\(
 let gradientIds = 0;
 
 export function drawingSvg(geometry: Paths, link: DrawingLink, tile = false): string {
+  return drawingElement(document, geometry, link, tile).outerHTML;
+}
+
+/** The drawing as a node of `doc`: colours reach it through CSSOM, which a strict style CSP lets through. */
+export function drawingElement(doc: Document, geometry: Paths, link: DrawingLink, tile = false): SVGSVGElement {
   const NS = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(NS, 'svg');
+  const svg = doc.createElementNS(NS, 'svg');
   svg.setAttribute('viewBox', geometry.viewBox.join(' '));
   // A tile is an image: it needs its own size, and literal colours the pattern recolouring can find.
   svg.setAttribute('width', tile ? String(geometry.viewBox[2]) : '100%');
@@ -39,19 +44,19 @@ export function drawingSvg(geometry: Paths, link: DrawingLink, tile = false): st
   let strokeUrl: string | undefined;
   if (link.strokeGradient) {
     const { tag, attrs, stops } = svgGradientAttrs(link.strokeGradient, geometry.viewBox);
-    const grad = svg.appendChild(document.createElementNS(NS, 'defs')).appendChild(document.createElementNS(NS, tag));
+    const grad = svg.appendChild(doc.createElementNS(NS, 'defs')).appendChild(doc.createElementNS(NS, tag));
     grad.id = `oim-sg-${++gradientIds}`;
     grad.setAttribute('gradientUnits', 'userSpaceOnUse');
     for (const [k, v] of Object.entries(attrs)) grad.setAttribute(k, String(v));
     for (const st of stops) {
-      const stop = grad.appendChild(document.createElementNS(NS, 'stop'));
+      const stop = grad.appendChild(doc.createElementNS(NS, 'stop'));
       stop.setAttribute('offset', st.offset);
       stop.setAttribute('stop-color', safeColor(st.color) ?? '#000');
     }
     strokeUrl = `url(#${grad.id})`;
   }
   for (const p of geometry.paths) {
-    const el = document.createElementNS(NS, 'path');
+    const el = doc.createElementNS(NS, 'path');
     el.setAttribute('d', p.d);
     const fill = safeColor(p.fill === 'currentColor' ? link.fill ?? 'currentColor' : p.fill);
     const stroke = strokeUrl ?? safeColor(p.stroke === 'currentColor' ? link.stroke ?? 'currentColor' : p.stroke);
@@ -72,7 +77,13 @@ export function drawingSvg(geometry: Paths, link: DrawingLink, tile = false): st
     if (p.transform) el.setAttribute('transform', `matrix(${p.transform.join(' ')})`);
     svg.appendChild(el);
   }
-  return svg.outerHTML;
+  return svg;
+}
+
+/** A drawing whose first fill is not a flat colour: the fill layer would paint it, cut to the paths. */
+export function paintedByFillLayer(layer: Layer): boolean {
+  const kind = (layer.fills?.[0] as { kind?: unknown } | undefined)?.kind;
+  return kind === 'gradient' || kind === 'pattern' || kind === 'generative';
 }
 
 /** The colour a drawing's `currentColor` takes, as CSS or as a literal for a baked tile. */

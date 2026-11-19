@@ -191,7 +191,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     const outline = layer.type === "shape" ? (figure ? applyGeometry(el, layer, { colors }) : geometryOutline(layer.geometry)) : geometryOutline(undefined);
     if (has("effects", "geometry")) el.style.clipPath = filterClip(layer, outline);
     if (has("corners", "geometry")) applyCorners(el, layer, !!outline.round);
-    if (has("strokes", "geometry", "fills")) applyStrokes(el, layer, { colors, isText, vector: !!outline.silhouette, rounded: !!outline.round || [layer.corners ?? 0].flat().some((c) => c > 0) });
+    if (has("strokes", "geometry", "fills")) applyStrokes(el, layer, { colors, isText, vector: !!outline.silhouette || !!el.querySelector(":scope > svg[data-oim-figure]"), rounded: !!outline.round || [layer.corners ?? 0].flat().some((c) => c > 0) });
     // A window mask paints a frame around its outline instead of its own box; a cutout is not painted yet.
     if (layer.mask && layer.mask.mode !== "cutout" && has("mask", "fills", "strokes", "geometry", "box")) applyWindowMask(el, layer, { canvas: { width, height }, colors });
     if (layer.type === "lottie" && has("lottie")) {

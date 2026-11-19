@@ -55,4 +55,30 @@ describe("applyGeometry", () => {
     const expected = geometryOutline({ kind: "preset", name: "star" } as Layer["geometry"]).silhouette!;
     expect(clip.firstElementChild!.getAttribute("d")).toBe(expected.d ?? "M " + expected.points!.split(" ").join(" L ") + " Z");
   });
+  describe("a drawing (several paths, or paths that carry their own colour)", () => {
+    const icon = {
+      kind: "paths", viewBox: [0, 0, 24, 24],
+      paths: [{ d: "M16 18a2 2 0 0 1 2 2", stroke: "#090a0d", strokeWidth: 2.2, cap: "round", join: "round" }],
+    } as Layer["geometry"];
+    // What upgrade writes next to the per-path stroke: a layer stroke of width 0.
+    const layer = shape(icon, { fills: undefined, strokes: [{ paint: { kind: "color", value: "#090a0d" }, width: 0 }] as Layer["strokes"] });
+
+    it("paints each path with its own stroke; the layer's zero-width stroke does not hide it", () => {
+      const el = document.createElement("div");
+      applyGeometry(el, layer, { colors });
+      const svg = el.querySelector("svg[data-oim-figure]")!;
+      expect(svg.getAttribute("viewBox")).toBe("0 0 24 24");
+      const path = svg.querySelector("path")!;
+      expect(path.getAttribute("d")).toBe("M16 18a2 2 0 0 1 2 2");
+      expect(path.style.getPropertyValue("stroke")).toBe("#090a0d");
+      expect(path.getAttribute("stroke-width")).toBe("2.2");
+    });
+
+    it("applying again replaces the drawing", () => {
+      const el = document.createElement("div");
+      applyGeometry(el, layer, { colors });
+      applyGeometry(el, layer, { colors });
+      expect(el.querySelectorAll("svg")).toHaveLength(1);
+    });
+  });
 });

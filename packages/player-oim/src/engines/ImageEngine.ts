@@ -620,8 +620,13 @@ export class ImageEngine extends EngineShell {
     // scaled container) the image was sized for a box bigger than its own and
     // came out zoomed. offsetWidth/Height ignore transforms.
     const containerWidth = this.host.offsetWidth;
-    const containerHeight = this.host.offsetHeight;
-    if (containerWidth === 0 || containerHeight === 0) {
+    // The host's own height, measured without the viewport: a host with no height of its
+    // own (`display:block; width:800px`) takes it from the viewport, and sizing the
+    // viewport from that pins it to the size it already had. 0 there means "the width decides".
+    this._viewport.style.display = 'none';
+    const hostHeight = this.host.offsetHeight;
+    this._viewport.style.display = '';
+    if (containerWidth === 0) {
       if (!this._retryViewportSize) {
         this._retryViewportSize = true;
         const self = this;
@@ -633,6 +638,7 @@ export class ImageEngine extends EngineShell {
       }
       return;
     }
+    const containerHeight = hostHeight || containerWidth * imgHeight / imgWidth;
 
     const ar = imgWidth / imgHeight;
     const containerAr = containerWidth / containerHeight;

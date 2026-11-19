@@ -402,5 +402,5 @@ export function validateOimMetadata(json: any): string[] {
   return errors;
 }
 
-export { sanitizeHtml, isSandboxImageSrc, neutralizeExternalCssUrls, requestsOutsideByCss, isSafeImageDataUri, sanitizeFontFamily } from '../../../scene/src/legacy/sanitize.js';
+export { sanitizeHtml, isSandboxImageSrc, neutralizeExternalCssUrls, requestsOutsideByCss, isSafeImageDataUri, sanitizeFontFamily } from '../../../scene/src/runtime/sanitize.js';
 

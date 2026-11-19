@@ -20,7 +20,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import ImageEngine from "./ImageEngine";
 
 function fakeAnimation() {
-  return { pause: vi.fn(), play: vi.fn(), cancel: vi.fn() };
+  return { pause: vi.fn(), play: vi.fn(), cancel: vi.fn(), finish: vi.fn() };
 }
 
 function mount() {
@@ -57,7 +57,8 @@ function mount() {
 }
 
 const animate = HTMLElement.prototype.animate;
-afterEach(() => { HTMLElement.prototype.animate = animate; });
+const getAnimations = HTMLElement.prototype.getAnimations;
+afterEach(() => { HTMLElement.prototype.animate = animate; HTMLElement.prototype.getAnimations = getAnimations; });
 
 function stubAnimate() {
   const created: ReturnType<typeof fakeAnimation>[] = [];
@@ -66,6 +67,8 @@ function stubAnimate() {
     created.push(a);
     return a;
   }) as any;
+  // The scene reaches its runs through getAnimations, which happy-dom does not keep.
+  HTMLElement.prototype.getAnimations = (() => created) as any;
   return created;
 }
 
@@ -89,7 +92,8 @@ describe("keyframe animations follow the player's pause", () => {
     motor.pause();
     await motor.renderSlots();
     expect(created).toHaveLength(1);
-    expect(created[0].pause).toHaveBeenCalled();
+    // Born at rest: a loop at its first frame (cancelled), a one-shot at its last.
+    expect(created[0].cancel.mock.calls.length + created[0].finish.mock.calls.length).toBeGreaterThan(0);
   });
 
   it("one created while the player plays is left playing", async () => {

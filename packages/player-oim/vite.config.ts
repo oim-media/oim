@@ -31,7 +31,7 @@ const GENERATIVE_FILE = `oim-generative-${UPGRADE_HASH}.js`;
 const PATTERNS_FILE = `oim-patterns-${UPGRADE_HASH}.js`;
 
 // The parts the player fetches on demand: built after the player, into its vendor/.
-const LEGACY = resolve(import.meta.dirname, '../scene/src/legacy');
+const RUNTIME = resolve(import.meta.dirname, '../scene/src/runtime');
 const VENDOR_PARTS: Record<string, { entry: string; name: string; file: string }> = {
   upgrade: { entry: 'upgrade-global.ts', name: 'OimUpgrade', file: UPGRADE_FILE },
   generative: { entry: 'generative-global.ts', name: 'OimGenerative', file: GENERATIVE_FILE },
@@ -78,7 +78,7 @@ export default defineConfig(({ command, mode }) => VENDOR_PARTS[mode] ? {
   plugins: [copyVendorPlugin(VENDOR_PARTS[mode].file)],
   publicDir: false,
   build: {
-    lib: { entry: resolve(LEGACY, VENDOR_PARTS[mode].entry), name: VENDOR_PARTS[mode].name, fileName: () => VENDOR_PARTS[mode].file, formats: ['iife'] },
+    lib: { entry: resolve(RUNTIME, VENDOR_PARTS[mode].entry), name: VENDOR_PARTS[mode].name, fileName: () => VENDOR_PARTS[mode].file, formats: ['iife'] },
     outDir: 'dist/vendor',
     emptyOutDir: false,
     minify: true
@@ -107,11 +107,11 @@ export default defineConfig(({ command, mode }) => VENDOR_PARTS[mode] ? {
   // the real library.
   resolve: command === 'build'
     ? { alias: [
-        { find: 'lottie-web/build/player/lottie_light', replacement: resolve(import.meta.dirname, '../scene/src/legacy/lottie-external.ts') },
-        { find: /^\.\/upgrade-entry\.js$/, replacement: resolve(LEGACY, 'upgrade-external.ts') },
-        { find: /^\.\/features-entry\.js$/, replacement: resolve(LEGACY, 'features-external.ts') },
-        { find: /^\.\/generative\/index\.js$/, replacement: resolve(LEGACY, 'generative-external.ts') },
-        { find: /^(\.\/|(\.\.\/)+core\/src\/)patterns\.js$/, replacement: resolve(LEGACY, 'patterns-external.ts') },
+        { find: 'lottie-web/build/player/lottie_light', replacement: resolve(import.meta.dirname, '../scene/src/runtime/lottie-external.ts') },
+        { find: /^(\.|\.\.\/runtime|(\.\.\/)+scene\/src\/runtime)\/upgrade-entry\.js$/, replacement: resolve(RUNTIME, 'upgrade-external.ts') },
+        { find: /^(\.|\.\.\/runtime|(\.\.\/)+scene\/src\/runtime)\/features-entry\.js$/, replacement: resolve(RUNTIME, 'features-external.ts') },
+        { find: /^\.\/generative\/index\.js$/, replacement: resolve(RUNTIME, 'generative-external.ts') },
+        { find: /^(\.\/|(\.\.\/)+core\/src\/)patterns\.js$/, replacement: resolve(RUNTIME, 'patterns-external.ts') },
       ] }
     : {},
   build: {

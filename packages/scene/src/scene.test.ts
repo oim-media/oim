@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildLayerGrainFilter, DYNAMIC_COLOR_ROLES, mediaFilterCss } from "@oim-media/core";
 import { mount } from "./index.js";
 import { sceneColors } from "./scene.js";
-import { getMaskSilhouetteCanvasD, getWindowMaskCanvasD } from "./legacy/layerComposition.js";
+import { getMaskSilhouetteCanvasD, getWindowMaskCanvasD } from "./runtime/layerComposition.js";
 import { buildArtisticTextModelFromLayer, generateArtisticTextSvgString } from "./blocks/artisticText.js";
 
 const shape = (o: Partial<Layer> = {}): Layer => ({
@@ -271,6 +271,31 @@ describe("a filter clips its backdrop to its figure", () => {
     expect(el.style.display).toBe("none");
     scene.update("a", { visible: true } as Partial<Layer>);
     expect(el.style.display).toBe("");
+  });
+
+  it("a hidden text stays hidden, and shown again it keeps its own layout", () => {
+    const host = document.createElement("div");
+    const t = { id: "t", type: "text", box: { x: 0, y: 0 }, visible: false, text: { content: { es: "Hola" } } } as unknown as Layer;
+    const scene = mount(host, doc([t, shape({ id: "btn", interactions: [{ on: "press", actions: [{ type: "toggle", target: "t" }] }] } as Partial<Layer>)]), { paused: true });
+    const el = scene.elementOf("t")!;
+    expect(el.style.display).toBe("none");
+    scene.elementOf("btn")!.click();
+    expect(el.style.display).toBe("flex");
+    scene.elementOf("btn")!.click();
+    expect(el.style.display).toBe("none");
+    scene.update("t", { text: { content: { es: "Adiós" } } } as Partial<Layer>);
+    expect(el.style.display).toBe("none");
+  });
+
+  it("a layer an action hides is marked hidden at once, before its exit animation ends", () => {
+    const host = document.createElement("div");
+    const scene = mount(host, doc([shape({ id: "p" }), shape({ id: "btn", interactions: [{ on: "press", actions: [{ type: "toggle", target: "p" }] }] } as Partial<Layer>)]));
+    const el = scene.elementOf("p")!;
+    expect(el.hasAttribute("data-oim-hidden")).toBe(false);
+    scene.elementOf("btn")!.click();
+    expect(el.hasAttribute("data-oim-hidden")).toBe(true);
+    scene.elementOf("btn")!.click();
+    expect(el.hasAttribute("data-oim-hidden")).toBe(false);
   });
 });
 

@@ -18,7 +18,7 @@ describe("bindInteractions", () => {
     const actions = [{ type: "toggle" as const, target: "panel" }, { type: "hide" as const, target: "alert" }];
     bindInteractions(el, [{ on: "press", actions }], run);
     el.click();
-    expect(run).toHaveBeenCalledWith(actions, false);
+    expect(run).toHaveBeenCalledWith(actions, false, "press");
     expect(run).toHaveBeenCalledTimes(1);
     expect(page).toHaveBeenCalledTimes(1);
   });

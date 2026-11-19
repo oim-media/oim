@@ -15,11 +15,9 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const { ensureFeatures } = vi.hoisted(() => ({ ensureFeatures: vi.fn(() => Promise.resolve()) }));
-vi.mock("../../../scene/src/legacy/features-entry.js", () => ({ ensureFeatures }));
+vi.mock("../../../scene/src/runtime/features-entry.js", () => ({ ensureFeatures }));
 
 import { extractOIM } from "../../../core/src/binary.js";
-import { resolveRefs } from "../../../core/src/v2/resources.js";
-import { legacyView } from "../../../scene/src/legacy/legacy-view.js";
 import { ImageEngine } from "./ImageEngine";
 
 describe("the optional parts of a 2.0 file", () => {
@@ -32,7 +30,7 @@ describe("the optional parts of a 2.0 file", () => {
     const engine = new ImageEngine(host);
     engine._overlay = document.createElement("div");
     shadow.appendChild(engine._overlay);
-    engine.metadata = legacyView(resolveRefs(metadata).document) as any;
+    (engine as any).fileMetadata = metadata;
 
     await engine.renderSlots();
 

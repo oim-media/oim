@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { applyEntrance, entranceFrames, presetCss, presetFrames, presetSeconds } from "./presets.js";
+import { applyEntrance, entranceFrames, presetFrames, presetSeconds } from "./presets.js";
 
 describe("named presets", () => {
   it("a pulse loop shrinks and dims at its middle and rests at scale 1", () => {
@@ -23,14 +23,6 @@ describe("named presets", () => {
   it("an unknown name has no frames", () => {
     expect(presetFrames("loop", "wobble")).toBeUndefined();
     expect(presetFrames("hover", "pulse")).toBeUndefined();
-  });
-
-  it("the 1.x stylesheet is written from the same table", () => {
-    const css = presetCss().join(" ");
-    expect(css).toContain("@keyframes oim-loop-pulse{0%{transform:scale(1);opacity:1}50%{transform:scale(0.95);opacity:0.8}100%{transform:scale(1);opacity:1}}");
-    expect(css).toContain(".oim-loop-pulse{animation:oim-loop-pulse var(--oim-loop-duration, 2s) infinite ease-in-out var(--oim-loop-delay, 0s)}");
-    expect(css).toContain(".oim-hover-grow:hover{transform:scale(1.08)}");
-    expect(css).toContain("text-shadow:0 0 12px rgba(245, 158, 11, 0.8)");
   });
 
   it("a text entrance puts each character in its own span, spaces as text", () => {

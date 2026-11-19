@@ -9,7 +9,7 @@ import { cropCss, mediaFilterCss } from "@oim-media/core";
 import { filterStyle } from "./effects.js";
 import { paintCss, patternStyle, type Layer, type Paint, type PaintColors, type PaintTarget } from "@oim-media/core/v2";
 import { patternTileUri } from "../../../core/src/patterns.js";
-import { drawingLink, drawingSvg } from "../legacy/v2-layers.js";
+import { drawingLink, drawingSvg } from "./drawing.js";
 
 export type PaintContext = {
   colors: PaintColors;

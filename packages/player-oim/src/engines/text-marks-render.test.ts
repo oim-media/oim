@@ -13,7 +13,6 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import ImageEngine from "./ImageEngine";
 import { renderMarkedText } from "../../../scene/src/blocks/marked-text";
 import { PLAYER_CAPABILITIES } from "../../../core/src/compatibility.js";
 
@@ -56,58 +55,5 @@ describe("renderMarkedText", () => {
 describe("the player declares text_marks", () => {
   it("is in PLAYER_CAPABILITIES", () => {
     expect(PLAYER_CAPABILITIES).toContain("text_marks");
-  });
-});
-
-function mount(slot: any, lang = "es") {
-  const host = document.createElement("div");
-  host.setAttribute("mode", "full");
-  const shadow = (host as any).attachShadow({ mode: "open" });
-  document.body.appendChild(host);
-  const motor: any = new ImageEngine(host as any);
-  motor._viewport = document.createElement("div");
-  shadow.appendChild(motor._viewport);
-  motor._overlay = document.createElement("div");
-  motor._viewport.appendChild(motor._overlay);
-  motor.lang = lang;
-  motor.metadata = { width: 800, height: 600, slots: [{ id: "t", type: "text", align: "center", position: [10, 10], ...slot }] };
-  return { motor, shadow };
-}
-
-describe("ImageEngine with marks", () => {
-  it("paints the marks of the active language", async () => {
-    const { motor, shadow } = mount({ content: { es: "a {hl}b{/hl}" }, style: { marks: MARKS } });
-    await motor.renderSlots();
-    expect(shadow.querySelector('span[data-mark="hl"]')).not.toBeNull();
-    expect(shadow.textContent).not.toContain("{");
-  });
-
-  it("a language that falls back paints the fallback's marks", async () => {
-    const { motor, shadow } = mount({ content: { es: "a {hl}b{/hl}" }, style: { marks: MARKS } }, "de");
-    await motor.renderSlots();
-    expect(shadow.querySelector('span[data-mark="hl"]')).not.toBeNull();
-    expect(shadow.textContent).not.toContain("{hl}");
-  });
-
-  it.each(["typewriter", "glitch-cyberpunk", "wave-chars"])("%s animates the plain text, no tags", async (type) => {
-    // The typewriter writes nothing at t = 0: let time pass before looking.
-    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "performance"] });
-    try {
-      const { motor, shadow } = mount({ content: { es: "a {hl}b{/hl} {{x}}" }, style: { marks: MARKS, textAnimationType: type, textAnimationSpeed: 1000 } });
-      await motor.renderSlots();
-      vi.advanceTimersByTime(2000);
-      // The wave writes spaces as no-break spaces.
-      expect((shadow.textContent ?? "").replace(/ /g, " ")).toContain("a b");
-      expect(shadow.textContent).not.toContain("{hl}");
-      expect(shadow.textContent).not.toContain("{{");
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it("a drop cap uses the plain text", async () => {
-    const { motor, shadow } = mount({ content: { es: "{hl}Hola{/hl}" }, style: { marks: MARKS, dropCap: { enabled: true } } });
-    await motor.renderSlots();
-    expect(shadow.textContent).not.toContain("{");
   });
 });

@@ -11,7 +11,7 @@
 // the work still drawn. It used to fail in silence.
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("../../../scene/src/legacy/features-entry.js", () => ({
+vi.mock("../../../scene/src/runtime/features-entry.js", () => ({
   ensureFeatures: () => Promise.reject(new Error("Could not load https://example.test/vendor/oim-patterns-x.js")),
 }));
 
@@ -39,7 +39,7 @@ describe("a part that does not load", () => {
 
     expect(errors).toEqual([{ code: "chunk", message: expect.stringContaining("vendor/oim-patterns") }]);
     expect(quiet).toHaveBeenCalledWith(expect.any(String), expect.stringContaining("vendor/oim-patterns"));
-    expect(engine._overlay!.querySelector('[data-slot-id="a"]')).not.toBeNull();
+    expect(engine._overlay!.querySelector('[data-oim-id="a"]')).not.toBeNull();
     quiet.mockRestore();
   });
 });

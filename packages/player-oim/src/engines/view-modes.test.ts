@@ -31,6 +31,7 @@
 
 import { describe, it, expect, vi, afterEach } from "vitest";
 import ImageEngine from "./ImageEngine";
+import { doc2, paintedEngine, shape2 } from "./scene-engine.fixture";
 
 function engineWith(attrs: Record<string, string> = {}, options: any = {}) {
   const host = document.createElement("div");
@@ -132,87 +133,42 @@ describe("the mount options win over everything", () => {
  * A flag that nobody checks is worse than not having it: the integrator declares
  * `mode="image"`, feels reassured, and the file keeps responding.
  */
-describe("the mode reaches the slot", () => {
-  function setupItem(slots: any[], attrs: Record<string, string> = {}) {
-    const host = document.createElement("div");
-    for (const [k, v] of Object.entries(attrs)) host.setAttribute(k, v);
-    const shadow = (host as any).attachShadow({ mode: "open" });
-    document.body.appendChild(host);
-    const motor: any = new ImageEngine(host as any);
-    motor._viewport = document.createElement("div");
-    shadow.appendChild(motor._viewport);
-    motor._overlay = document.createElement("div");
-    motor._viewport.appendChild(motor._overlay);
-    motor.metadata = { slots, width: 800, height: 600 };
-    return { host, motor };
-  }
+describe("the mode reaches the layer", () => {
+  const file = () => doc2([
+    shape2("b", { interactions: [{ on: "press", actions: [{ type: "toggle", target: "other" }] }] }),
+    shape2("other"),
+  ]);
+  const layerIn = async (attrs: Record<string, string>) => (await paintedEngine(file(), attrs)).el;
 
-  const button = (extra: any = {}) => ({
-    id: "b", type: "text", align: "center", position: [10, 10],
-    content: { es: "PULSAME" },
-    style: {
-      width: "32.5cqw", height: "8.75cqw", fontSize: "2.75cqw",
-      fillColor: "#b91c1c", color: "#b91c1c", isInteractive: true,
-      states: { active: { actions: [{ target: "other", type: "toggle" }] } },
-      ...extra,
-    },
+  it("in image mode it is not clickable: no pointer, no contact area, and a click does nothing", async () => {
+    const el = await layerIn({ mode: "image" });
+    expect(el("b")!.style.cursor).not.toBe("pointer");
+    expect(el("b")!.style.minWidth).toBe("");
+    el("b")!.click();
+    expect(el("other")!.style.display).not.toBe("none");
   });
 
-  async function slotIn(attrs: Record<string, string>, slot: any = button()) {
-    const { host, motor } = setupItem([slot], attrs);
-    await motor.renderSlots();
-    return host.shadowRoot!.querySelector('[data-slot-id="b"]') as HTMLElement;
-  }
-
-  it('in image mode it is not flagged as clickable', async () => {
-    expect((await slotIn({ mode: "image" })).style.cursor).not.toBe("pointer");
+  it("in full mode it IS clickable and does reserve area", async () => {
+    const el = await layerIn({ mode: "full" });
+    expect(el("b")!.style.cursor).toBe("pointer");
+    expect(el("b")!.style.minWidth).toBe("24px");
   });
 
-  it("and a click does nothing", async () => {
-    const el = await slotIn({ mode: "image" });
-    const other = document.createElement("div");
-    // If something were hooked up, the click would fire the action and touch the DOM.
-    const before = el.outerHTML;
-    el.dispatchEvent(new Event("click", { bubbles: true }));
-    expect(el.outerHTML).toBe(before);
-    other.remove();
+  it("the 1.x click path, upgraded, is closed too", async () => {
+    const { el } = await paintedEngine({
+      slots: [
+        { id: "b", type: "geo", align: "center", position: [10, 10], content: { es: "" }, style: { width: "32.5cqw", height: "8.75cqw", fillColor: "#b91c1c" },
+          interaction: { action_type: "toggle_elements", target: { show_slots: ["other"] } } },
+      ],
+      width: 800, height: 600,
+    } as any, { mode: "image" });
+    expect(el("b")?.style.cursor ?? "").not.toBe("pointer");
   });
 
-  it("nor does it reserve the minimum contact area: nothing is clickable", async () => {
-    expect((await slotIn({ mode: "image" })).style.minWidth).toBe("");
-  });
-
-  it("in full mode it IS flagged and does reserve area", async () => {
-    const el = await slotIn({ mode: "full" });
-    expect(el.style.cursor).toBe("pointer");
-    expect(el.style.minWidth).toBe("24px");
-  });
-
-  /**
-   * The old click path (`interaction.toggle_elements`) is another door to the
-   * same place. Gating one and leaving the other open would be worse than not
-   * gating: it would deem something safe that is not.
-   */
-  it("the old click path is closed too", async () => {
-    const conInteraction = {
-      id: "b", type: "geo", align: "center", position: [10, 10],
-      content: { es: "" },
-      style: { width: "32.5cqw", height: "8.75cqw", fillColor: "#b91c1c" },
-      interaction: { action_type: "toggle_elements", target: { show_slots: ["other"] } },
-    };
-    expect((await slotIn({ mode: "image" }, conInteraction)).style.cursor).not.toBe("pointer");
-  });
-
-  /**
-   * The console's actionEvent exists for the case "the file asks for it and the
-   * player does not know". In image mode the player DOES know and has decided
-   * not to do it: warning would send someone looking for a failure that does
-   * not exist, and in a gallery of twenty, twenty times.
-   */
   it("and does not warn in the console about something that was turned off on purpose", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
-      await slotIn({ mode: "image" }, button({ states: undefined }));
+      await layerIn({ mode: "image" });
       expect(warn).not.toHaveBeenCalled();
     } finally {
       warn.mockRestore();

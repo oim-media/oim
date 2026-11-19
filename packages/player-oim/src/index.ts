@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import '../../scene/src/legacy/own-script.js';
-import { resolveMode } from '../../scene/src/legacy/modes.js';
+import '../../scene/src/runtime/own-script.js';
+import { resolveMode } from '../../scene/src/runtime/modes.js';
 import { ImageEngine } from './engines/ImageEngine.js';
 import { fileCache } from './render/file-cache.js';
-import { setFlag } from '../../scene/src/legacy/attrs.js';
+import { setFlag } from '../../scene/src/runtime/attrs.js';
 
 interface OimPlayerOptions {
   allowZoom?: boolean;

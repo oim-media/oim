@@ -30,15 +30,6 @@ const HOVERS: Record<string, string> = {
 
 const own = <T>(table: Record<string, T>, name: string | undefined): T | undefined => (name && Object.hasOwn(table, name) ? table[name] : undefined);
 
-/** The 1.x player's loop and hover classes, written from the table. */
-export function presetCss(): string[] {
-  const loops = Object.entries(LOOPS).flatMap(([name, [seconds, easing, frames]]) => [
-    `@keyframes oim-loop-${name}{${frames.map((f, i) => `${(i * 100) / (frames.length - 1)}%{${f}}`).join("")}}`,
-    `.oim-loop-${name}{animation:oim-loop-${name} var(--oim-loop-duration, ${seconds}s) infinite ${easing} var(--oim-loop-delay, 0s)}`,
-  ]);
-  return [...loops, ...Object.entries(HOVERS).map(([name, look]) => `.oim-hover-${name}:hover{${look}}`)];
-}
-
 const keyframe = (css: string): Keyframe =>
   Object.fromEntries(css.split(";").map((d) => [d.slice(0, d.indexOf(":")).replace(/-[a-z]/g, (c) => c[1].toUpperCase()), d.slice(d.indexOf(":") + 1)]));
 

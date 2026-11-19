@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import { getStylesText } from "../../../scene/src/legacy/styles";
+import { getStylesText } from "../../../scene/src/runtime/styles";
 import ImageEngine from "./ImageEngine";
 
 describe("Blur effect (blur 14px) on the initial load", () => {

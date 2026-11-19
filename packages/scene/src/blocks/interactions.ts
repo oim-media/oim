@@ -80,16 +80,16 @@ export function resolveActions(
 export function bindInteractions(
   el: HTMLElement,
   interactions: readonly Interaction[] | undefined,
-  run: (actions: StateAction[], revert: boolean) => void,
+  run: (actions: StateAction[], revert: boolean, trigger: string) => void,
 ): void {
   if (!interactions?.length) return;
   applyMinHitArea(el);
   el.style.cursor = "pointer";
   for (const { on, actions } of interactions) {
-    if (on === "press") el.addEventListener("click", () => run(actions, false));
+    if (on === "press") el.addEventListener("click", () => run(actions, false, on));
     else {
-      el.addEventListener("pointerenter", () => run(actions, false));
-      el.addEventListener("pointerleave", () => run(actions, true));
+      el.addEventListener("pointerenter", () => run(actions, false, on));
+      el.addEventListener("pointerleave", () => run(actions, true, on));
     }
   }
 }

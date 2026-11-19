@@ -30,6 +30,9 @@
  */
 export const MAX_SLOTS = 150;
 
+/** How deeply layers may nest inside groups (`children`). The top level is depth 1. */
+export const MAX_LAYER_DEPTH = 32;
+
 /** Text marks (contract 1.11.0): tag names and how many styles a text may carry. */
 export const MARK_NAME = /^[a-z][a-z0-9-]{0,23}$/;
 export const MAX_MARKS = 8;

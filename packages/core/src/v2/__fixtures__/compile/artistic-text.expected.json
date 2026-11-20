@@ -1,0 +1,38 @@
+{
+  "oim": "1.35.2",
+  "media_type": "image",
+  "oim_id": "oim_fixture0001",
+  "reedit": "author_only",
+  "immutable_lock": false,
+  "canvas": {
+    "natural_width": 800.0,
+    "natural_height": 600.0
+  },
+  "slots": [
+    {
+      "id": "art",
+      "type": "artistic-text",
+      "position": [
+        12.5,
+        16.6667
+      ],
+      "style": {
+        "fillGradient": "linear-gradient(90deg,#1b3a6b,#e0457b)",
+        "textAnimationType": "wave-chars",
+        "width": "37.5cqw",
+        "height": "10.0cqw",
+        "maxWidth": "41.25cqw",
+        "fontSize": "8.0cqw",
+        "border": "0.25cqw solid #fff",
+        "boxShadow": "0.25cqw 0.25cqw 0.5cqw rgba(0,0,0,0.5)"
+      },
+      "content": {
+        "es": "hola",
+        "en": "hello"
+      },
+      "align": "center",
+      "width_px": 300.0,
+      "height_px": 80.0
+    }
+  ]
+}

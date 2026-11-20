@@ -1,0 +1,42 @@
+{
+  "canvas_width": 800,
+  "canvas_height": 600,
+  "oim_id": "oim_fixture0001",
+  "slots_raw": [
+    {
+      "id": "r1",
+      "type": "shape",
+      "x_px": 10,
+      "y_px": 10,
+      "width_px": 200,
+      "height_px": 100,
+      "border_radius_px": 24,
+      "style": {
+        "fill": "#fff"
+      }
+    },
+    {
+      "id": "r2",
+      "type": "shape",
+      "x_px": 10,
+      "y_px": 130,
+      "width_px": 200,
+      "height_px": 100,
+      "border_radius_px": {
+        "topLeft": 10,
+        "topRight": 20,
+        "bottomRight": 0,
+        "bottomLeft": 40
+      }
+    },
+    {
+      "id": "r3",
+      "type": "shape",
+      "x_px": 10,
+      "y_px": 250,
+      "width_px": 200,
+      "height_px": 100,
+      "border_radius_px": 0
+    }
+  ]
+}

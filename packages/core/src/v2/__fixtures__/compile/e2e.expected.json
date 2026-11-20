@@ -1,0 +1,35 @@
+{
+  "oim": "1.35.2",
+  "media_type": "image",
+  "oim_id": "oim_fixture0001",
+  "reedit": "author_only",
+  "immutable_lock": false,
+  "canvas": {
+    "natural_width": 800.0,
+    "natural_height": 600.0
+  },
+  "slots": [
+    {
+      "id": "header-title",
+      "type": "text",
+      "position": [
+        50.0,
+        25.0
+      ],
+      "style": {
+        "fillColor": "#fbbf24",
+        "width": "75.0cqw",
+        "height": "10.0cqw",
+        "maxWidth": "82.5cqw",
+        "fontSize": "4.5cqw"
+      },
+      "content": {
+        "es": "¡Conectado desde el pipeline real!",
+        "en": "Connected from the real pipeline!"
+      },
+      "align": "center",
+      "width_px": 600.0,
+      "height_px": 80.0
+    }
+  ]
+}

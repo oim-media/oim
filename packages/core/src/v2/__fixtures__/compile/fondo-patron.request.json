@@ -1,0 +1,37 @@
+{
+  "canvas_width": 800,
+  "canvas_height": 600,
+  "oim_id": "oim_fixture0001",
+  "slots_raw": [
+    {
+      "id": "background-pattern-slot",
+      "type": "shape",
+      "x_px": 0,
+      "y_px": 0,
+      "width_px": 800,
+      "height_px": 600,
+      "is_background_pattern": true,
+      "content": {
+        "*": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M0 0L10 10'/></svg>"
+      },
+      "style": {
+        "fill": "#222"
+      }
+    },
+    {
+      "id": "encima",
+      "type": "text",
+      "x_px": 100,
+      "y_px": 100,
+      "width_px": 300,
+      "height_px": 80,
+      "font_size_px": 32,
+      "align": "center",
+      "style": {},
+      "content": {
+        "es": "hola",
+        "en": "hello"
+      }
+    }
+  ]
+}

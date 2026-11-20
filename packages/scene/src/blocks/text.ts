@@ -33,7 +33,9 @@ const inCanvas = canvasLength;
  */
 export function applyText(el: HTMLElement, layer: Pick<Layer, "text">, ctx: TextContext): void {
   const text = layer.text;
-  const words = text?.content?.[ctx.lang] ?? "";
+  // A language with no words of its own shows what 1.x showed: English, else Spanish, else the first words.
+  const content = text?.content ?? {};
+  const words = content[ctx.lang] || content.en || content.es || Object.values(content).find(Boolean) || "";
   if (!text?.marks && !text?.highlight && !text?.dropCap) el.textContent = words;
   else {
     // One block holds the runs, so the marks' spans flow as one paragraph inside the flex column.

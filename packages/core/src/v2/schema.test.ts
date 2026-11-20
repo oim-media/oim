@@ -104,3 +104,24 @@ describe("markup-breaking characters in ids and font families", () => {
     ok(doc([{ ...rect, id: "título 1" }]));
   });
 });
+
+describe("stable version and signer timestamp", () => {
+  const withVersion = (oim: string) => ({ ...doc([rect]), oim });
+  it("accepts the stable string and the draft every signed vector carries", () => {
+    ok(withVersion("2.0.0"));
+    ok(withVersion("2.0.0-draft.1"));
+    ok(withVersion("2.3.7"));
+  });
+  it("rejects a non-2.x version", () => {
+    bad(withVersion("1.35.2"));
+    bad(withVersion("2.0"));
+  });
+  it("the writer constant is the stable string", () => expect(DOCUMENT_VERSION).toBe("2.0.0"));
+  it("admits the signer's root timestamp as an ISO string and rejects any other type", () => {
+    ok({ ...doc([rect]), timestamp: "2026-06-12T20:38:40.713579+00:00" });
+    // What the production signer writes (datetime.isoformat(), read from a file signed on 2026-10-10): a string.
+    ok({ ...doc([rect]), timestamp: "2026-10-10T20:42:34.074608+00:00" });
+    bad({ ...doc([rect]), timestamp: 1781296720 });
+    bad({ ...doc([rect]), timestamp: { at: "x" } });
+  });
+});

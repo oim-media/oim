@@ -18,7 +18,7 @@ it("oim2.schema.json is up to date with v2/schema.ts", async () => {
       {
         $schema: "https://json-schema.org/draft/2020-12/schema",
         $id: `https://oim.media/spec/${DOCUMENT_VERSION}/oim.schema.json`,
-        title: "OIM document 2.0 (draft)",
+        title: "OIM document 2.0",
         specVersion: DOCUMENT_VERSION,
         ...generated,
       },

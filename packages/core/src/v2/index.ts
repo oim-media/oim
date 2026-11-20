@@ -20,3 +20,5 @@ export * from "./base-layer.js";
 export * from "./colors.js";
 export * from "./typography.js";
 export * from "./svg-gradient.js";
+export * from "./trim.js";
+export * from "./extensions.js";

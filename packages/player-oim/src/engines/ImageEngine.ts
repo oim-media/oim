@@ -12,6 +12,7 @@ import { fileCache, type VerifyResult, type VerifiedFile } from '../render/file-
 import { injectStyles } from '../../../scene/src/runtime/styles.js';
 import { normalizeRawSlots } from '../render/normalize-raw-slots.js';
 import { isV2 } from '../../../core/src/v2/upgrade.js';
+import { unsupportedRequired } from '../../../core/src/v2/extensions.js';
 import { hasBaseLayer } from '../../../core/src/v2/base-layer.js';
 import { resolveRefs } from '../../../core/src/v2/resources.js';
 import type { Layer, OimDocument } from '../../../core/src/v2/schema.js';
@@ -74,6 +75,12 @@ export class ImageEngine extends EngineShell {
       if (!isV2(file)) {
         paints = false;
         this.host.dispatchEvent(new CustomEvent('oim:error', { detail: { code: 'unsupported-version', message: 'OIM 1.x files are no longer painted; upgrade the file with the CLI or re-export it.' } }));
+      } else {
+        const extensions = unsupportedRequired(file);
+        if (extensions.length) {
+          paints = false;
+          this.host.dispatchEvent(new CustomEvent('oim:error', { detail: { code: 'unsupported-extension', extensions, message: 'The file requires extensions this player does not implement: ' + extensions.join(', ') } }));
+        }
       }
       if (ticket !== this._renderTicket) return;
     }

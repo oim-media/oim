@@ -492,6 +492,8 @@ export const documentSchema = z
     signature: z.string().optional(),
     key_version: z.string().optional(),
     signed_at: z.string().optional(),
+    // Written by the production signer at packaging time; outside the signature (canonical.ts).
+    timestamp: z.string().optional(),
   })
   .strict()
   .superRefine((document, ctx) => {

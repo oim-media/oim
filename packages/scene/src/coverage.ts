@@ -15,21 +15,18 @@ import { canAnimate } from "./blocks/animations.js";
 
 export const UNSUPPORTED_BLOCKS = [
   "animation:preset",
-  "mask",
   "paint:pattern-tile",
 ] as const;
 export type UnsupportedBlock = (typeof UNSUPPORTED_BLOCKS)[number];
 
-const layerUses = (layer: Layer, nested = false): UnsupportedBlock[] => {
+const layerUses = (layer: Layer): UnsupportedBlock[] => {
   const uses: UnsupportedBlock[] = [];
   // Tracks and the reveal presets run; the named loops, hovers and text entrances wait for their painter.
   if (layer.animations?.some((a) => !canAnimate(a))) uses.push("animation:preset");
   // shortcut: a draft 2.0 file kept a background's drawing as its paths, which cannot be told from an icon cut to its
   // paths; both wait until the vectors carry `pattern.tile` (re-signed), then this rule goes.
   if (layer.geometry?.kind === "paths" && (layer.fills ?? []).some((p) => "kind" in p && p.kind === "pattern")) uses.push("paint:pattern-tile");
-  // A window mask is painted, and a cutout at the top level; a cutout inside a group is not yet.
-  if (nested && layer.mask?.mode === "cutout") uses.push("mask");
-  for (const child of layer.children ?? []) uses.push(...layerUses(child, true));
+  for (const child of layer.children ?? []) uses.push(...layerUses(child));
   return uses;
 };
 

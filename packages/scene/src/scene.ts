@@ -5,7 +5,7 @@
  */
 
 import { DYNAMIC_COLOR_ROLES, filterClipPath, GRAIN_LAYER_TYPES, resolvePalette } from "@oim-media/core";
-import { geometryOutline, paintColors, palettesOf, type Box, type Layer, type OimDocument, type Outline, type PaintColors } from "@oim-media/core/v2";
+import { geometryOutline, paintColors, palettesOf, type Animation as LayerAnimation, type Box, type Layer, type OimDocument, type Outline, type PaintColors } from "@oim-media/core/v2";
 import { applyBox, type Frame } from "./box.js";
 import { applyCorners } from "./blocks/corners.js";
 import { effectsToStyle } from "./blocks/effects.js";
@@ -23,7 +23,7 @@ import { applyCompositing } from "./blocks/compositing.js";
 import { applyText } from "./blocks/text.js";
 import { applyTextureEffect } from "./blocks/texture.js";
 import { resolveLineHeight } from "../../core/src/typography.js";
-import { animationFrames, animationTiming, canAnimate, isEntrance, isTimedText } from "./blocks/animations.js";
+import { animationFrames, animationTiming, canAnimate, isEntrance, isTimedText, trimFrames } from "./blocks/animations.js";
 import { applyGlitchText, applyTypewriterText, applyWaveText, type TimedTextAnimation } from "./blocks/text-timed.js";
 import { buildWaveKeyframesCss } from "./blocks/waveText.js";
 import { applyEntrance, ENTRANCE_MS, entranceFrames } from "./blocks/presets.js";
@@ -70,8 +70,10 @@ const notYet = (name: string) => () => {
 };
 
 /** The file's language that the reader's own matches (exactly, then by its main tag), else the file's first. */
+const main = (tag: string) => tag.toLowerCase().split("-")[0];
+/** The one rule for matching two language tags: the same tag, or the same primary subtag (en-US ~ en). */
+const sameLanguage = (a: string, b: string) => a.toLowerCase() === b.toLowerCase() || main(a) === main(b);
 function languageOf(languages: string[], reader: string | undefined): string {
-  const main = (tag: string) => tag.toLowerCase().split("-")[0];
   return languages.find((l) => reader !== undefined && l.toLowerCase() === reader.toLowerCase())
     ?? languages.find((l) => reader !== undefined && main(l) === main(reader))
     ?? languages[0];
@@ -115,6 +117,9 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   root.appendChild(backdrop);
   applyFills(backdrop, document.canvas, { colors, isText: false, width, height, size: (px) => `${+((px / width) * 100).toFixed(4)}% ${+((px / height) * 100).toFixed(4)}%`, len: canvasLen });
   let lang = languageOf(document.languages, _options.language ?? (typeof navigator === "undefined" ? undefined : navigator.language));
+
+  /** A layer with its own `languages` shows only in those; absent means every language. */
+  const inLanguage = (layer: Layer) => !layer.languages || layer.languages.some((l) => sameLanguage(l, lang));
 
   /** The effects the scene paints (blur, shadow, glow, backdrop); grain, texture and duotone wait for their own painter (see coverage). */
   const applyEffects = (el: HTMLElement, layer: Layer) => {
@@ -182,9 +187,10 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
       if (layer.text?.artistic) applyArtistic(el, layer, { lang, literal: colors.literal, fonts });
       else applyText(el, layer, { lang, canvasWidth: width, fonts });
     }
-    if (has("visible", "text")) {
-      el.toggleAttribute("data-oim-hidden", layer.visible === false);
-      if (layer.visible === false) hide(el);
+    if (has("visible", "text", "languages")) {
+      const hidden = layer.visible === false || !inLanguage(layer);
+      el.toggleAttribute("data-oim-hidden", hidden);
+      if (hidden) hide(el);
       else show(el);
     }
     const figure = has("fills", "geometry", "strokes");
@@ -220,6 +226,18 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     run.finished?.catch(() => {});
     if (paused) timing.iterations === Infinity ? run.cancel() : run.finish?.();
     return run;
+  };
+  /** Runs an animation on a layer's box, and its trim tracks on the figure's own outline. */
+  const animateLayer = (el: HTMLElement, layer: Layer, a: LayerAnimation, timing: KeyframeAnimationOptions): Animation[] => {
+    const runs: Animation[] = [];
+    const frames = animationFrames(a, len);
+    const box = frames.length ? animate(el, frames, timing) : undefined;
+    if (box) runs.push(box);
+    const trim = a.tracks ? trimFrames(a.tracks, layer.geometry?.trim) : [];
+    const outline = trim.length ? el.querySelector<HTMLElement>(":scope > svg[data-oim-figure] > *") : null;
+    const own = outline && animate(outline, trim, timing);
+    if (own) runs.push(own);
+    return runs;
   };
   const animationsOf = (layer: Layer, on: string) => (layer.animations ?? []).filter((a) => a.on === on && canAnimate(a));
   const bindAnimations = (el: HTMLElement, layer: Layer) => {
@@ -259,12 +277,22 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
         const words = el.textContent ?? "";
         el.replaceChildren(body);
         const frames = entranceFrames(a.preset as EntranceEffect);
-        const stagger = typeof a.params?.speed === "number" ? a.params.speed : undefined;
+        // `stagger` is milliseconds and wins; `params.speed` is the same gap in seconds.
+        const stagger = typeof a.stagger === "number" ? a.stagger / 1000 : typeof a.params?.speed === "number" ? a.params.speed : undefined;
         applyEntrance(body, words, a.preset as EntranceEffect, stagger, (a.delay ?? 0) / 1000, (span, start) =>
           void animate(span, frames, { duration: ENTRANCE_MS, delay: start * 1000, easing: "linear", fill: "both" }));
         continue;
       }
-      animate(el, animationFrames(a, len), animationTiming(a));
+      animateLayer(el, layer, a, animationTiming(a));
+    }
+    // A press plays once, from the pointer's first touch; it leaves no end state behind.
+    for (const a of animationsOf(layer, "press")) {
+      let last: Animation[] = [];
+      el.addEventListener("pointerdown", () => {
+        if (paused) return;
+        for (const run of last) run.cancel();
+        last = animateLayer(el, layer, a, { ...animationTiming(a), fill: "none" });
+      });
     }
     const hover = animationsOf(layer, "hover");
     if (!hover.length) return;
@@ -272,7 +300,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     el.addEventListener("pointerenter", () => {
       if (paused) return;
       if (runs.length) for (const r of runs) { r.playbackRate = 1; r.play(); }
-      else for (const a of hover) { const r = animate(el, animationFrames(a, len), { ...animationTiming(a), duration: a.duration || 200 }); if (r) runs.push(r); }
+      else for (const a of hover) runs.push(...animateLayer(el, layer, a, { ...animationTiming(a), duration: a.duration || 200 }));
     });
     el.addEventListener("pointerleave", () => { for (const r of runs) r.reverse(); });
   };
@@ -284,15 +312,18 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     entry.layer = { ...entry.layer, visible } as Layer;
     const { el } = entry;
     // Hidden from the moment the action runs; the exit animation is only how it leaves.
-    el.toggleAttribute("data-oim-hidden", !visible);
+    el.toggleAttribute("data-oim-hidden", !visible || !inLanguage(entry.layer));
     const enter = animationsOf(entry.layer, "enter")[0];
     const frames = enter ? animationFrames(enter, len) : revealFrames(REVEAL_DEFAULT.effect, true);
     const timing: KeyframeAnimationOptions = enter
       ? { ...animationTiming(enter), fill: "none" }
       : { duration: visible ? REVEAL_DEFAULT.durationIn : REVEAL_DEFAULT.durationOut, easing: REVEAL_DEFAULT.easing };
     if (visible) {
-      show(el);
-      if (!paused) animate(el, frames, timing);
+      // Shown by an action, but a layer out of the document's language stays out until the language changes.
+      if (inLanguage(entry.layer)) {
+        show(el);
+        if (!paused) animate(el, frames, timing);
+      }
       return;
     }
     const run = paused ? undefined : animate(el, [...frames].reverse(), timing);
@@ -314,7 +345,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
         continue;
       }
       if (action.type === "play") {
-        for (const a of animationsOf(entry.layer, "action")) if (!paused) animate(entry.el, animationFrames(a, len), { ...animationTiming(a), fill: "none" });
+        for (const a of animationsOf(entry.layer, "action")) if (!paused) animateLayer(entry.el, entry.layer, a, { ...animationTiming(a), fill: "none" });
         continue;
       }
       const { visibility, texts } = resolveActions([action], { [action.target]: entry.layer.visible !== false });
@@ -338,14 +369,17 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     applyLoop(el, layer, width, len);
     if (!_options.disableActions) bindInteractions(el, layer.interactions, runActions(layer.id));
     bindAnimations(el, layer);
-    for (const child of layer.children ?? []) paint(child, el, layer.box as Frame); // only groups have children, and a group is always sized
+    // only groups have children, and a group is always sized
+    for (const child of layer.children ?? []) place(child, el, layer.box as Frame);
     parent.appendChild(el);
   };
-  for (const layer of document.layers) {
-    // shortcut: a cutout clips the layers before it at the top level only; one inside a group is not painted yet.
-    if (layer.mask?.mode === "cutout") applyCutoutMask(root, layer, { width, height });
-    else paint(layer, root, canvas);
-  }
+  // A cutout clips the layers before it in its parent (the canvas or its group), in that parent's own units.
+  const place = (layer: Layer, parent: HTMLElement, frame: Frame) => {
+    // Boxes are canvas units, so the cutout's moves into its parent's own units.
+    if (layer.mask?.mode === "cutout") applyCutoutMask(parent, { ...layer, box: { ...layer.box, x: (layer.box.x ?? 0) - frame.x, y: (layer.box.y ?? 0) - frame.y } }, frame);
+    else paint(layer, parent, frame);
+  };
+  for (const layer of document.layers) place(layer, root, canvas);
   container.appendChild(letterbox);
 
   // A move is written once when it starts a frame; the moves that follow in the same frame are kept and written once more, at the next frame.
@@ -385,7 +419,10 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
       // shortcut: only the language; a palette change still needs a new mount (baked colours), until a host asks for it live.
       if (language === undefined) return;
       lang = languageOf(document.languages, language);
-      for (const { el, layer } of entries.values()) if (layer.type === "text" || layer.type === "image") paintBlocks(el, layer, new Set(["text", "image"]));
+      for (const { el, layer } of entries.values()) {
+        const keys = [...(layer.type === "text" || layer.type === "image" ? ["text", "image"] : []), ...(layer.languages ? ["languages"] : [])];
+        if (keys.length) paintBlocks(el, layer, new Set(keys));
+      }
     },
     play() { if (still) return; paused = false; for (const a of animations()) a.play(); lotties.forEach((l) => l.play()); for (const t of timers) t.play(); },
     pause() { paused = true; for (const a of animations()) a.pause(); lotties.forEach((l) => l.pause()); for (const t of timers) t.pause(); },

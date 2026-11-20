@@ -6,7 +6,7 @@
 
 import { geometryOutline, type Layer, type Outline, type PaintColors } from "@oim-media/core/v2";
 import { silhouetteClip, silhouettePath } from "./silhouette-clip.js";
-import { drawingElement, drawingLink, paintedByFillLayer } from "./drawing.js";
+import { drawingElement, drawingLink, drawingSvg, paintedByFillLayer } from "./drawing.js";
 import { colorStrokeOf } from "./strokes.js";
 
 const SVG = "http://www.w3.org/2000/svg";
@@ -22,17 +22,22 @@ export function applyGeometry(el: HTMLElement, layer: Pick<Layer, "geometry" | "
   el.querySelectorAll(":scope > svg[data-oim-figure]").forEach((node) => node.remove());
   // A picture clipped earlier goes back to the layer before the figure is drawn again.
   el.querySelectorAll(":scope > [data-oim-figure-clip]").forEach((box) => box.replaceWith(...box.querySelectorAll(":scope > img")));
+  setMask(el, undefined);
   const outline = geometryOutline(layer.geometry);
+  // A gradient, pattern or generative fill is painted by applyFills on the element: kept, and cut to the figure.
+  const rich = paintedByFillLayer(layer as Layer);
   if (outline.round && !outline.silhouette) el.style.borderRadius = "50%";
   const figure = outline.silhouette;
   if (!figure) {
     // Paths that paint themselves (an icon, an SVG) are no silhouette: each path brings its own colours.
     if (layer.geometry?.kind === "paths" && !outline.path) {
-      el.style.backgroundColor = "transparent";
-      el.style.backgroundImage = "";
-      // shortcut: a gradient, pattern or generative fill is not painted on a drawing yet, only its paths' own colours.
       const link = drawingLink(layer as Layer, ctx.colors.css);
-      const svg = drawingElement(el.ownerDocument, layer.geometry, paintedByFillLayer(layer as Layer) ? { ...link, fill: "none" } : link);
+      if (rich) setMask(el, drawingSvg(layer.geometry, { fill: "#000", stroke: "#000" }, true));
+      else {
+        el.style.backgroundColor = "transparent";
+        el.style.backgroundImage = "";
+      }
+      const svg = drawingElement(el.ownerDocument, layer.geometry, rich ? { ...link, fill: "none" } : link);
       svg.dataset.oimFigure = "";
       el.appendChild(svg);
     }
@@ -41,8 +46,12 @@ export function applyGeometry(el: HTMLElement, layer: Pick<Layer, "geometry" | "
 
   const first = layer.fills?.[0];
   const fill = outline.fillable && first && "kind" in first && first.kind === "color" ? ctx.colors.css(first.value) : undefined;
-  el.style.backgroundColor = "transparent";
-  el.style.backgroundImage = "";
+  if (rich) setMask(el, `<svg xmlns="${SVG}" viewBox="${figure.viewBox}" preserveAspectRatio="none"><path d="${silhouettePath(figure).replace(/[^\d\sMmLlHhVvCcSsQqTtAaZzEe.,+-]/g, "")}"/></svg>`);
+  else {
+    el.style.backgroundColor = "transparent";
+    el.style.backgroundImage = "";
+  }
+  // shortcut: a stroke on a masked figure loses its outer half; give the stroke its own unmasked layer if one shows up.
   const stroke = colorStrokeOf({ strokes: (layer.strokes ?? []).filter((s) => !s.align) }, ctx.colors);
 
   const svg = el.ownerDocument.createElementNS(SVG, "svg");
@@ -79,4 +88,14 @@ function clipPictures(el: HTMLElement, figure: { d?: string; points?: string; vi
   Object.assign(box.style, { position: "absolute", left: "0", top: "0", width: "100%", height: "100%", overflow: "hidden", pointerEvents: "none", clipPath });
   box.append(svg, ...pictures);
   el.insertBefore(box, el.firstChild);
+}
+
+/** Cuts the element (its painted fills) to an SVG's shape, stretched to the box; undefined removes the cut. */
+function setMask(el: HTMLElement, svg: string | undefined): void {
+  const image = svg ? `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")` : "";
+  for (const prefix of ["", "-webkit-"]) {
+    el.style.setProperty(`${prefix}mask-image`, image);
+    el.style.setProperty(`${prefix}mask-size`, svg ? "100% 100%" : "");
+    el.style.setProperty(`${prefix}mask-repeat`, svg ? "no-repeat" : "");
+  }
 }

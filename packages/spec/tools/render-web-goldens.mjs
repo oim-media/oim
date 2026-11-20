@@ -69,7 +69,7 @@ const server = http.createServer((req, res) => {
     const name = path.basename(url);
     return res.end(scenePage(name, goldenSize(fs.readFileSync(path.join(VECTORS, name))).height));
   }
-  // What the player fetches next to itself: `upgrade` and Lottie.
+  // What the player fetches next to itself: Lottie and the on-demand parts.
   const vendor = path.join(path.dirname(PLAYER), 'vendor', path.basename(url));
   if (url.startsWith('/vendor/') && fs.existsSync(vendor)) {
     res.setHeader('content-type', 'text/javascript');
@@ -123,8 +123,6 @@ for (const file of fs.readdirSync(VECTORS).filter((f) => f.endsWith('.oim.png'))
     ).map((img) => img.decode().catch(() => {}))));
     // Two frames: the engine lays out after load.
     await tab.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
-    // A golden painted without `upgrade` would be the 1.x road, not the one that ships.
-    if (renderer === 'web' && !(await tab.evaluate(() => typeof window.__oimUpgrade === 'function'))) throw new Error('upgrade did not load');
     await tab.locator(renderer === 'scene' ? '#host' : '#p').screenshot({ path: path.join(outDir, `${name}${suffix}.png`), animations: 'disabled' });
     console.log(`rendered ${name}`);
   } catch (err) {

@@ -25,7 +25,8 @@ export function applyGeometry(el: HTMLElement, layer: Pick<Layer, "geometry" | "
   setMask(el, undefined);
   const outline = geometryOutline(layer.geometry);
   // A gradient, pattern or generative fill is painted by applyFills on the element: kept, and cut to the figure.
-  const rich = paintedByFillLayer(layer as Layer);
+  // A window mask is not: it paints its fill as a frame around the outline (applyWindowMask).
+  const rich = paintedByFillLayer(layer as Layer) && !(layer as Layer).mask;
   if (outline.round && !outline.silhouette) el.style.borderRadius = "50%";
   const figure = outline.silhouette;
   if (!figure) {

@@ -34,4 +34,9 @@ describe("a gradient, pattern or generative fill on a figure is cut to the figur
     expect(mask(el)).toBe("");
     expect(el.querySelector("svg path")!.getAttribute("fill")).toBe("#FDBA74");
   });
+
+  it("a window mask is not cut: its fill is the frame around the outline", () => {
+    const el = paint({ geometry: { kind: "preset", name: "cloud" }, fills: [radial], mask: {} });
+    expect(mask(el)).toBe("");
+  });
 });

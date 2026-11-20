@@ -6,6 +6,7 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 ## 1.36.0
 
 - core: `compileRaw`, `rawToDocument` and `canonizeStyle` (from `@oim-media/core/v2`) build a 2.0 document from raw pixel slots without the network. A pure port of the backend's `/v1/oim/compile`, checked against its output on 15 fixtures; `rawToDocument` keeps the author's pixels without the 4-decimal rounding of the old round trip. `/v1/oim/compile` stays for older clients.
+- core: `compileRaw` reads an `undefined` value as absent (the backend only ever saw JSON), so a client can pass its objects without serializing them first.
 
 ## 1.35.2
 

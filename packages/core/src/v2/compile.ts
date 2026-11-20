@@ -14,6 +14,9 @@ import { upgrade, type UpgradeResult } from "./upgrade.js";
 
 type Json = Record<string, unknown>;
 
+/** A shallow copy without the `undefined` values: a key set to undefined is absent in the JSON the backend read. */
+const defined = (o: Json): Json => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined));
+
 // Pure duplicates: two names, one meaning.
 const RENAMES: Record<string, string> = { size: "fontSize", font: "fontFamily", color: "fillColor" };
 
@@ -30,7 +33,7 @@ const SHORTCUTS: Record<string, [string, unknown, unknown]> = {
  */
 export function canonizeStyle(style: Json | null | undefined): Json {
   if (!style) return {};
-  const out: Json = { ...style };
+  const out: Json = defined(style);
 
   for (const [alias, canonical] of Object.entries(RENAMES)) {
     if (alias in out) {
@@ -118,7 +121,7 @@ const ALIASED_IN_RAW_PX = [
 
 /** The slot with its alias keys resolved, as the backend's `RawSlot` validator does before reading it. */
 function withAliases(data: Json): Json {
-  const slot: Json = { ...data };
+  const slot: Json = defined(data);
   if (isObject(slot.raw_px)) {
     for (const key of ALIASED_IN_RAW_PX) if (key in slot.raw_px && !(key in slot)) slot[key] = slot.raw_px[key];
   }
@@ -157,7 +160,7 @@ function validate(input: Json): void {
  */
 export function compileRaw(request: CompileInput, opts: { round?: boolean } = {}): Json {
   const round = opts.round ?? false;
-  const input: Json = { ...(request as unknown as Json) };
+  const input: Json = defined(request as unknown as Json);
   if ("width" in input && !("canvas_width" in input)) input.canvas_width = input.width;
   if ("height" in input && !("canvas_height" in input)) input.canvas_height = input.height;
   if ("slots" in input && !("slots_raw" in input)) input.slots_raw = input.slots;

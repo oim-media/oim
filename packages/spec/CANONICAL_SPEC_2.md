@@ -538,7 +538,7 @@ the document's `description`.
    blends with the layers under it inside the canvas, never with the page behind the reader.
 7. **Language.** One language is selected for the whole document (3.9) and used for every text, exception and
    picture. A layer's `languages` list, when present, restricts the layer to those languages (compared without
-   regard to case): out of them it is hidden, and no action shows it until the language changes.
+   regard to case, and by primary subtag as the document language is chosen: `en` matches `en-US` and `en-GB`): out of them it is hidden, and no action shows it until the language changes.
 8. **Hidden.** A `visible: false` layer is not shown until an action shows it.
 9. **Base picture.** See 2.4.
 10. **Motion.** A reader paints the resting state when motion is disabled, and runs no animation while the
@@ -789,7 +789,8 @@ conforming to the schema; a writer SHOULD NOT rely on them being painted.
 - Text marks in 2.0 are not limited by the schema to the 1.x pattern `^[a-z][a-z0-9-]{0,23}$` and 8 per
   layer; writers SHOULD respect them because the shared parser of `{name}…{/name}` does.
 - A trim is not drawn on a rectangle (a box, no outline) or on a drawing of several paths.
-- A `geometry.trim` stroke is drawn without `vector-effect: non-scaling-stroke` (the browser ignores
+- A trimmed stroke drops a dashed or dotted style; the trim replaces it.
+- A `geometry.trim` stroke (or one under a `trimStart` / `trimEnd` track) is drawn without `vector-effect: non-scaling-stroke` (the browser ignores
   `pathLength` under it), so its width scales with the figure's box.
 - A feathered cutout edge is drawn hard.
 - The reference player does not check the per-layer schema limits (fills, strokes, effects, animations, interactions, actions, tracks, keyframes, gradient stops, paths and the like); only 150 per list, 1000 total, depth 32 and 10 MiB.

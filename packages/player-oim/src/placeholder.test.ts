@@ -55,6 +55,15 @@ describe('placeholder attribute', () => {
     expect(img!.getAttribute('decoding')).toBe('async');
   });
 
+  it('keeps the placeholder over the engine until its scene has painted', async () => {
+    const el = make({ src: 'art.oim', placeholder: THUMB });
+    await flush();
+    expect(loads.length).toBe(1);
+    // The engine exists but has not painted: only its bare base would show.
+    expect(thumb(el)).not.toBeNull();
+    expect(thumb(el)!.getAttribute('style')).toContain('z-index:2');
+  });
+
   it('removes the placeholder once the engine has loaded', async () => {
     const el = make({ src: 'art.oim', placeholder: THUMB });
     await flush();
@@ -62,6 +71,17 @@ describe('placeholder attribute', () => {
     loads[0].resolve(true);
     await flush();
     expect(thumb(el) ?? null).toBeNull();
+  });
+
+  it('shows the placeholder again while a new source loads', async () => {
+    const el = make({ src: 'art.oim', placeholder: THUMB });
+    await flush();
+    loads[0].resolve(true);
+    await flush();
+    expect(thumb(el)).toBeNull();
+    el.setAttribute('src', 'other.oim');
+    await flush();
+    expect(thumb(el)).not.toBeNull();
   });
 
   it('removes the placeholder when the engine load fails, so the error UI shows', async () => {

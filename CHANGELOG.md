@@ -3,7 +3,7 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
-## Unreleased
+## 1.35.0
 
 - player: paints 2.0 files only. A 1.x file shows its thumbnail and fires `oim:error` with `code: "unsupported-version"`; upgrade it with `upgrade()` from `@oim-media/core` or re-export it. The separate `vendor/oim-upgrade-*.js` script is no longer built or fetched.
 - player: `languages` and `auto-rotate-lang` read a 2.0 file's `languages` (they looked for 1.x slots and found none).

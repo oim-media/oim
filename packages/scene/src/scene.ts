@@ -70,8 +70,10 @@ const notYet = (name: string) => () => {
 };
 
 /** The file's language that the reader's own matches (exactly, then by its main tag), else the file's first. */
+const main = (tag: string) => tag.toLowerCase().split("-")[0];
+/** The one rule for matching two language tags: the same tag, or the same primary subtag (en-US ~ en). */
+const sameLanguage = (a: string, b: string) => a.toLowerCase() === b.toLowerCase() || main(a) === main(b);
 function languageOf(languages: string[], reader: string | undefined): string {
-  const main = (tag: string) => tag.toLowerCase().split("-")[0];
   return languages.find((l) => reader !== undefined && l.toLowerCase() === reader.toLowerCase())
     ?? languages.find((l) => reader !== undefined && main(l) === main(reader))
     ?? languages[0];
@@ -117,7 +119,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   let lang = languageOf(document.languages, _options.language ?? (typeof navigator === "undefined" ? undefined : navigator.language));
 
   /** A layer with its own `languages` shows only in those; absent means every language. */
-  const inLanguage = (layer: Layer) => !layer.languages || layer.languages.some((l) => l.toLowerCase() === lang.toLowerCase());
+  const inLanguage = (layer: Layer) => !layer.languages || layer.languages.some((l) => sameLanguage(l, lang));
 
   /** The effects the scene paints (blur, shadow, glow, backdrop); grain, texture and duotone wait for their own painter (see coverage). */
   const applyEffects = (el: HTMLElement, layer: Layer) => {
@@ -285,7 +287,12 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     }
     // A press plays once, from the pointer's first touch; it leaves no end state behind.
     for (const a of animationsOf(layer, "press")) {
-      el.addEventListener("pointerdown", () => { if (!paused) animateLayer(el, layer, a, { ...animationTiming(a), fill: "none" }); });
+      let last: Animation[] = [];
+      el.addEventListener("pointerdown", () => {
+        if (paused) return;
+        for (const run of last) run.cancel();
+        last = animateLayer(el, layer, a, { ...animationTiming(a), fill: "none" });
+      });
     }
     const hover = animationsOf(layer, "hover");
     if (!hover.length) return;

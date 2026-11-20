@@ -15,7 +15,7 @@ const shape = (o: Partial<Layer> = {}): Layer =>
 const doc = (layers: Layer[], languages = ["es", "en"]): OimDocument =>
   ({ oim: "2.0.0", canvas: { width: 1000, height: 500 }, languages, layers }) as OimDocument;
 
-type Call = { tag: string; id: string; frames: Keyframe[]; timing: KeyframeAnimationOptions; run: { reverse: ReturnType<typeof vi.fn> } };
+type Call = { tag: string; id: string; frames: Keyframe[]; timing: KeyframeAnimationOptions; run: { reverse: ReturnType<typeof vi.fn>; cancel: ReturnType<typeof vi.fn> } };
 const calls: Call[] = [];
 const realAnimate = Element.prototype.animate;
 const stub = () => {
@@ -47,6 +47,17 @@ describe("a layer's own languages", () => {
     expect(scene.elementOf("en-only")!.style.display).toBe("none");
   });
 
+  it("matches the way the document language is chosen: exactly, then by primary subtag, in both directions", () => {
+    const l = [shape({ id: "en", languages: ["en"] }), shape({ id: "gb", languages: ["en-GB"] }), shape({ id: "es", languages: ["es"] })];
+    const regional = mount(document.createElement("div"), doc(l, ["en-US", "es"]), { language: "en-US" });
+    expect(regional.elementOf("en")!.hasAttribute("data-oim-hidden")).toBe(false); // en-US ~ en
+    expect(regional.elementOf("gb")!.hasAttribute("data-oim-hidden")).toBe(false); // en-US ~ en-GB, same primary
+    expect(regional.elementOf("es")!.hasAttribute("data-oim-hidden")).toBe(true);
+    const plain = mount(document.createElement("div"), doc(l, ["en", "es"]), { language: "en" });
+    expect(plain.elementOf("gb")!.hasAttribute("data-oim-hidden")).toBe(false); // en ~ en-GB
+    expect(plain.elementOf("es")!.hasAttribute("data-oim-hidden")).toBe(true);
+  });
+
   it("an action cannot show a layer out of its language", () => {
     const scene = mount(document.createElement("div"), doc([
       shape({ id: "tip", visible: false, languages: ["en"] }),
@@ -69,6 +80,16 @@ describe("an animation on press", () => {
     expect(calls[0]).toMatchObject({ id: "btn", timing: { duration: 300, fill: "none", iterations: 1 } });
     scene.elementOf("btn")!.dispatchEvent(new Event("pointerdown"));
     expect(calls).toHaveLength(2);
+  });
+
+  it("a new press cancels the run of the previous one", () => {
+    stub();
+    const scene = mount(document.createElement("div"), press());
+    scene.elementOf("btn")!.dispatchEvent(new Event("pointerdown"));
+    expect(calls[0].run.cancel).not.toHaveBeenCalled();
+    scene.elementOf("btn")!.dispatchEvent(new Event("pointerdown"));
+    expect(calls[0].run.cancel).toHaveBeenCalledTimes(1);
+    expect(calls[1].run.cancel).not.toHaveBeenCalled();
   });
 
   it("paused, a press animates nothing", () => {
@@ -131,6 +152,21 @@ describe("geometry.trim", () => {
     const [, , vbW, vbH] = scene.elementOf("s")!.querySelector("svg[data-oim-figure]")!.getAttribute("viewBox")!.split(" ").map(Number);
     // The box is 500 x 100 canvas units; the stroke is 4: its width in viewBox units is the mean of both scales.
     expect(Number(path.getAttribute("stroke-width"))).toBeCloseTo((4 * (vbW / 500 + vbH / 100)) / 2, 3);
+  });
+
+  it("a trim track on a shape with no static trim still prepares the outline", () => {
+    const track = { property: "trimEnd", keyframes: [{ t: 0, v: 0 }, { t: 1, v: 1 }] };
+    for (const geometry of [{ kind: "preset", name: "star" }, { kind: "preset", name: "star", trim: { start: 0, end: 1 } }]) {
+      const path = figure(mount(document.createElement("div"), doc([star({ geometry, animations: [{ on: "load", duration: 500, tracks: [track] }] } as Partial<Layer>)])));
+      expect(path.getAttribute("pathLength")).toBe("1");
+      expect(path.hasAttribute("vector-effect")).toBe(false);
+      expect(path.getAttribute("stroke-dasharray")).toBe("1 2");
+    }
+  });
+
+  it("a trimmed stroke drops a dashed or dotted style", () => {
+    const path = figure(mount(document.createElement("div"), doc([star({ strokes: [{ paint: { kind: "color", value: "#f00" }, width: 4, style: "dashed" }] } as Partial<Layer>)])));
+    expect(path.getAttribute("stroke-dasharray")).toBe("0.5 2");
   });
 
   it("an untrimmed shape keeps its plain stroke", () => {

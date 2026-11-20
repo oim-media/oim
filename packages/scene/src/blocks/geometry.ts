@@ -19,7 +19,7 @@ const SVG = "http://www.w3.org/2000/svg";
  * draws it. The element's own background is then transparent. Returns the outline,
  * so the caller knows whether the figure carries the stroke and rounds the box.
  */
-export function applyGeometry(el: HTMLElement, layer: Pick<Layer, "geometry" | "fills" | "strokes" | "box">, ctx: { colors: PaintColors }): Outline {
+export function applyGeometry(el: HTMLElement, layer: Pick<Layer, "geometry" | "fills" | "strokes" | "box" | "animations">, ctx: { colors: PaintColors }): Outline {
   el.querySelectorAll(":scope > svg[data-oim-figure]").forEach((node) => node.remove());
   // A picture clipped earlier goes back to the layer before the figure is drawn again.
   el.querySelectorAll(":scope > [data-oim-figure-clip]").forEach((box) => box.replaceWith(...box.querySelectorAll(":scope > img")));
@@ -74,7 +74,9 @@ export function applyGeometry(el: HTMLElement, layer: Pick<Layer, "geometry" | "
     if (stroke.style === "dashed") shape.setAttribute("stroke-dasharray", "6,4");
     else if (stroke.style === "dotted") shape.setAttribute("stroke-dasharray", "2,3");
     // A trim is a dash over an outline of length 1; it replaces a dashed or dotted style.
-    const dash = trimDash(layer.geometry?.trim);
+    // A trim track animates the dash too, so the outline is prepared even when nothing is trimmed at rest.
+    const tracksTrim = layer.animations?.some((a) => a.tracks?.some((t) => t.property === "trimStart" || t.property === "trimEnd"));
+    const dash = trimDash(layer.geometry?.trim) ?? (tracksTrim ? { dasharray: "1 2", dashoffset: 0 } : undefined);
     if (dash) {
       // Chromium ignores pathLength under non-scaling-stroke, so the stroke scales with the figure instead:
       // its width in viewBox units, the mean of the two scales.

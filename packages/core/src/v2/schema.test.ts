@@ -119,6 +119,8 @@ describe("stable version and signer timestamp", () => {
   it("the writer constant is the stable string", () => expect(DOCUMENT_VERSION).toBe("2.0.0"));
   it("admits the signer's root timestamp as an ISO string and rejects any other type", () => {
     ok({ ...doc([rect]), timestamp: "2026-06-12T20:38:40.713579+00:00" });
+    // What the production signer writes (datetime.isoformat(), read from a file signed on 2026-10-10): a string.
+    ok({ ...doc([rect]), timestamp: "2026-10-10T20:42:34.074608+00:00" });
     bad({ ...doc([rect]), timestamp: 1781296720 });
     bad({ ...doc([rect]), timestamp: { at: "x" } });
   });

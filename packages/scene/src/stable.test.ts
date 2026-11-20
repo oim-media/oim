@@ -207,8 +207,8 @@ describe("a cutout mask inside a group", () => {
   const group = () => shape({
     id: "g", type: "group", geometry: undefined, box: { x: 100, y: 50, width: 400, height: 300 },
     children: [
-      shape({ id: "cover", box: { x: 0, y: 0, width: 400, height: 300 } }),
-      shape({ id: "cut", geometry: { kind: "preset", name: "star" }, mask: { mode: "cutout" }, box: { x: 50, y: 40, width: 200, height: 200 } } as Partial<Layer>),
+      shape({ id: "cover", box: { x: 100, y: 50, width: 400, height: 300 } }),
+      shape({ id: "cut", geometry: { kind: "preset", name: "star" }, mask: { mode: "cutout" }, box: { x: 150, y: 90, width: 200, height: 200 } } as Partial<Layer>),
       shape({ id: "after", box: { x: 0, y: 0, width: 10, height: 10 } }),
     ],
   } as Partial<Layer>);
@@ -222,6 +222,7 @@ describe("a cutout mask inside a group", () => {
     expect(wrapper.contains(scene.elementOf("after"))).toBe(false);
     expect(scene.elementOf("cut")).toBeNull();
     const d = host.querySelector(`${wrapper.style.clipPath.slice(4, -1).replace(/"/g, "")} path`)!.getAttribute("d")!;
+    // Boxes are canvas units: the cutout at (150, 90) lies at (50, 40) inside the group at (100, 50).
     expect(d.startsWith("M0 0H400V300H0Z M50 40H250V240H50Z")).toBe(true); // the group, the box, then the figure
   });
 

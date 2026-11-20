@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # OIM 2.0 Canonical Specification
 
-**Document version emitted by the reference writer:** `2.0.0-draft.1` (`DOCUMENT_VERSION` in `@oim-media/core/v2`)  
+**Document version emitted by the reference writer:** `2.0.0` (`DOCUMENT_VERSION` in `@oim-media/core/v2`)  
 **Contract release this text was checked against:** 1.35.2  
 **Status:** Normative  
 **License:** Apache-2.0  
@@ -41,7 +41,7 @@ how a document is signed and verified (section 6).
 ### 1.2. Conformance classes
 
 - **Writer**: produces a `.oim`. A conforming writer MUST emit a document that validates against
-  `schema/oim2.schema.json` (section 3; apart from the signer's root `timestamp`, see Appendix D), MUST emit the container of section 2, and MUST NOT emit a
+  `schema/oim2.schema.json` (section 3), MUST emit the container of section 2, and MUST NOT emit a
   retired construct (section 2.5 for the container, Appendix B).
 - **Reader / player**: paints a `.oim`. A conforming reader MUST follow sections 1.3, 2, 4, 5 and 6.
   It MUST NOT execute anything the file carries, MUST NOT request any resource the file names
@@ -54,7 +54,8 @@ how a document is signed and verified (section 6).
 ### 1.3. Versioning
 
 The root field `oim` is a string matching `^2\.\d+\.\d+(-[\w.]+)?$`. The reference writer emits the
-value of `DOCUMENT_VERSION`, currently `2.0.0-draft.1`; every signed vector in `vectors-2/` carries it.
+value of `DOCUMENT_VERSION`, currently `2.0.0`. The signed vectors in `vectors-2/` were signed under the
+pre-release string `2.0.0-draft.1` and are not re-signed: that string is still a valid `oim`.
 
 - A reader MUST treat any `oim` that starts with `2.` as a 2.0 document and MUST NOT refuse it for its
   minor, patch or pre-release part.
@@ -159,16 +160,13 @@ its default; no object carries a switched-off value.
 | `extensionsRequired` | string[] (each ≤64) | no | Section 3.17. |
 | `extensions` | open map | no | Section 3.17. |
 | `image_hash`, `image_hash_alg`, `signature`, `key_version`, `signed_at` | string | signed files | Section 6. |
-
-Signed files written by the production signer also carry a root `timestamp` (ISO 8601, time of packaging).
-It is outside the signature (section 6.3) and a reader MUST ignore it. The strict schema does not list it;
-see section 11.
+| `timestamp` | string | no | ISO 8601, the time of packaging, written by the signer. Outside the signature (6.3); a reader MUST ignore it. |
 
 Example of a minimal document (unsigned):
 
 ```json
 {
-  "oim": "2.0.0-draft.1",
+  "oim": "2.0.0",
   "canvas": { "width": 800, "height": 600 },
   "languages": ["en"],
   "layers": [
@@ -285,7 +283,8 @@ Effects apply in array order to the whole layer.
 ### 3.7. Geometry and corners
 
 `geometry` (required on `shape`) is discriminated by `kind`. Every kind may carry `trim`
-(`{ start?: 0..1, end?: 0..1 }`, how much of the outline is drawn).
+(`{ start?: 0..1, end?: 0..1 }`, how much of the outline is drawn). The reference painter draws it on a figure
+it draws as an SVG outline (a preset, a line, an ellipse, a single path); a plain rectangle is not trimmed.
 
 | `kind` | Fields |
 |---|---|
@@ -343,7 +342,7 @@ base64 (section 5.4).
 ### 3.11. Masks
 
 `mask` is `{ mode?, invert?, feather?, scope? }`: `mode` is `window` \| `cutout`, `invert` is boolean,
-`feather` ≥0, `scope` is `group` \| `canvas`. Mask support in the reference painter is partial (section 11).
+`feather` ≥0, `scope` is `group` \| `canvas`. A cutout clips the layers before it in its parent (the canvas, or its group), in that parent's own units.
 
 ### 3.12. Animations and motion
 
@@ -358,7 +357,7 @@ An animation:
 | `tracks` | 1..16 | Exactly one of `preset` and `tracks`. |
 | `duration` | number ≥0 | Required. **Milliseconds.** |
 | `delay` | number ≥0 | Milliseconds. |
-| `stagger` | number ≥0 | Intended: milliseconds between the units of a text target (section 11). |
+| `stagger` | number ≥0 | Milliseconds between the units of a text entrance. Wins over `params.speed` (the same gap in seconds). |
 | `easing` | easing | Default per preset. |
 
 A **track** is `{ property, keyframes }`: `property` is one of `opacity`, `x`, `y`, `scale`, `rotation`,
@@ -385,8 +384,10 @@ A reader MUST ignore an animation whose preset it does not know; the file stays 
 
 **Triggers.** `load` runs once when the layer is painted; `loop` repeats forever; `hover` runs while the pointer
 is over the layer and reverses when it leaves; `enter` is how the layer appears (and, reversed, leaves) when an
-action shows or hides it; `action` runs when a `play` action (3.13) targets the layer; `press` is declared by the
-schema (section 11).
+action shows or hides it; `action` runs when a `play` action (3.13) targets the layer; `press` runs once on every
+pointer press on the layer (`pointerdown`), leaves no end state and does nothing while the document is paused.
+The `trimStart` and `trimEnd` tracks animate the geometry's trim (3.7) under `load`, `loop`, `hover`, `press` and
+`action`; a track the animation lacks keeps the trim at rest.
 
 **Motion.** `motion` is `{ loop?: { speedPxSec, direction?, mirror?, pauseOnHover? } }`. `loop` scrolls the
 layer's content endlessly sideways: `speedPxSec` is −500..500 canvas pixels per second; `direction` is
@@ -453,8 +454,9 @@ covered by the signature; enforcement belongs to the registry that holds authors
 `extensions` (on the document and on a layer) is the only open map: keys and values are free. A reader MUST
 ignore an extension it does not know. `extensionsUsed` lists the extensions a writer used; `extensionsRequired`
 those without which the work is not faithfully shown. A reader that sees a required extension it does not
-implement SHOULD say so to the host and SHOULD NOT claim a faithful render. (The reference player does not read
-either list yet; section 11.)
+implement MUST NOT paint it: it keeps showing the PNG and fires `oim:error` with `detail.code === "unsupported-extension"`
+and `detail.extensions` (the names). The reference reader implements no extension, so every name in
+`extensionsRequired` is unsupported. `extensionsUsed` is informative.
 
 `a11y` (on `shape` and `image`) is `{ alt?: map language → string, decorative?: boolean }`. A decorative
 layer is hidden from assistive technology; otherwise a reader SHOULD expose `alt` for the current language, and
@@ -464,7 +466,7 @@ the document's `description`.
 
 ```json
 {
-  "oim": "2.0.0-draft.1",
+  "oim": "2.0.0",
   "name": "Sale",
   "description": { "en": "A sale poster", "es": "Un cartel de rebajas" },
   "canvas": { "width": 1080, "height": 1080, "fills": [{ "kind": "color", "value": "#101014" }] },
@@ -535,7 +537,8 @@ the document's `description`.
 6. **Opacity and blend.** `opacity` and `blend` apply to the layer as a whole (children included). A layer
    blends with the layers under it inside the canvas, never with the page behind the reader.
 7. **Language.** One language is selected for the whole document (3.9) and used for every text, exception and
-   picture. A layer's `languages` list, when present, restricts the layer to those languages (section 11).
+   picture. A layer's `languages` list, when present, restricts the layer to those languages (compared without
+   regard to case): out of them it is hidden, and no action shows it until the language changes.
 8. **Hidden.** A `visible: false` layer is not shown until an action shows it.
 9. **Base picture.** See 2.4.
 10. **Motion.** A reader paints the resting state when motion is disabled, and runs no animation while the
@@ -550,7 +553,7 @@ the document's `description`.
   `allow-lottie` is off unless set; `mode="full"` enables animation and actions, and the default shows a
   still image with its language.
 - Events (bubbling from the element): `oim:loaded` (`detail`: `type`, `metadata`, `security`), `oim:error`
-  (`detail`: `code`, `message`; codes include `unsupported-version` and `chunk`), `oim:action` (cancelable;
+  (`detail`: `code`, `message`; codes include `unsupported-version`, `unsupported-extension` and `chunk`), `oim:action` (cancelable;
   `detail`: `slot`, `name`, `trigger`, `targets`, `types`), `oim:langchange` (`detail.lang`). `oim:incomplete`
   and `oim:unsupported` report the 1.x `capabilities` and `min_player` fields and do not apply to a strict 2.0
   document.
@@ -773,20 +776,24 @@ A writer is checked by validating its documents against `schema/oim2.schema.json
 
 ## 11. Appendix D: what the schema allows and the reference painter does not draw
 
-Checked against release 1.35.2. A reader that does not draw one of these is still conforming to the schema; a
-writer SHOULD NOT rely on them being painted.
+Checked against the working tree that follows release 1.35.2. A reader that does not draw one of these is still
+conforming to the schema; a writer SHOULD NOT rely on them being painted.
 
-- `geometry.trim` and the `trimStart` / `trimEnd` tracks: not drawn.
-- An animation with `on: "press"`: not run (only `load`, `loop`, `hover`, `enter` and `action` are).
-- `animation.stagger`: not read; a text entrance takes its spacing from `params.speed`.
-- A gradient paint with `preset` and no `gradient`: draws nothing; only an explicit `gradient` is drawn.
-- `layer.languages`: the document language is chosen, but a layer's own `languages` list is not used to hide it.
-- Length bindings `{ var }` for a text's `font.size` or `maxWidth` are not resolved; literals and
-  `{ value, modes }` are. Colour bindings are resolved.
-- `extensionsUsed`, `extensionsRequired`: not read.
-- A cutout mask inside a group, and a `{ ref }` chain through several resources beyond four steps: not drawn.
+- A gradient paint with `preset` and no `gradient`: the reference painter reads the preset only for an artistic
+  text (`text.artistic`), where it names the gradient type. On any other fill it draws nothing; writers SHOULD
+  give an explicit `gradient`. (Kept in the schema because a signed vector, `artistic-text`, uses it.)
+- Length bindings `{ var }` for `font.size`, `maxWidth` and a stroke's `width` are not resolved; literals and
+  `{ value, modes }` are. Nothing in this repository writes them. Readers MAY ignore them; colour bindings are
+  resolved.
+- A `{ ref }` chain through several resources beyond four steps: not drawn.
 - Text marks in 2.0 are not limited by the schema to the 1.x pattern `^[a-z][a-z0-9-]{0,23}$` and 8 per
   layer; writers SHOULD respect them because the shared parser of `{name}…{/name}` does.
-- `timestamp` at the root of a signed file is written by the signer and is rejected by the strict schema.
-- The document version string is a draft (`2.0.0-draft.1`), accepted by the `^2\.` rule.
+- A trim is not drawn on a rectangle (a box, no outline) or on a drawing of several paths.
+- A `geometry.trim` stroke is drawn without `vector-effect: non-scaling-stroke` (the browser ignores
+  `pathLength` under it), so its width scales with the figure's box.
+- A feathered cutout edge is drawn hard.
 - The reference player does not check the per-layer schema limits (fills, strokes, effects, animations, interactions, actions, tracks, keyframes, gradient stops, paths and the like); only 150 per list, 1000 total, depth 32 and 10 MiB.
+
+Painted since the draft of this appendix: `geometry.trim` and the `trimStart` / `trimEnd` tracks, an animation
+`on: "press"`, `animation.stagger`, a layer's own `languages`, `extensionsRequired` (refusal), and a cutout mask
+inside a group. The root `timestamp` is part of the schema (section 1.2).

@@ -3,6 +3,15 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## Unreleased
+
+- core: writers emit `oim: "2.0.0"` (`DOCUMENT_VERSION`, and so `upgrade()`). Readers still accept any `2.x.y`, including the `2.0.0-draft.1` that every signed vector carries; nothing is re-signed.
+- core: the root `timestamp` the production signer writes is part of the 2.0 schema (optional string, outside the signature). `oim2.schema.json` is regenerated.
+- core: `trimDash()` (the dash of a trim) and `unsupportedRequired()` (the `extensionsRequired` a reader cannot honour), shared by every renderer.
+- scene: paints a layer's own `languages`, an animation `on: "press"`, `animation.stagger`, `geometry.trim` with the `trimStart` / `trimEnd` tracks, and a cutout mask inside a group.
+- player: a file whose `extensionsRequired` lists an extension the player does not implement is not painted; `oim:error` fires with `code: "unsupported-extension"`.
+- spec: CANONICAL_SPEC_2.md section 1.2 and Appendix D follow.
+
 ## 1.35.2
 
 - spec: the seven `vectors-2` files that still declared 1.x (animation-presets, color-grade, duotone, generative-fill, mask-cutout, text-decorations, texture) are signed 2.0 documents now.

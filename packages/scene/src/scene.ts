@@ -368,7 +368,8 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   };
   // A cutout clips the layers before it in its parent (the canvas or its group), in that parent's own units.
   const place = (layer: Layer, parent: HTMLElement, frame: Frame) => {
-    if (layer.mask?.mode === "cutout") applyCutoutMask(parent, layer, frame);
+    // Boxes are canvas units, so the cutout's moves into its parent's own units.
+    if (layer.mask?.mode === "cutout") applyCutoutMask(parent, { ...layer, box: { ...layer.box, x: (layer.box.x ?? 0) - frame.x, y: (layer.box.y ?? 0) - frame.y } }, frame);
     else paint(layer, parent, frame);
   };
   for (const layer of document.layers) place(layer, root, canvas);

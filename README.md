@@ -5,6 +5,7 @@
 [![pub.dev](https://img.shields.io/pub/v/oim_flutter?label=pub.dev)](https://pub.dev/packages/oim_flutter)
 [![crates.io](https://img.shields.io/crates/v/oim-media?label=crates.io)](https://crates.io/crates/oim-media)
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+[![Buy me a coffee](https://img.shields.io/badge/buy%20me%20a%20coffee-support-yellow)](https://buymeacoffee.com/jxue)
 
 Documentation: [English](https://oim.media/docs/) · [Español](https://oim.media/docs/es/)
 

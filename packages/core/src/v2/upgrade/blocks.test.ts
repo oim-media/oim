@@ -19,7 +19,7 @@ const doc = (style: object, type = "geo", extra: Extra = {}) => ({
   ...extra.root,
 });
 const run = (style: object, type?: string, extra?: Extra) => upgrade(doc(style, type, extra));
-const layer = (style: object, type?: string, extra?: Extra) => run(style, type, extra).document.layers[0];
+const layer = (style: object, type?: string, extra?: Extra) => run(style, type, extra).document.layers[1];
 const valid = (style: object, type?: string, extra?: Extra) => {
   const parsed = documentSchema.safeParse(run(style, type, extra).document);
   return parsed.success ? [] : parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`);
@@ -86,7 +86,7 @@ describe("text", () => {
 
   it("typography on a layer that is not a text is noise: dropped, not reported", () => {
     const result = run({ fontFamily: "Inter", fontSize: "1.4815cqw", textAlign: "left", textDecoration: "none", fontStyle: "normal", fontWeight: 400, maxWidth: "93cqw" }, "geo", { slot: { align: "left" } });
-    expect(result.document.layers[0]).not.toHaveProperty("text");
+    expect(result.document.layers[1]).not.toHaveProperty("text");
     expect(result.unhandled).toEqual([]);
   });
 });
@@ -247,8 +247,8 @@ describe("geometry, corners and images", () => {
 
   it("an SVG outside the profile keeps its layer and says why", () => {
     const result = run({ svgRawXml: '<svg viewBox="0 0 1 1"><text>hi</text></svg>' }, "svg");
-    expect(result.document.layers[0].geometry).toEqual({ kind: "rect" });
-    expect(result.document.layers[0].box).toEqual({ x: 0, y: 0, width: 10, height: 10 });
+    expect(result.document.layers[1].geometry).toEqual({ kind: "rect" });
+    expect(result.document.layers[1].box).toEqual({ x: 0, y: 0, width: 10, height: 10 });
     expect(result.unhandled).toEqual(["style.svgRawXml: <text> is outside the static profile"]);
   });
 
@@ -257,7 +257,7 @@ describe("geometry, corners and images", () => {
     expect(layer({ borderRadius: "0.0cqw" })).not.toHaveProperty("corners");
     expect(layer({ borderRadius: 10, borderRadiusTL: 0, borderRadiusBR: 30 }).corners).toEqual([0, 10, 30, 10]);
     // A hollow text: 1.x painted only its stroke, so the letter stays transparent (flyer_drop «07»).
-    const hollow = upgrade({ oim: "1.27.9", slots: [{ id: "t", type: "text", position: [0, 0], content: { es: "07" }, style: { fillColor: "transparent", textStrokeColor: "#090a0f", textStrokeWidth: 4 } }] }).document.layers[0];
+    const hollow = upgrade({ oim: "1.27.9", slots: [{ id: "t", type: "text", position: [0, 0], content: { es: "07" }, style: { fillColor: "transparent", textStrokeColor: "#090a0f", textStrokeWidth: 4 } }] }).document.layers[1];
     expect(hollow.fills).toEqual([{ kind: "color", value: "transparent" }]);
     // The CSS shorthand, as the editor writes per-side corners (asymmetric-borders vector).
     expect(layer({ borderRadius: "10px 25px 50px 0px" }).corners).toEqual([10, 25, 50, 0]);
@@ -481,7 +481,7 @@ describe("animations, motion and interactions", () => {
 });
 
 describe("the picture of an image", () => {
-  const img = (content: object) => upgrade({ oim: "1.27.9", languages: ["es", "en"], canvas: { natural_width: 100, natural_height: 100 }, slots: [{ id: "a", type: "image", position: [0, 0], content, style: { width: 10, height: 10 } }] }).document.layers[0].image;
+  const img = (content: object) => upgrade({ oim: "1.27.9", languages: ["es", "en"], canvas: { natural_width: 100, natural_height: 100 }, slots: [{ id: "a", type: "image", position: [0, 0], content, style: { width: 10, height: 10 } }] }).document.layers[1].image;
 
   it("a language with its own picture is an exception; an empty one shows none", () => {
     expect(img({ "*": "data:image/png;base64,AA", en: "data:image/png;base64,BB", fr: "" })?.src).toEqual({
@@ -536,7 +536,7 @@ describe("mask and the merged layer types", () => {
 
   it("maskCoverage and maskInvert on a layer that is not a mask are noise", () => {
     const result = run({ maskCoverage: "canvas", maskInvert: false });
-    expect(result.document.layers[0]).not.toHaveProperty("mask");
+    expect(result.document.layers[1]).not.toHaveProperty("mask");
     expect(result.unhandled).toEqual([]);
   });
 

@@ -23,7 +23,7 @@ const slot = (o: object = {}) => ({
   style: { width: "50.0cqw", height: "10.0cqw" },
   ...o,
 });
-const first = (input: unknown): Layer => upgrade(input).document.layers[0];
+const first = (input: unknown): Layer => upgrade(input).document.layers[1];
 
 describe("upgrade: root, tree and box", () => {
   it("converts the root: version, canvas, languages, one list of layers", () => {
@@ -34,13 +34,13 @@ describe("upgrade: root, tree and box", () => {
     expect(document.reedit).toBe("sealed");
     expect(document.canvas).toEqual({ width: 1000, height: 500 });
     expect(document.languages).toEqual(["es"]);
-    expect(document.layers).toHaveLength(1);
+    expect(document.layers).toHaveLength(2);
   });
 
   it("reads the layer list from slots, elements or layers", () => {
     for (const key of ["slots", "elements", "layers"]) {
       const input = { oim: "1.27.9", canvas: { natural_width: 1000, natural_height: 500 }, [key]: [slot()] };
-      expect(upgrade(input).document.layers, key).toHaveLength(1);
+      expect(upgrade(input).document.layers, key).toHaveLength(2);
     }
   });
 
@@ -95,8 +95,8 @@ describe("upgrade: root, tree and box", () => {
       slot({ id: "loose", style: { width: 10, height: 10 } }),
     ];
     const { document, unhandled } = upgrade(v1(slots));
-    expect(document.layers.map((l) => l.id)).toEqual(["g", "loose"]);
-    expect(document.layers[0].children?.map((l) => l.id)).toEqual(childrenByGroup(slots).get("g"));
+    expect(document.layers.map((l) => l.id)).toEqual(["oim-base", "g", "loose"]);
+    expect(document.layers[1].children?.map((l) => l.id)).toEqual(childrenByGroup(slots).get("g"));
     expect(unhandled).toEqual([]);
   });
 
@@ -120,7 +120,7 @@ describe("upgrade: root, tree and box", () => {
 
   it("a groupId that points nowhere leaves the layer loose, never lost", () => {
     const { document } = upgrade(v1([slot({ style: { width: 10, height: 10, groupId: "ghost" } })]));
-    expect(document.layers.map((l) => l.id)).toEqual(["a"]);
+    expect(document.layers.map((l) => l.id)).toEqual(["oim-base", "a"]);
   });
 
   it("the 15 layer types of 1.x become the 5 of 2.0", () => {
@@ -145,7 +145,7 @@ describe("upgrade: root, tree and box", () => {
       slots: [{ id: "a", type: "geo", position: [0, 0], p: [10, 20], st: { width: "50.0cqw", height: "10.0cqw" } }],
     };
     const result = upgrade(legacy);
-    expect(result.document.layers[0].box).toMatchObject({ width: 100, height: 100 });
+    expect(result.document.layers[1].box).toMatchObject({ width: 100, height: 100 });
     expect(result.document.reedit).toBe("sealed");
     expect(result.unhandled).toEqual([]);
   });

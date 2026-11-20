@@ -14,7 +14,7 @@ const upgradeMask = (style: object) =>
     canvas: { natural_width: 1000, natural_height: 500 },
     languages: ["es"],
     slots: [{ id: "m", type: "mask", position: [10, 20], style: { width: "50.0cqw", height: "10.0cqw", ...style } }],
-  }).document.layers[0];
+  }).document.layers[1];
 
 describe("upgrade: the 1.x mask frame", () => {
   it("maps fillType gradient on a window mask to a gradient paint in fills", () => {

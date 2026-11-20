@@ -13,7 +13,7 @@ import { documentSchema } from "../schema.js";
 import { upgrade } from "../upgrade.js";
 
 const at = (slot: object, canvas = { natural_width: 1000, natural_height: 500 }) =>
-  upgrade({ oim: "1.27.9", canvas, slots: [{ id: "a", type: "geo", ...slot }] }).document.layers[0];
+  upgrade({ oim: "1.27.9", canvas, slots: [{ id: "a", type: "geo", ...slot }] }).document.layers[1];
 
 describe("upgrade: the box the player painted", () => {
   it("a position under 1 on both axes is a fraction, as the player reads it", () => {
@@ -103,7 +103,7 @@ describe("visibility", () => {
   it("a slot hidden at its top level stays hidden", async () => {
     const { upgrade } = await import("../upgrade.js");
     const out = upgrade({ oim: "1.27.9", canvas: { natural_width: 100, natural_height: 100 }, slots: [{ id: "a", type: "geo", isVisible: false, position: [0, 0], style: { width: 10, height: 10 } }] });
-    expect(out.document.layers[0].visible).toBe(false);
+    expect(out.document.layers[1].visible).toBe(false);
     expect(out.unhandled).toEqual([]);
   });
 });

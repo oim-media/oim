@@ -27,6 +27,13 @@ const paint = (layer: Layer, lang = "es", canvasWidth = 800) => {
 };
 
 describe("applyText", () => {
+  it("a language the text lacks shows what 1.x showed: the English, else the Spanish, else the first words", () => {
+    expect(paint(textLayer({ content: { es: "09:00" } }), "en").textContent).toBe("09:00");
+    expect(paint(textLayer({ content: { es: "Hola", en: "Hi", fr: "" } }), "fr").textContent).toBe("Hi");
+    expect(paint(textLayer({ content: { ja: "こんにちは" } }), "de").textContent).toBe("こんにちは");
+    expect(paint(textLayer({ content: { es: "Hola", en: "Hi" } }), "es").textContent).toBe("Hola");
+  });
+
   it("the font size is the player's size in canvas units, so it scales with the canvas", () => {
     const layer = textLayer({ font: { size: 42 } });
     expect(typographyCss(layer, "es")!.fontSize).toBe("42px");

@@ -158,6 +158,8 @@ export function upgrade(input: unknown): UpgradeResult {
     });
   }
   document.layers.forEach(completeLayer);
+  // 1.x painted its PNG under every slot (often the only place the background lives); in 2.0 that takes a layer, or the PNG is a poster that fades out.
+  document.layers.unshift({ id: "oim-base", type: "image", box: { x: 0, y: 0, width: ctx.canvas.width, height: ctx.canvas.height }, image: { src: "oim:base" } });
 
   return { document, ...ctx.finish() };
 }

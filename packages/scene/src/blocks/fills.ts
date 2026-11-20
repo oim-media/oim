@@ -30,8 +30,8 @@ const FILL_PROPS = ["backgroundColor", "backgroundImage", "backgroundSize", "bac
 const PATTERN_MOVES = ["right", "left", "up", "down", "zoom-in", "zoom-out", "pulse"];
 const TILE = "var(--oim-bg-tile, 160px)";
 const BIG = `calc(${TILE} * 1.15)`;
-const at = (pos: string) => `background-position: ${pos}; -webkit-mask-position: ${pos}; mask-position: ${pos};`;
-const sized = (size: string) => `background-size: ${size} ${size}; -webkit-mask-size: ${size} ${size}; mask-size: ${size} ${size};`;
+const at = (pos: string) => `background-position: ${pos}`;
+const sized = (size: string) => `background-size: ${size} ${size}`;
 /** The keyframes a moving pattern runs, one tile per lap: the 1.x player's, which the 2.0 scene lost with the old renderer. */
 export const PATTERN_KEYFRAMES = [
   `@keyframes background-animation-right { from { ${at("0 0")} } to { ${at(`${TILE} 0`)} } }`,

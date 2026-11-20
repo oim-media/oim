@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://oim.media/spec/2.0.0-draft.1/oim.schema.json",
-  "title": "OIM document 2.0 (draft)",
-  "specVersion": "2.0.0-draft.1",
+  "$id": "https://oim.media/spec/2.0.0/oim.schema.json",
+  "title": "OIM document 2.0",
+  "specVersion": "2.0.0",
   "type": "object",
   "properties": {
     "oim": {
@@ -61,6 +61,9 @@
     },
     "signed_at": {
       "$ref": "#/$defs/__schema94"
+    },
+    "timestamp": {
+      "$ref": "#/$defs/__schema95"
     }
   },
   "required": [
@@ -2801,6 +2804,9 @@
       "type": "string"
     },
     "__schema94": {
+      "type": "string"
+    },
+    "__schema95": {
       "type": "string"
     }
   }

@@ -207,3 +207,9 @@ describe("upgrade: a filter keeps its figure", () => {
     expect(layer.effects).toEqual([{ kind: "backdrop", preset: "grayscale" }]);
   });
 });
+
+describe("upgrade emits the stable version", () => {
+  it('a fresh upgrade() writes oim "2.0.0"', () => {
+    expect(upgrade(v1([slot()])).document.oim).toBe("2.0.0");
+  });
+});

@@ -18,6 +18,7 @@
 
 import { describe, it, expect, vi, afterEach } from "vitest";
 import ImageEngine from "./ImageEngine";
+import { upgradeFixture } from '../test-utils/upgrade-fixture.js';
 
 function fakeAnimation() {
   return { pause: vi.fn(), play: vi.fn(), cancel: vi.fn(), finish: vi.fn() };
@@ -33,7 +34,7 @@ function mount() {
   shadow.appendChild(motor._viewport);
   motor._overlay = document.createElement("div");
   motor._viewport.appendChild(motor._overlay);
-  motor.metadata = {
+  motor.metadata = upgradeFixture({
     width: 800,
     height: 600,
     slots: [{
@@ -52,7 +53,7 @@ function mount() {
         },
       },
     }],
-  };
+  });
   return motor;
 }
 

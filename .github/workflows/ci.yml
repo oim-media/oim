@@ -79,13 +79,7 @@ jobs:
       - run: pnpm build
       # GitHub's image can install Chromium's system libraries; a self-hosted runner has them already (no sudo).
       - run: pnpm --filter @oim-media/spec exec playwright install ${{ runner.environment == 'github-hosted' && '--with-deps' || '' }} chromium
-      # The player paints every file with the scene; here the 1.x files, upgraded on load, against the web goldens.
-      # The 2.0 files are the scene step below: the same painter, so no separate player step for them.
-      - name: Player (1.x files) against the goldens
-        run: |
-          cd packages/spec
-          node tools/render-web-goldens.mjs "$RUNNER_TEMP/parity/web" --suffix ""
-          node tools/parity.mjs "$RUNNER_TEMP/parity/web" --renderer web --out "$RUNNER_TEMP/parity/diff/web"
+      # The player paints 2.0 only (1.x files are upgraded with the CLI or re-exported): the 2.0 goldens are the gate.
       # The scene (@oim-media/scene) against the same goldens. Required for the vectors in scope; a vector that uses a block
       # the scene does not paint yet is listed as SKIPPED (packages/scene/src/coverage.ts), never failed.
       - name: Scene against the goldens

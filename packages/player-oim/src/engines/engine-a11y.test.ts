@@ -14,6 +14,7 @@ import { describe, it, expect, vi } from "vitest";
 import ImageEngine from "./ImageEngine";
 import { doc2, shape2, text2, paintedEngine } from "./scene-engine.fixture";
 import { readingOrder, a11yNodes, artworkLabel } from "../../../scene/src/runtime/a11y";
+import { upgradeFixture } from '../test-utils/upgrade-fixture.js';
 
 function mount(slots: any[], extra: any = {}) {
   const host = document.createElement("div");
@@ -25,7 +26,7 @@ function mount(slots: any[], extra: any = {}) {
   shadow.appendChild(motor._viewport);
   motor._overlay = document.createElement("div");
   motor._viewport.appendChild(motor._overlay);
-  motor.metadata = { slots, width: 800, height: 600, lang: ["es", "en"], ...extra };
+  motor.metadata = upgradeFixture({ slots, width: 800, height: 600, lang: ["es", "en"], ...extra });
   return { host, motor };
 }
 

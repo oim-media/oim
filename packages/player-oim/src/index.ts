@@ -10,6 +10,13 @@ import { ImageEngine } from './engines/ImageEngine.js';
 import { fileCache } from './render/file-cache.js';
 import { setFlag } from '../../scene/src/runtime/attrs.js';
 
+/** The 2.0 document's languages (`languages`), lowercased and sorted; [] before a file loads. */
+function documentLanguages(engine: any): string[] {
+  const doc = engine ? (engine.fileMetadata ?? engine.metadata) : null;
+  const langs: unknown = doc?.languages;
+  return Array.isArray(langs) ? [...new Set(langs.map((l) => String(l).toLowerCase()))].sort() : [];
+}
+
 interface OimPlayerOptions {
   allowZoom?: boolean;
   /** @deprecated No effect; removed in 2.0.0. */
@@ -278,19 +285,7 @@ OimPlayerElement._startAutoRotateLang = function (this: any) {
   
   const self = this;
   this._autoRotateIntervalId = setInterval(() => {
-    // The 1.x view: its slots carry the languages. The file document has them under layers.
-    const metadata = self._engine ? self._engine.metadata : null;
-    if (!metadata) return;
-    
-    const slots = metadata.slots || metadata.elements || [];
-    const allLangs: Record<string, boolean> = {};
-    for (let i = 0; i < slots.length; i++) {
-      const content = slots[i].content || {};
-      Object.keys(content).forEach((lang) => {
-        allLangs[lang.toLowerCase()] = true;
-      });
-    }
-    const langs = Object.keys(allLangs).sort();
+    const langs = documentLanguages(self._engine);
     if (langs.length <= 1) return;
     
     const currentLang = (self.getAttribute('lang') || (self._engine && self._engine.lang) || 'en').toLowerCase();
@@ -657,16 +652,7 @@ if (typeof customElements !== 'undefined' && !customElements.get('oim-player')) 
 
   Object.defineProperty(OimPlayerClass.prototype, 'languages', {
     get: function (this: any) {
-      if (!this._engine || !this._engine.metadata) return [];
-      const slots = this._engine.metadata.slots || this._engine.metadata.elements || [];
-      const allLangs: Record<string, boolean> = {};
-      for (let i = 0; i < slots.length; i++) {
-        const content = slots[i].content || {};
-        Object.keys(content).forEach((lang) => {
-          allLangs[lang.toLowerCase()] = true;
-        });
-      }
-      return Object.keys(allLangs).sort();
+      return documentLanguages(this._engine);
     }
   });
 

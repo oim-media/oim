@@ -9,7 +9,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
-import { REFERENCE_OIM } from '../../../core/test/fixtures/index';
+import path from 'node:path';
 
 let currentVerdict: string = 'unsigned';
 
@@ -23,7 +23,8 @@ vi.mock('../render/security.js', async (importOriginal) => {
 
 import ImageEngine from './ImageEngine';
 
-const oimFilePath = REFERENCE_OIM;
+// A 2.0 file: the player no longer paints 1.x.
+const oimFilePath = path.resolve(process.cwd(), '../spec/vectors-2/basic-text.oim.png');
 const oimBuffer = fs.readFileSync(oimFilePath);
 
 function blobDePrueba(): Blob {

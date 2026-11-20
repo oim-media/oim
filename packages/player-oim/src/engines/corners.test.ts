@@ -11,6 +11,7 @@
 
 import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine";
+import { upgradeFixture } from '../test-utils/upgrade-fixture.js';
 
 async function slot(style: any): Promise<HTMLElement> {
   const host = document.createElement("div");
@@ -21,7 +22,7 @@ async function slot(style: any): Promise<HTMLElement> {
   shadow.appendChild(motor._viewport);
   motor._overlay = document.createElement("div");
   motor._viewport.appendChild(motor._overlay);
-  motor.metadata = { slots: [{ id: "c", type: "geo", position: [10, 10], width_px: 200, height_px: 200, content: {}, style: { fillColor: "#ff0000", ...style } }], width: 800, height: 600 };
+  motor.metadata = upgradeFixture({ slots: [{ id: "c", type: "geo", position: [10, 10], width_px: 200, height_px: 200, content: {}, style: { fillColor: "#ff0000", ...style } }], width: 800, height: 600 });
   await motor.renderSlots();
   return host.shadowRoot!.querySelector('[data-oim-id="c"]') as HTMLElement;
 }

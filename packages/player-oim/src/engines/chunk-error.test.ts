@@ -16,6 +16,7 @@ vi.mock("../../../scene/src/runtime/features-entry.js", () => ({
 }));
 
 import { ImageEngine } from "./ImageEngine";
+import { upgradeFixture } from '../test-utils/upgrade-fixture.js';
 
 describe("a part that does not load", () => {
   it("is reported and does not stop the render", async () => {
@@ -25,11 +26,11 @@ describe("a part that does not load", () => {
     const engine = new ImageEngine(host);
     engine._overlay = document.createElement("div");
     shadow.appendChild(engine._overlay);
-    engine.metadata = {
+    engine.metadata = upgradeFixture({
       canvas_width: 800,
       canvas_height: 600,
       slots: [{ id: "a", type: "geo", content: { es: "" }, position: [0.1, 0.1], width_px: 100, height_px: 100, style: { fillColor: "#ff0000" } }],
-    } as any;
+    }) as any;
 
     const errors: any[] = [];
     host.addEventListener("oim:error", (e) => errors.push((e as CustomEvent).detail));

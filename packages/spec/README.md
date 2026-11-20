@@ -6,12 +6,15 @@ TypeScript.
 
 ```
 BINARY_SPEC.md      Binary layout of the PNG container, compression and the image seal.
-CANONICAL_SPEC.md   Canonical form of the metadata, the bytes a signature covers.
+CANONICAL_SPEC_2.md Canonical specification of OIM 2.0 (the current format): container, document, security, signing.
+SPEC_2.md           2.0 rendering rules (box, strokes, text, opacity and blend).
+CANONICAL_SPEC.md   Canonical specification of 1.x (legacy, no longer painted): metadata and the bytes a signature covers.
 schema/             oim.schema.json and ovm.schema.json: JSON Schema, generated from @oim-media/core.
 keys.json           Public keys every player embeds (kid, jwk and key dates). Public parts only.
 marks-cases.json    Known-answer cases for text marks, shared with the backend's validator tests.
 canonical-cases.json  Known-answer case for the canonical form, checked by the TypeScript, Rust and Dart implementations.
-schema/oim2.schema.json  Draft of the 2.0 document, generated from @oim-media/core/v2. Not the published format.
+schema/oim2.schema.json  The 2.0 document, generated from @oim-media/core/v2.
+vectors-2/          48 signed 2.0 .oim files with web goldens (golden/).
 vectors/            39 signed .oim files, each with <name>.expected.json.
 tools/              Read-only checks: contract-summary.mjs, canonical-check.mjs, style-usage.mjs.
 ```
@@ -20,7 +23,7 @@ Published as `@oim-media/spec`. The tarball carries the schema, the vectors, bot
 specifications, `keys.json`, `marks-cases.json`, this README, LICENSE and NOTICE.
 
 
-**2.0 rendering rules:** [SPEC_2.md](SPEC_2.md).
+**2.0:** the normative text is [CANONICAL_SPEC_2.md](CANONICAL_SPEC_2.md); the rendering rules are [SPEC_2.md](SPEC_2.md).
 
 ## Versioning
 
@@ -272,11 +275,11 @@ overrides all of them.
 A 1.20.0 file read by an earlier player is shown with each layer's fixed
 colours. Nothing breaks.
 
-## The 2.0 draft
+## The 2.0 document
 
-`schema/oim2.schema.json` is the next version of the document, still a draft: no player reads it and
-it can change. `@oim-media/core/v2` exports `upgrade`, which reads any 1.x document as 2.0, and the
-conformance gate checks that every vector upgrades to a valid 2.0 document with no key left behind.
+`schema/oim2.schema.json` is the 2.0 document, specified in [CANONICAL_SPEC_2.md](CANONICAL_SPEC_2.md). Players
+paint 2.0 only; a 1.x file is not painted. `@oim-media/core/v2` exports `upgrade`, which reads any 1.x document
+as 2.0, and the conformance gate checks that every 1.x vector upgrades to a valid 2.0 document with no key left behind.
 
 ```
 node tools/upgrade-report.mjs --vectors   # the same check, as a report

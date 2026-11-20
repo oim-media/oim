@@ -162,6 +162,12 @@ describe("the background of the canvas", () => {
     expect(canvas({ backgroundType: "color", backgroundColor: "#F6F1E7" }).document.canvas.fills).toEqual([{ kind: "color", value: "#F6F1E7" }]);
   });
 
+  it("an image background paints nothing: the photo is the file's base picture, not a fill", () => {
+    const result = canvas({ backgroundType: "image", backgroundColor: "#FFFFFF" });
+    expect(result.document.canvas.fills ?? []).toEqual([]);
+    expect(result.unhandled).toEqual([]);
+  });
+
   it("the gradient fields that only repeat the string are dropped with it", () => {
     const result = canvas({
       backgroundType: "color", backgroundColor: "#FFFFFF",

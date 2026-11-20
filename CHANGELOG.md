@@ -3,6 +3,12 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.34.1
+
+- scene: 2.0 `shape` layers with `paths` geometry are painted again (the figure SVG is built by the renderer).
+- player: a host without its own height sizes a 2.0 document from its width, like 1.x.
+- ci: cdn-next sends `Access-Control-Allow-Origin: *`, needed by the SRI vendor loads.
+
 ## 1.34.0
 
 - format: 2.0 ids (layers, `ref` targets, document) and font `family` reject `<`, `>`, `"` and

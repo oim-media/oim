@@ -3,6 +3,10 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.34.2
+
+- core: `upgrade` paints no canvas fill for a 1.x `backgroundType: "image"`; the base PNG shows again.
+
 ## 1.34.1
 
 - scene: 2.0 `shape` layers with `paths` geometry are painted again (the figure SVG is built by the renderer).

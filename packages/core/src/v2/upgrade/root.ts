@@ -48,7 +48,13 @@ export function languagesOf(meta: V1Object): string[] {
       if (clean.length > 0) return [...new Set(clean)];
     }
   }
-  return ["es"];
+  // Files compiled without a list (the backend's /compile) still carry their languages in the content.
+  const found = new Set<string>();
+  for (const slot of Array.isArray(meta.slots) ? meta.slots : []) {
+    const content = asObject(asObject(slot)?.content);
+    for (const key of Object.keys(content ?? {})) if (key !== "*") found.add(key);
+  }
+  return found.size > 0 ? [...found] : ["es"];
 }
 
 /** Every colour role some palette of the document defines. */

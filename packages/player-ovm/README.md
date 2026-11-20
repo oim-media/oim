@@ -5,7 +5,9 @@ counterpart of [`@oim-media/player-oim`](../player-oim/README.md). It plays the
 video with the browser's own `<video>` element and draws text layers on top of it,
 positioned by the tracking data stored in the file.
 
-**Current state: reserved / pending specification.** The `.ovm` interactive video format is reserved for a future specification. This package currently ships a minimal vanilla-JS prototype for simple text overlays, with no signature verification, no events and no playback API of its own. For the production specification and verified reference player, see [`@oim-media/player-oim`](../player-oim/README.md) and [`@oim-media/spec`](../spec/README.md).
+**Current state: experimental, not published.** No longer released to npm until it is tested with real videos; versions up to 1.34.5 remain on the registry.
+
+**Specification: reserved / pending.** The `.ovm` interactive video format is reserved for a future specification. This package currently ships a minimal vanilla-JS prototype for simple text overlays, with no signature verification, no events and no playback API of its own. For the production specification and verified reference player, see [`@oim-media/player-oim`](../player-oim/README.md) and [`@oim-media/spec`](../spec/README.md).
 
 ## Install
 

@@ -64,16 +64,17 @@ jobs:
       - run: pnpm check:licenses
       - run: node tools/pack-contents.mjs
       # pnpm pack rewrites workspace: ranges; npm publish then signs with OIDC + provenance.
+      # player-ovm is experimental and stays unpublished until it is tested with real videos (Josué, 20 Nov).
       - run: |
           mkdir -p "$RUNNER_TEMP/tgz"
-          for p in core player-oim player-ovm spec; do (cd "packages/$p" && pnpm pack --pack-destination "$RUNNER_TEMP/tgz"); done
+          for p in core player-oim spec; do (cd "packages/$p" && pnpm pack --pack-destination "$RUNNER_TEMP/tgz"); done
           for t in "$RUNNER_TEMP"/tgz/*.tgz; do npm publish "$t" --access public --provenance; done
-      - name: All four packages published
+      - name: All three packages published
         env:
           TAG: ${{ inputs.tag }}
         run: |
           v="${TAG#v}"
-          for p in core player-oim player-ovm spec; do
+          for p in core player-oim spec; do
             # The registry can lag a few minutes behind a successful publish.
             for i in 1 2 3 4 5 6 7 8 9 10; do
               npm view "@oim-media/$p@$v" version >/dev/null 2>&1 && continue 2

@@ -1,6 +1,6 @@
 # OIM (Object Interactive Media) Canonical Metadata Specification
 
-**Contract version:** 1.35.1  
+**Contract version:** 1.35.2  
 **Date:** 2026-11-02 (reviewed against `packages/core/src/schema.ts`; the source of truth is the schema, this document summarises it)  
 **Status:** Normative / In force  
 **License:** Apache-2.0  

@@ -3,6 +3,10 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.35.2
+
+- spec: the seven `vectors-2` files that still declared 1.x (animation-presets, color-grade, duotone, generative-fill, mask-cutout, text-decorations, texture) are signed 2.0 documents now.
+
 ## 1.35.1
 
 - scene: a gradient, pattern or generative fill on a preset shape (cloud, star…) or an SVG icon paints again, cut to the figure. Since the player switched to scene (1.33) those fills were dropped and the shapes vanished.

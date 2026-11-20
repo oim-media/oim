@@ -41,8 +41,8 @@ how a document is signed and verified (section 6).
 ### 1.2. Conformance classes
 
 - **Writer**: produces a `.oim`. A conforming writer MUST emit a document that validates against
-  `schema/oim2.schema.json` (section 3), MUST emit the container of section 2, and MUST NOT emit a
-  retired construct (section 2.5, Appendix A).
+  `schema/oim2.schema.json` (section 3; apart from the signer's root `timestamp`, see Appendix D), MUST emit the container of section 2, and MUST NOT emit a
+  retired construct (section 2.5 for the container, Appendix B).
 - **Reader / player**: paints a `.oim`. A conforming reader MUST follow sections 1.3, 2, 4, 5 and 6.
   It MUST NOT execute anything the file carries, MUST NOT request any resource the file names
   (section 5.4), and MUST NOT paint a file whose signature or image seal fails (section 6.4).
@@ -85,13 +85,12 @@ The document is stored in one ancillary text chunk:
 | Chunk type | `zTXt` |
 | Keyword | `OIM_Data` |
 | Compression method byte | `0x00` |
-| Payload | zlib (RFC 1950) of the UTF-8 JSON text, level 9 |
+| Payload | zlib (RFC 1950) of the UTF-8 JSON text, any zlib level (the reference signer uses 9) |
 
 Layout of the chunk data: `"OIM_Data" 0x00 0x00 <zlib bytes>`.
 
-- The chunk MUST come after `IHDR` and before `IEND`. It MAY come before or after the `IDAT` chunks;
-  writers since 1.30.0 put it after the last `IDAT`, and signed vectors exist in both orders. A reader MUST
-  accept both.
+- The chunk MUST come after `IHDR` and before `IEND`. It MAY come before or after the `IDAT` chunks, and a reader MUST
+  accept both (signed vectors exist in both orders; informative: the reference writer has put it after the last `IDAT` since 1.30.0).
 - The PNG bytes of `IDAT` (and of every other chunk) MUST NOT be re-encoded when the chunk is inserted,
   because `image_hash` covers the `IDAT` payloads (section 6.5).
 - A reader MUST also accept the earlier forms: keyword `OIM_JSON_DATA`; a `tEXt` chunk whose value is
@@ -155,7 +154,7 @@ its default; no object carries a switched-off value.
 | `resources` | map name → paint | no | Shared paints, section 3.15. |
 | `fonts` | array | no | Embedded fonts, section 3.16. |
 | `layers` | Layer[] ≤150 | yes | Bottom to top. |
-| `reedit` | `public` \| `author_only` \| `sealed` | no | Section 3.18. |
+| `reedit` | `public` \| `author_only` \| `sealed` | no | Section 3.17. |
 | `extensionsUsed` | string[] (each ≤64) | no | Section 3.17. |
 | `extensionsRequired` | string[] (each ≤64) | no | Section 3.17. |
 | `extensions` | open map | no | Section 3.17. |
@@ -357,7 +356,7 @@ An animation:
 | `preset` | string 1..64 | A named animation. Exactly one of `preset` and `tracks`. |
 | `params` | open map | Preset-specific parameters. |
 | `tracks` | 1..16 | Exactly one of `preset` and `tracks`. |
-| `duration` | number ≥0 | **Milliseconds.** |
+| `duration` | number ≥0 | Required. **Milliseconds.** |
 | `delay` | number ≥0 | Milliseconds. |
 | `stagger` | number ≥0 | Intended: milliseconds between the units of a text target (section 11). |
 | `easing` | easing | Default per preset. |
@@ -564,9 +563,8 @@ A `.oim` is foreign data and travels to third parties. A reader treats everythin
 
 ### 5.1. Strict objects and sanitised strings
 
-Every object is strict (section 3). `id` (document and layer), `name` of a layer, `font.family`, and the
-`family` of an embedded font reject `<`, `>`, `"` and control characters (U+0000–U+001F, U+007F) so they can
-never become markup or an attribute break. A reader MUST NOT insert a document string as HTML: text is set as plain text.
+Every object is strict (section 3). Only `id` (document and layer) and `text.font.family` reject `<`, `>`, `"` and control characters (U+0000–U+001F, U+007F) so they can
+never become markup or an attribute break. A layer `name` (max 256) and the `family` of an embedded font (max 128) are not restricted this way, which is one more reason a reader treats every string as plain text. A reader MUST NOT insert a document string as HTML: text is set as plain text.
 
 ### 5.2. Colours
 
@@ -594,8 +592,11 @@ splice a document string into CSS other than through that whitelist. Free CSS is
 | Colour string; `id`; layer `name` | 128; 128; 256 | schema |
 | Interaction `value`; document `description` per language | 10000; 1000 | schema |
 
-A document over a limit is corrupt. The reader MUST refuse it before it paints and before it copies it in full.
-A signer MUST NOT sign it. A signer MAY set lower limits; it MUST NOT set higher ones, because a file no reader
+A document over the limits of 150 layers per list, 1000 in total, nesting depth 32 or the 10 MiB cap is corrupt.
+The reader MUST refuse it before it paints and before it copies it in full (this is what the player's
+`validateOimMetadata` checks). For every other limit in the table, writers MUST respect it and a signer MUST
+refuse a document over it; a reader is not required to check them.
+A signer MUST NOT sign a document over any limit. A signer MAY set lower limits; it MUST NOT set higher ones, because a file no reader
 shows is worse than a refusal. The total and depth limits are checked by the player's validation, not by
 `documentSchema`.
 
@@ -665,6 +666,8 @@ A reader verifies in this order:
 4. Otherwise rebuild the canonical form (6.2) and verify the signature with the key `key_version`. A number with
    no canonical form, an unknown key, or a failed verification: `invalid_signature`, refuse. When the
    embedded key fails, the reader MAY retry once with the key the server publishes for the same `kid`.
+   (Informative: for older files the reference player also retries when the document has `creator_user_id`,
+   keeping that field and using UTF-16 key order with no number normalisation. Writers and signers MUST NOT rely on it.)
 5. If the key was retired (`not_after` earlier than `signed_at`) the signature is invalid. A key the player no
    longer trusts by its own clock (`verify_until`) gives `expired_key`.
 6. Compute the image seal (6.5). If `image_hash_alg` is `sha256-idat` and `image_hash` is a string, they MUST
@@ -786,3 +789,4 @@ writer SHOULD NOT rely on them being painted.
   layer; writers SHOULD respect them because the shared parser of `{name}…{/name}` does.
 - `timestamp` at the root of a signed file is written by the signer and is rejected by the strict schema.
 - The document version string is a draft (`2.0.0-draft.1`), accepted by the `^2\.` rule.
+- The reference player does not check the per-layer schema limits (fills, strokes, effects, animations, interactions, actions, tracks, keyframes, gradient stops, paths and the like); only 150 per list, 1000 total, depth 32 and 10 MiB.

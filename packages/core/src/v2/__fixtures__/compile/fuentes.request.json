@@ -1,0 +1,37 @@
+{
+  "canvas_width": 800,
+  "canvas_height": 600,
+  "oim_id": "oim_fixture0001",
+  "slots_raw": [
+    {
+      "id": "f",
+      "type": "text",
+      "x_px": 100,
+      "y_px": 100,
+      "width_px": 300,
+      "height_px": 80,
+      "font_size_px": 32,
+      "align": "center",
+      "style": {
+        "font": "Mi Fuente",
+        "size": 20,
+        "bold": true,
+        "italic": false
+      },
+      "content": {
+        "es": "hola",
+        "en": "hello"
+      }
+    }
+  ],
+  "fonts": [
+    {
+      "family": "Mi Fuente",
+      "weight": 400,
+      "style": "normal",
+      "src": "https://example.com/f.woff2",
+      "format": "woff2"
+    }
+  ],
+  "reedicion": "sealed"
+}

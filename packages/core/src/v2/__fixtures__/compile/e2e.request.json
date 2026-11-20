@@ -1,0 +1,27 @@
+{
+  "canvas_width": 800,
+  "canvas_height": 600,
+  "oim_id": "oim_fixture0001",
+  "allowed_domains": [],
+  "immutable_lock": false,
+  "slots_raw": [
+    {
+      "id": "header-title",
+      "type": "text",
+      "x_px": 400,
+      "y_px": 150,
+      "width_px": 600,
+      "height_px": 80,
+      "is_auto_width": false,
+      "font_size_px": 36,
+      "align": "center",
+      "style": {
+        "color": "#fbbf24"
+      },
+      "content": {
+        "es": "¡Conectado desde el pipeline real!",
+        "en": "Connected from the real pipeline!"
+      }
+    }
+  ]
+}

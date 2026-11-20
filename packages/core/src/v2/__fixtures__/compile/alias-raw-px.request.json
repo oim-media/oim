@@ -1,0 +1,46 @@
+{
+  "width": 1080,
+  "height": 1350,
+  "oim_id": "oim_fixture0001",
+  "slots": [
+    {
+      "id": "a1",
+      "name": "Titulo",
+      "raw_px": {
+        "x_px": 333,
+        "y_px": 100.5,
+        "width_px": 500,
+        "height_px": 120,
+        "font_size_px": 48,
+        "align": "left",
+        "letter_spacing_px": -0.5
+      },
+      "type": "text",
+      "content": {
+        "es": "alias"
+      }
+    },
+    {
+      "id": "a2",
+      "type": "text",
+      "x": 10,
+      "y": 20,
+      "width": 300,
+      "height": 50,
+      "font_size": 16,
+      "style": {
+        "bold": true,
+        "italic": true,
+        "underline": true,
+        "size": 99,
+        "color": "#abc",
+        "fontSizeOverrides": {
+          "es": "2cqw"
+        }
+      },
+      "extra_unknown": 1
+    }
+  ],
+  "junk_root": true,
+  "immutable_lock": true
+}

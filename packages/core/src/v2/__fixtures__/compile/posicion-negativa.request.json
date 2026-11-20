@@ -1,0 +1,42 @@
+{
+  "canvas_width": 800,
+  "canvas_height": 600,
+  "oim_id": "oim_fixture0001",
+  "slots_raw": [
+    {
+      "id": "neg",
+      "type": "text",
+      "x_px": -200,
+      "y_px": -50,
+      "width_px": 300,
+      "height_px": 80,
+      "font_size_px": 32,
+      "align": "center",
+      "style": {},
+      "content": {
+        "es": "hola",
+        "en": "hello"
+      }
+    },
+    {
+      "id": "fuera",
+      "type": "text",
+      "x_px": 2000,
+      "y_px": 900,
+      "width_px": -10,
+      "height_px": 80,
+      "font_size_px": 32,
+      "align": "center",
+      "style": {},
+      "content": {
+        "es": "hola",
+        "en": "hello"
+      }
+    },
+    {
+      "id": "sin-tipo",
+      "x_px": 100,
+      "y_px": 200
+    }
+  ]
+}

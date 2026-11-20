@@ -43,11 +43,12 @@
  * the format can change without the player being touched. Tying both numbers
  * together would make an internal fix look like a format break.
  */
-export const CONTRACT_VERSION = "1.34.3";
+export const CONTRACT_VERSION = "1.34.4";
 // 1.34.0: 2.0 ids, refs and font families reject < > " and control characters; the CDN player pins its on-demand scripts with SRI and caps 2.0 layers at 1000 total, 150 per list.
 // 1.34.1: the player paints 2.0 shapes drawn with paths, and a 2.0 player with no height of its own fills its width.
 // 1.34.2: upgrading a 1.x file whose background is its base picture no longer paints the fallback colour over it.
 // 1.34.3: upgrading a 1.x file with no languages list reads its languages from the content.
+// 1.34.4: upgrading a 1.x file keeps its base picture as the bottom layer, and a text missing the current language falls back as 1.x did.
 // 1.33.0: OIM_Seal retired: writers stop emitting it and readers ignore it; the player reads a file once, whole, and paints its PNG while it arrives.
 // 1.32.5: no format change; a 2.0 file that shows its own picture keeps it under the canvas colour, and a file the poster read held whole loads (no HTTP 416).
 // 1.32.4: the player sends If-Range when it resumes a download, so a cached old head is never spliced with a new file; no format change.

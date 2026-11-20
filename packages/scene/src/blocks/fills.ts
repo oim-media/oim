@@ -25,7 +25,31 @@ export type PaintContext = {
 };
 
 /** Set by applyFills on the element; cleared before every new paint so an update never stacks old fills. */
-const FILL_PROPS = ["backgroundColor", "backgroundImage", "backgroundSize", "backgroundClip", "WebkitBackgroundClip", "color"] as const;
+const FILL_PROPS = ["backgroundColor", "backgroundImage", "backgroundSize", "backgroundClip", "WebkitBackgroundClip", "color", "animation"] as const;
+
+const PATTERN_MOVES = ["right", "left", "up", "down", "zoom-in", "zoom-out", "pulse"];
+const TILE = "var(--oim-bg-tile, 160px)";
+const BIG = `calc(${TILE} * 1.15)`;
+const at = (pos: string) => `background-position: ${pos}; -webkit-mask-position: ${pos}; mask-position: ${pos};`;
+const sized = (size: string) => `background-size: ${size} ${size}; -webkit-mask-size: ${size} ${size}; mask-size: ${size} ${size};`;
+/** The keyframes a moving pattern runs, one tile per lap: the 1.x player's, which the 2.0 scene lost with the old renderer. */
+export const PATTERN_KEYFRAMES = [
+  `@keyframes background-animation-right { from { ${at("0 0")} } to { ${at(`${TILE} 0`)} } }`,
+  `@keyframes background-animation-left { from { ${at("0 0")} } to { ${at(`calc(-1 * ${TILE}) 0`)} } }`,
+  `@keyframes background-animation-up { from { ${at("0 0")} } to { ${at(`0 calc(-1 * ${TILE})`)} } }`,
+  `@keyframes background-animation-down { from { ${at("0 0")} } to { ${at(`0 ${TILE}`)} } }`,
+  `@keyframes background-animation-zoom-in { 0%, 100% { ${sized(TILE)} } 50% { ${sized(BIG)} } }`,
+  `@keyframes background-animation-zoom-out { 0%, 100% { ${sized(BIG)} } 50% { ${sized(TILE)} } }`,
+  "@keyframes background-animation-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.65; } }",
+].join(" ");
+
+function ensurePatternKeyframes(doc: Document): void {
+  if (doc.getElementById("oim-pattern-keyframes")) return;
+  const style = doc.createElement("style");
+  style.id = "oim-pattern-keyframes";
+  style.textContent = PATTERN_KEYFRAMES;
+  (doc.head || doc.documentElement).appendChild(style);
+}
 
 /**
  * The fills of a layer. They are painted bottom to top: the first paint is the
@@ -50,6 +74,13 @@ export function applyFills(el: HTMLElement, layer: Pick<Layer, "fills">, ctx: Pa
       continue;
     }
     const css = (tileCss(paint, ctx.colors) ?? paintCss(paint, target)) as Record<string, string | undefined>;
+    const motion = "kind" in paint && paint.kind === "pattern" ? paint.pattern.motion : undefined;
+    if (motion?.period && motion.period > 0 && PATTERN_MOVES.includes(motion.direction ?? "right")) {
+      ensurePatternKeyframes(el.ownerDocument);
+      const side = 160 * ((paint as Extract<Paint, { kind: "pattern" }>).pattern.scale || 1);
+      el.style.setProperty("--oim-bg-tile", ctx.len ? ctx.len(side) : `${side}px`);
+      el.style.animation = `background-animation-${motion.direction ?? "right"} ${motion.period}s linear infinite`;
+    }
     if (css.color) el.style.color = css.color;
     if (css.backgroundClip) Object.assign(el.style, { backgroundClip: "text", WebkitBackgroundClip: "text" });
     if (css.backgroundColor) {

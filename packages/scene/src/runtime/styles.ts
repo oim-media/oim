@@ -3,7 +3,8 @@
  * Copyright (c) 2026 Xue Studios LLC
  * SPDX-License-Identifier: Apache-2.0
  */
-
+import { ensureParallaxKeyframes } from '../../../core/src/parallaxCss.js';
+import { PATTERN_KEYFRAMES } from '../blocks/fills.js';
 
 export function getStylesText(): string {
   return [
@@ -32,6 +33,8 @@ export function getStylesText(): string {
     // The overlay lets the pointer reach the base picture; each painted layer takes it back (a layer's own inline style still wins).
     '.oim-layer-overlay [data-oim-id] { pointer-events: auto; }',
     '.oim-player-loading { color: var(--oim-text-muted, #8a8a96); font-family: "JetBrains Mono", monospace; font-size: 12px; }',
+    // Keyframes resolve in the tree that uses them: the layers inside the shadow root never see the document's.
+    PATTERN_KEYFRAMES,
     '.oim-player-error { color: var(--oim-red, #ef4444); font-family: "JetBrains Mono", monospace; font-size: 12px; }',
   ].join('\n');
 }
@@ -53,4 +56,5 @@ export function injectStyles(rootNode: ShadowRoot | Document | null): void {
     shadowStyle.textContent = cssText;
     rootNode.appendChild(shadowStyle);
   }
+  ensureParallaxKeyframes(rootNode);
 }

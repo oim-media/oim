@@ -30,7 +30,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { getStylesText } from "./styles";
+import { getStylesText, injectStyles } from "./styles";
 
 const css = getStylesText();
 
@@ -110,5 +110,15 @@ describe("the overlay does not request a permanent compositor layer", () => {
   it("and still scales with the fit factor", () => {
     // Removing `will-change` must not take the transform away with it.
     expect(regla(".oim-layer-overlay")).toContain("scale(var(--oim-fit");
+  });
+});
+
+describe("injectStyles", () => {
+  it("puts the loop and pattern keyframes inside the shadow root, where the layers can see them", () => {
+    const shadow = document.createElement("div").attachShadow({ mode: "open" });
+    injectStyles(shadow);
+    const css = Array.from(shadow.querySelectorAll("style"), (s) => s.textContent).join("\n");
+    expect(css).toContain("@keyframes oim-parallax-infinite");
+    expect(css).toContain("@keyframes background-animation-right");
   });
 });

@@ -32,6 +32,7 @@ vi.mock("../../../scene/src/runtime/lottie-loader.js", () => ({
 }));
 
 import ImageEngine from "./ImageEngine";
+import { upgradeFixture } from '../test-utils/upgrade-fixture.js';
 
 function mount(attrs: Record<string, string>) {
   const host = document.createElement("div");
@@ -44,7 +45,7 @@ function mount(attrs: Record<string, string>) {
   shadow.appendChild(motor._viewport);
   motor._overlay = document.createElement("div");
   motor._viewport.appendChild(motor._overlay);
-  motor.metadata = {
+  motor.metadata = upgradeFixture({
     width: 800,
     height: 600,
     slots: [{
@@ -52,7 +53,7 @@ function mount(attrs: Record<string, string>) {
       content: { es: JSON.stringify({ v: "5.7.0", fr: 30, ip: 0, op: 30, w: 10, h: 10, layers: [] }) },
       style: {},
     }],
-  };
+  });
   return motor;
 }
 

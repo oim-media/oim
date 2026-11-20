@@ -9,9 +9,9 @@
  */
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import fs from "node:fs";
-import { REFERENCE_OIM } from "../../core/test/fixtures/index";
 
-const oim = fs.readFileSync(REFERENCE_OIM);
+// A 2.0 file: the player paints 2.0 only.
+const oim = fs.readFileSync(`${__dirname}/../../spec/vectors-2/basic-text.oim.png`);
 const pasar = (ms) => new Promise((r) => setTimeout(r, ms));
 window.__OIM_BENCH__ = true;
 
@@ -29,11 +29,6 @@ describe("five players of the same file", () => {
       arrayBuffer: () => Promise.resolve(oim.buffer.slice(oim.byteOffset, oim.byteOffset + oim.byteLength)),
       blob: () => Promise.resolve(new Blob([oim], { type: "image/png" })),
     }));
-    // A 1.x file needs the separate `upgrade` script the CDN serves next to the player;
-    // happy-dom does not run a <script src>, so it is evaluated here as the page would.
-    const vendor = `${__dirname}/../dist/vendor/`;
-    const file = fs.readdirSync(vendor).find((f) => f.startsWith("oim-upgrade-"));
-    if (!window.__oimUpgrade) (0, eval)(fs.readFileSync(vendor + file, "utf8"));
     if (!customElements.get("oim-player")) await import("../dist/oim-player.js");
   });
 

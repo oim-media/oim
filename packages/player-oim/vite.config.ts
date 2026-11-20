@@ -15,8 +15,8 @@ const LOTTIE_PKG = require.resolve('lottie-web/package.json');
 const LOTTIE_VERSION: string = JSON.parse(readFileSync(LOTTIE_PKG, 'utf8')).version;
 const LOTTIE_LIGHT = resolve(LOTTIE_PKG, '..', 'build/player/lottie_light.min.js');
 
-// `upgrade` ships as its own file next to the player. Its name carries a hash
-// of the sources that make it, so a new player never meets an old cached one.
+// The on-demand parts' names carry a hash of core's sources, so a new player
+// never meets an old cached part.
 const CORE_SRC = resolve(import.meta.dirname, '../core/src');
 function sourcesOf(dir: string): string[] {
   return readdirSync(dir).sort().flatMap((entry) => {
@@ -25,15 +25,13 @@ function sourcesOf(dir: string): string[] {
     return path.endsWith('.ts') && !path.endsWith('.test.ts') ? [path] : [];
   });
 }
-const UPGRADE_HASH = createHash('sha256').update(sourcesOf(CORE_SRC).map((p) => readFileSync(p)).join('|')).digest('hex').slice(0, 12);
-const UPGRADE_FILE = `oim-upgrade-${UPGRADE_HASH}.js`;
-const GENERATIVE_FILE = `oim-generative-${UPGRADE_HASH}.js`;
-const PATTERNS_FILE = `oim-patterns-${UPGRADE_HASH}.js`;
+const PARTS_HASH = createHash('sha256').update(sourcesOf(CORE_SRC).map((p) => readFileSync(p)).join('|')).digest('hex').slice(0, 12);
+const GENERATIVE_FILE = `oim-generative-${PARTS_HASH}.js`;
+const PATTERNS_FILE = `oim-patterns-${PARTS_HASH}.js`;
 
 // The parts the player fetches on demand: built after the player, into its vendor/.
 const RUNTIME = resolve(import.meta.dirname, '../scene/src/runtime');
 const VENDOR_PARTS: Record<string, { entry: string; name: string; file: string }> = {
-  upgrade: { entry: 'upgrade-global.ts', name: 'OimUpgrade', file: UPGRADE_FILE },
   generative: { entry: 'generative-global.ts', name: 'OimGenerative', file: GENERATIVE_FILE },
   patterns: { entry: 'patterns-global.ts', name: 'OimPatterns', file: PATTERNS_FILE },
 };
@@ -83,7 +81,6 @@ function sriDefines(build: boolean): Record<string, string> {
   const pin = (file: string) => JSON.stringify(build ? sriOf(resolve(import.meta.dirname, 'dist/vendor', file)) : '');
   return {
     __OIM_LOTTIE_SRI__: JSON.stringify(build ? sriOf(LOTTIE_LIGHT) : ''),
-    __OIM_UPGRADE_SRI__: pin(UPGRADE_FILE),
     __OIM_GENERATIVE_SRI__: pin(GENERATIVE_FILE),
     __OIM_PATTERNS_SRI__: pin(PATTERNS_FILE)
   };
@@ -116,7 +113,6 @@ export default defineConfig(({ command, mode }) => VENDOR_PARTS[mode] ? {
   publicDir: false,
   define: {
     __OIM_LOTTIE_VERSION__: JSON.stringify(LOTTIE_VERSION),
-    __OIM_UPGRADE_FILE__: JSON.stringify(UPGRADE_FILE),
     __OIM_GENERATIVE_FILE__: JSON.stringify(GENERATIVE_FILE),
     __OIM_PATTERNS_FILE__: JSON.stringify(PATTERNS_FILE),
     ...sriDefines(command === 'build' && !process.argv.includes('--watch')) // watch builds skip SRI: vendor files may not exist yet
@@ -127,7 +123,6 @@ export default defineConfig(({ command, mode }) => VENDOR_PARTS[mode] ? {
   resolve: command === 'build'
     ? { alias: [
         { find: 'lottie-web/build/player/lottie_light', replacement: resolve(import.meta.dirname, '../scene/src/runtime/lottie-external.ts') },
-        { find: /^(\.|\.\.\/runtime|(\.\.\/)+scene\/src\/runtime)\/upgrade-entry\.js$/, replacement: resolve(RUNTIME, 'upgrade-external.ts') },
         { find: /^(\.|\.\.\/runtime|(\.\.\/)+scene\/src\/runtime)\/features-entry\.js$/, replacement: resolve(RUNTIME, 'features-external.ts') },
         { find: /^\.\/generative\/index\.js$/, replacement: resolve(RUNTIME, 'generative-external.ts') },
         { find: /^(\.\/|(\.\.\/)+core\/src\/)patterns\.js$/, replacement: resolve(RUNTIME, 'patterns-external.ts') },

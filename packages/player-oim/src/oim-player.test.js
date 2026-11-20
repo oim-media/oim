@@ -6,7 +6,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import fs from 'fs';
-import { REFERENCE_OIM } from '../../core/test/fixtures/index';
+const REFERENCE_OIM = `${__dirname}/../../spec/vectors-2/interactive.oim.png`; // 2.0 with es/en: the player paints 2.0 only
 
 // Configure happy-dom environment for the test file
 /**

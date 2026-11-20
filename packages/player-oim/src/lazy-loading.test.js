@@ -21,7 +21,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "node:fs";
-import { REFERENCE_OIM } from "../../core/test/fixtures/index";
+const REFERENCE_OIM = `${__dirname}/../../spec/vectors-2/basic-text.oim.png`; // 2.0: the player paints 2.0 only
 
 const oim = fs.readFileSync(REFERENCE_OIM);
 

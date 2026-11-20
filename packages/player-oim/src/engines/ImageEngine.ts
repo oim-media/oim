@@ -24,7 +24,6 @@ import { whatTheReaderCannotDo, describeMissing, CONTRACT_VERSION, PLAYER_CAPABI
 import { resolveMode } from '../../../scene/src/runtime/modes.js';
 import { readEmbeddedFonts, registerEmbeddedFonts } from '../../../scene/src/blocks/fonts.js';
 import { mount, type Scene } from '../../../scene/src/scene.js';
-import { upgrade, ensureUpgrade } from '../../../scene/src/runtime/upgrade-entry.js';
 import { ensureFeatures } from '../../../scene/src/runtime/features-entry.js';
 import { featuresOf } from '../../../scene/src/runtime/features.js';
 import { EngineShell, getTouchDistance, type ImageEngineOptions } from './EngineShell.js';
@@ -32,7 +31,6 @@ export { getTouchDistance, type ImageEngineOptions } from './EngineShell.js';
 
 /** The 2.0 document the scene paints: a 2.0 file with its references resolved, a 1.x file upgraded. */
 function sceneDocument(metadata: any): OimDocument {
-  if (!isV2(metadata)) return upgrade(structuredClone(metadata)).document;
   const resolved = resolveRefs(structuredClone(metadata) as OimDocument);
   resolved.missing.forEach((id) => console.warn(`[OimPlayer] resource "${id}" is not in the document`));
   return resolved.document;
@@ -73,7 +71,10 @@ export class ImageEngine extends EngineShell {
       this.host.dispatchEvent(new CustomEvent('oim:error', { detail: { code: 'chunk', message } }));
     };
     if (paints) {
-      if (!isV2(file)) await ensureUpgrade().catch((err) => { paints = false; report(err); });
+      if (!isV2(file)) {
+        paints = false;
+        this.host.dispatchEvent(new CustomEvent('oim:error', { detail: { code: 'unsupported-version', message: 'OIM 1.x files are no longer painted; upgrade the file with the CLI or re-export it.' } }));
+      }
       if (ticket !== this._renderTicket) return;
     }
     if (paints) {

@@ -22,6 +22,7 @@
 
 import { describe, it, expect } from "vitest";
 import ImageEngine from "./ImageEngine";
+import { upgradeFixture } from '../test-utils/upgrade-fixture.js';
 
 function mount(animation: any) {
   const host = document.createElement("div");
@@ -34,7 +35,7 @@ function mount(animation: any) {
   shadow.appendChild(motor._viewport);
   motor._overlay = document.createElement("div");
   motor._viewport.appendChild(motor._overlay);
-  motor.metadata = {
+  motor.metadata = upgradeFixture({
     slots: [{
       id: "a", type: "text", align: "left",
       position: [50, 50], width_px: 300, height_px: 80,
@@ -42,7 +43,7 @@ function mount(animation: any) {
       style: { fontSize: "48px", animation },
     }],
     width: 800, height: 600,
-  };
+  });
   return { host, motor };
 }
 

@@ -9,6 +9,7 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import { doc2, paintedEngine, shape2, text2 } from "./scene-engine.fixture";
+import { upgradeFixture } from '../test-utils/upgrade-fixture.js';
 
 /** Sandbox: no font is ever requested from a font host. */
 const asksForFonts = () =>
@@ -32,10 +33,10 @@ describe("the player asks no font host", () => {
   });
 
   it("a 1.x image layer with the editor's fontFamily asks for nothing either", async () => {
-    const { el } = await paintedEngine({
+    const { el } = await paintedEngine(upgradeFixture({
       canvas_width: 800, canvas_height: 600,
       slots: [{ id: "i", type: "image", position: [0.1, 0.1], width_px: 100, height_px: 100, content: { es: "data:image/png;base64,iVBORw0KGgo=" }, style: { fontFamily: "Inter" } }],
-    });
+    }));
     expect(el("i")).not.toBeNull();
     expect(asksForFonts()).toBe(false);
   });

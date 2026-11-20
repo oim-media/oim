@@ -427,10 +427,11 @@ OimPlayerElement.attributeChangedCallback = function (this: any, name: string, o
 /**
  * Keeps the placeholder `<img>` in step with the `placeholder`, `fit` and `align`
  * options. It lives in the shadow root, where the engine keeps its own tree, and
- * exists only while there is no engine and nothing has painted yet.
+ * exists only until the engine's first load has settled.
  */
 OimPlayerElement._syncPlaceholder = function (this: any) {
-  const url = this._engine || this._placeholderSettled
+  // Kept over the engine until its scene has painted: a bare base under no layers reads as a black card.
+  const url = this._placeholderSettled
     ? null
     : placeholderUrl(this._oimOptions && this._oimOptions.placeholder);
   if (!url) {
@@ -454,7 +455,7 @@ OimPlayerElement._syncPlaceholder = function (this: any) {
   const fit = this._oimOptions && this._oimOptions.fit === 'cover' ? 'cover' : 'contain';
   const align = this._oimOptions && this._oimOptions.align;
   const position = align === 'top' ? 'center top' : align === 'bottom' ? 'center bottom' : 'center center';
-  img.setAttribute('style', `position:absolute;inset:0;width:100%;height:100%;object-fit:${fit};object-position:${position}`);
+  img.setAttribute('style', `position:absolute;inset:0;z-index:2;width:100%;height:100%;object-fit:${fit};object-position:${position}`);
   if (img.getAttribute('src') !== url) img.setAttribute('src', url);
 };
 
@@ -466,6 +467,9 @@ OimPlayerElement._removePlaceholder = function (this: any) {
 OimPlayerElement._initPlayer = function (this: any) {
   if (!this._src) return;
   this._loading = true;
+  // Every load, a reload after the card slept included, hides behind the thumbnail until it paints.
+  this._placeholderSettled = false;
+  this._syncPlaceholder();
 
   const self = this;
   const src = this._src;

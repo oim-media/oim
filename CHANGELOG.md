@@ -3,6 +3,11 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.34.4
+
+- core: upgrading a 1.x file keeps its base picture as the bottom layer (`oim-base`), so a background that lived only in the PNG is no longer lost.
+- scene: a text missing the current language shows the English, else the Spanish, else the first words, as 1.x did.
+
 ## 1.34.3
 
 - core: `upgrade` reads a 1.x file's languages from its content when the file lists none (backend `/compile` output showed only Spanish).

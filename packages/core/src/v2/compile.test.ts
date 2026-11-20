@@ -7,7 +7,8 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { CONTRACT_VERSION } from "../compatibility.js";
-import { canonizeStyle, compileRaw } from "./compile.js";
+import { canonizeStyle, compileRaw, rawToDocument } from "./compile.js";
+import { upgrade } from "./upgrade.js";
 
 const dir = new URL("./__fixtures__/compile/", import.meta.url);
 const names = readdirSync(dir)
@@ -75,5 +76,48 @@ describe("compileRaw matches the backend /compile", () => {
   });
   it("mints an oim_id when none is given", () => {
     expect(compileRaw({ canvas_width: 10, canvas_height: 10, slots_raw: [] }).oim_id).toMatch(/^oim_[0-9a-f]{12}$/);
+  });
+});
+
+// Numbers differ by at most half the last decimal the backend kept; everything else must be identical.
+const close = (a: unknown, b: unknown, tol: number): boolean =>
+  typeof a === "number" && typeof b === "number"
+    ? Math.abs(a - b) <= tol
+    : Array.isArray(a) && Array.isArray(b)
+      ? a.length === b.length && a.every((x, i) => close(x, b[i], tol))
+      : a && b && typeof a === "object" && typeof b === "object"
+        ? Object.keys(a).length === Object.keys(b).length &&
+          Object.keys(a).every((k) => k in b && close((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k], tol))
+        : a === b;
+
+describe("rawToDocument == upgrade(backend compile)", () => {
+  it.each(names)("%s", (name) => {
+    const request = read(name, "request");
+    const fresh = rawToDocument(request).document;
+    const old = upgrade(read(name, "expected")).document;
+    const side = Math.max(request.canvas_width ?? request.width, request.canvas_height ?? request.height);
+    // A measure kept to 4 decimals of a percentage of the canvas: half a unit of the last decimal, in px.
+    expect(close(fresh, old, side * 5e-7)).toBe(true);
+  });
+  it("keeps the pixels the author sent, without the rounding of the old round trip", () => {
+    const { document } = rawToDocument({
+      canvas_width: 1080,
+      canvas_height: 1080,
+      slots_raw: [{ id: "a", type: "shape", x_px: 333, y_px: 10, width_px: 111, height_px: 111 }],
+    });
+    const box = document.layers.find((l) => l.id === "a")!.box;
+    expect(box.x).toBe(333);
+    expect(box.width).toBe(111);
+  });
+  it("passthrough reaches the canvas, and what was compiled wins over it", () => {
+    const { document } = rawToDocument({
+      canvas_width: 100,
+      canvas_height: 100,
+      slots_raw: [],
+      oim_id: "oim_mine",
+      passthrough: { backgroundType: "color", backgroundColor: "#123456", oim_id: "oim_theirs" },
+    });
+    expect(JSON.stringify(document.canvas)).toContain("#123456");
+    expect(document.id).toBe("oim_mine");
   });
 });

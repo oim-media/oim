@@ -10,6 +10,7 @@
 import { CONTRACT_VERSION } from "../compatibility.js";
 import { MAX_SLOTS } from "../limits.js";
 import { permissionOf } from "../reeditPermission.js";
+import { upgrade, type UpgradeResult } from "./upgrade.js";
 
 type Json = Record<string, unknown>;
 
@@ -263,4 +264,15 @@ export function compileRaw(request: CompileInput, opts: { round?: boolean } = {}
   };
   for (const key of Object.keys(metadata)) if (metadata[key] === undefined || metadata[key] === null) delete metadata[key];
   return metadata;
+}
+
+/**
+ * Raw pixel slots to a 2.0 document, without the network.
+ *
+ * `upgrade(compileRaw(input))` with the measures unrounded, so the pixels come back as the author
+ * sent them. What `compileRaw` produced wins over `passthrough`, the same rule the editor applied
+ * when it pasted the root fields that never went through the backend.
+ */
+export function rawToDocument(input: CompileInput): UpgradeResult {
+  return upgrade({ ...input.passthrough, ...compileRaw(input, { round: false }) });
 }

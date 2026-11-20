@@ -55,8 +55,8 @@
       "id": "sin-tipo",
       "type": "text",
       "position": [
-        0.125,
-        0.3333
+        12.5,
+        33.3333
       ],
       "style": {
         "width": "0.0cqw",

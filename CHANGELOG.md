@@ -3,6 +3,11 @@
 All packages share one version, equal to the contract version (`CONTRACT_VERSION`
 in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
+## 1.34.5
+
+- player: the thumbnail stays until the scene has painted, so gallery cards no longer flash black while scrolling.
+- scene: parallax loops and moving pattern backgrounds run again (their keyframes now live inside the player's shadow root).
+
 ## 1.34.4
 
 - core: upgrading a 1.x file keeps its base picture as the bottom layer (`oim-base`), so a background that lived only in the PNG is no longer lost.

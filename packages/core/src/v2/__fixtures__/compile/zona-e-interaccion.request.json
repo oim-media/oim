@@ -1,0 +1,44 @@
+{
+  "canvas_width": 800,
+  "canvas_height": 600,
+  "oim_id": "oim_fixture0001",
+  "slots_raw": [
+    {
+      "id": "z1",
+      "type": "text",
+      "x_px": 100,
+      "y_px": 100,
+      "width_px": 300,
+      "height_px": 80,
+      "font_size_px": 32,
+      "align": "center",
+      "style": {},
+      "content": {
+        "es": "hola",
+        "en": "hello"
+      },
+      "zone_id": "zona-a",
+      "interaction": {
+        "onClick": {
+          "action": "link",
+          "url": "https://example.com"
+        },
+        "hover": {
+          "scale": 1.1
+        }
+      }
+    },
+    {
+      "id": "img",
+      "type": "image",
+      "x_px": 0,
+      "y_px": 200,
+      "width_px": 400,
+      "height_px": 300,
+      "content": {
+        "*": "https://example.com/a.png"
+      },
+      "zone_id": "zona-a"
+    }
+  ]
+}

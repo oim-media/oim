@@ -1,0 +1,40 @@
+{
+  "canvas_width": 800,
+  "canvas_height": 600,
+  "oim_id": "oim_fixture0001",
+  "slots_raw": [
+    {
+      "id": "tx",
+      "type": "text",
+      "x_px": 100,
+      "y_px": 100,
+      "width_px": 300,
+      "height_px": 80,
+      "font_size_px": 32,
+      "align": "center",
+      "style": {},
+      "content": {
+        "es": "hola",
+        "en": "hello"
+      },
+      "shadows_raw_px": [
+        {
+          "offsetX": 4,
+          "offsetY": 6,
+          "blur": 10,
+          "color": "rgba(0,0,0,0.3)",
+          "inset": true
+        },
+        {
+          "offsetX": -2,
+          "offsetY": 0,
+          "blur": 0
+        }
+      ],
+      "stroke_width_px": 2,
+      "stroke_color": "#ff0000",
+      "blur_raw_px": 3,
+      "letter_spacing_px": 1.5
+    }
+  ]
+}

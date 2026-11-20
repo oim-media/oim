@@ -1,0 +1,69 @@
+{
+  "oim": "1.35.2",
+  "media_type": "image",
+  "oim_id": "oim_fixture0001",
+  "reedit": "author_only",
+  "immutable_lock": false,
+  "canvas": {
+    "natural_width": 800.0,
+    "natural_height": 600.0
+  },
+  "slots": [
+    {
+      "id": "neg",
+      "type": "text",
+      "position": [
+        0.0,
+        0.0
+      ],
+      "style": {
+        "width": "37.5cqw",
+        "height": "10.0cqw",
+        "maxWidth": "41.25cqw",
+        "fontSize": "4.0cqw"
+      },
+      "content": {
+        "es": "hola",
+        "en": "hello"
+      },
+      "align": "center",
+      "width_px": 300.0,
+      "height_px": 80.0
+    },
+    {
+      "id": "fuera",
+      "type": "text",
+      "position": [
+        100.0,
+        100.0
+      ],
+      "style": {
+        "width": "0.0cqw",
+        "height": "10.0cqw",
+        "maxWidth": "0.0cqw",
+        "fontSize": "4.0cqw"
+      },
+      "content": {
+        "es": "hola",
+        "en": "hello"
+      },
+      "align": "center",
+      "width_px": -10.0,
+      "height_px": 80.0
+    },
+    {
+      "id": "sin-tipo",
+      "type": "text",
+      "position": [
+        0.125,
+        0.3333
+      ],
+      "style": {
+        "width": "0.0cqw",
+        "height": "0.0cqw",
+        "maxWidth": "0.0cqw"
+      },
+      "align": "center"
+    }
+  ]
+}

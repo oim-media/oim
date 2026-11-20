@@ -1,0 +1,54 @@
+{
+  "canvas_width": 800,
+  "canvas_height": 600,
+  "oim_id": "oim_fixture0001",
+  "slots_raw": [
+    {
+      "id": "langs",
+      "type": "text",
+      "x_px": 100,
+      "y_px": 100,
+      "width_px": 300,
+      "height_px": 80,
+      "font_size_px": 32,
+      "align": "center",
+      "style": {},
+      "content": {
+        "es": "hola",
+        "en": "hello"
+      },
+      "font_sizes_px": {
+        "es": 40,
+        "en": 24,
+        "fr": 0,
+        "de": 999
+      }
+    },
+    {
+      "id": "fusion",
+      "type": "text",
+      "x_px": 100,
+      "y_px": 100,
+      "width_px": 300,
+      "height_px": 80,
+      "font_size_px": 32,
+      "align": "center",
+      "style": {
+        "fontSizeOverrides": {
+          "es": "1cqw",
+          "en": "2cqw"
+        },
+        "fontSizes": {
+          "en": "3cqw"
+        }
+      },
+      "content": {
+        "es": "hola",
+        "en": "hello"
+      },
+      "font_sizes_px": {
+        "es": 20
+      }
+    }
+  ]
+}

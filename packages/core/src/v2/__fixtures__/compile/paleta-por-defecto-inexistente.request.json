@@ -1,0 +1,29 @@
+{
+  "canvas_width": 800,
+  "canvas_height": 600,
+  "oim_id": "oim_fixture0001",
+  "slots_raw": [
+    {
+      "id": "p",
+      "type": "text",
+      "x_px": 100,
+      "y_px": 100,
+      "width_px": 300,
+      "height_px": 80,
+      "font_size_px": 32,
+      "align": "center",
+      "style": {},
+      "content": {
+        "es": "hola",
+        "en": "hello"
+      }
+    }
+  ],
+  "palettes": {
+    "claro": {
+      "primary": "#fff"
+    }
+  },
+  "defaultPalette": "nope",
+  "reedit": "public"
+}

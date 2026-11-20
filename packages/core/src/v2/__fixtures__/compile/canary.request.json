@@ -1,0 +1,23 @@
+{
+  "canvas_width": 800,
+  "canvas_height": 600,
+  "oim_id": "oim_fixture0001",
+  "creator_user_id": "signing-canary",
+  "slots_raw": [
+    {
+      "id": "s1",
+      "type": "text",
+      "x_px": 100,
+      "y_px": 100,
+      "width_px": 300,
+      "height_px": 80,
+      "font_size_px": 32,
+      "align": "center",
+      "style": {},
+      "content": {
+        "es": "canary",
+        "en": "canary"
+      }
+    }
+  ]
+}

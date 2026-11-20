@@ -1,0 +1,61 @@
+{
+  "oim": "1.35.2",
+  "media_type": "image",
+  "oim_id": "oim_fixture0001",
+  "reedit": "author_only",
+  "immutable_lock": false,
+  "canvas": {
+    "natural_width": 800.0,
+    "natural_height": 600.0
+  },
+  "slots": [
+    {
+      "id": "r1",
+      "type": "shape",
+      "position": [
+        1.25,
+        1.6667
+      ],
+      "style": {
+        "fill": "#fff",
+        "width": "25.0cqw",
+        "height": "12.5cqw",
+        "borderRadius": "3.0cqw"
+      },
+      "align": "center",
+      "width_px": 200.0,
+      "height_px": 100.0
+    },
+    {
+      "id": "r2",
+      "type": "shape",
+      "position": [
+        1.25,
+        21.6667
+      ],
+      "style": {
+        "width": "25.0cqw",
+        "height": "12.5cqw",
+        "borderRadius": "1.25cqw 2.5cqw 0.0cqw 5.0cqw"
+      },
+      "align": "center",
+      "width_px": 200.0,
+      "height_px": 100.0
+    },
+    {
+      "id": "r3",
+      "type": "shape",
+      "position": [
+        1.25,
+        41.6667
+      ],
+      "style": {
+        "width": "25.0cqw",
+        "height": "12.5cqw"
+      },
+      "align": "center",
+      "width_px": 200.0,
+      "height_px": 100.0
+    }
+  ]
+}

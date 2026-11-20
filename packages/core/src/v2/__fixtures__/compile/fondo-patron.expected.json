@@ -1,0 +1,53 @@
+{
+  "oim": "1.35.2",
+  "media_type": "image",
+  "oim_id": "oim_fixture0001",
+  "reedit": "author_only",
+  "immutable_lock": false,
+  "canvas": {
+    "natural_width": 800.0,
+    "natural_height": 600.0
+  },
+  "slots": [
+    {
+      "id": "background-pattern-slot",
+      "type": "shape",
+      "position": [
+        0.0,
+        0.0
+      ],
+      "style": {
+        "fill": "#222",
+        "width": "100.0cqw",
+        "height": "75.0cqw"
+      },
+      "content": {
+        "*": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M0 0L10 10'/></svg>"
+      },
+      "align": "center",
+      "width_px": 800.0,
+      "height_px": 600.0
+    },
+    {
+      "id": "encima",
+      "type": "text",
+      "position": [
+        12.5,
+        16.6667
+      ],
+      "style": {
+        "width": "37.5cqw",
+        "height": "10.0cqw",
+        "maxWidth": "41.25cqw",
+        "fontSize": "4.0cqw"
+      },
+      "content": {
+        "es": "hola",
+        "en": "hello"
+      },
+      "align": "center",
+      "width_px": 300.0,
+      "height_px": 80.0
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "oim": "1.35.2",
+  "media_type": "image",
+  "oim_id": "oim_fixture0001",
+  "reedit": "author_only",
+  "immutable_lock": false,
+  "canvas": {
+    "natural_width": 800.0,
+    "natural_height": 600.0
+  },
+  "slots": [
+    {
+      "id": "fx",
+      "type": "shape",
+      "position": [
+        6.25,
+        8.3333
+      ],
+      "style": {
+        "width": "25.0cqw",
+        "height": "15.0cqw",
+        "borderRadius": "1.0cqw",
+        "border": "0.375cqw solid #00ff00",
+        "filter": "blur(0.625cqw)",
+        "boxShadow": "0.5cqw 0.75cqw 1.25cqw rgba(0,0,0,0.3) inset, -0.25cqw 0.0cqw 0.0cqw rgba(0,0,0,0.5)"
+      },
+      "align": "center",
+      "width_px": 200.0,
+      "height_px": 120.0
+    },
+    {
+      "id": "nostroke",
+      "type": "shape",
+      "position": [
+        6.25,
+        33.3333
+      ],
+      "style": {
+        "width": "12.5cqw",
+        "height": "12.5cqw"
+      },
+      "align": "center",
+      "width_px": 100.0,
+      "height_px": 100.0
+    }
+  ]
+}

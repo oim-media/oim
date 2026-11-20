@@ -21,7 +21,7 @@ const file = {
 
 describe("a 1.x zone", () => {
   const result = upgrade(file);
-  const [zone, out] = result.document.layers;
+  const [, zone, out] = result.document.layers;
 
   it("is a group at the bottom, in canvas units, holding its layers after its background", () => {
     expect(zone).toMatchObject({ id: "z", type: "group", box: { x: 100, y: 100, width: 500, height: 200 } });
@@ -43,6 +43,6 @@ describe("a 1.x zone", () => {
 
   it("a zone_id naming no zone leaves the layer where it was", () => {
     const { document } = upgrade({ ...file, zones: [] });
-    expect(document.layers.map((l) => l.id)).toEqual(["in", "out"]);
+    expect(document.layers.map((l) => l.id)).toEqual(["oim-base", "in", "out"]);
   });
 });

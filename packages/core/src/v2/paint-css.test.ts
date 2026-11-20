@@ -68,7 +68,7 @@ describe("paintCss", () => {
       width: 10, height: 10, fillType: "pattern", fillPatternType: "dots", fillPatternColor: "#ff0000",
       fillPatternBgColor: "#000000", fillPatternScale: 2, fillPatternSpeed: 6, fillPatternDirection: "left",
     };
-    const layer = upgrade({ oim: "1.27.9", slots: [{ id: "a", type: "geo", position: [0, 0], style }] }).document.layers[0];
+    const layer = upgrade({ oim: "1.27.9", slots: [{ id: "a", type: "geo", position: [0, 0], style }] }).document.layers[1];
     expect(paintCss(layer.fills![0], { colors })).toEqual(getFillCss({ type: "shape", ...style } as never));
   });
 

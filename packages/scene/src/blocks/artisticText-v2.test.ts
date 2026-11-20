@@ -29,7 +29,7 @@ describe('the artistic text drawn from 2.0 is the SVG drawn from 1.x', () => {
   for (const [name, style] of Object.entries(slots)) {
     it(name, () => {
       const slot = { id: 'a', type: 'artistic-text', position: [0, 0], content: { es: 'Hola' }, style };
-      const layer = upgrade({ oim: '1.27.9', canvas: { natural_width: W, natural_height: 600 }, slots: [slot] }).document.layers[0];
+      const layer = upgrade({ oim: '1.27.9', canvas: { natural_width: W, natural_height: 600 }, slots: [slot] }).document.layers[1];
       const literal = (v: unknown) => (typeof v === 'string' ? v : undefined);
       const svg = (model: Parameters<typeof generateArtisticTextSvgString>[0]) => generateArtisticTextSvgString(model, 'a');
       expect(svg(buildArtisticTextModelFromLayer(layer, 'es', literal))).toBe(svg(buildArtisticTextModelFromSlot(slot, 'es', W)));

@@ -14,13 +14,13 @@ const doc = (style: object, type = "geo", root: object = {}) => ({
   slots: [{ id: "a", type, position: [0, 0], style: { width: 10, height: 10, ...style } }],
   ...root,
 });
-const layer = (style: object, type?: string, root?: object) => upgrade(doc(style, type, root)).document.layers[0];
+const layer = (style: object, type?: string, root?: object) => upgrade(doc(style, type, root)).document.layers[1];
 const off = { shadowEnabled: false, shadowColor: "#000000", shadowBlur: 8, shadowOffsetX: 0, shadowOffsetY: 4, shadowOpacity: 30 };
 
 describe("effects", () => {
   it("a shadow that is switched off is not written, and its six fields are not reported", () => {
     const result = upgrade(doc(off));
-    expect(result.document.layers[0]).not.toHaveProperty("effects");
+    expect(result.document.layers[1]).not.toHaveProperty("effects");
     expect(result.unhandled).toEqual([]);
   });
 
@@ -142,6 +142,6 @@ describe("effects", () => {
   });
 
   it("a canvas with its grain switched off gets no extra layer", () => {
-    expect(upgrade(doc({}, "geo", { grain: { enabled: false, intensity: 40 } })).document.layers).toHaveLength(1);
+    expect(upgrade(doc({}, "geo", { grain: { enabled: false, intensity: 40 } })).document.layers).toHaveLength(2);
   });
 });

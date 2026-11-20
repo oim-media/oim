@@ -24,7 +24,7 @@ const slot = (id: string, style: Record<string, unknown> = {}) => ({
 });
 
 const layerOf = (s: ReturnType<typeof slot>) =>
-  upgrade({ oim: '1.27.9', canvas: { natural_width: 800, natural_height: 600 }, slots: [s] }).document.layers[0];
+  upgrade({ oim: '1.27.9', canvas: { natural_width: 800, natural_height: 600 }, slots: [s] }).document.layers[1];
 
 const paint = (layer: ReturnType<typeof layerOf>) => {
   const el = document.createElement('div');

@@ -121,3 +121,30 @@ describe("rawToDocument == upgrade(backend compile)", () => {
     expect(document.id).toBe("oim_mine");
   });
 });
+
+describe("compileRaw reads undefined as absent, like the JSON the backend received", () => {
+  const input = { canvas_width: 800, canvas_height: 600 };
+  it("an undefined maxWidth is derived, not written as undefined", () => {
+    const slot = { id: "t", type: "text", width_px: 200, height_px: 40, style: { maxWidth: undefined } };
+    const out = compileRaw({ ...input, slots_raw: [slot] }, { round: true });
+    expect((out.slots as any[])[0].style.maxWidth).toBe("27.5cqw");
+  });
+  it("an undefined alias does not stop the long name from being read", () => {
+    const slot = { id: "t", type: "text", x_px: undefined, x: 400, width_px: 10, height_px: 10 };
+    const out = compileRaw({ ...input, slots_raw: [slot] }, { round: true });
+    expect((out.slots as any[])[0].position[0]).toBe(50);
+  });
+  it("an undefined style alias does not shadow the full name", () => {
+    expect(canonizeStyle({ size: undefined, fontSize: "3cqw" })).toEqual({ fontSize: "3cqw" });
+    expect(canonizeStyle({ bold: undefined, fontWeight: 700 })).toEqual({ fontWeight: 700 });
+  });
+  it("an undefined canvas_width lets the width alias stand", () => {
+    const out = compileRaw({ canvas_width: undefined, width: 800, canvas_height: 600, slots_raw: [] } as any);
+    expect((out.canvas as any).natural_width).toBe(800);
+  });
+  it("undefined root fields are not written", () => {
+    const out = compileRaw({ ...input, slots_raw: [], min_player: undefined, palettes: undefined }, { round: true });
+    expect(out).not.toHaveProperty("min_player");
+    expect(out).not.toHaveProperty("palettes");
+  });
+});

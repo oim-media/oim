@@ -80,6 +80,16 @@ describe("applyFills", () => {
     applyFills(el, { fills: [{ kind: "pattern", pattern: { preset: "stars", scale: 1.5, colors: ["#1d4ed8"] } }] }, { ...ctx, size: (px) => `${px / 8}% ${px / 6}%` });
     expect(el.style.backgroundSize).toBe("30% 40%");
   });
+
+  it("a moving pattern runs one tile per lap, with its keyframes in the document", () => {
+    const el = document.createElement("div");
+    applyFills(el, { fills: [{ kind: "pattern", pattern: { preset: "waves", scale: 1.2, colors: ["#f4a261"], motion: { direction: "right", period: 2 } } }] }, { ...ctx, len: (px) => `${px / 10}cqw` });
+    expect(el.style.animation).toContain("background-animation-right 2s linear infinite");
+    expect(el.style.getPropertyValue("--oim-bg-tile")).toBe("19.2cqw");
+    expect(document.getElementById("oim-pattern-keyframes")?.textContent).toContain("@keyframes background-animation-right");
+    applyFills(el, { fills: [{ kind: "color", value: "#000" }] }, ctx);
+    expect(el.style.animation).toBe("");
+  });
 });
 
 describe("generative fill", () => {

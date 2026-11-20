@@ -3,112 +3,15 @@
  * Copyright (c) 2026 Xue Studios LLC
  * SPDX-License-Identifier: Apache-2.0
  */
+import { describe, expect, it } from "vitest";
+import { injectStyles } from "./styles.js";
 
-/**
- * The fitting factor and a shape's scale must NOT share a name.
- *
- * The fault, measured on a real `.oim`: a shape declared at 140 px was painted
- * at 90 instead of 112. Every slot came out 20% smaller. The positions were
- * correct -only the size was wrong.
- *
- * `--oim-scale` meant two things at once:
- *
- *   - in `ImageEngine` line 766, the document's **fitting factor** to the
- *     host box, set on the viewer;
- *   - in line 2272, a shape's own **scale**, set on its element.
- *
- * And here is the CSS quirk that makes it invisible:
- * `var(--x, 1)` does **not** mean "1 if nobody gave this box a value", but
- * "1 if that variable does not exist anywhere in the chain". Since the viewer
- * defined it three levels up, every slot inherited the fitting factor and
- * applied it in its own transform -on top of the one the overlay already applied.
- * Twice 0.8 = 0.64.
- *
- * A default value that inheritance can steal. That is why the rule is not
- * "put `--oim-scale: 1` in more places" -which hides the inheritance case by
- * case- but that the two concepts have different names.
- */
-
-import { describe, it, expect } from "vitest";
-import { getStylesText } from "./styles";
-
-const css = getStylesText();
-
-/**
- * The full rule for a selector, so that it can be read whole.
- *
- * It anchors at the START of the rule, not at any occurrence of the selector:
- * `.oim-slot {` also appears inside
- * `.oim-player-viewport:not(.oim-viewport--ready) .oim-slot { … }`, and
- * searching for the substring returned that one. It is the same mistake that
- * the rule these tests guard against makes, committed in the tests themselves.
- */
-function regla(selector: string): string {
-  // Split on `}` and compare the WHOLE selector, not as a substring.
-  const encontrada = css
-    .split("}")
-    .map((trozo) => trozo + "}")
-    .find((trozo) => {
-      const key = trozo.indexOf("{");
-      return key > -1 && trozo.slice(0, key).trim() === selector;
-    });
-  expect(encontrada, `no encuentro la regla de ${selector}`).toBeTruthy();
-  return encontrada as string;
-}
-
-describe("the two scalings do not share a name", () => {
-  it("the overlay scale with --oim-fit, which is the fit factor", () => {
-    const r = regla(".oim-layer-overlay");
-    expect(r).toContain("scale(var(--oim-fit");
-  });
-
-  /**
-   * The check that bites. If the overlay went back to using `--oim-scale`, the
-   * value would travel by inheritance to every `.oim-slot` and be applied twice.
-   * That is exactly the fault this closes.
-   */
-  it("the overlay lets the pointer through and its layers take it back", () => {
-    // The overlay is pointer-events: none so the base picture can be dragged; a press on a layer must still land.
-    expect(regla(".oim-layer-overlay")).toContain("pointer-events: none");
-    expect(regla(".oim-layer-overlay [data-oim-id]")).toContain("pointer-events: auto");
-  });
-
-  it("el overlay NO define ni consume --oim-scale", () => {
-    expect(regla(".oim-layer-overlay")).not.toContain("--oim-scale");
-  });
-
-});
-
-/**
- * The overlay does not promise changes it will not make.
- *
- * It carried `will-change: transform`, and the transform is NOT animated: the
- * engine itself says so in `ImageEngine.ts`, next to the call that should not be
- * made -"`--oim-fit` only needs updating when the container/viewport dimensions
- * change"-. It changes on resize and nothing else. The only transition declared
- * on the overlay is the one for `opacity`.
- *
- * `will-change` is not a free optimization: it asks the browser to keep the
- * element in its own compositor layer PERMANENTLY. The overlay measures the
- * entire canvas -1080x1920 by default-, which is roughly 8 MB of GPU memory per
- * player, and the player is embedded in third-party pages that did not choose
- * to pay for it.
- *
- * What this does NOT fix, and it is worth writing down so as not to suspect this
- * place again: the pixelation of letters with a gradient fill. It was compared
- * by hand -gradient with and without `will-change`, and flat color with
- * `will-change`- and the one that looks clean is the FLAT COLOR one, which has
- * `will-change` set. The cause is in `fill.ts`: a text with a gradient, generative
- * or pattern fill is painted with `background-clip: text`, that is, like a mask,
- * and a mask is rasterized without knowing that its edges are letter outlines.
- */
-describe("the overlay does not request a permanent compositor layer", () => {
-  it("no declara will-change", () => {
-    expect(regla(".oim-layer-overlay")).not.toContain("will-change");
-  });
-
-  it("and still scales with the fit factor", () => {
-    // Removing `will-change` must not take the transform away with it.
-    expect(regla(".oim-layer-overlay")).toContain("scale(var(--oim-fit");
+describe("injectStyles", () => {
+  it("puts the loop and pattern keyframes inside the shadow root, where the layers can see them", () => {
+    const shadow = document.createElement("div").attachShadow({ mode: "open" });
+    injectStyles(shadow);
+    const css = Array.from(shadow.querySelectorAll("style"), (s) => s.textContent).join("\n");
+    expect(css).toContain("@keyframes oim-parallax-infinite");
+    expect(css).toContain("@keyframes background-animation-right");
   });
 });

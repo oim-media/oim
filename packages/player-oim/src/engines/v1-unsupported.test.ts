@@ -47,3 +47,20 @@ describe("the player paints 2.0 only", () => {
     expect(errors).toEqual([]);
   });
 });
+
+describe("the player refuses a file that requires an extension it does not implement", () => {
+  it("paints nothing and reports unsupported-extension with the names", async () => {
+    const { host, engine } = bareEngine(doc2([], { extensionsRequired: ["x.fancy"] }));
+    const errors: Array<{ code: string; extensions?: string[] }> = [];
+    host.addEventListener("oim:error", (e: any) => errors.push(e.detail));
+    await engine.renderSlots();
+    expect(errors.map((e) => e.code)).toEqual(["unsupported-extension"]);
+    expect(errors[0].extensions).toEqual(["x.fancy"]);
+    expect(engine._scene).toBeNull();
+  });
+
+  it("an extension that is only used, not required, paints as usual", async () => {
+    const { engine } = await paintedEngine(doc2([], { extensionsUsed: ["x.fancy"] }));
+    expect((engine as any)._scene).not.toBeNull();
+  });
+});

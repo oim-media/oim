@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Animation } from "@oim-media/core/v2";
+import { trimDash, type Animation, type Trim } from "@oim-media/core/v2";
 import { easingToCss, revealFrames } from "../../../core/src/reveal.js";
 import type { RevealEffect } from "../../../core/src/schema.js";
 import { isEntranceEffect } from "../../../core/src/text-effects.js";
@@ -43,7 +43,9 @@ const valueAt = (track: Track, t: number): number => {
  * only independent properties (`translate`, `scale`, `rotate`), so the box keeps
  * its own `transform`. `len` turns canvas pixels into the scene's length.
  */
-export function trackFrames(tracks: readonly Track[], len: (px: number) => string): Keyframe[] {
+export function trackFrames(allTracks: readonly Track[], len: (px: number) => string): Keyframe[] {
+  // trimStart/trimEnd draw a stroke along its outline, not on the layer's box: see trimFrames.
+  const tracks = allTracks.filter((tr) => !isTrim(tr));
   const times = [...new Set(tracks.flatMap((tr) => tr.keyframes.map((k) => k.t)))].sort((a, b) => a - b);
   return times.map((t) => {
     const frame: Keyframe = { offset: t };
@@ -57,11 +59,30 @@ export function trackFrames(tracks: readonly Track[], len: (px: number) => strin
       else if (tr.property === "blur") frame.filter = `blur(${len(v)})`;
       else if (tr.property === "x") x = v;
       else if (tr.property === "y") y = v;
-      // trimStart/trimEnd draw a stroke along its path; they have no CSS property on the layer box.
       const own = tr.keyframes.find((k) => k.t === t)?.e;
       if (own !== undefined) frame.easing = easingToCss(own, "linear");
     }
     if (x !== undefined || y !== undefined) frame.translate = `${len(x ?? 0)} ${len(y ?? 0)}`;
+    return frame;
+  });
+}
+
+const isTrim = (tr: Track) => tr.property === "trimStart" || tr.property === "trimEnd";
+
+/**
+ * The frames of the `trimStart` and `trimEnd` tracks, for the outline's own path: the dash of
+ * the trim at each keyframe time (a track the animation lacks keeps the rest value). Empty when
+ * there is no trim track.
+ */
+export function trimFrames(tracks: readonly Track[], rest: Trim | undefined): Keyframe[] {
+  const own = tracks.filter(isTrim);
+  const times = [...new Set(own.flatMap((tr) => tr.keyframes.map((k) => k.t)))].sort((a, b) => a - b);
+  const of = (property: string, t: number) => { const tr = own.find((x) => x.property === property); return tr ? valueAt(tr, t) : undefined; };
+  return times.map((t) => {
+    const dash = trimDash({ start: of("trimStart", t) ?? rest?.start, end: of("trimEnd", t) ?? rest?.end }) ?? { dasharray: "1 2", dashoffset: 0 };
+    const frame: Keyframe = { offset: t, strokeDasharray: dash.dasharray, strokeDashoffset: String(dash.dashoffset) };
+    const e = own.flatMap((tr) => tr.keyframes.filter((k) => k.t === t)).find((k) => k.e !== undefined)?.e;
+    if (e !== undefined) frame.easing = easingToCss(e, "linear");
     return frame;
   });
 }

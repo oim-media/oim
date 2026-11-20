@@ -1,5 +1,7 @@
 # OIM (Object Interactive Media) Canonical Metadata Specification
 
+> This document describes **1.x** (legacy, no longer painted by readers). The current format is OIM 2.0: see [CANONICAL_SPEC_2.md](CANONICAL_SPEC_2.md).
+
 **Contract version:** 1.35.2  
 **Date:** 2026-11-02 (reviewed against `packages/core/src/schema.ts`; the source of truth is the schema, this document summarises it)  
 **Status:** Normative / In force  

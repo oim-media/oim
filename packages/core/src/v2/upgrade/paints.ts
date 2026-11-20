@@ -255,7 +255,8 @@ export function canvasFills(ctx: UpgradeContext, meta: V1Object): Paint[] {
   if (type === "gradient") fills.push(...[gradient ?? solid].filter((p): p is Paint => !!p));
   else if (type === "pattern") fills.push(...[pattern ?? solid].filter((p): p is Paint => !!p));
   else if (type === "generative" && generative) fills.push({ kind: "generative", generative: generative as never });
-  else if (type !== "transparent" && solid) fills.push(solid);
+  // "image": the picture is the file's base PNG, which the player paints under the scene; a fill would cover it.
+  else if (type !== "transparent" && type !== "image" && solid) fills.push(solid);
 
   if (texture && typeof texture.tipo === "string") {
     const drawn: Record<string, unknown> = {};

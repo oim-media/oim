@@ -70,8 +70,12 @@ export function applyGeometry(el: HTMLElement, layer: Pick<Layer, "geometry" | "
   shape.setAttribute("fill", fill ?? "none");
   if (stroke) {
     shape.setAttribute("stroke", stroke.color);
-    shape.setAttribute("stroke-width", String(stroke.width));
-    shape.setAttribute("vector-effect", "non-scaling-stroke");
+    // The stroke is in the figure's units, so it grows with the layer like everything else: in screen
+    // pixels (non-scaling-stroke) its share of the figure changed with the display size (Josué, 21 Nov 2026).
+    // shortcut: a figure stretched unevenly draws a slightly uneven stroke; fine until a file shows it.
+    const [, , vbW, vbH] = figure.viewBox.trim().split(" ").map(Number);
+    const scale = ((vbW / (layer.box.width || vbW)) + (vbH / (layer.box.height || vbH))) / 2;
+    shape.setAttribute("stroke-width", String(+(Number(stroke.width) * scale).toFixed(4)));
     shape.setAttribute("stroke-linejoin", "round");
     shape.setAttribute("stroke-linecap", "round");
     if (stroke.style === "dashed") shape.setAttribute("stroke-dasharray", "6,4");
@@ -81,13 +85,6 @@ export function applyGeometry(el: HTMLElement, layer: Pick<Layer, "geometry" | "
     const tracksTrim = layer.animations?.some((a) => a.tracks?.some((t) => t.property === "trimStart" || t.property === "trimEnd"));
     const dash = trimDash(layer.geometry?.trim) ?? (tracksTrim ? { dasharray: "1 2", dashoffset: 0 } : undefined);
     if (dash) {
-      // Chromium ignores pathLength under non-scaling-stroke, so the stroke scales with the figure instead:
-      // its width in viewBox units, the mean of the two scales.
-      // shortcut: a figure stretched unevenly draws a slightly uneven stroke; fine until a file shows it.
-      shape.removeAttribute("vector-effect");
-      const [, , vbW, vbH] = figure.viewBox.trim().split(" ").map(Number);
-      const scale = ((vbW / (layer.box.width || vbW)) + (vbH / (layer.box.height || vbH))) / 2;
-      shape.setAttribute("stroke-width", String(+(Number(stroke.width) * scale).toFixed(4)));
       shape.setAttribute("pathLength", "1");
       shape.setAttribute("stroke-dasharray", dash.dasharray);
       shape.setAttribute("stroke-dashoffset", String(dash.dashoffset));

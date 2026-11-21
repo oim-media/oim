@@ -5,6 +5,10 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+## 1.36.4
+
+- scene: a figure's stroke is in layer pixels and scales with the figure (no `non-scaling-stroke`), so it keeps its share of the figure at any display size.
+
 ## 1.36.3
 
 - core, scene: a stroked preset is drawn half its stroke width inside its box (`presetPath` `inset`), so the centred stroke is no longer cut at the edge.

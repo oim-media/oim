@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 # OIM 2.0 Canonical Specification
 
 **Document version emitted by the reference writer:** `2.0.0` (`DOCUMENT_VERSION` in `@oim-media/core/v2`)  
-**Contract release this text was checked against:** 1.36.2  
+**Contract release this text was checked against:** 1.36.3  
 **Status:** Normative  
 **License:** Apache-2.0  
 **Authority:** Xue Studios LLC
@@ -291,7 +291,7 @@ it draws as an SVG outline (a preset, a line, an ellipse, a single path); a plai
 | `rect`, `ellipse`, `line` | none |
 | `polygon` | `sides`: integer 3..64. |
 | `star` | `points`: integer 3..64; `inner`: 0..1. |
-| `preset` | `name` (1..64): a catalogue shape: `triangle`, `star`, `arrow`, `diamond`, `hexagon`, `circle`, `heart`, `line`, `blob`, `scribble`, `pill`, `octagon`, `pentagon`, `cross`, `moon`, `cloud`, `drop`, `bolt`, `bubble`, `flower`, `burst`, `arch`. A preset fills its box, drawn in the box's own pixels: `arch`, `pill`, `bubble` and `circle` keep round curves at any aspect ratio; every other preset is its drawing scaled to span the box. |
+| `preset` | `name` (1..64): a catalogue shape: `triangle`, `star`, `arrow`, `diamond`, `hexagon`, `circle`, `heart`, `line`, `blob`, `scribble`, `pill`, `octagon`, `pentagon`, `cross`, `moon`, `cloud`, `drop`, `bolt`, `bubble`, `flower`, `burst`, `arch`. A preset fills its box, drawn in the box's own pixels: `arch`, `pill`, `bubble` and `circle` keep round curves at any aspect ratio; every other preset is its drawing scaled to span the box. With a centred colour stroke, the preset is drawn half the stroke width inside every edge, so the stroke stays in the box. |
 | `paths` | `viewBox`: 4 numbers; `paths`: 1..2000 entries `{ d (required), fillRule ("evenodd"), fill (≤128), stroke (≤128), strokeWidth ≥0, cap (round \| square), join (round \| bevel), opacity 0..1, transform (6 numbers) }`. The drawing is scaled from its `viewBox` into the box. |
 
 `corners` (on `shape` and `image`) is a number ≥0 (all corners) or an array of exactly 4 numbers ≥0.
@@ -776,7 +776,7 @@ A writer is checked by validating its documents against `schema/oim2.schema.json
 
 ## 11. Appendix D: what the schema allows and the reference painter does not draw
 
-Checked against the working tree that follows release 1.36.2. A reader that does not draw one of these is still
+Checked against the working tree that follows release 1.36.3. A reader that does not draw one of these is still
 conforming to the schema; a writer SHOULD NOT rely on them being painted.
 
 - A gradient paint with `preset` and no `gradient`: the reference painter reads the preset only for an artistic

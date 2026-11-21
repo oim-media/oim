@@ -8,6 +8,7 @@ import { describe, it, expect } from "vitest";
 import { GEO_SHAPES, FRAME_SHAPES } from "./geoShapes";
 import { frameSilhouette, usesFrameShapes } from "./frame-silhouette";
 import { styleSchema } from "./schema";
+import { presetPath } from "./preset-path";
 
 const NEW_SHAPES = [
   "pill", "octagon", "pentagon", "cross", "moon", "cloud", "drop",
@@ -59,14 +60,20 @@ describe("frameSilhouette", () => {
   it("a catalog shape yields its path", () => {
     const s = frameSilhouette({ geoShape: "cloud" });
     expect(s).not.toBeNull();
-    expect(s!.d).toBe((GEO_SHAPES.cloud as { d: string }).d);
+    expect(s!.d).toBe(presetPath("cloud", 100, 100)!.d);
     expect(s!.viewBox).toBe("0 0 100 100");
   });
 
-  it("a polygon shape yields its points", () => {
-    const s = frameSilhouette({ geoShape: "octagon" });
-    expect(s!.points).toContain("30,5");
-    expect(s!.d).toBeUndefined();
+  it("a catalog shape is drawn in the pixels of the box", () => {
+    const s = frameSilhouette({ geoShape: "arch" }, { width: 320, height: 480 });
+    expect(s!.viewBox).toBe("0 0 320 480");
+    expect(s!.d).toBe(presetPath("arch", 320, 480)!.d);
+  });
+
+  it("a polygon shape yields a closed path that fills the box", () => {
+    const s = frameSilhouette({ geoShape: "octagon" }, { width: 200, height: 100 });
+    expect(s!.d).toBe("M55.56 0L144.44 0L200 27.78L200 72.22L144.44 100L55.56 100L0 72.22L0 27.78Z");
+    expect(s!.points).toBeUndefined();
   });
 
   it("an svgPath is returned as is, with the default viewBox", () => {
@@ -83,7 +90,7 @@ describe("frameSilhouette", () => {
   it("the blob uses customBlobPath, then svgPath, then the catalog", () => {
     expect(frameSilhouette({ geoShape: "blob", customBlobPath: "M1 1Z", svgPath: "M2 2Z" })!.d).toBe("M1 1Z");
     expect(frameSilhouette({ geoShape: "blob", svgPath: "M2 2Z" })!.d).toBe("M2 2Z");
-    expect(frameSilhouette({ geoShape: "blob" })!.d).toBe((GEO_SHAPES.blob as { d: string }).d);
+    expect(frameSilhouette({ geoShape: "blob" })!.d).toBe(presetPath("blob", 100, 100)!.d);
   });
 
   it("the rectangle and unknown shapes give null", () => {

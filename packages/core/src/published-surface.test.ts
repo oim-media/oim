@@ -186,6 +186,7 @@ const SUPERFICIE = [
   // frame-silhouette.ts — the silhouette of the photo frame, contract 1.19.0.
   "FRAME_SHAPES",
   "frameSilhouette",
+  "presetPath",
   "usesFrameShapes",
   // path-data.ts — the one SVG path parser for mask outlines (contract 1.32.0).
   "normalizePathData",

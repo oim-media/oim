@@ -10,9 +10,8 @@ let sequence = 0;
 /** A silhouette as path data, its viewBox, and for a rectangle its corner radius as a fraction of the box. */
 export type ClipSilhouette = { d: string; viewBox: string; rect?: { rx: number; ry: number }; evenodd?: boolean };
 
-/** Path data for a silhouette given as polygon points or as a path. */
-export const silhouettePath = (figure: { d?: string; points?: string }): string =>
-  figure.d ?? "M " + figure.points!.split(" ").join(" L ") + " Z";
+/** Path data of a silhouette: every figure is a path now, a polygon preset included. */
+export const silhouettePath = (figure: { d?: string }): string => figure.d!;
 
 /**
  * A zero-size <svg> holding a clipPath in objectBoundingBox units, so the silhouette

@@ -182,7 +182,7 @@ describe("geometry.trim", () => {
       geometry: { kind: "preset", name: "star", trim: { start: 0, end: 1 } },
       animations: [{ on: "load", duration: 1000, tracks: [{ property: "trimEnd", keyframes: [{ t: 0, v: 0 }, { t: 1, v: 1 }] }, { property: "trimStart", keyframes: [{ t: 0, v: 0 }, { t: 1, v: 0.5 }] }] }],
     } as Partial<Layer>)]));
-    expect(calls.map((c) => c.tag)).toEqual(["polygon"]);
+    expect(calls.map((c) => c.tag)).toEqual(["path"]);
     expect(calls[0].timing).toMatchObject({ duration: 1000, fill: "both" });
     expect(calls[0].frames).toEqual([
       { offset: 0, strokeDasharray: "0 2", strokeDashoffset: "0" },
@@ -224,7 +224,7 @@ describe("geometry.trim", () => {
       animations: [{ on: "hover", duration: 300, tracks: [{ property: "trimEnd", keyframes: [{ t: 0, v: 0.5 }, { t: 1, v: 1 }] }] }],
     } as Partial<Layer>)]));
     scene.elementOf("s")!.dispatchEvent(new Event("pointerenter"));
-    expect(calls.map((c) => c.tag)).toEqual(["polygon"]);
+    expect(calls.map((c) => c.tag)).toEqual(["path"]);
     scene.elementOf("s")!.dispatchEvent(new Event("pointerleave"));
     expect(calls[0].run.reverse).toHaveBeenCalledTimes(1);
   });
@@ -234,7 +234,7 @@ describe("geometry.trim", () => {
     mount(document.createElement("div"), doc([star({
       animations: [{ on: "load", duration: 500, tracks: [{ property: "opacity", keyframes: [{ t: 0, v: 0 }, { t: 1, v: 1 }] }, { property: "trimEnd", keyframes: [{ t: 0, v: 0 }, { t: 1, v: 1 }] }] }],
     } as Partial<Layer>)]));
-    expect(calls.map((c) => c.tag).sort()).toEqual(["div", "polygon"]);
+    expect(calls.map((c) => c.tag).sort()).toEqual(["div", "path"]);
     expect(calls.find((c) => c.tag === "div")!.frames).toEqual([{ offset: 0, opacity: 0 }, { offset: 1, opacity: 1 }]);
   });
 });

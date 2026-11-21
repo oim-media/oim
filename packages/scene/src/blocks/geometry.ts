@@ -61,9 +61,8 @@ export function applyGeometry(el: HTMLElement, layer: Pick<Layer, "geometry" | "
   svg.setAttribute("viewBox", figure.viewBox);
   svg.setAttribute("preserveAspectRatio", "none");
   Object.assign(svg.style, { position: "absolute", left: "0", top: "0", width: "100%", height: "100%", display: "block", overflow: "visible" });
-  const shape = el.ownerDocument.createElementNS(SVG, figure.points ? "polygon" : "path");
-  if (figure.points) shape.setAttribute("points", figure.points);
-  else shape.setAttribute("d", figure.d!);
+  const shape = el.ownerDocument.createElementNS(SVG, "path");
+  shape.setAttribute("d", figure.d!);
   shape.setAttribute("fill", fill ?? "none");
   if (stroke) {
     shape.setAttribute("stroke", stroke.color);
@@ -97,7 +96,7 @@ export function applyGeometry(el: HTMLElement, layer: Pick<Layer, "geometry" | "
 }
 
 /** The pictures of a figure sit in a box clipped by its silhouette, under the stroke drawing. The crop transform stays on the picture, inside the clip. */
-function clipPictures(el: HTMLElement, figure: { d?: string; points?: string; viewBox: string }): void {
+function clipPictures(el: HTMLElement, figure: { d?: string; viewBox: string }): void {
   const pictures = el.querySelectorAll<HTMLImageElement>(":scope > img[data-oim-fill]");
   if (!pictures.length) return;
   const { svg, clipPath } = silhouetteClip(el.ownerDocument, { d: silhouettePath(figure), viewBox: figure.viewBox });

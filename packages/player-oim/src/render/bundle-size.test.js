@@ -162,13 +162,14 @@ describe("lottie ships apart from the player", () => {
   // to vendor/ (oim-generative-*.js, oim-patterns-*.js); 53.1 KB at that commit.
   // 52 KB (19 Nov): +0.35 KB for the SRI hashes of the on-demand scripts.
   // 53 KB (20 Nov): +0.75 KB for the loop and pattern keyframes the shadow root now carries; 52.49 KB at that commit.
+  // 54 KB (21 Nov): +0.5 KB for presetPath, preset shapes drawn at their real size; 53.5 KB at that commit.
   // 51 KB (18 Nov, phase 3 plan: measured + 1 KB): the scene paints every document and the
   // 1.x renderer is gone; 50.50 KB at that commit (the vite alias also missed the
   // scene/src/runtime path, which had inlined `upgrade` and the features).
-  it.skipIf(!hasBundle)("the player fits in 53 KB gzip", async () => {
+  it.skipIf(!hasBundle)("the player fits in 54 KB gzip", async () => {
     const { gzipSync } = await import("node:zlib");
     const kb = gzipSync(readFileSync(BUNDLE)).length / 1024;
-    expect(Math.round(kb)).toBeLessThanOrEqual(53);
+    expect(Math.round(kb)).toBeLessThanOrEqual(54);
   });
 
   it.skipIf(!hasBundle)("generative fills and pattern tiles ship apart, next to both player paths", () => {

@@ -26,7 +26,7 @@ import "@oim-media/player-oim";
 ```
 
 The second form is also reachable as the subpath `@oim-media/player-oim/cdn`.
-The single file is about **53 KB gzip** and includes the verifier. Lottie, generative fills and pattern tiles are not
+The single file is about **54 KB gzip** and includes the verifier. Lottie, generative fills and pattern tiles are not
 in it: each is loaded from `dist/vendor/`, next to the player, only when a file uses it. A test keeps the
 file under a 55 KB budget.
 

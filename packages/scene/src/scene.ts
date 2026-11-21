@@ -10,7 +10,7 @@ import { applyBox, type Frame } from "./box.js";
 import { applyCorners } from "./blocks/corners.js";
 import { effectsToStyle } from "./blocks/effects.js";
 import { applyFills, pictureNode } from "./blocks/fills.js";
-import { applyGeometry } from "./blocks/geometry.js";
+import { applyGeometry, strokeInset } from "./blocks/geometry.js";
 import { defineGrade, defineGrain, defsOf } from "./blocks/grain.js";
 import { lottieData, playLottie, type LottieRun } from "./blocks/lottie.js";
 import { duotoneFilter } from "./blocks/duotone.js";
@@ -194,7 +194,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
       else show(el);
     }
     const figure = has("fills", "geometry", "strokes");
-    const outline = layer.type === "shape" ? (figure ? applyGeometry(el, layer, { colors }) : geometryOutline(layer.geometry, layer.box)) : geometryOutline(undefined);
+    const outline = layer.type === "shape" ? (figure ? applyGeometry(el, layer, { colors }) : geometryOutline(layer.geometry, layer.box, strokeInset(layer, colors))) : geometryOutline(undefined);
     if (has("effects", "geometry")) el.style.clipPath = filterClip(layer, outline);
     if (has("corners", "geometry")) applyCorners(el, layer, !!outline.round);
     if (has("strokes", "geometry", "fills")) applyStrokes(el, layer, { colors, isText, vector: !!outline.silhouette || !!el.querySelector(":scope > svg[data-oim-figure]"), rounded: !!outline.round || [layer.corners ?? 0].flat().some((c) => c > 0) });

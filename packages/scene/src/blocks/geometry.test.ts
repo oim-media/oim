@@ -37,6 +37,16 @@ describe("applyGeometry", () => {
     expect(svg.firstElementChild!.getAttribute("d")).toContain("L0 160");
   });
 
+  it("a stroked preset is drawn half its stroke inside the box, so the stroke is not cut at the edge", () => {
+    const el = document.createElement("div");
+    const box = { x: 0, y: 0, width: 128, height: 126 };
+    applyGeometry(el, shape({ kind: "preset", name: "burst" }, { box, strokes: [{ paint: { kind: "color", value: "#fdba74" }, width: 10 }] } as Partial<Layer>), { colors });
+    const d = el.querySelector("svg")!.firstElementChild!.getAttribute("d")!;
+    expect(d).toBe(geometryOutline({ kind: "preset", name: "burst" } as Layer["geometry"], box, 5).silhouette!.d);
+    const nums = d.match(/-?\d+(\.\d+)?/g)!.map(Number);
+    expect(Math.min(...nums)).toBeGreaterThanOrEqual(4.5);
+  });
+
   it("a star or polygon with its own kind is a box until the core has its outline", () => {
     const el = document.createElement("div");
     expect(applyGeometry(el, shape({ kind: "star", points: 5 } as Layer["geometry"]), { colors }).silhouette).toBeNull();

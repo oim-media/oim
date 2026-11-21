@@ -27,7 +27,8 @@ export type Outline = {
 const BOX: Outline = { silhouette: null, fillable: true, round: false };
 
 /** `box` is the layer's size in px: a preset is drawn in it, not stretched to it. */
-export function geometryOutline(geometry: Geometry | undefined, box?: { width?: number; height?: number }): Outline {
+/** `inset`: half the stroke width, so the stroke of a preset stays inside the box. */
+export function geometryOutline(geometry: Geometry | undefined, box?: { width?: number; height?: number }, inset = 0): Outline {
   if (!geometry || geometry.kind === "rect") return BOX;
   if (geometry.kind === "line" || geometry.kind === "preset" || geometry.kind === "ellipse") {
     // 1.x drew its circle as the catalogue's `circle` path; the box is also rounded.
@@ -35,7 +36,7 @@ export function geometryOutline(geometry: Geometry | undefined, box?: { width?: 
     const drawing = shapeDrawing(preset);
     if (!drawing) return BOX;
     return {
-      silhouette: frameSilhouette({ geoShape: preset }, box),
+      silhouette: frameSilhouette({ geoShape: preset }, box, inset),
       fillable: drawing.kind === "polygon" || !!drawing.fillable,
       round: geometry.kind === "ellipse",
       preset,

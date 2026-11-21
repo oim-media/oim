@@ -71,10 +71,21 @@ function boundsOf(d: string): [number, number, number, number] {
   return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
 }
 
-/** A preset as path data in a `width` x `height` box; null for the rectangle, an unknown name or an empty box. */
-export function presetPath(name: string, width: number, height: number): PresetPath | null {
+/**
+ * A preset as path data in a `width` x `height` box; null for the rectangle, an unknown name or an empty box.
+ * `inset` (px, usually half the stroke width) draws it that far inside every edge, so a centred stroke stays
+ * in the box instead of losing its outer half to the clip; capped at a quarter of the short side.
+ */
+export function presetPath(name: string, width: number, height: number, inset = 0): PresetPath | null {
   if (!(width > 0) || !(height > 0)) return null;
-  const viewBox = `0 0 ${width} ${height}`;
+  const i = Math.min(Math.max(inset || 0, 0), Math.min(width, height) / 4);
+  const inner = drawPreset(name, width - 2 * i, height - 2 * i);
+  if (!inner) return null;
+  const d = i ? transformPathData(inner, (x, y) => [x + i, y + i]) : inner;
+  return d ? { d, viewBox: `0 0 ${width} ${height}` } : null;
+}
+
+function drawPreset(name: string, width: number, height: number): string | null {
   const radius: Record<string, () => string> = {
     arch: () => rrect(width, height, Math.min(width / 2, height), 0),
     pill: () => rrect(width, height, Math.min(width, height) / 2, Math.min(width, height) / 2),
@@ -82,11 +93,11 @@ export function presetPath(name: string, width: number, height: number): PresetP
     circle: () => ellipse(width, height),
     line: () => `M${pts(0, height / 2)}L${pts(width, height / 2)}`,
   };
-  if (radius[name]) return { d: radius[name](), viewBox };
+  if (radius[name]) return radius[name]();
   const drawing = GEO_SHAPES[name];
   if (!drawing) return null;
   const source = drawing.kind === "polygon" ? `M${drawing.points.map((p) => p.join(",")).join("L")}Z` : drawing.d;
   const [x0, y0, x1, y1] = boundsOf(source);
   const d = transformPathData(source, (x, y) => [((x - x0) * width) / (x1 - x0), ((y - y0) * height) / (y1 - y0)]);
-  return d ? { d, viewBox } : null;
+  return d;
 }

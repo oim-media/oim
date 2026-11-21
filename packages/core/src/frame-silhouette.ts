@@ -52,7 +52,8 @@ export interface FrameStyle {
  * pixels of `box` (`viewBox` = box, nothing stretched); without a box it is
  * drawn in 100 x 100. A custom path keeps its own viewBox.
  */
-export function frameSilhouette(style: FrameStyle, box: { width?: number; height?: number } = {}): FrameSilhouette | null {
+/** `inset`: px a catalogue shape is drawn inside its box (half the stroke width), see presetPath. */
+export function frameSilhouette(style: FrameStyle, box: { width?: number; height?: number } = {}, inset = 0): FrameSilhouette | null {
   const drawing = shapeDrawing(style.geoShape);
   const svgPath = path(style.svgPath);
   if (!drawing) {
@@ -64,7 +65,7 @@ export function frameSilhouette(style: FrameStyle, box: { width?: number; height
   const isGenerative = style.geoShape === "blob" || style.geoShape === "scribble";
   const own = (isGenerative && path(style.customBlobPath)) || (style.geoShape === "blob" && svgPath);
   if (own) return { d: own, viewBox: DEFAULT_VIEW_BOX };
-  return presetPath(style.geoShape!, box.width || 100, box.height || 100);
+  return presetPath(style.geoShape!, box.width || 100, box.height || 100, inset);
 }
 
 /**

@@ -19,12 +19,18 @@ const SVG = "http://www.w3.org/2000/svg";
  * draws it. The element's own background is then transparent. Returns the outline,
  * so the caller knows whether the figure carries the stroke and rounds the box.
  */
+/** Half the width of the colour stroke a figure carries: the preset is drawn that far inside its box, so the stroke is not cut. */
+export function strokeInset(layer: Pick<Layer, "strokes">, colors: PaintColors): number {
+  return Number(colorStrokeOf({ strokes: (layer.strokes ?? []).filter((s) => !s.align) }, colors)?.width ?? 0) / 2;
+}
+
 export function applyGeometry(el: HTMLElement, layer: Pick<Layer, "geometry" | "fills" | "strokes" | "box" | "animations">, ctx: { colors: PaintColors }): Outline {
   el.querySelectorAll(":scope > svg[data-oim-figure]").forEach((node) => node.remove());
   // A picture clipped earlier goes back to the layer before the figure is drawn again.
   el.querySelectorAll(":scope > [data-oim-figure-clip]").forEach((box) => box.replaceWith(...box.querySelectorAll(":scope > img")));
   setMask(el, undefined);
-  const outline = geometryOutline(layer.geometry, layer.box);
+  const stroke = colorStrokeOf({ strokes: (layer.strokes ?? []).filter((s) => !s.align) }, ctx.colors);
+  const outline = geometryOutline(layer.geometry, layer.box, strokeInset(layer, ctx.colors));
   // A gradient, pattern or generative fill is painted by applyFills on the element: kept, and cut to the figure.
   // A window mask is not: it paints its fill as a frame around the outline (applyWindowMask).
   const rich = paintedByFillLayer(layer as Layer) && !(layer as Layer).mask;
@@ -53,8 +59,6 @@ export function applyGeometry(el: HTMLElement, layer: Pick<Layer, "geometry" | "
     el.style.backgroundColor = "transparent";
     el.style.backgroundImage = "";
   }
-  // shortcut: a stroke on a masked figure loses its outer half; give the stroke its own unmasked layer if one shows up.
-  const stroke = colorStrokeOf({ strokes: (layer.strokes ?? []).filter((s) => !s.align) }, ctx.colors);
 
   const svg = el.ownerDocument.createElementNS(SVG, "svg");
   svg.dataset.oimFigure = "";

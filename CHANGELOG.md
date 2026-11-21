@@ -5,6 +5,8 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+## 1.36.2
+
 - core: `upgrade()` fills a custom `svgPath` with its colour, as the editor draws it. It used to drop the colour, as the 1.x player did.
 
 ## 1.36.1

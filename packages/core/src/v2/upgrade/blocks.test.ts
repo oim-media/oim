@@ -179,6 +179,15 @@ describe("geometry, corners and images", () => {
     });
   });
 
+  // The editor draws a path with no view box in the layer's own pixels.
+  it("a custom path without a view box is drawn in the box's pixels", () => {
+    const slot = { slot: { width_px: 300, height_px: 420 } };
+    const size = { width: "300px", height: "420px" };
+    expect(layer({ ...size, geoShape: "custom", svgPath: "M 0,0 L 300,420 Z" }, "geo", slot).geometry).toEqual({
+      kind: "paths", viewBox: [0, 0, 300, 420], paths: [{ d: "M 0,0 L 300,420 Z" }],
+    });
+  });
+
   // Only the canvas background tiles its raw SVG: an icon with fillColor transparent paints no fill (flyer_cafe cup).
   it("an SVG icon with a transparent fill is no pattern", () => {
     expect(layer({ svgRawXml: '<svg viewBox="0 0 24 24"><path d="M3 10h14"/></svg>', fillColor: "transparent" }, "svg")).not.toHaveProperty("fills");

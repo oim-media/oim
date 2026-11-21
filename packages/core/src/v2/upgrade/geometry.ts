@@ -20,9 +20,9 @@ const BASIC: Record<string, Geometry> = {
   line: { kind: "line" },
 };
 
-const viewBoxOf = (value: unknown): number[] => {
+const viewBoxOf = (value: unknown, fallback: number[] = [0, 0, 24, 24]): number[] => {
   const numbers = typeof value === "string" ? value.trim().split(/[\s,]+/).map(Number) : [];
-  return numbers.length === 4 && numbers.every(Number.isFinite) ? numbers : [0, 0, 24, 24];
+  return numbers.length === 4 && numbers.every(Number.isFinite) ? numbers : fallback;
 };
 
 /** `content` of a layer that is not a text: one value for every language, under "*" or the main one. */
@@ -70,14 +70,15 @@ function pathsFromLayers(ctx: UpgradeContext, layers: unknown[], viewBox: number
   return paths.length > 0 ? { kind: "paths", viewBox, paths } : undefined;
 }
 
-function shapeGeometry(ctx: UpgradeContext, slot: V1Slot, media: string | undefined): Geometry {
+function shapeGeometry(ctx: UpgradeContext, slot: V1Slot, media: string | undefined, box?: DraftLayer["box"]): Geometry {
   const { style } = slot;
   // Ruling (13 Nov): the 1.x player drew only `geoShape`; a `geoType` alone painted the box.
   const name = ctx.take(style, "geoShape");
   ctx.take(style, "geoType");
   const path = ctx.take(style, "svgPath");
   const blob = ctx.take(style, "customBlobPath");
-  const viewBox = viewBoxOf(ctx.take(style, "svgViewBox"));
+  const rawViewBox = ctx.take(style, "svgViewBox");
+  const viewBox = viewBoxOf(rawViewBox);
   const rawXml = ctx.take(style, "svgRawXml");
   const layers = ctx.take(style, "svgLayers");
 
@@ -109,7 +110,9 @@ function shapeGeometry(ctx: UpgradeContext, slot: V1Slot, media: string | undefi
   // The blob and the scribble draw their own path (1.x: customBlobPath first, then svgPath for the blob).
   if (name === "scribble" && typeof blob === "string" && blob) return { kind: "paths", viewBox: [0, 0, 100, 100], paths: [{ d: blob }] };
   if (name === "blob" && typeof blob === "string" && blob) return { kind: "paths", viewBox: [0, 0, 100, 100], paths: [{ d: blob }] };
-  if (d && (name === undefined || name === "custom" || name === "blob")) return { kind: "paths", viewBox: name === "blob" ? [0, 0, 100, 100] : viewBox, paths: [{ d }] };
+  // With no view box of its own, the editor draws a custom path in the layer's pixels.
+  const ownBox = box?.width && box?.height ? viewBoxOf(rawViewBox, [0, 0, box.width, box.height]) : viewBox;
+  if (d && (name === undefined || name === "custom" || name === "blob")) return { kind: "paths", viewBox: name === "blob" ? [0, 0, 100, 100] : ownBox, paths: [{ d }] };
   if (typeof name === "string" && name) return BASIC[name] ?? { kind: "preset", name };
   return { kind: "rect" };
 }
@@ -145,7 +148,7 @@ export function convertGeometry(ctx: UpgradeContext, slot: V1Slot, layer: DraftL
   const { style } = slot;
   const media = layer.type === "text" ? undefined : mediaOf(ctx, slot);
 
-  if (layer.type === "shape") layer.geometry = shapeGeometry(ctx, slot, media);
+  if (layer.type === "shape") layer.geometry = shapeGeometry(ctx, slot, media, layer.box);
   // 1.x painted an SVG layer's fillColor into every figure of its drawing, fill="none"
   // included: each path's fill becomes the layer's fill.
   const first = layer.fills?.[0];

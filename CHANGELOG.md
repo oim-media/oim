@@ -5,6 +5,9 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+## 1.36.1
+
+- core: `upgrade()` draws a custom `svgPath` with no `svgViewBox` in the layer's own pixels, as the editor does, instead of a 24 x 24 view box.
 - core: writers emit `oim: "2.0.0"` (`DOCUMENT_VERSION`, and so `upgrade()`). Readers still accept any `2.x.y`, including the `2.0.0-draft.1` that every signed vector carries; nothing is re-signed.
 - core: the root `timestamp` the production signer writes is part of the 2.0 schema (optional string, outside the signature). `oim2.schema.json` is regenerated.
 - core: `trimDash()` (the dash of a trim) and `unsupportedRequired()` (the `extensionsRequired` a reader cannot honour), shared by every renderer.

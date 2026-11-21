@@ -43,8 +43,8 @@
  * the format can change without the player being touched. Tying both numbers
  * together would make an internal fix look like a format break.
  */
-export const CONTRACT_VERSION = "1.36.0";
-// 1.36.0: no format change; core gains compileRaw and rawToDocument, the client-side port of /compile.
+export const CONTRACT_VERSION = "1.36.1";
+// 1.36.1: no format change; core gains compileRaw and rawToDocument, the client-side port of /compile.
 // 1.35.2: no format change; every vectors-2 file is a signed 2.0 document.
 // 1.35.1: no format change; the player paints 2.0 only (a 1.x file reports unsupported-version) and reads 2.0 languages.
 // 1.34.0: 2.0 ids, refs and font families reject < > " and control characters; the CDN player pins its on-demand scripts with SRI and caps 2.0 layers at 1000 total, 150 per list.

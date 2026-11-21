@@ -29,6 +29,14 @@ describe("applyGeometry", () => {
     expect(figure.getAttribute("fill")).toBe("#00ff00");
   });
 
+  it("a preset is drawn in the pixels of the layer's box, not stretched to it", () => {
+    const el = document.createElement("div");
+    applyGeometry(el, shape({ kind: "preset", name: "arch" }, { box: { x: 0, y: 0, width: 320, height: 480 } }), { colors });
+    const svg = el.querySelector("svg")!;
+    expect(svg.getAttribute("viewBox")).toBe("0 0 320 480");
+    expect(svg.firstElementChild!.getAttribute("d")).toContain("L0 160");
+  });
+
   it("a star or polygon with its own kind is a box until the core has its outline", () => {
     const el = document.createElement("div");
     expect(applyGeometry(el, shape({ kind: "star", points: 5 } as Layer["geometry"]), { colors }).silhouette).toBeNull();

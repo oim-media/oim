@@ -9,6 +9,7 @@ import { getFillCss, patternLayerCss, patternShapeMask, PATTERN_SHAPES, type Sha
 import { resolvePatternColors } from "./patterns";
 import { shapeMaskCss } from "./fill";
 import { GEO_SHAPES, pointsToAttribute } from "./geoShapes";
+import { presetPath } from "./preset-path";
 
 describe("getFillCss in @oim-media/player-oim", () => {
   const makeShape = (overrides: Partial<Shape> = {}): Shape => ({
@@ -154,25 +155,31 @@ describe("the shapes of the pattern layer", () => {
     expect(PATTERN_SHAPES).toEqual(["rectangle", "circle", "triangle", "star", "diamond", "hexagon", "heart", "arrow", "blob"]);
   });
 
-  it("each shape carries EXACTLY the GEO_SHAPES geometry, stretched to the box", () => {
+  it("each shape is the presetPath of its box, in px, with no stretching", () => {
     for (const id of PATTERN_SHAPES.filter((s) => s !== "rectangle")) {
-      const css: any = patternShapeMask(id);
+      const css: any = patternShapeMask(id, undefined, { width: 320, height: 480 });
       const svg = svgOf(css);
-      const d = GEO_SHAPES[id];
-      if (d.kind === "polygon") expect(svg).toContain(`points="${pointsToAttribute(d.points)}"`);
-      else expect(svg).toContain(`d="${d.d}"`);
-      expect(svg).toContain('viewBox="0 0 100 100"');
-      expect(svg).toContain('preserveAspectRatio="none"');
+      expect(svg).toContain(`d="${presetPath(id, 320, 480)!.d}"`);
+      expect(svg).toContain('viewBox="0 0 320 480"');
       expect(css.maskSize).toBe("100% 100%");
       expect(css.maskRepeat).toBe("no-repeat");
       expect(css.WebkitMaskImage).toBe(css.maskImage);
     }
   });
 
+  it("without a box the shape is drawn in 100 x 100", () => {
+    expect(svgOf(patternShapeMask("star") as any)).toContain('viewBox="0 0 100 100"');
+  });
+
   it("the rectangle, open shapes and unknown ones carry no mask", () => {
     for (const id of [undefined, "rectangle", "rect", "line", "scribble", "no-existe"]) {
       expect(patternShapeMask(id as any)).toEqual({});
     }
+  });
+
+  it("patternLayerCss draws the shape mask in the layer's own size", () => {
+    const css: any = patternLayerCss({ type: "pattern", fillPatternType: "clouds", geoShape: "arch", width: 320, height: 480 } as any);
+    expect(svgOf(css)).toContain('viewBox="0 0 320 480"');
   });
 
   it("patternLayerCss includes the shape mask", () => {

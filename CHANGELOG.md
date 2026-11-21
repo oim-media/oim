@@ -5,7 +5,10 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+## 1.36.1
+
 - **Changed rendering** (core, scene): a preset shape fills its box. The 5% inset is gone, and the shapes with a radius (`arch`, `pill`, `bubble`, `circle`/ellipse) are built in pixels from the real box, so their curves are no longer stretched. Every other preset keeps its drawing, normalised to span the box. New `presetPath(name, width, height)` in core is the only place a preset becomes a path; `frameSilhouette(style, box?)`, `geometryOutline(geometry, box?)` and `shapeMaskCss(shape, custom?, box?)` take the box size and return pixel-space outlines (a polygon is now a `d` path, no longer `points`). Custom `paths` geometry still stretches its own `viewBox`. The `frame-shapes` and `shape-shadows` goldens are regenerated. The editor, the static export and the Flutter SDK follow in their own changes.
+- core: `upgrade()` draws a custom `svgPath` with no `svgViewBox` in the layer's own pixels, as the editor does, instead of a 24 x 24 view box.
 - core: writers emit `oim: "2.0.0"` (`DOCUMENT_VERSION`, and so `upgrade()`). Readers still accept any `2.x.y`, including the `2.0.0-draft.1` that every signed vector carries; nothing is re-signed.
 - core: the root `timestamp` the production signer writes is part of the 2.0 schema (optional string, outside the signature). `oim2.schema.json` is regenerated.
 - core: `trimDash()` (the dash of a trim) and `unsupportedRequired()` (the `extensionsRequired` a reader cannot honour), shared by every renderer.

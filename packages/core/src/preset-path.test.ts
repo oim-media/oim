@@ -69,6 +69,26 @@ describe("presetPath", () => {
     }
   });
 
+  it("an inset keeps the whole stroke inside the box: every preset spans the box minus the inset", () => {
+    for (const name of Object.keys(GEO_SHAPES)) {
+      const out = presetPath(name, 300, 200, 5);
+      expect(out!.viewBox, name).toBe("0 0 300 200");
+      const b = bbox(out!.d);
+      expect(Math.abs(b.x0 - 5), `${name} x0`).toBeLessThan(0.5);
+      expect(Math.abs(b.x1 - 295), `${name} x1`).toBeLessThan(0.5);
+      if (name !== "line") {
+        expect(Math.abs(b.y0 - 5), `${name} y0`).toBeLessThan(0.5);
+        expect(Math.abs(b.y1 - 195), `${name} y1`).toBeLessThan(0.5);
+      }
+    }
+  });
+
+  it("an inset never empties the box: it is capped at a quarter of the short side", () => {
+    const b = bbox(presetPath("star", 40, 40, 100)!.d);
+    expect(b.x0).toBeCloseTo(10, 0);
+    expect(b.x1).toBeCloseTo(30, 0);
+  });
+
   it("clamps the radius to half the short side", () => {
     const wide = normalizePathData(presetPath("pill", 600, 100)!.d)!;
     expect(wide.find((o) => o.cmd === "L")!.args[0]).toBe(550); // 600 - 50

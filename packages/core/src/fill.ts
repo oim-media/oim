@@ -192,7 +192,7 @@ export const PATTERN_SHAPES = ["rectangle", "circle", "triangle", "star", "diamo
  * drawn in the layer's box (`box`, in px; 100 x 100 without it). The rectangle has no mask; it is cut by its
  * corner radius, as always. Used for pattern layers and complex fills of shapes.
  */
-export function shapeMaskCss(geoShape?: string, custom?: { svgPath?: string; svgViewBox?: string }, box?: { width?: number; height?: number }): CSSProperties {
+export function shapeMaskCss(geoShape?: string, custom?: { svgPath?: string; svgViewBox?: string }, box?: { width?: number; height?: number }, inset = 0): CSSProperties {
   // A custom svgPath frame (no catalogue shape): the outline frameSilhouette draws, already sanitised.
   if (!geoShape && custom?.svgPath) {
     const own = frameSilhouette({ svgPath: custom.svgPath, svgViewBox: custom.svgViewBox });
@@ -203,7 +203,7 @@ export function shapeMaskCss(geoShape?: string, custom?: { svgPath?: string; svg
   // cloud...) painted their fill colour over the whole box.
   const drawing = GEO_SHAPES[geoShape];
   if (!drawing || (drawing.kind === "path" && !drawing.fillable)) return {};
-  const outline = frameSilhouette({ geoShape }, box);
+  const outline = frameSilhouette({ geoShape }, box, inset);
   if (!outline?.d) return {};
   return maskFromSvg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${outline.viewBox}" preserveAspectRatio="none"><path d="${outline.d}" fill="black"/></svg>`);
 }

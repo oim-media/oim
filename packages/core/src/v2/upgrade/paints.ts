@@ -180,11 +180,9 @@ export function convertPaints(ctx: UpgradeContext, slot: V1Slot, layer: DraftLay
 
   const fills = fillOf(ctx, slot);
   const fill = Array.isArray(fills) ? fills[0] : fills;
-  // 1.x painted no colour inside a custom path (only a photo, a gradient or a
-  // pattern) nor inside the scribble, an open stroke.
-  const shape = style.geoShape;
-  const customPath = typeof style.svgPath === "string" && style.svgPath !== "" && (shape === undefined || shape === "custom");
-  const colourless = slot.type === "geo" && (customPath || shape === "scribble") && !!fill && "kind" in fill && fill.kind === "color";
+  // The scribble is an open stroke: no colour inside it. A custom path is
+  // filled with its colour, as the editor draws it.
+  const colourless = slot.type === "geo" && style.geoShape === "scribble" && !!fill && "kind" in fill && fill.kind === "color";
   if (fill && !colourless && admits(layer.type, "fills")) layer.fills = Array.isArray(fills) ? fills : [fill];
   else if (hollowText) layer.fills = [{ kind: "color", value: "transparent" }];
 

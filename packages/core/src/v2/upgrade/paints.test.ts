@@ -223,8 +223,9 @@ describe("1.x shapes whose fill the player read through fallbacks", () => {
     expect(l.strokes?.[0]).toMatchObject({ width: 2, paint: { kind: "color", value: "#00ff00" } });
   });
 
-  it("a custom path takes no colour fill", () => {
-    expect(layer({ svgPath: "M 0 0 L 10 10 Z", fillColor: "#00ff00" }).fills).toBeUndefined();
+  it("a custom path is filled with its colour, as the editor draws it", () => {
+    expect(layer({ svgPath: "M 0 0 L 10 10 Z", fillColor: "#00ff00" }).fills).toEqual([{ kind: "color", value: "#00ff00" }]);
+    expect(layer({ geoShape: "custom", svgPath: "M 0 0 L 10 10 Z", fillColor: "#00ff00" }).fills).toEqual([{ kind: "color", value: "#00ff00" }]);
   });
 });
 

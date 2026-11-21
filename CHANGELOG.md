@@ -5,6 +5,8 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+- core: `upgrade()` fills a custom `svgPath` with its colour, as the editor draws it. It used to drop the colour, as the 1.x player did.
+
 ## 1.36.1
 
 - **Changed rendering** (core, scene): a preset shape fills its box. The 5% inset is gone, and the shapes with a radius (`arch`, `pill`, `bubble`, `circle`/ellipse) are built in pixels from the real box, so their curves are no longer stretched. Every other preset keeps its drawing, normalised to span the box. New `presetPath(name, width, height)` in core is the only place a preset becomes a path; `frameSilhouette(style, box?)`, `geometryOutline(geometry, box?)` and `shapeMaskCss(shape, custom?, box?)` take the box size and return pixel-space outlines (a polygon is now a `d` path, no longer `points`). Custom `paths` geometry still stretches its own `viewBox`. The `frame-shapes` and `shape-shadows` goldens are regenerated. The editor, the static export and the Flutter SDK follow in their own changes.

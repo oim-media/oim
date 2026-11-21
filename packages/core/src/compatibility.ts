@@ -43,7 +43,8 @@
  * the format can change without the player being touched. Tying both numbers
  * together would make an internal fix look like a format break.
  */
-export const CONTRACT_VERSION = "1.36.3";
+export const CONTRACT_VERSION = "1.36.4";
+// 1.36.4: no format change; a figure's stroke scales with the figure.
 // 1.36.3: no format change; a stroked preset is drawn half its stroke inside its box.
 // 1.36.2: no format change; core gains compileRaw and rawToDocument, the client-side port of /compile.
 // 1.35.2: no format change; every vectors-2 file is a signed 2.0 document.

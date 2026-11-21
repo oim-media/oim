@@ -173,7 +173,8 @@ describe("geometry.trim", () => {
     const path = figure(mount(document.createElement("div"), doc([star({ geometry: { kind: "preset", name: "star" } } as Partial<Layer>)])));
     expect(path.hasAttribute("pathLength")).toBe(false);
     expect(path.hasAttribute("stroke-dasharray")).toBe(false);
-    expect(path.getAttribute("vector-effect")).toBe("non-scaling-stroke");
+    // The stroke scales with the figure, as in the editor at any zoom (Josué, 21 Nov 2026).
+    expect(path.hasAttribute("vector-effect")).toBe(false);
   });
 
   it("the trimEnd and trimStart tracks animate the outline's dash, not the layer's box", () => {

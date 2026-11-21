@@ -790,8 +790,8 @@ conforming to the schema; a writer SHOULD NOT rely on them being painted.
   layer; writers SHOULD respect them because the shared parser of `{name}…{/name}` does.
 - A trim is not drawn on a rectangle (a box, no outline) or on a drawing of several paths.
 - A trimmed stroke drops a dashed or dotted style; the trim replaces it.
-- A `geometry.trim` stroke (or one under a `trimStart` / `trimEnd` track) is drawn without `vector-effect: non-scaling-stroke` (the browser ignores
-  `pathLength` under it), so its width scales with the figure's box.
+- A figure's stroke width is in layer pixels and scales with the figure, like the rest of the layer (no
+  `vector-effect: non-scaling-stroke`); at any display size it keeps the same share of the figure.
 - A feathered cutout edge is drawn hard.
 - The reference player does not check the per-layer schema limits (fills, strokes, effects, animations, interactions, actions, tracks, keyframes, gradient stops, paths and the like); only 150 per list, 1000 total, depth 32 and 10 MiB.
 

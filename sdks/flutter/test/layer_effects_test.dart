@@ -49,4 +49,17 @@ void main() {
     expect(shadowOf({...legacy, 'effects': [{'type': 'blur'}]}), isNull);
     expect(shadowOf({...legacy, 'effects': []}), isNotNull);
   });
+
+  test('color-grade is the last colour matrix, offsets in 0-255, interpolated by intensity', () {
+    final w = layerEffects(box, fx([{'type': 'color-grade', 'preset': 'sepia', 'intensity': 50}, {'type': 'blur', 'radius': 2}]), null, isText: true) as ColorFiltered;
+    expect(w.child, isA<ImageFiltered>());
+    final m = colorGradeFlutterMatrix('sepia', 50)!;
+    expect(w.colorFilter, ColorFilter.matrix(m));
+    expect(m[0], closeTo((1 + 0.393) / 2, 1e-9));
+    expect(m[6], closeTo((1 + 0.686) / 2, 1e-9));
+    expect(m[5], closeTo(0.349 / 2, 1e-9));
+    expect(colorGradeFlutterMatrix('cross-process', 100)![14], closeTo((0.1 * 1.15 + 0.5 - 0.5 * 1.15) * 255, 1e-3));
+    expect(colorGradeFlutterMatrix('nope', 100), isNull);
+    expect(identical(layerEffects(box, fx([{'type': 'color-grade', 'preset': 'nope'}]), null, isText: false), box), isTrue);
+  });
 }

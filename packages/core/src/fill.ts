@@ -16,7 +16,7 @@
 export type CSSProperties = Record<string, string>;
 import { renderGenerativeSVG } from "./generative/index.js";
 import { generatePatternSVG } from "./patterns.js";
-import { GEO_SHAPES, pointsToAttribute } from "./geoShapes.js";
+import { GEO_SHAPES } from "./geoShapes.js";
 import { isSafeCssGradient } from "./css-gradient.js";
 import { frameSilhouette } from "./frame-silhouette.js";
 import { resolveCssColor } from "./dynamic-colors.js";
@@ -189,10 +189,10 @@ export const PATTERN_SHAPES = ["rectangle", "circle", "triangle", "star", "diamo
 
 /**
  * The shape of a closed geometry as a CSS mask: an SVG of the canonical geometry,
- * stretched to the layer's box. The rectangle has no mask; it is cut by its
+ * drawn in the layer's box (`box`, in px; 100 x 100 without it). The rectangle has no mask; it is cut by its
  * corner radius, as always. Used for pattern layers and complex fills of shapes.
  */
-export function shapeMaskCss(geoShape?: string, custom?: { svgPath?: string; svgViewBox?: string }): CSSProperties {
+export function shapeMaskCss(geoShape?: string, custom?: { svgPath?: string; svgViewBox?: string }, box?: { width?: number; height?: number }): CSSProperties {
   // A custom svgPath frame (no catalogue shape): the outline frameSilhouette draws, already sanitised.
   if (!geoShape && custom?.svgPath) {
     const own = frameSilhouette({ svgPath: custom.svgPath, svgViewBox: custom.svgViewBox });
@@ -203,10 +203,9 @@ export function shapeMaskCss(geoShape?: string, custom?: { svgPath?: string; svg
   // cloud...) painted their fill colour over the whole box.
   const drawing = GEO_SHAPES[geoShape];
   if (!drawing || (drawing.kind === "path" && !drawing.fillable)) return {};
-  const body = drawing.kind === "polygon"
-    ? `<polygon points="${pointsToAttribute(drawing.points)}" fill="black"/>`
-    : `<path d="${drawing.d}" fill="black"/>`;
-  return maskFromSvg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">${body}</svg>`);
+  const outline = frameSilhouette({ geoShape }, box);
+  if (!outline?.d) return {};
+  return maskFromSvg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${outline.viewBox}" preserveAspectRatio="none"><path d="${outline.d}" fill="black"/></svg>`);
 }
 
 function maskFromSvg(svg: string): CSSProperties {
@@ -261,6 +260,6 @@ export const patternShapeMask = shapeMaskCss;
  */
 export function patternLayerCss(shape: Shape): CSSProperties {
   const css = patternTileCss(shape);
-  Object.assign(css, shapeMaskCss(shape.geoShape));
+  Object.assign(css, shapeMaskCss(shape.geoShape, undefined, shape.width && shape.height ? { width: shape.width, height: shape.height } : undefined));
   return css;
 }

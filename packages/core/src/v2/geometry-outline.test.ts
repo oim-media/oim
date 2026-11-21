@@ -29,4 +29,15 @@ describe("geometryOutline", () => {
   it("a painted drawing of paths paints itself: the box", () => {
     expect(geometryOutline({ kind: "paths", viewBox: [0, 0, 1, 1], paths: [{ d: "M0 0", fill: { kind: "color", value: "#000" } }] } as never).silhouette).toBeNull();
   });
+
+  it("a preset is outlined in the pixels of the box", () => {
+    const o = geometryOutline({ kind: "preset", name: "arch" } as never, { width: 320, height: 480 });
+    expect(o.silhouette!.viewBox).toBe("0 0 320 480");
+    expect(o.silhouette!.d).toContain("L0 160");
+  });
+
+  it("an ellipse outline is the inscribed ellipse of the box", () => {
+    const o = geometryOutline({ kind: "ellipse" } as never, { width: 300, height: 100 });
+    expect(o.silhouette!.viewBox).toBe("0 0 300 100");
+  });
 });

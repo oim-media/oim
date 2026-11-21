@@ -24,7 +24,7 @@ export function applyGeometry(el: HTMLElement, layer: Pick<Layer, "geometry" | "
   // A picture clipped earlier goes back to the layer before the figure is drawn again.
   el.querySelectorAll(":scope > [data-oim-figure-clip]").forEach((box) => box.replaceWith(...box.querySelectorAll(":scope > img")));
   setMask(el, undefined);
-  const outline = geometryOutline(layer.geometry);
+  const outline = geometryOutline(layer.geometry, layer.box);
   // A gradient, pattern or generative fill is painted by applyFills on the element: kept, and cut to the figure.
   // A window mask is not: it paints its fill as a frame around the outline (applyWindowMask).
   const rich = paintedByFillLayer(layer as Layer) && !(layer as Layer).mask;

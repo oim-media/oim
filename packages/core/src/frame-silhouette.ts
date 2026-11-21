@@ -14,6 +14,7 @@
  */
 
 import { shapeDrawing } from "./geoShapes.js";
+import { presetPath } from "./preset-path.js";
 
 /** Path data only: no markup, quotes or url(). The same pattern as `svgPath` in the schema. */
 const PATH_DATA = /^[MmLlHhVvCcSsQqTtAaZz0-9eE.,\s+-]*$/;
@@ -47,9 +48,11 @@ export interface FrameStyle {
 
 /**
  * A frame's outline, or `null` for a rectangle (drawn from its width and
- * height, no outline) or an unknown shape.
+ * height, no outline) or an unknown shape. A catalogue shape comes back in the
+ * pixels of `box` (`viewBox` = box, nothing stretched); without a box it is
+ * drawn in 100 x 100. A custom path keeps its own viewBox.
  */
-export function frameSilhouette(style: FrameStyle): FrameSilhouette | null {
+export function frameSilhouette(style: FrameStyle, box: { width?: number; height?: number } = {}): FrameSilhouette | null {
   const drawing = shapeDrawing(style.geoShape);
   const svgPath = path(style.svgPath);
   if (!drawing) {
@@ -57,15 +60,11 @@ export function frameSilhouette(style: FrameStyle): FrameSilhouette | null {
     if (!svgPath) return null;
     return { d: svgPath, viewBox: viewBox(style.svgViewBox) };
   }
-  if (drawing.kind === "polygon") {
-    return { points: drawing.points.map(([x, y]) => `${x},${y}`).join(" "), viewBox: DEFAULT_VIEW_BOX };
-  }
-  // The blob and the scribble take their own path; the blob also an svgPath.
+  // The blob and the scribble take their own path (drawn for a 0-100 box); the blob also an svgPath.
   const isGenerative = style.geoShape === "blob" || style.geoShape === "scribble";
-  const d = (isGenerative && path(style.customBlobPath))
-    || (style.geoShape === "blob" && svgPath)
-    || drawing.d;
-  return { d, viewBox: DEFAULT_VIEW_BOX };
+  const own = (isGenerative && path(style.customBlobPath)) || (style.geoShape === "blob" && svgPath);
+  if (own) return { d: own, viewBox: DEFAULT_VIEW_BOX };
+  return presetPath(style.geoShape!, box.width || 100, box.height || 100);
 }
 
 /**

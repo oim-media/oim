@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="256"
+    android:viewportHeight="256">
+    <!-- Official OIM mark (oim-marca.svg) centered inside the 66% adaptive safe zone -->
+    <group
+        android:translateX="128"
+        android:translateY="128"
+        android:scaleX="0.60"
+        android:scaleY="0.60"
+        android:rotation="-75">
+        <path
+            android:fillColor="#F4F4F5"
+            android:fillType="evenOdd"
+            android:pathData="M-66.40,-75.10H66.40A35.00,35.00 0,0 1,101.40 -40.10V40.10A35.00,35.00 0,0 1,66.40 75.10H-66.40A35.00,35.00 0,0 1,-101.40 40.10V-40.10A35.00,35.00 0,0 1,-66.40 -75.10ZM-66.40,-65.10H66.40A25.00,25.00 0,0 1,91.40 -40.10V40.10A25.00,25.00 0,0 1,66.40 65.10H-66.40A25.00,25.00 0,0 1,-91.40 40.10V-40.10A25.00,25.00 0,0 1,-66.40 -65.10Z" />
+        <path
+            android:fillColor="#F4F4F5"
+            android:fillType="evenOdd"
+            android:pathData="M-55.40,-41.90H55.50A10.00,10.00 0,0 1,65.50 -31.90V31.90A10.00,10.00 0,0 1,55.50 41.90H-55.40A10.00,10.00 0,0 1,-65.40 31.90V-31.90A10.00,10.00 0,0 1,-55.40 -41.90ZM-50.40,-30.60H37.00A15.00,15.00 0,0 1,52.00 -15.60V26.90A15.00,15.00 0,0 1,37.00 41.90H-50.40A15.00,15.00 0,0 1,-65.40 26.90V-15.60A15.00,15.00 0,0 1,-50.40 -30.60Z" />
+        <path
+            android:fillColor="#F4F4F5"
+            android:fillType="evenOdd"
+            android:pathData="M-55.40,-20.60H32.00A10.00,10.00 0,0 1,42.00 -10.60V31.90A10.00,10.00 0,0 1,32.00 41.90H-55.40A10.00,10.00 0,0 1,-65.40 31.90V-10.60A10.00,10.00 0,0 1,-55.40 -20.60ZM-50.40,-10.00H12.90A15.00,15.00 0,0 1,27.90 5.00V26.90A15.00,15.00 0,0 1,12.90 41.90H-50.40A15.00,15.00 0,0 1,-65.40 26.90V5.00A15.00,15.00 0,0 1,-50.40 -10.00Z" />
+        <path
+            android:fillColor="#F4F4F5"
+            android:fillType="evenOdd"
+            android:pathData="M-55.40,0.00H7.90A10.00,10.00 0,0 1,17.90 10.00V31.90A10.00,10.00 0,0 1,7.90 41.90H-55.40A10.00,10.00 0,0 1,-65.40 31.90V10.00A10.00,10.00 0,0 1,-55.40 0.00Z" />
+    </group>
+</vector>

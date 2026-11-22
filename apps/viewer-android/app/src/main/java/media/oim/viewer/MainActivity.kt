@@ -294,6 +294,7 @@ fun OimStudioApp(viewModel: OimStudioViewModel) {
                                 onSelectLayer = { viewModel.selectLayer(it) },
                                 onToggleLayerVisibility = { viewModel.toggleLayerVisibility(it) },
                                 onToggleGrid = { viewModel.togglePixelGrid() },
+                                onTogglePerformance = { viewModel.togglePerformance() },
                                 onToggleParallax = { viewModel.toggleParallax() },
                                 onRetryLoad = { viewModel.retryLastRequest() },
                                 onTogglePinCritical = { key, pin -> viewModel.togglePinCritical(key, pin) },

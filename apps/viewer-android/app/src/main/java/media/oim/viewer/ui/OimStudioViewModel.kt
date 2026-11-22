@@ -54,6 +54,7 @@ data class OimStudioUiState(
     val selectedLayerId: String? = null,
     val hiddenLayerIds: Set<String> = emptySet(),
     val showPixelGrid: Boolean = false,
+    val showPerformance: Boolean = false,
     val parallaxEnabled: Boolean = true,
     val replayTrigger: Int = 0,
     val statusBanner: String? = null,
@@ -363,6 +364,10 @@ class OimStudioViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun togglePixelGrid() {
         _uiState.update { it.copy(showPixelGrid = !it.showPixelGrid) }
+    }
+
+    fun togglePerformance() {
+        _uiState.update { it.copy(showPerformance = !it.showPerformance) }
     }
 
     fun toggleParallax() {

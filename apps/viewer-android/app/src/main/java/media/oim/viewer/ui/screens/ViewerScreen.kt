@@ -104,6 +104,7 @@ fun ViewerScreen(
     onSelectLayer: (String?) -> Unit,
     onToggleLayerVisibility: (String) -> Unit,
     onToggleGrid: () -> Unit,
+    onTogglePerformance: () -> Unit,
     onToggleParallax: () -> Unit,
     onRetryLoad: () -> Unit,
     onTogglePinCritical: (String, Boolean) -> Unit,
@@ -198,6 +199,7 @@ fun ViewerScreen(
                     hiddenLayerIds = state.hiddenLayerIds,
                     selectedLayerId = state.selectedLayerId,
                     showPixelGrid = state.showPixelGrid,
+                    showPerformanceOverlay = state.showPerformance,
                     parallaxEnabled = state.parallaxEnabled,
                     replayTrigger = state.replayTrigger,
                     cornerRadius = 0.dp,
@@ -321,6 +323,16 @@ fun ViewerScreen(
                                     onClick = {
                                         showOverflowMenu = false
                                         onToggleGrid()
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.performance_overlay)) },
+                                    trailingIcon = {
+                                        if (state.showPerformance) Icon(Icons.Outlined.Check, contentDescription = null)
+                                    },
+                                    onClick = {
+                                        showOverflowMenu = false
+                                        onTogglePerformance()
                                     }
                                 )
                                 if (activeKey != null && !asset.verification.isRefused) {

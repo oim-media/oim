@@ -1133,7 +1133,7 @@ private fun OimLayerNode(
             }
             val resolvedCornerPx = cornerRadiiPx?.get(0) ?: (canvasWidthPx * layer.style.cornerRadiusRatio)
             val geoKindStr = layer.style.geoShape ?: "rectangle"
-            val clipShape = buildGeoClipShape(geoKindStr, shape)
+            val clipShape = customFrameShape(layer.style.svgPaths, layer.style.svgViewBox) ?: buildGeoClipShape(geoKindStr, shape)
             val imageFill = layer.style.imageFill
             val fillBitmap by produceState<ImageBitmap?>(initialValue = null, key1 = imageFill?.src) {
                 val src = imageFill?.src
@@ -2157,6 +2157,10 @@ private fun buildStarPath(points: Int, width: Float, height: Float): Path {
 }
 
 private fun buildGeoClipShape(geoKindStr: String, cornerShape: RoundedCornerShape): Shape {
+    // The core catalogue first, so the frame matches the web player's (CANONICAL: presetPath).
+    if (presetSilhouette(geoKindStr.lowercase(), 100f, 100f) != null) {
+        return GenericShape { size, _ -> presetSilhouette(geoKindStr.lowercase(), size.width, size.height)?.let { addPath(it) } }
+    }
     return when (geoKindStr.lowercase()) {
         "circle" -> CircleShape
         "pill" -> RoundedCornerShape(50)
@@ -2523,4 +2527,21 @@ private fun cutoutShape(mask: OimLayer, naturalWidth: Int, naturalHeight: Int) =
     addRect(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height))
     addRect(box)
     addPath(maskSilhouette(mask.style.geoShape, box))
+}
+
+/**
+ * A single unpainted path is a custom frame (geometryOutline in @oim-media/core): its
+ * viewBox is stretched over the box, like the web's preserveAspectRatio="none".
+ */
+private fun customFrameShape(paths: List<OimSvgPathItem>, viewBox: String?): Shape? {
+    val only = paths.singleOrNull()?.takeIf { it.fill == null && it.stroke == null && it.transform == null } ?: return null
+    val vb = viewBox?.trim()?.split(Regex("[\\s,]+"))?.mapNotNull { it.toFloatOrNull() }?.takeIf { it.size == 4 && it[2] > 0f && it[3] > 0f } ?: return null
+    return GenericShape { size, _ ->
+        val path = PathParser().parsePathString(only.d).toPath()
+        path.asAndroidPath().transform(AndroidMatrix().apply {
+            setTranslate(-vb[0], -vb[1])
+            postScale(size.width / vb[2], size.height / vb[3])
+        })
+        addPath(path)
+    }
 }

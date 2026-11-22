@@ -53,3 +53,49 @@ internal fun maskSilhouette(name: String?, box: Rect): Path {
     })
     return path
 }
+
+/** presetPath(name, 100, 100) of @oim-media/core: each catalogue shape stretched to fill its box. */
+private val PRESET_UNIT = mapOf(
+    "triangle" to "M50 0L100 100L0 100Z",
+    "star" to "M50 0L62 38.71L100 38.71L69 61.29L80 100L50 76.34L20 100L31 61.29L0 38.71L38 38.71Z",
+    "arrow" to "M0 33.33L61.11 33.33L61.11 0L100 50L61.11 100L61.11 66.67L0 66.67Z",
+    "diamond" to "M50 0L100 50L50 100L0 50Z",
+    "hexagon" to "M22.22 0L77.78 0L100 50L77.78 100L22.22 100L0 50Z",
+    "heart" to "M50 100C4.36 66.4 -12.76 30.4 10.06 8.79C27.18 -8.01 50 0.39 50 24.4C50 0.39 72.82 -8.01 89.94 8.79C112.76 30.4 95.64 66.4 50 100Z",
+    "blob" to "M49.9 0C81.09 0 102.3 18.75 99.8 50C97.31 81.25 81.09 100 49.9 100C18.71 100 0 81.25 0 50C0 18.75 18.71 0 49.9 0Z",
+    "scribble" to "M0 55.56C14.81 0 31.48 -9.26 50 27.78C68.52 64.81 85.19 55.56 100 0C85.19 55.56 68.52 77.78 50 66.67C31.48 55.56 14.81 66.67 0 100",
+    "octagon" to "M27.78 0L72.22 0L100 27.78L100 72.22L72.22 100L27.78 100L0 72.22L0 27.78Z",
+    "pentagon" to "M50 0L100 38.24L80.87 100L19.13 100L0 38.24Z",
+    "cross" to "M33.33 0L66.67 0L66.67 33.33L100 33.33L100 66.67L66.67 66.67L66.67 100L33.33 100L33.33 66.67L0 66.67L0 33.33L33.33 33.33Z",
+    "moon" to "M100 0C44.78 0 0 22.39 0 50C0 77.61 44.78 100 100 100C55.56 83.33 55.56 16.67 100 0Z",
+    "cloud" to "M17.61 100C-3.25 100 -6.94 60.86 13.92 54.05C4.11 23.41 29.88 9.8 42.15 26.82C45.83 -7.22 78.96 -10.62 82.64 26.82C104.73 23.41 105.95 67.66 85.09 71.07C85.09 88.09 82.64 100 70.37 100Z",
+    "drop" to "M50 0C70 22.22 100 44.44 100 66.67C100 85 77.5 100 50 100C22.5 100 0 85 0 66.67C0 44.44 30 22.22 50 0Z",
+    "bolt" to "M68.75 0L0 58.89L43.75 58.89L25 100L100 38.89L57.81 38.89L84.38 0Z",
+    "bubble" to "M15 0L85 0A15 15 0 0 1 100 15L100 61.14A15 15 0 0 1 85 76.14L41.11 76.14L18.89 100L25.56 76.14L15 76.14A15 15 0 0 1 0 61.14L0 15A15 15 0 0 1 15 0Z",
+    "flower" to "M67.21 39.17C89.16 32.8 102.4 37.85 99.64 50C102.4 62.15 89.16 67.2 67.21 60.83C83.2 78.27 85.85 93.43 74.82 96.92C66.55 105.58 55.85 95.6 50 71.66C44.15 95.6 33.45 105.58 25.18 96.92C14.15 93.43 16.8 78.27 32.79 60.83C10.84 67.2 -2.4 62.15 0.36 50C-2.4 37.85 10.84 32.8 32.79 39.17C16.8 21.73 14.15 6.57 25.18 3.08C33.45 -5.58 44.15 4.4 50 28.34C55.85 4.4 66.55 -5.58 74.82 3.08C85.85 6.57 83.2 21.73 67.21 39.17Z",
+    "burst" to "M100 50L86.44 59.78L93.33 75L76.67 76.67L75 93.33L59.78 86.44L50 100L40.22 86.44L25 93.33L23.33 76.67L6.67 75L13.56 59.78L0 50L13.56 40.22L6.67 25L23.33 23.33L25 6.67L40.22 13.56L50 0L59.78 13.56L75 6.67L76.67 23.33L93.33 25L86.44 40.22Z",
+)
+
+/**
+ * A shape layer's figure in a w x h box, as presetPath in @oim-media/core: the catalogue
+ * drawing fitted to its own bounds. Null for the rectangle and names the catalogue lacks.
+ * shortcut: the bubble's corner radius scales with the box instead of staying round; draw it per size if a frame shows it.
+ */
+internal fun presetSilhouette(name: String?, w: Float, h: Float): Path? {
+    val rect = Rect(0f, 0f, w, h)
+    fun rounded(top: Float, bottom: Float) = Path().apply {
+        addRoundRect(androidx.compose.ui.geometry.RoundRect(rect,
+            androidx.compose.ui.geometry.CornerRadius(top), androidx.compose.ui.geometry.CornerRadius(top),
+            androidx.compose.ui.geometry.CornerRadius(bottom), androidx.compose.ui.geometry.CornerRadius(bottom)))
+    }
+    return when (name) {
+        "circle" -> Path().apply { addOval(rect) }
+        "arch" -> rounded(minOf(w / 2f, h), 0f)
+        "pill" -> rounded(minOf(w, h) / 2f, minOf(w, h) / 2f)
+        else -> PRESET_UNIT[name]?.let { d ->
+            PathParser().parsePathString(d).toPath().also {
+                it.asAndroidPath().transform(android.graphics.Matrix().apply { setScale(w / 100f, h / 100f) })
+            }
+        }
+    }
+}

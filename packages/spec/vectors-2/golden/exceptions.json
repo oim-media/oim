@@ -4,7 +4,6 @@
     "color-blending-opacity": "Android SDK does not apply blend modes yet (0.1.0).",
     "duotone": "Android SDK does not paint the duotone backdrop yet (0.1.0).",
     "filter-shape": "Android SDK does not clip a filter to its geoShape yet (0.1.0).",
-    "frame-shapes": "Android SDK does not paint image fills inside frame shapes yet (0.1.0).",
     "full-monty-composite": "Android SDK differs on blend and mask details of the composite (0.1.0).",
     "generative-fill": "Android SDK does not paint the generative fill yet (0.1.0).",
     "layer-blur": "Android SDK layer blur radius differs from CSS blur (0.1.0).",

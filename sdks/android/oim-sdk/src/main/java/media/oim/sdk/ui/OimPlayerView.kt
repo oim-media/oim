@@ -466,6 +466,10 @@ fun OimPlayerView(
                             layer.slotLanguages.any { it.equals(language, ignoreCase = true) }
                     }
                     .forEach { layer ->
+                        if (layer.style.maskMode == "window") {
+                            OimWindowMask(layer, doc.canvas.width, doc.canvas.height, canvasWidthPx, canvasHeightPx, resolvedPalette)
+                            return@forEach
+                        }
                         val effectiveVisible = visibilityOverrides[layer.id]
                             ?: layer.name?.let { visibilityOverrides[it] }
                             ?: layer.style.isVisible
@@ -2452,6 +2456,46 @@ private fun OimRefusedSecurityGate(
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * A window mask (CANONICAL_SPEC_2 3.11): its fill covers the whole canvas except its own
+ * silhouette, which stays a window onto the layers below; its stroke rings the silhouette.
+ * Same result as applyWindowMask in @oim-media/scene.
+ */
+@Composable
+private fun OimWindowMask(
+    layer: OimLayer,
+    naturalWidth: Int,
+    naturalHeight: Int,
+    canvasWidthPx: Float,
+    canvasHeightPx: Float,
+    palette: Map<String, String>
+) {
+    val scale = canvasWidthPx / naturalWidth.coerceAtLeast(1)
+    val left = (layer.x / 100.0 * canvasWidthPx).toFloat()
+    val top = (layer.y / 100.0 * canvasHeightPx).toFloat()
+    val w = layer.widthDim?.resolvePx(canvasWidthPx, canvasHeightPx, naturalWidth, isHorizontal = true) ?: 0f
+    val h = layer.heightDim?.resolvePx(canvasWidthPx, canvasHeightPx, naturalHeight, isHorizontal = false) ?: 0f
+    if (w <= 0f || h <= 0f) return
+    val fill = resolveSlotColor(layer.style.fillColorRole, layer.style.fillColorHex, palette, Color.Transparent)
+    val stroke = resolveSlotColor(layer.style.strokeColorRole, layer.style.borderColorHex, palette, Color.Transparent)
+    val strokeWidth = (layer.style.strokeWidthPx ?: 0f) * scale
+    val window = androidx.compose.ui.geometry.Rect(left, top, left + w, top + h)
+    val silhouette = androidx.compose.ui.graphics.Path().apply {
+        if (layer.style.geoShape == "circle") addOval(window) else addRect(window)
+    }
+    androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+        val outside = androidx.compose.ui.graphics.Path().apply {
+            fillType = androidx.compose.ui.graphics.PathFillType.EvenOdd
+            addRect(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height))
+            addPath(silhouette)
+        }
+        drawPath(outside, fill)
+        if (strokeWidth > 0f) {
+            drawPath(silhouette, stroke, style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth))
         }
     }
 }

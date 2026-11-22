@@ -1495,6 +1495,7 @@ object OimBinaryCodec {
                     svgPath = svgPath,
                     svgPaths = svgPaths,
                     svgViewBox = svgViewBox,
+                    maskMode = lObj.optJSONObject("mask")?.optString("mode", "window")?.ifBlank { "window" },
                     flipX = box?.optBoolean("flipX", false) ?: false,
                     flipY = box?.optBoolean("flipY", false) ?: false,
                     isVisible = lObj.optBoolean("visible", true),

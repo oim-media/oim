@@ -459,16 +459,10 @@ fun OimPlayerView(
                     .fillMaxSize()
                     .then(if (langBlurDp > 0.2.dp) Modifier.blur(langBlurDp) else Modifier)
             ) {
-                doc.layers
-                    .filterNot { it.id in hiddenLayerIds }
-                    .filter { layer ->
-                        layer.slotLanguages.contains("*") ||
-                            layer.slotLanguages.any { it.equals(language, ignoreCase = true) }
-                    }
-                    .forEach { layer ->
+                val paintLayer: @Composable (OimLayer) -> Unit = paintLayer@{ layer ->
                         if (layer.style.maskMode == "window") {
                             OimWindowMask(layer, doc.canvas.width, doc.canvas.height, canvasWidthPx, canvasHeightPx, resolvedPalette)
-                            return@forEach
+                            return@paintLayer
                         }
                         val effectiveVisible = visibilityOverrides[layer.id]
                             ?: layer.name?.let { visibilityOverrides[it] }
@@ -605,7 +599,21 @@ fun OimPlayerView(
                                 paintLayerInstance(0f, false)
                             }
                         }
+                }
+                // A cutout mask clips every layer painted before it (CANONICAL_SPEC_2 3.11).
+                val visibleLayers = doc.layers
+                    .filterNot { it.id in hiddenLayerIds }
+                    .filter { layer ->
+                        layer.slotLanguages.contains("*") ||
+                            layer.slotLanguages.any { it.equals(language, ignoreCase = true) }
                     }
+                val cut = visibleLayers.indexOfLast { it.style.maskMode == "cutout" }
+                if (cut >= 0) {
+                    Box(Modifier.fillMaxSize().clip(cutoutShape(visibleLayers[cut], doc.canvas.width, doc.canvas.height))) {
+                        visibleLayers.take(cut).forEach { paintLayer(it) }
+                    }
+                }
+                visibleLayers.drop(cut + 1).forEach { paintLayer(it) }
             }
 
             if (showPixelGrid) {
@@ -2484,9 +2492,7 @@ private fun OimWindowMask(
     val stroke = resolveSlotColor(layer.style.strokeColorRole, layer.style.borderColorHex, palette, Color.Transparent)
     val strokeWidth = (layer.style.strokeWidthPx ?: 0f) * scale
     val window = androidx.compose.ui.geometry.Rect(left, top, left + w, top + h)
-    val silhouette = androidx.compose.ui.graphics.Path().apply {
-        if (layer.style.geoShape == "circle") addOval(window) else addRect(window)
-    }
+    val silhouette = maskSilhouette(layer.style.geoShape, window)
     androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
         val outside = androidx.compose.ui.graphics.Path().apply {
             fillType = androidx.compose.ui.graphics.PathFillType.EvenOdd
@@ -2498,4 +2504,17 @@ private fun OimWindowMask(
             drawPath(silhouette, stroke, style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth))
         }
     }
+}
+
+/** Shows outside the mask's box and inside its figure, the player's evenodd clip path. */
+private fun cutoutShape(mask: OimLayer, naturalWidth: Int, naturalHeight: Int) = androidx.compose.foundation.shape.GenericShape { size, _ ->
+    val left = (mask.x / 100.0 * size.width).toFloat()
+    val top = (mask.y / 100.0 * size.height).toFloat()
+    val w = mask.widthDim?.resolvePx(size.width, size.height, naturalWidth, isHorizontal = true) ?: 0f
+    val h = mask.heightDim?.resolvePx(size.width, size.height, naturalHeight, isHorizontal = false) ?: 0f
+    val box = androidx.compose.ui.geometry.Rect(left, top, left + w, top + h)
+    fillType = androidx.compose.ui.graphics.PathFillType.EvenOdd
+    addRect(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height))
+    addRect(box)
+    addPath(maskSilhouette(mask.style.geoShape, box))
 }

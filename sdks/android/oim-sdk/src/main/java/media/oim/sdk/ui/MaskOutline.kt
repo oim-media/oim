@@ -9,6 +9,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.graphics.asComposePath
 
 /** GEO_SHAPES of @oim-media/core (geoShapes.ts), in its viewBox 0 0 100 100. Keep in step with it. */
 private val CATALOGUE = mapOf(
@@ -42,10 +43,16 @@ private val CATALOGUE = mapOf(
  * the catalogue's content area (5 5 90 90) is fitted to the box, so tips such as the star's
  * may cross it. A rectangle, or a name the catalogue lacks, is the box itself.
  */
+/** Parsing a d string allocates and costs on every frame a shape relayouts: parse each once. */
+private val PARSED = java.util.concurrent.ConcurrentHashMap<String, android.graphics.Path>()
+
+internal fun parsedCopy(d: String): Path =
+    android.graphics.Path(PARSED.getOrPut(d) { PathParser().parsePathString(d).toPath().asAndroidPath() }).asComposePath()
+
 internal fun maskSilhouette(name: String?, box: Rect): Path {
     val d = CATALOGUE[name ?: "circle"] ?: return Path().apply { addRect(box) }
     val (v0, vSize) = if (name == "line") 0f to 100f else 5f to 90f
-    val path = PathParser().parsePathString(d).toPath()
+    val path = parsedCopy(d)
     path.asAndroidPath().transform(android.graphics.Matrix().apply {
         setTranslate(-v0, -v0)
         postScale(box.width / vSize, box.height / vSize)
@@ -93,7 +100,7 @@ internal fun presetSilhouette(name: String?, w: Float, h: Float): Path? {
         "arch" -> rounded(minOf(w / 2f, h), 0f)
         "pill" -> rounded(minOf(w, h) / 2f, minOf(w, h) / 2f)
         else -> PRESET_UNIT[name]?.let { d ->
-            PathParser().parsePathString(d).toPath().also {
+            parsedCopy(d).also {
                 it.asAndroidPath().transform(android.graphics.Matrix().apply { setScale(w / 100f, h / 100f) })
             }
         }

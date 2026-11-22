@@ -159,6 +159,9 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.roundToInt
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.layout.layout
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -618,16 +621,18 @@ fun OimPlayerView(
                     }
                 val cut = visibleLayers.indexOfLast { it.style.maskMode == "cutout" }
                 if (cut >= 0) {
-                    Box(Modifier.fillMaxSize().clip(cutoutShape(visibleLayers[cut], doc.canvas.width, doc.canvas.height))) {
+                    val cutShape = remember(visibleLayers[cut], doc.canvas.width, doc.canvas.height) { cutoutShape(visibleLayers[cut], doc.canvas.width, doc.canvas.height) }
+                    Box(Modifier.fillMaxSize().clip(cutShape)) {
                         visibleLayers.take(cut).forEach { paintLayer(it) }
                     }
                 }
                 visibleLayers.withIndex().drop(cut + 1).forEach { (i, layer) ->
                     val backdrop = layer.style.backdropPreset
-                    val backdropMatrix = backdrop?.let { if (it == "duotone") duotoneMatrix() else FILTER_PRESET_CSS[it]?.let(::cssFilterMatrix) }
+                    val backdropMatrix = remember(backdrop) { backdrop?.let { if (it == "duotone") duotoneMatrix() else FILTER_PRESET_CSS[it]?.let(::cssFilterMatrix) } }
                     if (backdropMatrix != null) {
+                        val backdropShape = remember(layer, doc.canvas.width, doc.canvas.height) { boxShape(layer, doc.canvas.width, doc.canvas.height) }
                         // A backdrop filters what lies under its figure: paint that again, filtered and clipped.
-                        Box(Modifier.fillMaxSize().clip(boxShape(layer, doc.canvas.width, doc.canvas.height)).colorMatrixLayer(backdropMatrix)) {
+                        Box(Modifier.fillMaxSize().clip(backdropShape).colorMatrixLayer(backdropMatrix)) {
                             paintBackground()
                             visibleLayers.take(i).forEach { paintLayer(it) }
                         }
@@ -1120,12 +1125,15 @@ private fun OimLayerNode(
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
+                            var chipLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
                             Text(
                                 text = animatedTextRender.fillText,
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = with(density) { ((canvasWidthPx * 0.017f) / fontScaleOverride.coerceAtLeast(0.5f)).toSp() },
                                 color = if (isSelected) Color(0xFF0E1015) else Color(0xFFF8FAFC),
-                                maxLines = 1
+                                maxLines = 1,
+                                onTextLayout = { chipLayout = it },
+                                modifier = Modifier.markHighlights(animatedTextRender.fillText, { chipLayout }, scaleFactor)
                             )
                             Icon(
                                 imageVector = Icons.Default.TouchApp,
@@ -1156,7 +1164,9 @@ private fun OimLayerNode(
             }
             val resolvedCornerPx = cornerRadiiPx?.get(0) ?: (canvasWidthPx * layer.style.cornerRadiusRatio)
             val geoKindStr = layer.style.geoShape ?: "rectangle"
-            val clipShape = customFrameShape(layer.style.svgPaths, layer.style.svgViewBox) ?: buildGeoClipShape(geoKindStr, shape)
+            val clipShape = remember(layer.style.svgPaths, layer.style.svgViewBox, geoKindStr, shape) {
+                customFrameShape(layer.style.svgPaths, layer.style.svgViewBox) ?: buildGeoClipShape(geoKindStr, shape)
+            }
             val imageFill = layer.style.imageFill
             val fillBitmap by produceState<ImageBitmap?>(initialValue = null, key1 = imageFill?.src) {
                 val src = imageFill?.src
@@ -1430,6 +1440,7 @@ private fun OimLayerNode(
                     .then(interactiveMod)
                     .testTag("oim_layer_${layer.id}")
             ) {
+                var buttonLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
                 Text(
                     text = animatedTextRender.fillText,
                     fontFamily = fontFamily,
@@ -1438,7 +1449,9 @@ private fun OimLayerNode(
                     fontSize = pixelLockedSp,
                     letterSpacing = (layer.style.letterSpacingEm * 10f).sp,
                     color = textColor,
+                    onTextLayout = { buttonLayout = it },
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                        .markHighlights(animatedTextRender.fillText, { buttonLayout }, scaleFactor)
                 )
             }
         }
@@ -1548,6 +1561,7 @@ private fun OimLayerNode(
                             plainText = animatedTextRender.plainText.subSequence(1, animatedTextRender.plainText.length),
                             strokeText = animatedTextRender.strokeText.subSequence(1, animatedTextRender.strokeText.length)
                         )
+                        var fillLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
                         val textBody: @Composable () -> Unit = {
                         val plainOrBaseAnnotated = textRender.plainText
                         val fillAnnotated = textRender.fillText
@@ -1648,7 +1662,8 @@ private fun OimLayerNode(
                             style = baseTextStyle,
                             color = textColor,
                             // shortcut: the band sits under the fill only, so it covers a glyph stroke's outer half; paint it first if strokes need it.
-                            modifier = textWidthMod,
+                            modifier = textWidthMod.markHighlights(fillAnnotated, { fillLayout }, scaleFactor),
+                            onTextLayout = { fillLayout = it },
                             textAlign = resolvedTextAlign
                         )
                         if (glitchState != null && glitchState.isActive && layer.style.textAnimationType.equals("glitch-slice", ignoreCase = true)) {
@@ -2038,7 +2053,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGeoShape(
         val matrixVals = FloatArray(9)
 
         svgPaths.forEach { item ->
-            val parsed = runCatching { PathParser().parsePathString(item.d).toPath() }.getOrNull() ?: return@forEach
+            val parsed = runCatching { parsedCopy(item.d) }.getOrNull() ?: return@forEach
             val androidPath = parsed.asAndroidPath()
             itemMatrix.reset()
             val tr = item.transform
@@ -2118,7 +2133,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGeoShape(
     }
 
     if (!svgPath.isNullOrBlank()) {
-        val parsed = runCatching { PathParser().parsePathString(svgPath).toPath() }.getOrNull()
+        val parsed = runCatching { parsedCopy(svgPath) }.getOrNull()
         if (parsed != null) {
             val vbW = vbParts?.getOrNull(2)?.takeIf { it > 0f } ?: 100f
             val vbH = vbParts?.getOrNull(3)?.takeIf { it > 0f } ?: 100f
@@ -2352,6 +2367,41 @@ private fun buildComposeColorFilter(filter: OimFilterSpec?): ColorFilter? {
 
 private val MARK_TAG_REGEX = Regex("^\\{(/?)([a-z][a-z0-9-]{0,23})\\}")
 
+private const val MARK_HIGHLIGHT_TAG = "oim-hl"
+
+/**
+ * marked-text.ts: a mark's highlight is a box behind its letters, padded (2px 4px) and rounded
+ * (3px; pill round, box square), or a band over the lower 0.4em (underline-thick).
+ * shortcut: CSS padding also pushes the letters after the mark 2 x paddingX to the right; here the box grows without moving them.
+ */
+private fun Modifier.markHighlights(text: AnnotatedString, layout: () -> TextLayoutResult?, scale: Float): Modifier {
+    val marks = text.getStringAnnotations(MARK_HIGHLIGHT_TAG, 0, text.length)
+    if (marks.isEmpty()) return this
+    return drawBehind {
+        val l = layout() ?: return@drawBehind
+        for (m in marks) {
+            if (m.end <= m.start || m.end > l.layoutInput.text.length) continue
+            val (argb, style, radius, padX, padY) = m.item.split(';')
+            val color = Color(argb.toInt())
+            for (line in l.getLineForOffset(m.start)..l.getLineForOffset(m.end - 1)) {
+                val from = maxOf(m.start, l.getLineStart(line))
+                val to = minOf(m.end, l.getLineEnd(line, visibleEnd = true))
+                if (to <= from) continue
+                val a = l.getHorizontalPosition(from, usePrimaryDirection = true)
+                val b = l.getHorizontalPosition(to, usePrimaryDirection = true)
+                val px = padX.toFloat() * scale
+                // The line box (1.25em) already spans the font's content area plus the 2px of paddingY the web adds.
+                val top = l.getLineTop(line)
+                val bottom = l.getLineBottom(line)
+                val boxTop = if (style == "underline-thick") bottom - padY.toFloat() * scale - 0.4f * (bottom - top) / 1.25f else top
+                val h = bottom - boxTop
+                val r = minOf(radius.toFloat() * scale, h / 2f)
+                drawRoundRect(color, Offset(minOf(a, b) - px, boxTop), Size(kotlin.math.abs(b - a) + 2 * px, h), CornerRadius(r, r))
+            }
+        }
+    }
+}
+
 private fun buildMarkedAnnotatedString(
     rawText: String,
     marks: Map<String, OimTextMarkStyle>,
@@ -2374,17 +2424,21 @@ private fun buildMarkedAnnotatedString(
                 } else {
                     Color.Unspecified
                 }
+                if (hl != Color.Unspecified) {
+                    val radius = when (style.highlightStyle) { "pill" -> 9999f; "box" -> 0f; else -> style.highlightRadius }
+                    pushStringAnnotation(MARK_HIGHLIGHT_TAG, "${hl.toArgb()};${style.highlightStyle};$radius;${style.highlightPaddingX};${style.highlightPaddingY}")
+                }
                 pushStyle(
                     SpanStyle(
                         color = fg,
                         fontWeight = if (style.bold) FontWeight.Bold else null,
                         fontStyle = if (style.italic) FontStyle.Italic else null,
-                        textDecoration = if (style.underline) TextDecoration.Underline else null,
-                        background = hl
+                        textDecoration = if (style.underline) TextDecoration.Underline else null
                     )
                 )
                 append(s)
                 pop()
+                if (hl != Color.Unspecified) pop()
             }
         }
 
@@ -2633,7 +2687,7 @@ private fun customFrameShape(paths: List<OimSvgPathItem>, viewBox: String?): Sha
 private fun customFrameOutline(paths: List<OimSvgPathItem>, viewBox: String?, w: Float, h: Float): androidx.compose.ui.graphics.Path? {
     val only = paths.singleOrNull()?.takeIf { it.fill == null && it.stroke == null && it.transform == null } ?: return null
     val vb = viewBox?.trim()?.split(Regex("[\\s,]+"))?.mapNotNull { it.toFloatOrNull() }?.takeIf { it.size == 4 && it[2] > 0f && it[3] > 0f } ?: return null
-    return PathParser().parsePathString(only.d).toPath().also {
+    return parsedCopy(only.d).also {
         it.asAndroidPath().transform(AndroidMatrix().apply {
             setTranslate(-vb[0], -vb[1])
             postScale(w / vb[2], h / vb[3])

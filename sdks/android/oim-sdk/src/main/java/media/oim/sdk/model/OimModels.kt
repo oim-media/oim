@@ -267,7 +267,11 @@ data class OimTextMarkStyle(
     val underline: Boolean = false,
     val highlightColorHex: String? = null,
     val highlightColorRole: String? = null,
-    val highlightStyle: String? = null
+    val highlightStyle: String? = null,
+    /** CSS of the highlight box in canvas px (marked-text.ts): radius 3, padding 2px 4px. */
+    val highlightRadius: Float = 3f,
+    val highlightPaddingX: Float = 4f,
+    val highlightPaddingY: Float = 2f
 )
 
 data class OimImageFill(

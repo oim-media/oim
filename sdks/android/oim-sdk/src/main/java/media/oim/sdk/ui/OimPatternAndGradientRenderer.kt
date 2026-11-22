@@ -119,7 +119,7 @@ private fun renderPatternTileBitmap(
 
     for (item in pattern.tilePaths) {
         val parsedPath = try {
-            PathParser().parsePathString(item.d).toPath().asAndroidPath()
+            parsedCopy(item.d).asAndroidPath()
         } catch (_: Exception) {
             null
         } ?: continue

@@ -1806,7 +1806,10 @@ object OimBinaryCodec {
                         underline = mObj.optBoolean("underline", false),
                         highlightColorHex = hlObj?.optString("color", "")?.ifBlank { null },
                         highlightColorRole = hlObj?.optString("colorRole", "")?.ifBlank { null },
-                        highlightStyle = hlObj?.optString("style", "marker")?.ifBlank { "marker" }
+                        highlightStyle = hlObj?.optString("style", "marker")?.ifBlank { "marker" },
+                        highlightRadius = hlObj?.optDouble("borderRadius", 3.0)?.toFloat() ?: 3f,
+                        highlightPaddingX = hlObj?.optDouble("paddingX", 4.0)?.toFloat() ?: 4f,
+                        highlightPaddingY = hlObj?.optDouble("paddingY", 2.0)?.toFloat() ?: 2f
                     )
                 )
             }

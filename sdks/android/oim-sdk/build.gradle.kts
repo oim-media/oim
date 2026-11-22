@@ -51,6 +51,9 @@ android {
       isIncludeAndroidResources = true
       all {
         it.systemProperty("oim.spec.dir", specDir.path)
+        // OIM_PARITY=1 turns on VisualParityTest (renders, never compares).
+        System.getenv("OIM_PARITY")?.let { v -> it.systemProperty("oim.parity", v) }
+        it.systemProperty("oim.parity.out", layout.buildDirectory.dir("parity/android").get().asFile.path)
         it.inputs.dir(specDir.resolve("vectors"))
         it.inputs.dir(specDir.resolve("vectors-2"))
         it.inputs.file(specDir.resolve("canonical-cases.json"))
@@ -78,4 +81,7 @@ dependencies {
   testImplementation(libs.androidx.test.core)
   testImplementation(libs.kotlinx.coroutines.test)
   testImplementation(libs.robolectric)
+  testImplementation(platform(libs.androidx.compose.bom))
+  testImplementation(libs.androidx.compose.ui.test.junit4)
+  debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

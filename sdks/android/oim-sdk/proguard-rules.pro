@@ -1,0 +1,1 @@
+-keep class media.oim.sdk.** { *; }

@@ -1,0 +1,77 @@
+<resources>
+    <!-- Navigation -->
+    <string name="nav_library">Biblioteca</string>
+    <string name="nav_viewer">Visor</string>
+
+    <!-- Library -->
+    <string name="library_loading">Cargando biblioteca real de OIM…</string>
+    <string name="library_search_hint">Buscar en la biblioteca OIM…</string>
+    <string name="action_refresh_library">Actualizar biblioteca</string>
+    <string name="action_configure_endpoint">Configurar endpoint OIM</string>
+    <string name="action_toggle_theme">Cambiar tema claro u oscuro</string>
+    <string name="endpoint_dialog_title">Endpoint de Biblioteca OIM</string>
+
+    <!-- Viewer -->
+    <string name="viewer_subtitle">OIM Native Android SDK</string>
+    <string name="action_open_local">Abrir .oim</string>
+    <string name="action_load_url">Desde URL</string>
+    <string name="action_export_oim">Exportar</string>
+    <string name="action_toggle_grid">Grid 100%</string>
+    <string name="action_toggle_parallax">Parallax</string>
+    <string name="url_dialog_title">Abrir archivo .oim.png remoto</string>
+    <string name="url_dialog_hint">https://oim.media/.../archivo.oim.png</string>
+    <string name="url_dialog_confirm">Descargar y Verificar</string>
+    <string name="url_dialog_cancel">Cancelar</string>
+
+    <!-- Security States -->
+    <string name="security_verified_trusted">ECDSA Verificado</string>
+    <string name="security_verified_self_signed">Firma Local Válida</string>
+    <string name="security_image_unsealed">ECDSA Válido (Sin sello IDAT)</string>
+    <string name="security_unsigned">Sin Firma Digital</string>
+    <string name="security_unknown_key">Clave Desconocida</string>
+    <string name="security_expired_key">Clave Expirada</string>
+    <string name="security_invalid_signature">FIRMA INVÁLIDA · RECHAZADO</string>
+    <string name="security_refused_tampered">ARCHIVO ALTERADO · RECHAZADO</string>
+    <string name="refused_title">Renderizado Bloqueado (is_refused = true)</string>
+
+    <!-- Inspector Sheet -->
+    <string name="inspector_title">Inspector OIM &amp; Caché</string>
+
+    <!-- Screens -->
+    <string name="search">Buscar</string>
+    <string name="filter_all">Todo</string>
+    <string name="loading">Cargando</string>
+    <string name="load_more">Cargar más</string>
+    <string name="open_local_oim">Abrir archivo .oim local</string>
+    <string name="open_oim">Abrir archivo .oim</string>
+    <string name="open_file">Abrir archivo</string>
+    <string name="open_from_url">Abrir desde URL</string>
+    <string name="switch_to_light">Cambiar a tema claro</string>
+    <string name="switch_to_dark">Cambiar a tema oscuro</string>
+    <string name="catalog_url">URL del catálogo JSON (opcional)</string>
+    <string name="save_oim_png">Guardar .oim.png</string>
+    <string name="save">Guardar</string>
+    <string name="viewer_title">Visor OIM</string>
+    <string name="viewer_empty">Abre un archivo .oim desde tu dispositivo o elige una obra de la galería.</string>
+    <string name="gallery">Galería</string>
+    <string name="more_options">Más opciones</string>
+    <string name="grid_100">Cuadrícula 100%</string>
+    <string name="performance_overlay">Rendimiento</string>
+    <string name="unpin_offline">Quitar fijado offline</string>
+    <string name="pin_offline">Fijar en caché offline</string>
+    <string name="language">Idioma</string>
+    <string name="theme">Tema</string>
+    <string name="audit_verification">Verificación</string>
+    <string name="audit_seal">Sello sha256-idat</string>
+    <string name="audit_valid_m">Válido</string>
+    <string name="audit_no_seal">No coincide / Sin sello</string>
+    <string name="audit_signature">Firma ECDSA P-256</string>
+    <string name="audit_valid_f">Válida</string>
+    <string name="audit_not_verified">No verificada</string>
+    <string name="audit_reedit">Permiso de reedición</string>
+    <string name="audit_resolution">Resolución</string>
+    <string name="audit_contract">Contrato</string>
+    <string name="audit_decode">Decodificación</string>
+    <string name="local_cache">Caché local</string>
+    <string name="recent_cached">Recientes en caché (%1$d)</string>
+</resources>

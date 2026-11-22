@@ -1,0 +1,79 @@
+<resources>
+    <string name="app_name">OIM Viewer</string>
+
+    <!-- Navigation -->
+    <string name="nav_library">Library</string>
+    <string name="nav_viewer">Viewer</string>
+
+    <!-- Library -->
+    <string name="library_loading">Loading the OIM library…</string>
+    <string name="library_search_hint">Search the OIM library…</string>
+    <string name="action_refresh_library">Refresh library</string>
+    <string name="action_configure_endpoint">Set OIM endpoint</string>
+    <string name="action_toggle_theme">Toggle light or dark theme</string>
+    <string name="endpoint_dialog_title">OIM library endpoint</string>
+
+    <!-- Viewer -->
+    <string name="viewer_subtitle">OIM Native Android SDK</string>
+    <string name="action_open_local">Open .oim</string>
+    <string name="action_load_url">From URL</string>
+    <string name="action_export_oim">Export</string>
+    <string name="action_toggle_grid">100% grid</string>
+    <string name="action_toggle_parallax">Parallax</string>
+    <string name="url_dialog_title">Open a remote .oim.png file</string>
+    <string name="url_dialog_hint">https://oim.media/.../file.oim.png</string>
+    <string name="url_dialog_confirm">Download and verify</string>
+    <string name="url_dialog_cancel">Cancel</string>
+
+    <!-- Security States -->
+    <string name="security_verified_trusted">ECDSA verified</string>
+    <string name="security_verified_self_signed">Valid local signature</string>
+    <string name="security_image_unsealed">Valid ECDSA (no IDAT seal)</string>
+    <string name="security_unsigned">Unsigned</string>
+    <string name="security_unknown_key">Unknown key</string>
+    <string name="security_expired_key">Expired key</string>
+    <string name="security_invalid_signature">INVALID SIGNATURE · REFUSED</string>
+    <string name="security_refused_tampered">TAMPERED FILE · REFUSED</string>
+    <string name="refused_title">Rendering blocked (is_refused = true)</string>
+
+    <!-- Inspector Sheet -->
+    <string name="inspector_title">OIM inspector &amp; cache</string>
+
+    <!-- Screens -->
+    <string name="search">Search</string>
+    <string name="filter_all">All</string>
+    <string name="loading">Loading</string>
+    <string name="load_more">Load more</string>
+    <string name="open_local_oim">Open a local .oim file</string>
+    <string name="open_oim">Open .oim file</string>
+    <string name="open_file">Open file</string>
+    <string name="open_from_url">Open from URL</string>
+    <string name="switch_to_light">Switch to light theme</string>
+    <string name="switch_to_dark">Switch to dark theme</string>
+    <string name="catalog_url">Catalog JSON URL (optional)</string>
+    <string name="save_oim_png">Save .oim.png</string>
+    <string name="save">Save</string>
+    <string name="viewer_title">OIM viewer</string>
+    <string name="viewer_empty">Open an .oim file from your device or pick a piece from the gallery.</string>
+    <string name="gallery">Gallery</string>
+    <string name="more_options">More options</string>
+    <string name="grid_100">100% grid</string>
+    <string name="performance_overlay">Performance</string>
+    <string name="unpin_offline">Unpin from offline cache</string>
+    <string name="pin_offline">Pin to offline cache</string>
+    <string name="language">Language</string>
+    <string name="theme">Theme</string>
+    <string name="audit_verification">Verification</string>
+    <string name="audit_seal">sha256-idat seal</string>
+    <string name="audit_valid_m">Valid</string>
+    <string name="audit_no_seal">Mismatch / no seal</string>
+    <string name="audit_signature">ECDSA P-256 signature</string>
+    <string name="audit_valid_f">Valid</string>
+    <string name="audit_not_verified">Not verified</string>
+    <string name="audit_reedit">Re-edit permission</string>
+    <string name="audit_resolution">Resolution</string>
+    <string name="audit_contract">Contract</string>
+    <string name="audit_decode">Decoding</string>
+    <string name="local_cache">Local cache</string>
+    <string name="recent_cached">Recently cached (%1$d)</string>
+</resources>

@@ -5,6 +5,10 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+## 1.36.5
+
+- scene: a paused Lottie (animations off, or paused before it loads) rests on its middle frame, like the editor and the static export; frame 0 is empty in most Lotties.
+
 ## 1.36.4
 
 - scene: a figure's stroke is in layer pixels and scales with the figure (no `non-scaling-stroke`), so it keeps its share of the figure at any display size.

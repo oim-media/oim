@@ -317,6 +317,8 @@ data class OimLayerStyle(
     val maskMode: String? = null,
     /** `preset` of the layer's first `backdrop` effect: duotone or a FILTER_PRESET_CSS name. */
     val backdropPreset: String? = null,
+    /** CSS mix-blend-mode of a v2 layer (`blend`); null or `normal` paints over. */
+    val blendMode: String? = null,
     val flipX: Boolean = false,
     val flipY: Boolean = false,
     val isVisible: Boolean = true,

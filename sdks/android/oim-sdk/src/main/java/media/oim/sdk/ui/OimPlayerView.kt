@@ -627,7 +627,9 @@ fun OimPlayerView(
                             visibleLayers.take(i).forEach { paintLayer(it) }
                         }
                     }
-                    paintLayer(layer)
+                    val blend = layer.style.blendMode?.let { CSS_BLEND_MODES[it] }
+                    if (blend == null) paintLayer(layer)
+                    else Box(Modifier.fillMaxSize().blendLayer(blend)) { paintLayer(layer) }
                 }
             }
 
@@ -2601,6 +2603,23 @@ private fun Modifier.colorMatrixLayer(matrix: androidx.compose.ui.graphics.Color
     val paint = androidx.compose.ui.graphics.Paint().apply {
         colorFilter = androidx.compose.ui.graphics.ColorFilter.colorMatrix(matrix)
     }
+    drawContext.canvas.saveLayer(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height), paint)
+    drawContent()
+    drawContext.canvas.restore()
+}
+
+/** CSS mix-blend-mode names as Compose blend modes. */
+private val CSS_BLEND_MODES = mapOf(
+    "multiply" to BlendMode.Multiply, "screen" to BlendMode.Screen, "overlay" to BlendMode.Overlay,
+    "darken" to BlendMode.Darken, "lighten" to BlendMode.Lighten, "color-dodge" to BlendMode.ColorDodge,
+    "color-burn" to BlendMode.ColorBurn, "hard-light" to BlendMode.Hardlight, "soft-light" to BlendMode.Softlight,
+    "difference" to BlendMode.Difference, "exclusion" to BlendMode.Exclusion, "hue" to BlendMode.Hue,
+    "saturation" to BlendMode.Saturation, "color" to BlendMode.Color, "luminosity" to BlendMode.Luminosity,
+)
+
+/** Paints the content as one layer and blends it onto what lies under it, as mix-blend-mode does. */
+private fun Modifier.blendLayer(mode: BlendMode): Modifier = drawWithContent {
+    val paint = androidx.compose.ui.graphics.Paint().apply { blendMode = mode }
     drawContext.canvas.saveLayer(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height), paint)
     drawContent()
     drawContext.canvas.restore()

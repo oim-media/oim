@@ -1496,6 +1496,7 @@ object OimBinaryCodec {
                     svgPaths = svgPaths,
                     svgViewBox = svgViewBox,
                     maskMode = lObj.optJSONObject("mask")?.optString("mode", "window")?.ifBlank { "window" },
+                    blendMode = lObj.optString("blend", "").ifBlank { null },
                     backdropPreset = lObj.optJSONArray("effects")?.let { fx ->
                         (0 until fx.length()).mapNotNull { fx.optJSONObject(it) }
                             .firstOrNull { it.optString("kind") == "backdrop" }?.optString("preset")?.ifBlank { null }

@@ -82,18 +82,26 @@ class VisualParityTest(private val name: String) {
         // "Animations disabled": let entrances reach their final pose.
         compose.mainClock.advanceTimeBy(30_000)
         compose.waitForIdle()
-        // Image fills decode off the main thread (Dispatchers.Default), which waitForIdle does not wait for.
-        repeat(20) {
-            Thread.sleep(50)
+        // Image fills decode off the main thread (Dispatchers.Default), which waitForIdle does not wait
+        // for, and a decode can take seconds there: capture until the frame holds still for 4 s (30 s at most).
+        fun capture(): Bitmap {
+            val image = Bitmap.createBitmap(WIDTH, height, Bitmap.Config.ARGB_8888)
+            compose.runOnUiThread {
+                // Draw the content view straight into a bitmap (captureToImage times out under Robolectric).
+                compose.activity.findViewById<android.view.View>(android.R.id.content).draw(android.graphics.Canvas(image))
+            }
+            return image
+        }
+        var image = capture()
+        var same = 0
+        val deadline = System.currentTimeMillis() + 30_000
+        while (same < 40 && System.currentTimeMillis() < deadline) {
+            Thread.sleep(100)
             compose.mainClock.advanceTimeBy(100)
             compose.waitForIdle()
-        }
-
-        // Draw the content view straight into a bitmap (captureToImage times out under Robolectric).
-        val image = Bitmap.createBitmap(WIDTH, height, Bitmap.Config.ARGB_8888)
-        compose.runOnUiThread {
-            val root = compose.activity.findViewById<android.view.View>(android.R.id.content)
-            root.draw(android.graphics.Canvas(image))
+            val next = capture()
+            same = if (next.sameAs(image)) same + 1 else 0
+            image = next
         }
         File(out, "$name.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }

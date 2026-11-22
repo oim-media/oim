@@ -618,9 +618,11 @@ fun OimPlayerView(
                     }
                 }
                 visibleLayers.withIndex().drop(cut + 1).forEach { (i, layer) ->
-                    if (layer.style.backdropPreset == "duotone") {
-                        // A backdrop filters what lies under its box: paint that again, filtered and clipped.
-                        Box(Modifier.fillMaxSize().clip(boxShape(layer, doc.canvas.width, doc.canvas.height)).duotone()) {
+                    val backdrop = layer.style.backdropPreset
+                    val backdropMatrix = backdrop?.let { if (it == "duotone") duotoneMatrix() else FILTER_PRESET_CSS[it]?.let(::cssFilterMatrix) }
+                    if (backdropMatrix != null) {
+                        // A backdrop filters what lies under its figure: paint that again, filtered and clipped.
+                        Box(Modifier.fillMaxSize().clip(boxShape(layer, doc.canvas.width, doc.canvas.height)).colorMatrixLayer(backdropMatrix)) {
                             paintBackground()
                             visibleLayers.take(i).forEach { paintLayer(it) }
                         }
@@ -2351,6 +2353,8 @@ private fun buildMarkedAnnotatedString(
     }
 }
 
+private val DECODE_LOCK = Any()
+
 private fun decodeDataUriBitmap(content: String): ImageBitmap? {
     if (!content.startsWith("data:image/")) return null
     val commaIdx = content.indexOf(',')
@@ -2358,7 +2362,8 @@ private fun decodeDataUriBitmap(content: String): ImageBitmap? {
     return try {
         val b64 = content.substring(commaIdx + 1)
         val bytes = Base64Codec.decode(b64)
-        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
+        // One decode at a time: concurrent decodes come back empty under Robolectric's native graphics.
+        synchronized(DECODE_LOCK) { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }?.asImageBitmap()
     } catch (_: Exception) {
         null
     }
@@ -2551,15 +2556,18 @@ private fun cutoutShape(mask: OimLayer, naturalWidth: Int, naturalHeight: Int) =
  * viewBox is stretched over the box, like the web's preserveAspectRatio="none".
  */
 private fun customFrameShape(paths: List<OimSvgPathItem>, viewBox: String?): Shape? {
+    if (customFrameOutline(paths, viewBox, 1f, 1f) == null) return null
+    return GenericShape { size, _ -> customFrameOutline(paths, viewBox, size.width, size.height)?.let { addPath(it) } }
+}
+
+private fun customFrameOutline(paths: List<OimSvgPathItem>, viewBox: String?, w: Float, h: Float): androidx.compose.ui.graphics.Path? {
     val only = paths.singleOrNull()?.takeIf { it.fill == null && it.stroke == null && it.transform == null } ?: return null
     val vb = viewBox?.trim()?.split(Regex("[\\s,]+"))?.mapNotNull { it.toFloatOrNull() }?.takeIf { it.size == 4 && it[2] > 0f && it[3] > 0f } ?: return null
-    return GenericShape { size, _ ->
-        val path = PathParser().parsePathString(only.d).toPath()
-        path.asAndroidPath().transform(AndroidMatrix().apply {
+    return PathParser().parsePathString(only.d).toPath().also {
+        it.asAndroidPath().transform(AndroidMatrix().apply {
             setTranslate(-vb[0], -vb[1])
-            postScale(size.width / vb[2], size.height / vb[3])
+            postScale(w / vb[2], h / vb[3])
         })
-        addPath(path)
     }
 }
 
@@ -2568,14 +2576,17 @@ private fun boxShape(layer: OimLayer, naturalWidth: Int, naturalHeight: Int) = a
     val top = (layer.y / 100.0 * size.height).toFloat()
     val w = layer.widthDim?.resolvePx(size.width, size.height, naturalWidth, isHorizontal = true) ?: 0f
     val h = layer.heightDim?.resolvePx(size.width, size.height, naturalHeight, isHorizontal = false) ?: 0f
-    addRect(androidx.compose.ui.geometry.Rect(left, top, left + w, top + h))
+    // filterClipPath in @oim-media/core: a preset backdrop shows through the mask outline of its figure.
+    val box = androidx.compose.ui.geometry.Rect(left, top, left + w, top + h)
+    val name = layer.style.geoShape
+    if (name == null || name == "rectangle" || name == "line" || name == "scribble") addRect(box) else addPath(maskSilhouette(name, box))
 }
 
 /** DUOTONE_COLORS of @oim-media/scene: luminance (0.33 per channel) mapped from shadows to lights, in sRGB. */
 private val DUOTONE_SHADOWS = floatArrayOf(0x1e / 255f, 0x1b / 255f, 0x4b / 255f)
 private val DUOTONE_LIGHTS = floatArrayOf(0xfb / 255f, 0xbf / 255f, 0x24 / 255f)
 
-private fun Modifier.duotone(): Modifier = drawWithContent {
+private fun duotoneMatrix(): androidx.compose.ui.graphics.ColorMatrix {
     // The two-stop table is linear in the grey, so one colour matrix draws the whole filter.
     val m = FloatArray(20)
     for (c in 0..2) {
@@ -2583,8 +2594,12 @@ private fun Modifier.duotone(): Modifier = drawWithContent {
         m[c * 5] = k; m[c * 5 + 1] = k; m[c * 5 + 2] = k; m[c * 5 + 4] = DUOTONE_SHADOWS[c] * 255f
     }
     m[18] = 1f
+    return androidx.compose.ui.graphics.ColorMatrix(m)
+}
+
+private fun Modifier.colorMatrixLayer(matrix: androidx.compose.ui.graphics.ColorMatrix): Modifier = drawWithContent {
     val paint = androidx.compose.ui.graphics.Paint().apply {
-        colorFilter = androidx.compose.ui.graphics.ColorFilter.colorMatrix(androidx.compose.ui.graphics.ColorMatrix(m))
+        colorFilter = androidx.compose.ui.graphics.ColorFilter.colorMatrix(matrix)
     }
     drawContext.canvas.saveLayer(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height), paint)
     drawContent()

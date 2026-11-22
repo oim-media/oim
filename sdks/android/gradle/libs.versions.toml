@@ -13,8 +13,10 @@ junit = "4.13.2"
 androidxJunit = "1.3.0"
 androidxTestCore = "1.6.1"
 robolectric = "4.16.1"
+brotliDec = "0.1.2"
 
 [libraries]
+brotli-dec = { group = "org.brotli", name = "dec", version.ref = "brotliDec" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }

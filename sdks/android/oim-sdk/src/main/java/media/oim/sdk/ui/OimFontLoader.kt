@@ -64,15 +64,16 @@ internal object OimFontLoader {
     private fun loadSingleFont(context: Context, font: OimEmbeddedFont): FontFamily? {
         val rawB64 = font.dataBase64?.takeIf { it.isNotBlank() } ?: return null
         val format = font.format.trim().lowercase()
-        if (format != "woff" && format != "ttf" && format != "otf") return null
+        if (format != "woff" && format != "woff2" && format != "ttf" && format != "otf") return null
 
-        val key = sha256Hex("${font.family}|${font.weight}|${font.style}|$rawB64").take(24)
+        val key = sha256Hex("sfnt2|${font.family}|${font.weight}|${font.style}|$rawB64").take(24)
         loadedTypefaces[key]?.let { return it }
 
         return runCatching {
             val rawBytes = Base64Codec.decode(rawB64)
             val sfntBytes = when (format) {
                 "woff" -> decodeWoff1ToSfnt(rawBytes)
+                "woff2" -> woff2ToSfnt(rawBytes)
                 else -> rawBytes
             } ?: return null
 

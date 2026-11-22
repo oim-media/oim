@@ -381,7 +381,6 @@ fun OimPlayerView(
             .fillMaxWidth()
             .aspectRatio(aspectRatio)
             .then(clipFrameMod)
-            .background(parseOimColor(doc.canvas.backgroundColorHex, resolvedPalette, Color(0xFF0E1015)))
             .then(frameBorderModifier)
             .semantics {
                 if (docDescription.isNotBlank()) contentDescription = docDescription
@@ -413,6 +412,8 @@ fun OimPlayerView(
                     translationX = panOffsetX
                     translationY = panOffsetY
                 }
+                // Inside the zoom: the canvas colour grows with the layers instead of staying put.
+                .background(parseOimColor(doc.canvas.backgroundColorHex, resolvedPalette, Color(0xFF0E1015)))
                 .clipToBounds()
         ) {
             // The canvas under the layers; a backdrop effect paints it again under its box.

@@ -67,6 +67,8 @@ dependencies {
   api(libs.kotlinx.coroutines.android)
   api(libs.kotlinx.coroutines.core)
   implementation(libs.androidx.core.ktx)
+  // WOFF2 fonts embedded by the editor are Brotli-compressed (Woff2.kt).
+  implementation(libs.brotli.dec)
 
   implementation(platform(libs.androidx.compose.bom))
   api(libs.androidx.compose.ui)

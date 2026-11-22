@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 # OIM 2.0 Canonical Specification
 
 **Document version emitted by the reference writer:** `2.0.0` (`DOCUMENT_VERSION` in `@oim-media/core/v2`)  
-**Contract release this text was checked against:** 1.36.4  
+**Contract release this text was checked against:** 1.36.5  
 **Status:** Normative  
 **License:** Apache-2.0  
 **Authority:** Xue Studios LLC
@@ -776,7 +776,7 @@ A writer is checked by validating its documents against `schema/oim2.schema.json
 
 ## 11. Appendix D: what the schema allows and the reference painter does not draw
 
-Checked against the working tree that follows release 1.36.4. A reader that does not draw one of these is still
+Checked against the working tree that follows release 1.36.5. A reader that does not draw one of these is still
 conforming to the schema; a writer SHOULD NOT rely on them being painted.
 
 - A gradient paint with `preset` and no `gradient`: the reference painter reads the preset only for an artistic

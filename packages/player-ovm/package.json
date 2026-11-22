@@ -1,6 +1,6 @@
 {
   "name": "@oim-media/player-ovm",
-  "version": "1.36.4",
+  "version": "1.36.5",
   "private": true,
   "description": "Web player for OVM interactive video: a framework-free web component.",
   "keywords": [

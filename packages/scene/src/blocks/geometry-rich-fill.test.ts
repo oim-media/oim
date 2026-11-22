@@ -40,3 +40,29 @@ describe("a gradient, pattern or generative fill on a figure is cut to the figur
     expect(mask(el)).toBe("");
   });
 });
+
+// The mask also cuts the layer's own filter: a drop-shadow outside the silhouette vanished
+// (landing card «Animación», the rocket). The shadow goes on a wrapper outside the mask.
+describe("a masked figure keeps its shadow", () => {
+  const shadow = { kind: "shadow", x: 0, y: 8, blur: 1, color: "#52525B" };
+
+  it("the shadow is drawn by a wrapper outside the mask, and the layer keeps its pointer", () => {
+    const el = paint({ geometry: icon, fills: [radial], effects: [shadow] });
+    const wrap = el.parentElement!;
+    expect(wrap.hasAttribute("data-oim-shadow-lift")).toBe(true);
+    expect(wrap.style.filter).toContain("drop-shadow");
+    expect(el.style.filter).toBe("");
+    expect(el.style.pointerEvents).toBe("auto");
+  });
+
+  it("an unmasked figure keeps its shadow on itself, with no wrapper", () => {
+    const el = paint({ geometry: icon, fills: [{ kind: "color", value: "#FDBA74" }], effects: [shadow] });
+    expect(el.style.filter).toContain("drop-shadow");
+    expect(el.parentElement!.hasAttribute("data-oim-shadow-lift")).toBe(false);
+  });
+
+  it("a masked figure without a shadow gets no wrapper", () => {
+    const el = paint({ geometry: icon, fills: [radial] });
+    expect(el.parentElement!.hasAttribute("data-oim-shadow-lift")).toBe(false);
+  });
+});

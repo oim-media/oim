@@ -431,7 +431,12 @@ data class OimDocument(
     val fonts: List<OimEmbeddedFont> = emptyList(),
     val parallax: OimParallaxConfig = OimParallaxConfig(),
     val layers: List<OimLayer>,
-    val security: OimSecurityBlock
+    val security: OimSecurityBlock,
+    /**
+     * Whether the PNG is the picture's base, painted under the layers. A 2.0 file's PNG is only a
+     * poster unless some image layer shows `oim:base` (hasBaseLayer in @oim-media/core).
+     */
+    val pngIsBase: Boolean = true
 )
 
 data class PngChunkRecord(

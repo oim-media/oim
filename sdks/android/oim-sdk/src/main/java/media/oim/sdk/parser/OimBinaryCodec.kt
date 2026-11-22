@@ -820,7 +820,8 @@ object OimBinaryCodec {
             fonts = fonts,
             parallax = parallax,
             layers = layers.sortedBy { it.zIndex },
-            security = security
+            security = security,
+            pngIsBase = !isV2 || hasV2BaseLayer(layersArr, root.optJSONObject("resources"))
         )
     }
 
@@ -1212,7 +1213,9 @@ object OimBinaryCodec {
             var found: OimImageFill? = null
             if (fillsArr != null) {
                 for (i in 0 until fillsArr.length()) {
-                    val fObj = fillsArr.optJSONObject(i) ?: continue
+                    // A fill may name a shared resource ({ ref }), as colours and gradients do.
+                    val fObj = fillsArr.optJSONObject(i)
+                        ?.let { if (it.has("ref")) resources?.optJSONObject(it.optString("ref")) else it } ?: continue
                     if (fObj.optString("kind").equals("image", ignoreCase = true)) {
                         val src = resolveV2ImageSrc(fObj.opt("src"), resources)
                         if (!src.isNullOrBlank()) {
@@ -1813,6 +1816,21 @@ object OimBinaryCodec {
                     )
                 )
             }
+        }
+    }
+
+    /** hasBaseLayer of @oim-media/core: an image layer, nested ones included, shows `oim:base` in any language. */
+    internal fun hasV2BaseLayer(layers: JSONArray, resources: JSONObject?): Boolean {
+        fun shows(src: Any?): Boolean = when (src) {
+            is String -> src == "oim:base"
+            is JSONObject -> if (src.has("ref")) resources?.optJSONObject(src.optString("ref"))?.optString("src") == "oim:base"
+                else src.optString("value") == "oim:base" ||
+                    src.optJSONObject("modes")?.let { m -> m.keys().asSequence().any { m.optString(it) == "oim:base" } } == true
+            else -> false
+        }
+        return (0 until layers.length()).any { i ->
+            val l = layers.optJSONObject(i) ?: return@any false
+            shows(l.optJSONObject("image")?.opt("src")) || l.optJSONArray("children")?.let { hasV2BaseLayer(it, resources) } == true
         }
     }
 

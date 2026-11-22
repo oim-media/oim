@@ -10,6 +10,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -67,12 +75,18 @@ fun OimAsyncPlayer(
     selectedLayerId: String? = null,
     showPixelGrid: Boolean = false,
     showPerformanceOverlay: Boolean = false,
+    zoomState: OimZoomState? = null,
     parallaxEnabled: Boolean = true,
     replayTrigger: Int = 0,
     cornerRadius: Dp = 20.dp,
     showFrameBorder: Boolean = true,
     externalBlurDp: Dp = 0.dp,
     onSelectLayer: (String?) -> Unit = {},
+    /**
+     * What the reader sees while the file loads, instead of a spinner: typically its thumbnail, blurred.
+     * When the file is ready it fades out over the real render.
+     */
+    placeholder: (@Composable () -> Unit)? = null,
     onRetry: () -> Unit = {},
     onOpenLibrary: () -> Unit = {},
     onOpenLocalFile: () -> Unit = {}
@@ -135,7 +149,9 @@ fun OimAsyncPlayer(
             }
         }
 
-        is OimLoadState.Loading -> {
+        is OimLoadState.Loading -> if (placeholder != null) {
+            Box(modifier.testTag("oim_async_loading_box")) { placeholder() }
+        } else {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = modifier
@@ -170,7 +186,7 @@ fun OimAsyncPlayer(
             }
         }
 
-        is OimLoadState.Success -> {
+        is OimLoadState.Success -> Box(modifier, propagateMinConstraints = true) {
             OimPlayerView(
                 asset = loadState.asset,
                 language = language,
@@ -179,14 +195,21 @@ fun OimAsyncPlayer(
                 selectedLayerId = selectedLayerId,
                 showPixelGrid = showPixelGrid,
                 showPerformanceOverlay = showPerformanceOverlay,
+                zoomState = zoomState,
                 parallaxEnabled = parallaxEnabled,
                 replayTrigger = replayTrigger,
                 cornerRadius = cornerRadius,
                 showFrameBorder = showFrameBorder,
                 externalBlurDp = externalBlurDp,
-                onSelectLayer = onSelectLayer,
-                modifier = modifier
+                onSelectLayer = onSelectLayer
             )
+            if (placeholder != null) {
+                // The thumbnail fades out over the render: alpha only, so the blur under it is drawn once, not per frame.
+                var covering by remember(loadState.asset) { mutableStateOf(true) }
+                LaunchedEffect(loadState.asset) { covering = false }
+                val alpha by animateFloatAsState(if (covering) 1f else 0f, tween(350), label = "oim-placeholder")
+                if (alpha > 0f) Box(Modifier.matchParentSize().graphicsLayer { this.alpha = alpha }) { placeholder() }
+            }
         }
 
         is OimLoadState.DegradedFromCache -> {
@@ -241,6 +264,7 @@ fun OimAsyncPlayer(
                     selectedLayerId = selectedLayerId,
                     showPixelGrid = showPixelGrid,
                     showPerformanceOverlay = showPerformanceOverlay,
+                    zoomState = zoomState,
                     parallaxEnabled = parallaxEnabled,
                     replayTrigger = replayTrigger,
                     cornerRadius = cornerRadius,

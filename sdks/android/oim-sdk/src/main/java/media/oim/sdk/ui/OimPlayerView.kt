@@ -159,6 +159,7 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.roundToInt
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.text.TextLayoutResult
@@ -198,6 +199,11 @@ fun OimPlayerView(
     externalBlurDp: Dp = 0.dp,
     /** Debug: frame rate, frame time and stutters drawn over the player (see OimPerformanceOverlay). */
     showPerformanceOverlay: Boolean = false,
+    /**
+     * Zoom hoisted to the host, which then puts [oimZoomGestures] on its whole stage. Null: the
+     * player keeps its own and listens on its canvas only.
+     */
+    zoomState: OimZoomState? = null,
     onSelectLayer: (String?) -> Unit = {}
 ) {
     val doc = asset.document
@@ -265,9 +271,11 @@ fun OimPlayerView(
     val playCounters = remember(asset.sourceLabel, replayTrigger) { mutableStateMapOf<String, Int>() }
 
     // Zoom & pan state
-    var zoomScale by remember(asset.sourceLabel) { mutableFloatStateOf(1f) }
-    var panOffsetX by remember(asset.sourceLabel) { mutableFloatStateOf(0f) }
-    var panOffsetY by remember(asset.sourceLabel) { mutableFloatStateOf(0f) }
+    val zoom = zoomState ?: rememberOimZoomState(asset.sourceLabel)
+    if (zoomState != null) LaunchedEffect(asset.sourceLabel) { zoom.reset() }
+    var zoomScale by zoom::scale
+    var panOffsetX by zoom::panX
+    var panOffsetY by zoom::panY
 
     // Sensor & touch parallax (only active when doc actually defines parallax depth)
     val hasParallaxLayers = remember(doc.layers) {
@@ -276,8 +284,8 @@ fun OimPlayerView(
     val parallaxActive = parallaxEnabled && doc.parallax.enabled && hasParallaxLayers
     var sensorTiltX by remember { mutableFloatStateOf(0f) }
     var sensorTiltY by remember { mutableFloatStateOf(0f) }
-    var touchTiltX by remember { mutableFloatStateOf(0f) }
-    var touchTiltY by remember { mutableFloatStateOf(0f) }
+    var touchTiltX by zoom::tiltX
+    var touchTiltY by zoom::tiltY
 
     DisposableEffect(context, parallaxActive) {
         if (!parallaxActive) {
@@ -379,39 +387,11 @@ fun OimPlayerView(
                 if (docDescription.isNotBlank()) contentDescription = docDescription
             }
             .testTag("oim_player_canvas")
-            .pointerInput(asset.sourceLabel, parallaxEnabled, cornerRadius) {
-                detectTransformGestures { centroid, pan, zoom, _ ->
-                    val nextZoom = (zoomScale * zoom).coerceIn(1f, 5f)
-                    zoomScale = nextZoom
-                    if (nextZoom > 1.01f) {
-                        val panBound = maxOf(size.width, size.height)
-                        val maxPanX = (size.width * (nextZoom - 1f)) / 2f
-                        val maxPanY = ((if (cornerRadius <= 0.dp) panBound else size.height) * (nextZoom - 1f)) / 2f
-                        panOffsetX = (panOffsetX + pan.x).coerceIn(-maxPanX, maxPanX)
-                        panOffsetY = (panOffsetY + pan.y).coerceIn(-maxPanY, maxPanY)
-                    } else {
-                        panOffsetX = 0f
-                        panOffsetY = 0f
-                        if (parallaxActive) {
-                            touchTiltX = ((centroid.x / size.width.coerceAtLeast(1)) - 0.5f) * 2f
-                            touchTiltY = ((centroid.y / size.height.coerceAtLeast(1)) - 0.5f) * 2f
-                        }
-                    }
-                }
-            }
+            .onSizeChanged { zoom.canvasSize = it }
+            .then(if (zoomState == null) Modifier.oimZoomGestures(zoom, tilt = parallaxActive, overflowVertically = cornerRadius <= 0.dp) else Modifier)
             .pointerInput(asset.sourceLabel) {
                 detectTapGestures(
-                    onDoubleTap = {
-                        if (zoomScale > 1.05f) {
-                            zoomScale = 1f
-                            panOffsetX = 0f
-                            panOffsetY = 0f
-                            touchTiltX = 0f
-                            touchTiltY = 0f
-                        } else {
-                            zoomScale = 2.5f
-                        }
-                    },
+                    onDoubleTap = if (zoomState == null) { _ -> zoom.toggleZoom() } else null,
                     onTap = {
                         onSelectLayer(null)
                     }
@@ -449,7 +429,8 @@ fun OimPlayerView(
                         modifier = Modifier.fillMaxSize()
                     )
                 }
-                Image(
+                // A 2.0 poster is not part of the picture: the layers draw everything (ImageEngine's _posterFade).
+                if (doc.pngIsBase) Image(
                     bitmap = imageBitmap,
                     contentDescription = docDescription.ifBlank { null },
                     contentScale = ContentScale.FillBounds,
@@ -532,7 +513,7 @@ fun OimPlayerView(
                                 with(density) { cssSigmaToBlurRadius(rawBlurPx * scaleFactor).toDp() }
                             } else 0.dp
 
-                            val paintLayerInstance: @Composable (Float, Boolean) -> Unit = { copyOffsetX, mirrorCopy ->
+                            val paintLayerInstance: @Composable (Float, Boolean, Boolean) -> Unit = { copyOffsetX, mirrorCopy, dropShadow ->
                                 OimAnchoredLayerBox(
                                     xPercent = layer.x.toFloat(),
                                     yPercent = layer.y.toFloat(),
@@ -577,7 +558,8 @@ fun OimPlayerView(
                                             isSelected = isSelected,
                                             showDebugOutline = showPixelGrid,
                                             playTrigger = layerPlayCount,
-                                            onTap = { dispatchSlotInteraction(layer) }
+                                            onTap = { dispatchSlotInteraction(layer) },
+                                            dropShadow = dropShadow
                                         )
                                     }
                                 }
@@ -585,9 +567,10 @@ fun OimPlayerView(
 
                             val motionLoop = layer.motionLoop
                             if (motionLoop != null && motionLoop.speedPxSec > 0f) {
-                                val periodMs = ((doc.canvas.width.toFloat() / motionLoop.speedPxSec) * 1000f)
-                                    .toInt()
-                                    .coerceIn(800, 120000)
+                                // parallaxCss.ts: a lap moves one piece (the layer's width) at speedPxSec, with no ceiling.
+                                val pieceNaturalPx = ((layer.width ?: 100.0) / 100.0).toFloat().coerceAtLeast(0.1f) * doc.canvas.width
+                                val periodMs = (pieceNaturalPx / motionLoop.speedPxSec * 1000f)
+                                    .coerceIn(16f, Int.MAX_VALUE.toFloat()).toInt()
                                 val inf = rememberInfiniteTransition(label = "oim_loop_scroll_${layer.id}")
                                 val progress by inf.animateFloat(
                                     initialValue = 0f,
@@ -599,18 +582,25 @@ fun OimPlayerView(
                                     label = "loop_scroll_progress"
                                 )
                                 val tileW = ((layer.width ?: 100.0) / 100.0).toFloat().coerceAtLeast(0.1f) * canvasWidthPx
-                                val baseShift = if (motionLoop.direction.contains("left_to_right")) progress * tileW else -progress * tileW
-                                val adjacentOffset = if (motionLoop.direction.contains("left_to_right")) -tileW else tileW
+                                // Whole pixels, and the copies overlap by one: at a fractional offset each copy
+                                // half-covers the pixel where they meet, which then shows as a light seam.
+                                val shift = (progress * tileW).roundToInt().toFloat()
+                                val baseShift = if (motionLoop.direction.contains("left_to_right")) shift else -shift
+                                val step = tileW.roundToInt() - 1f
+                                val adjacentOffset = if (motionLoop.direction.contains("left_to_right")) -step else step
 
                                 Box(modifier = Modifier.fillMaxSize().clipToBounds()) {
-                                    for (copyIdx in 0..1) {
+                                    // Each copy's shadow spills onto its neighbour and draws a line where they meet;
+                                    // a second pass without shadows repaints the pictures over it.
+                                    val passes = if (layer.style.shadowEnabled) listOf(true, false) else listOf(true)
+                                    for (dropShadow in passes) for (copyIdx in 0..1) {
                                         val mirrorCopy = motionLoop.mirror && copyIdx == 1
                                         val copyOffsetX = baseShift + (if (copyIdx == 1) adjacentOffset else 0f)
-                                        paintLayerInstance(copyOffsetX, mirrorCopy)
+                                        paintLayerInstance(copyOffsetX, mirrorCopy, dropShadow)
                                     }
                                 }
                             } else {
-                                paintLayerInstance(0f, false)
+                                paintLayerInstance(0f, false, true)
                             }
                         }
                 }
@@ -940,7 +930,9 @@ private fun OimLayerNode(
     isSelected: Boolean,
     showDebugOutline: Boolean,
     playTrigger: Int,
-    onTap: () -> Unit
+    onTap: () -> Unit,
+    /** false: paint without the drop shadow (a loop's second pass, see the motion loop). */
+    dropShadow: Boolean = true
 ) {
     val density = LocalDensity.current
     val fontSizePx = remember(canvasWidthPx, layer.style.fontSizeDim, layer.style.fontSizeRatio) {
@@ -990,7 +982,7 @@ private fun OimLayerNode(
     } else {
         Color.Transparent
     }
-    val shadowColor = if (shadowBaseColor.alpha > 0f) {
+    val shadowColor = if (dropShadow && shadowBaseColor.alpha > 0f) {
         shadowBaseColor.copy(alpha = (shadowBaseColor.alpha * layer.style.shadowOpacity).coerceIn(0f, 1f))
     } else {
         Color.Transparent

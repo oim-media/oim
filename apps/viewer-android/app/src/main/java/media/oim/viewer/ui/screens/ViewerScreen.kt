@@ -5,6 +5,13 @@
  */
 package media.oim.viewer.ui.screens
 
+import media.oim.sdk.ui.oimZoomGestures
+import media.oim.sdk.ui.rememberOimZoomState
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import coil.request.ImageRequest
+import coil.compose.AsyncImage
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -179,12 +186,15 @@ fun ViewerScreen(
         }
     } else {
         // Google Photos-style full-screen immersive viewer
+        // Zoom listens on the whole screen: a zoomed picture covers the black above and below the canvas.
+        val zoomState = rememberOimZoomState(state.activeRequestKey)
         Box(
             modifier = modifier
                 .fillMaxSize()
                 .background(Color.Black)
+                .oimZoomGestures(zoomState, tilt = state.parallaxEnabled)
                 .pointerInput(Unit) {
-                    detectTapGestures(onTap = { chromeVisible = !chromeVisible })
+                    detectTapGestures(onTap = { chromeVisible = !chromeVisible }, onDoubleTap = { zoomState.toggleZoom() })
                 }
         ) {
             // Centered OIM Stage (borderless edge-to-edge on pure black, matching Google Photos)
@@ -200,11 +210,27 @@ fun ViewerScreen(
                     selectedLayerId = state.selectedLayerId,
                     showPixelGrid = state.showPixelGrid,
                     showPerformanceOverlay = state.showPerformance,
+                    zoomState = zoomState,
+                    placeholder = state.openingItem?.let { item ->
+                        {
+                            // Same request keys as the library tile, so Coil serves it from memory at once.
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(item.thumbnailUrl ?: item.oimUrl)
+                                    .size(540, 960)
+                                    .memoryCacheKey("thumb_${item.id}")
+                                    .diskCacheKey("thumb_${item.id}")
+                                    .build(),
+                                contentDescription = null,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.fillMaxSize().blur(16.dp)
+                            )
+                        }
+                    },
                     parallaxEnabled = state.parallaxEnabled,
                     replayTrigger = state.replayTrigger,
                     cornerRadius = 0.dp,
                     showFrameBorder = false,
-                    externalBlurDp = if (showLanguageMenu || showPaletteMenu) 6.dp else 0.dp,
                     onSelectLayer = { layerId ->
                         onSelectLayer(layerId)
                         if (layerId == null) {

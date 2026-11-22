@@ -55,6 +55,8 @@ data class OimStudioUiState(
     val hiddenLayerIds: Set<String> = emptySet(),
     val showPixelGrid: Boolean = false,
     val showPerformance: Boolean = false,
+    /** The library item being opened: its thumbnail stands in while the file loads. */
+    val openingItem: OimLibraryItem? = null,
     val parallaxEnabled: Boolean = true,
     val replayTrigger: Int = 0,
     val statusBanner: String? = null,
@@ -167,7 +169,7 @@ class OimStudioViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun openLibraryItem(item: OimLibraryItem, forceRefresh: Boolean = false) {
-        _uiState.update { it.copy(activeTab = StudioTab.VIEWER) }
+        _uiState.update { it.copy(activeTab = StudioTab.VIEWER, openingItem = item) }
         executeSdkLoad(
             OimRequest(
                 key = item.oimUrl,
@@ -180,7 +182,7 @@ class OimStudioViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun openCachedEntry(key: String, label: String) {
-        _uiState.update { it.copy(activeTab = StudioTab.VIEWER) }
+        _uiState.update { it.copy(activeTab = StudioTab.VIEWER, openingItem = null) }
         val remoteUrl = if (key.startsWith("http://") || key.startsWith("https://")) key else null
         executeSdkLoad(
             OimRequest(
@@ -199,7 +201,7 @@ class OimStudioViewModel(application: Application) : AndroidViewModel(applicatio
             return
         }
         val fileName = trimmed.substringAfterLast('/').ifBlank { "remote.oim.png" }
-        _uiState.update { it.copy(activeTab = StudioTab.VIEWER) }
+        _uiState.update { it.copy(activeTab = StudioTab.VIEWER, openingItem = null) }
         executeSdkLoad(
             OimRequest(
                 key = trimmed,
@@ -214,7 +216,7 @@ class OimStudioViewModel(application: Application) : AndroidViewModel(applicatio
     fun loadFromLocalUri(uri: Uri) {
         val resolver = getApplication<Application>().contentResolver
         val displayName = queryDisplayName(uri) ?: uri.lastPathSegment ?: "local.oim.png"
-        _uiState.update { it.copy(activeTab = StudioTab.VIEWER) }
+        _uiState.update { it.copy(activeTab = StudioTab.VIEWER, openingItem = null) }
         executeSdkLoad(
             OimRequest(
                 key = "local:$uri",

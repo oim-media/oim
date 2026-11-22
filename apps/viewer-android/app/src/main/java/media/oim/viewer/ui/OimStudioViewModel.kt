@@ -49,7 +49,7 @@ data class OimStudioUiState(
     val activeRequestKey: String? = null,
     val cacheSource: OimCacheSource? = null,
     val cacheStats: OimCacheStats? = null,
-    val selectedLanguage: String = "es",
+    val selectedLanguage: String = deviceLanguage(),
     val selectedPalette: String? = null,
     val selectedLayerId: String? = null,
     val hiddenLayerIds: Set<String> = emptySet(),
@@ -306,15 +306,11 @@ class OimStudioViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    private fun resolveInitialLanguage(asset: OimLoadedAsset): String {
-        val current = _uiState.value.selectedLanguage
-        val doc = asset.document ?: return current
-        return if (doc.languages.any { it.equals(current, ignoreCase = true) }) {
-            current
-        } else {
-            doc.languages.firstOrNull() ?: doc.defaultLanguage
-        }
-    }
+    /** The language the reader picked, else the device's; null until they pick one. */
+    private var pickedLanguage: String? = null
+
+    private fun resolveInitialLanguage(asset: OimLoadedAsset): String =
+        pickLanguage(asset.document?.languages.orEmpty(), asset.document?.defaultLanguage, pickedLanguage ?: deviceLanguage())
 
     fun exportActiveOimToUri(uri: Uri) {
         val rawBytes = _uiState.value.activeAsset?.rawBytes ?: return
@@ -338,6 +334,7 @@ class OimStudioViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun setLanguage(lang: String) {
+        pickedLanguage = lang
         _uiState.update { it.copy(selectedLanguage = lang) }
     }
 
@@ -411,3 +408,14 @@ class OimStudioViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 }
+
+/** The device's language when the app speaks it (es, en), else English: files open in it when they have it. */
+internal fun deviceLanguage(locale: java.util.Locale = java.util.Locale.getDefault()): String =
+    if (locale.language.equals("es", ignoreCase = true)) "es" else "en"
+
+/** [preferred] when the file has it, else the file's default, else its first language. */
+internal fun pickLanguage(languages: List<String>, defaultLanguage: String?, preferred: String): String =
+    languages.firstOrNull { it.equals(preferred, ignoreCase = true) }
+        ?: defaultLanguage?.takeIf { it.isNotBlank() }
+        ?: languages.firstOrNull()
+        ?: preferred

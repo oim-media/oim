@@ -32,6 +32,8 @@ translations travel inside it. There is a live demo at [oim.media](https://oim.m
 | [`oim_flutter`](sdks/flutter/README.md) | Native Dart/Flutter SDK: reads, verifies offline and renders `.oim` files with the `OimPlayer` widget. |
 | [`oim` (Rust)](sdks/rust/README.md) | Rust crate: reads, verifies offline and interprets `.oim` files. No renderer. |
 | [`viewer-flutter`](apps/viewer-flutter/README.md) | Native viewer for Android, iOS and Windows built on `oim_flutter`. |
+| [`oim-sdk` (Android)](sdks/android/README.md) | Native Kotlin/Jetpack Compose SDK: reads, verifies, caches and renders `.oim` files with `OimAsyncPlayer`. |
+| [`viewer-android`](apps/viewer-android/README.md) | Sample Android viewer built on the Android SDK: library gallery, full-screen viewer, device-language files. |
 
 ## Install
 

@@ -40,7 +40,7 @@ A native Kotlin, Jetpack Compose and C++17 (Android NDK) framework to browse **O
    - **[`OimPatternAndGradientRenderer.kt`](oim-sdk/src/main/java/media/oim/sdk/ui/OimPatternAndGradientRenderer.kt)**:
      - Vector `pattern.tile` rendering with `renderPatternTileBitmap` + `BitmapShader(TileMode.REPEAT)`, zoom matrix and animated offset (`motion`), palette recoloring (`rawBg`/`rawColors`), procedural presets (`waves`, `grid`, `checker`, `stripes`, `dots`) and `linear`/`radial` gradients (`OimGradientBox`).
    - **[`OimFontLoader.kt`](oim-sdk/src/main/java/media/oim/sdk/ui/OimFontLoader.kt)**:
-     - Native **WOFF1** decoding (`0x774F4646` → SFNT) besides embedded TTF/OTF, and nearest-weight selection (`findBestFont`).
+     - Embedded TTF/OTF, **WOFF1** (`0x774F4646` → SFNT) and **WOFF2** ([`Woff2.kt`](oim-sdk/src/main/java/media/oim/sdk/ui/Woff2.kt): Brotli via `org.brotli:dec`, rebuilt `glyf`/`loca`), and nearest-weight selection (`findBestFont`). A transformed `hmtx` or a font collection falls back to the system font.
    - **[`OimKeyframeSampler.kt`](oim-sdk/src/main/java/media/oim/sdk/animation/OimKeyframeSampler.kt)** and **[`OimTextAnimator.kt`](oim-sdk/src/main/java/media/oim/sdk/animation/OimTextAnimator.kt)**:
      - Track sampling (`x`, `y`, `r`, `s`, `o`, `b`) with `cubic-bezier` curves and CSS easings.
      - Text effects: `fade-chars`, `slide-up`, `bounce-chars`, `reveal-mask`, `scale-in`, `rise-words`, `wave-chars`, `typewriter`, `glitch-cyberpunk` and `glitch-slice`.
@@ -90,6 +90,11 @@ OimAsyncPlayer(
     onOpenLocalFile = { /* file picker */ }
 )
 ```
+
+Two optional parameters of `OimAsyncPlayer`:
+
+- `placeholder`: shown while the file loads and faded out once it paints, e.g. the library's blurred thumbnail instead of a spinner.
+- `zoomState`: pass `rememberOimZoomState(key)` and put `Modifier.oimZoomGestures(zoomState)` on the whole screen, so a pinch that starts outside the canvas (over a zoomed picture's overflow) still zooms. Without it the player handles zoom on its own canvas.
 
 To build with the C++17 native library (`liboim_native.so`) when the Android NDK and CMake `3.22.1` are available:
 

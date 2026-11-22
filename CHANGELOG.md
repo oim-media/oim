@@ -5,6 +5,12 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+- android: 2.0 files paint their layers instead of the poster PNG; image fills given as `{ref}` resolve.
+- android: embedded WOFF2 fonts decode (most editor files embed them), so text no longer falls back to the system font.
+- android: motion loops run at the web's speed (a lap is the layer's width at `speedPxSec`, no 120 s cap) and their copies meet without a seam.
+- android: full-screen pinch zoom (`OimZoomState`, `oimZoomGestures`), the canvas colour zooms with the layers, and `OimAsyncPlayer` takes a `placeholder`.
+- viewer-android: opens files in the device's language (Spanish or English), on the blurred thumbnail, without the menu blur.
+
 ## 1.36.6
 
 - scene: a figure whose fill is cut to its silhouette (gradient, pattern, generative) keeps its shadow and glow; the mask used to cut them too.

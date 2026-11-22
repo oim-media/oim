@@ -212,6 +212,9 @@ fun OimPlayerView(
         )
         return
     }
+    // The reader's language only counts when the file has it: otherwise the file's first (as the web scene picks).
+    @Suppress("NAME_SHADOWING")
+    val language = remember(doc.languages, language) { documentLanguage(doc.languages, language) }
 
     val animatedExternalBlur by animateDpAsState(
         targetValue = externalBlurDp,
@@ -519,7 +522,8 @@ fun OimPlayerView(
                             )
                             val rawBlurPx = (layer.style.blurRadiusPx + kfState.b).coerceAtLeast(0f)
                             val layerBlurDp = if (rawBlurPx > 0.2f) {
-                                with(density) { (rawBlurPx * scaleFactor).toDp() }
+                                // CSS blur(): the length is the standard deviation.
+                                with(density) { cssSigmaToBlurRadius(rawBlurPx * scaleFactor).toDp() }
                             } else 0.dp
 
                             val paintLayerInstance: @Composable (Float, Boolean) -> Unit = { copyOffsetX, mirrorCopy ->
@@ -980,7 +984,8 @@ private fun OimLayerNode(
     } else {
         Color.Transparent
     }
-    val shadowBlurDp = with(density) { (layer.style.shadowBlur.coerceAtLeast(0f) * 0.55f * scaleFactor).toDp() }
+    // CSS drop-shadow: the blur length is twice the standard deviation.
+    val shadowBlurDp = with(density) { cssSigmaToBlurRadius(layer.style.shadowBlur.coerceAtLeast(0f) / 2f * scaleFactor).toDp() }
     val shadowDxDp = with(density) { (layer.style.shadowOffsetX * scaleFactor).toDp() }
     val shadowDyDp = with(density) { (layer.style.shadowOffsetY * scaleFactor).toDp() }
 
@@ -2355,8 +2360,6 @@ private fun buildMarkedAnnotatedString(
     }
 }
 
-private val DECODE_LOCK = Any()
-
 private fun decodeDataUriBitmap(content: String): ImageBitmap? {
     if (!content.startsWith("data:image/")) return null
     val commaIdx = content.indexOf(',')
@@ -2364,8 +2367,7 @@ private fun decodeDataUriBitmap(content: String): ImageBitmap? {
     return try {
         val b64 = content.substring(commaIdx + 1)
         val bytes = Base64Codec.decode(b64)
-        // One decode at a time: concurrent decodes come back empty under Robolectric's native graphics.
-        synchronized(DECODE_LOCK) { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }?.asImageBitmap()
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
     } catch (_: Exception) {
         null
     }
@@ -2623,4 +2625,19 @@ private fun Modifier.blendLayer(mode: BlendMode): Modifier = drawWithContent {
     drawContext.canvas.saveLayer(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height), paint)
     drawContent()
     drawContext.canvas.restore()
+}
+
+/**
+ * A Gaussian standard deviation (what CSS blur lengths mean) as the radius Modifier.blur takes:
+ * Android turns a blur radius into sigma = 0.57735 * radius + 0.5 (HWUI Blur::convertRadiusToSigma).
+ */
+internal fun cssSigmaToBlurRadius(sigma: Float): Float = if (sigma <= 0.5f) sigma else (sigma - 0.5f) / 0.57735f
+
+/** languageOf in @oim-media/scene: the file's tag equal to the reader's, else one with its main subtag, else the file's first. */
+internal fun documentLanguage(languages: List<String>, reader: String): String {
+    fun main(tag: String) = tag.lowercase().substringBefore('-')
+    return languages.firstOrNull { it.equals(reader, ignoreCase = true) }
+        ?: languages.firstOrNull { main(it) == main(reader) }
+        ?: languages.firstOrNull()
+        ?: reader
 }

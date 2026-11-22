@@ -2493,14 +2493,20 @@ private fun OimWindowMask(
     val strokeWidth = (layer.style.strokeWidthPx ?: 0f) * scale
     val window = androidx.compose.ui.geometry.Rect(left, top, left + w, top + h)
     val silhouette = maskSilhouette(layer.style.geoShape, window)
-    androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
-        val outside = androidx.compose.ui.graphics.Path().apply {
-            fillType = androidx.compose.ui.graphics.PathFillType.EvenOdd
-            addRect(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height))
-            addPath(silhouette)
+    // The fill (color, gradient or pattern) spans the canvas, clipped to everything but the window.
+    val outside = androidx.compose.foundation.shape.GenericShape { size, _ ->
+        fillType = androidx.compose.ui.graphics.PathFillType.EvenOdd
+        addRect(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height))
+        addPath(silhouette)
+    }
+    Box(Modifier.fillMaxSize().clip(outside).background(fill)) {
+        layer.style.gradientFill?.let { OimGradientBox(gradient = it, palette = palette, modifier = Modifier.fillMaxSize()) }
+        layer.style.patternFill?.let {
+            OimPatternCanvas(pattern = it, palette = palette, canvasWidthPx = canvasWidthPx, naturalWidth = naturalWidth, modifier = Modifier.fillMaxSize())
         }
-        drawPath(outside, fill)
-        if (strokeWidth > 0f) {
+    }
+    if (strokeWidth > 0f) {
+        androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
             drawPath(silhouette, stroke, style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth))
         }
     }

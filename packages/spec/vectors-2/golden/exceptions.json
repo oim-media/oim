@@ -8,7 +8,6 @@
     "full-monty-composite": "Android SDK differs on blend and mask details of the composite (0.1.0).",
     "generative-fill": "Android SDK does not paint the generative fill yet (0.1.0).",
     "layer-blur": "Android SDK layer blur radius differs from CSS blur (0.1.0).",
-    "mask-frame-fill": "Android SDK does not paint the mask frame fill yet (0.1.0).",
     "media-filters": "Android SDK media filter colour matrix differs from CSS filters (0.1.0).",
     "pattern-color-roles": "Android SDK does not resolve pattern colour roles yet (0.1.0).",
     "shadow-effects": "Android SDK shadow blur radius differs from CSS box-shadow (0.1.0).",

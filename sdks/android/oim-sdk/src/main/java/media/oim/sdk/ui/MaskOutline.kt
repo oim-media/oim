@@ -47,7 +47,7 @@ private val CATALOGUE = mapOf(
 private val PARSED = java.util.concurrent.ConcurrentHashMap<String, android.graphics.Path>()
 
 internal fun parsedCopy(d: String): Path =
-    android.graphics.Path(PARSED.getOrPut(d) { PathParser().parsePathString(d).toPath().asAndroidPath() }).asComposePath()
+    android.graphics.Path(PARSED.getOrPut(d) { traced("oim:parse-path") { PathParser().parsePathString(d).toPath().asAndroidPath() } }).asComposePath()
 
 internal fun maskSilhouette(name: String?, box: Rect): Path {
     val d = CATALOGUE[name ?: "circle"] ?: return Path().apply { addRect(box) }

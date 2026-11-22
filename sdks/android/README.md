@@ -99,6 +99,14 @@ To build with the C++17 native library (`liboim_native.so`) when the Android NDK
 
 ---
 
+## Performance checks
+
+- **On screen:** `OimPlayerView(..., showPerformanceOverlay = true)` draws frame rate, median and p95 frame time,
+  and stutters (frames over 1.5x the display's budget) against the screen's real refresh rate (60/90/120 Hz).
+  It requests a frame every vsync, so it keeps an idle player drawing: read it while the file animates or scrolls.
+- **System trace:** record with Perfetto or Android Studio's profiler and look for the `oim:decode-image` and
+  `oim:parse-path` sections, beside Compose's own composition and draw slices. That also measures an idle player.
+
 ## Conformance, tests and references
 
 - **Unit suites**:

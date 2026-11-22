@@ -196,6 +196,8 @@ fun OimPlayerView(
     cornerRadius: Dp = 20.dp,
     showFrameBorder: Boolean = true,
     externalBlurDp: Dp = 0.dp,
+    /** Debug: frame rate, frame time and stutters drawn over the player (see OimPerformanceOverlay). */
+    showPerformanceOverlay: Boolean = false,
     onSelectLayer: (String?) -> Unit = {}
 ) {
     val doc = asset.document
@@ -649,6 +651,9 @@ fun OimPlayerView(
                     modifier = Modifier.fillMaxSize()
                 )
             }
+        }
+        if (showPerformanceOverlay) {
+            OimPerformanceOverlay(layerCount = doc.layers.size, modifier = Modifier.align(Alignment.TopStart))
         }
 
         val selectedLayer = doc.layers.firstOrNull { it.id == selectedLayerId && it.detailContent.isNotEmpty() }
@@ -2480,7 +2485,9 @@ private fun buildMarkedAnnotatedString(
     }
 }
 
-private fun decodeDataUriBitmap(content: String): ImageBitmap? {
+private fun decodeDataUriBitmap(content: String): ImageBitmap? = traced("oim:decode-image") { decodeDataUriBitmapUntraced(content) }
+
+private fun decodeDataUriBitmapUntraced(content: String): ImageBitmap? {
     if (!content.startsWith("data:image/")) return null
     val commaIdx = content.indexOf(',')
     if (commaIdx < 0) return null

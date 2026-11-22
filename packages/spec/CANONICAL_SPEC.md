@@ -2,7 +2,7 @@
 
 > This document describes **1.x** (legacy, no longer painted by readers). The current format is OIM 2.0: see [CANONICAL_SPEC_2.md](CANONICAL_SPEC_2.md).
 
-**Contract version:** 1.36.5  
+**Contract version:** 1.36.6  
 **Date:** 2026-11-02 (reviewed against `packages/core/src/schema.ts`; the source of truth is the schema, this document summarises it)  
 **Status:** Normative / In force  
 **License:** Apache-2.0  

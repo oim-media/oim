@@ -53,6 +53,12 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+          # Maven Central rate-limits GitHub's runners (429); cached dependencies skip most downloads.
+          cache: gradle
+          cache-dependency-path: |
+            sdks/android/**/*.gradle*
+            sdks/android/gradle/libs.versions.toml
+            apps/viewer-android/**/*.gradle*
       - name: Test Android SDK & Conformance
         run: cd sdks/android && ./gradlew --no-daemon :oim-sdk:testDebugUnitTest
       - name: Test and build the Android viewer

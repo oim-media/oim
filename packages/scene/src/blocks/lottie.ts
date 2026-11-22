@@ -36,20 +36,21 @@ export function lottieData(src: string | undefined): object | undefined {
 /**
  * Plays a lottie layer inside `el` with lottie_light (no expressions, no eval).
  * The library loads late, so the run reads `paused()` when it starts; a paused
- * scene shows the first frame.
+ * scene rests on the middle frame, like the editor and the static export: frame 0
+ * is empty in most Lotties (they build from nothing), the middle one is full.
  */
 export function playLottie(el: HTMLElement, data: object, opts: { loop: boolean; paused: () => boolean }): LottieRun {
   const box = el.ownerDocument.createElement("div");
   box.className = "oim-lottie";
   Object.assign(box.style, { position: "absolute", inset: "0" });
   el.appendChild(box);
-  let anim: { play(): void; pause(): void; destroy(): void; goToAndStop(f: number, isFrame: boolean): void } | undefined;
+  let anim: { play(): void; pause(): void; destroy(): void; goToAndStop(f: number, isFrame: boolean): void; totalFrames: number } | undefined;
   let gone = false;
   loadLottie()
     .then((lottie) => {
       if (gone) return;
       anim = lottie.loadAnimation({ container: box, renderer: "svg", loop: opts.loop, autoplay: !opts.paused(), animationData: data });
-      if (opts.paused()) anim!.goToAndStop(0, true);
+      if (opts.paused()) anim!.goToAndStop(Math.max(0, Math.floor((anim!.totalFrames - 1) / 2)) || 0, true);
     })
     .catch(() => {
       box.remove();

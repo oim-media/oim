@@ -6,7 +6,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const calls: Array<Record<string, unknown>> = [];
-const anim = { play: vi.fn(), pause: vi.fn(), destroy: vi.fn(), goToAndStop: vi.fn() };
+const anim = { play: vi.fn(), pause: vi.fn(), destroy: vi.fn(), goToAndStop: vi.fn(), totalFrames: 90 };
 vi.mock("../runtime/lottie-loader.js", () => ({
   loadLottie: () => Promise.resolve({ loadAnimation: (o: Record<string, unknown>) => (calls.push(o), anim) }),
 }));
@@ -61,11 +61,13 @@ describe("lottie layer", () => {
     expect(anim.destroy).toHaveBeenCalled();
   });
 
-  it("a paused scene shows the first frame, and loop: false plays once", async () => {
+  // Same rest as the editor and the static export (OIM-Studio lottie-frame.ts): frame 0 is
+  // empty in most Lotties (Success.json is at scale 0 there), the middle one is full.
+  it("a paused scene shows the middle frame, and loop: false plays once", async () => {
     const host = document.createElement("div");
     mount(host, doc(JSON.stringify(DOT), false), { allowLottie: true, paused: true });
     await flush();
     expect(calls[0]).toMatchObject({ loop: false, autoplay: false });
-    expect(anim.goToAndStop).toHaveBeenCalledWith(0, true);
+    expect(anim.goToAndStop).toHaveBeenCalledWith(44, true);
   });
 });

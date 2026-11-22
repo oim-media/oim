@@ -324,6 +324,12 @@ data class OimLayerStyle(
     val isVisible: Boolean = true,
     val decorative: Boolean = false,
     val alt: Map<String, String> = emptyMap(),
+    /** v2 `text.highlight` (block): a band behind the whole body, as wide as the box. */
+    val blockHighlightHex: String? = null,
+    /** v2 `text.dropCap`: lines it spans (0 = none), color and gap to the rest. */
+    val dropCapLines: Int = 0,
+    val dropCapColorHex: String? = null,
+    val dropCapMarginRight: Float = 8f,
     val textAnimationType: String? = null,
     val textAnimationSpeed: Double? = null,
     val textAnimationDelay: Double? = null,

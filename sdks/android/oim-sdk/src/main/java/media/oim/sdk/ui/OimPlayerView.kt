@@ -159,6 +159,7 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.roundToInt
+import androidx.compose.ui.layout.layout
 import kotlin.math.sin
 import kotlin.math.sqrt
 
@@ -1465,7 +1466,7 @@ private fun OimLayerNode(
                 }
                 m
             }
-            val lineHeightSp = layer.style.lineHeightFactor?.let { pixelLockedSp * it } ?: (pixelLockedSp * 1.15f)
+            val lineHeightSp = layer.style.lineHeightFactor?.let { pixelLockedSp * it } ?: (pixelLockedSp * 1.25f) // DEFAULT_LINE_HEIGHT in @oim-media/core typography.ts
             val resolvedTextAlign = when (layer.style.textAlign) {
                 OimTextAlign.START -> TextAlign.Start
                 OimTextAlign.CENTER -> TextAlign.Center
@@ -1477,7 +1478,36 @@ private fun OimLayerNode(
                 OimTextAlign.END -> Alignment.CenterEnd
                 else -> Alignment.CenterStart
             }
-            val textWidthMod = if (widthDp != null) Modifier.fillMaxWidth() else Modifier
+            val blockHighlight = layer.style.blockHighlightHex?.let { parseOimColor(it, palette, Color.Transparent) }
+            // text-marks.ts: the block band pads the body 2px 4px and stretches across the box.
+            val textWidthMod = (if (widthDp != null || blockHighlight != null) Modifier.fillMaxWidth() else Modifier)
+                .then(
+                    if (blockHighlight != null) with(density) {
+                        // CSS padding grows the stretched body past the box: 8px wider, overflowing right.
+                        val padX = (4f * scaleFactor).roundToInt()
+                        Modifier
+                            .layout { m, c ->
+                                val w = c.maxWidth + 2 * padX
+                                val pl = m.measure(c.copy(minWidth = w, maxWidth = w))
+                                layout(c.maxWidth, pl.height) { pl.place(0, 0) }
+                            }
+                            .background(blockHighlight)
+                            .padding(horizontal = (4f * scaleFactor).toDp(), vertical = (2f * scaleFactor).toDp())
+                    } else Modifier
+                )
+            // Only the fill paints the band; the other passes keep the same box without it.
+            val textBandlessMod = if (blockHighlight == null) textWidthMod else Modifier.fillMaxWidth().then(
+                with(density) {
+                    val padX = (4f * scaleFactor).roundToInt()
+                    Modifier
+                        .layout { m, c ->
+                            val w = c.maxWidth + 2 * padX
+                            val pl = m.measure(c.copy(minWidth = w, maxWidth = w))
+                            layout(c.maxWidth, pl.height) { pl.place(0, 0) }
+                        }
+                        .padding(horizontal = (4f * scaleFactor).toDp(), vertical = (2f * scaleFactor).toDp())
+                }
+            )
             val glyphStrokePx = with(density) { borderWidthDp.toPx() }
             val artistic = layer.style.artistic
             val extColor = artistic?.extrusionColorHex?.let {
@@ -1512,8 +1542,15 @@ private fun OimLayerNode(
                         .then(if (hasBoxChrome) Modifier.padding(horizontal = 2.dp, vertical = 1.dp) else Modifier)
                 ) {
                     if (resolvedText.isNotEmpty()) {
-                        val plainOrBaseAnnotated = animatedTextRender.plainText
-                        val fillAnnotated = animatedTextRender.fillText
+                        val capLetter = resolvedText.first().takeIf { layer.style.dropCapLines > 0 && it.isLetterOrDigit() }
+                        val textRender = if (capLetter == null) animatedTextRender else animatedTextRender.copy(
+                            fillText = animatedTextRender.fillText.subSequence(1, animatedTextRender.fillText.length),
+                            plainText = animatedTextRender.plainText.subSequence(1, animatedTextRender.plainText.length),
+                            strokeText = animatedTextRender.strokeText.subSequence(1, animatedTextRender.strokeText.length)
+                        )
+                        val textBody: @Composable () -> Unit = {
+                        val plainOrBaseAnnotated = textRender.plainText
+                        val fillAnnotated = textRender.fillText
                         val glitchState = animatedTextRender.glitchState
                         val baseTextStyle = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                         val strokeTextStyle = TextStyle(
@@ -1530,7 +1567,7 @@ private fun OimLayerNode(
                                 lineHeight = lineHeightSp,
                                 style = baseTextStyle,
                                 color = effColor,
-                                modifier = textWidthMod
+                                modifier = textBandlessMod
                                     .offset(x = dxDp, y = dyDp)
                                     .then(
                                         if (blurDp > 0.2.dp) {
@@ -1563,7 +1600,7 @@ private fun OimLayerNode(
                                     lineHeight = lineHeightSp,
                                     style = baseTextStyle,
                                     color = extColor,
-                                    modifier = textWidthMod.offset(x = d * 0.5f, y = d),
+                                    modifier = textBandlessMod.offset(x = d * 0.5f, y = d),
                                     textAlign = resolvedTextAlign
                                 )
                             }
@@ -1582,14 +1619,14 @@ private fun OimLayerNode(
                                     lineHeight = lineHeightSp,
                                     style = baseTextStyle,
                                     color = ghostColor,
-                                    modifier = textWidthMod.offset(x = dxDp, y = dyDp),
+                                    modifier = textBandlessMod.offset(x = dxDp, y = dyDp),
                                     textAlign = resolvedTextAlign
                                 )
                             }
                         }
                         if (glyphStrokePx > 0f && borderColor.alpha > 0f) {
                             Text(
-                                text = animatedTextRender.strokeText,
+                                text = textRender.strokeText,
                                 fontFamily = fontFamily,
                                 fontWeight = fontWeight,
                                 fontStyle = if (layer.style.fontStyleItalic) FontStyle.Italic else FontStyle.Normal,
@@ -1597,7 +1634,7 @@ private fun OimLayerNode(
                                 lineHeight = lineHeightSp,
                                 style = strokeTextStyle,
                                 color = borderColor,
-                                modifier = textWidthMod,
+                                modifier = textBandlessMod,
                                 textAlign = resolvedTextAlign
                             )
                         }
@@ -1610,6 +1647,7 @@ private fun OimLayerNode(
                             lineHeight = lineHeightSp,
                             style = baseTextStyle,
                             color = textColor,
+                            // shortcut: the band sits under the fill only, so it covers a glyph stroke's outer half; paint it first if strokes need it.
                             modifier = textWidthMod,
                             textAlign = resolvedTextAlign
                         )
@@ -1625,7 +1663,7 @@ private fun OimLayerNode(
                                     lineHeight = lineHeightSp,
                                     style = baseTextStyle,
                                     color = textColor,
-                                    modifier = textWidthMod
+                                    modifier = textBandlessMod
                                         .offset(x = dxDp)
                                         .drawWithContent {
                                             val topY = (size.height * (copy.clipTopPct / 100f)).coerceIn(0f, size.height)
@@ -1636,6 +1674,34 @@ private fun OimLayerNode(
                                         },
                                     textAlign = resolvedTextAlign
                                 )
+                            }
+                        }
+                        }
+                        if (capLetter == null) {
+                            textBody()
+                        } else {
+                            // core/drop-cap.ts: a bold letter floated left, 2.2x (3.2x over three lines), line height 0.85.
+                            // shortcut: a Row indents every line, not just the first N; a float is exact only when the rest fits in N lines.
+                            val capScale = if (layer.style.dropCapLines == 3) 3.2f else 2.2f
+                            Row(verticalAlignment = Alignment.Top) {
+                                Text(
+                                    text = capLetter.toString(),
+                                    fontFamily = fontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = pixelLockedSp * capScale,
+                                    lineHeight = pixelLockedSp * capScale * 0.85f,
+                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)),
+                                    color = layer.style.dropCapColorHex?.let { parseOimColor(it, palette, textColor) } ?: textColor,
+                                    modifier = Modifier
+                                        .padding(end = with(density) { (layer.style.dropCapMarginRight * scaleFactor).toDp() })
+                                        // CSS centres the glyph in a 0.85em line box, shorter than the font: Compose won't shrink below it.
+                                        .layout { m, c ->
+                                            val pl = m.measure(c)
+                                            val box = (pixelLockedSp * capScale * 0.85f).toPx().roundToInt()
+                                            layout(pl.width, box) { pl.place(0, (box - pl.height) / 2) }
+                                        }
+                                )
+                                Box(Modifier.weight(1f), contentAlignment = boxContentAlignment) { textBody() }
                             }
                         }
                     }

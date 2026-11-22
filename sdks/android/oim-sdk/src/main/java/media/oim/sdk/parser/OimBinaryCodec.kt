@@ -1527,6 +1527,12 @@ object OimBinaryCodec {
                     imageFill = effectiveImageFill,
                     artistic = artistic,
                     textMarks = parseV2TextMarks(textObj?.optJSONObject("marks")),
+                    blockHighlightHex = textObj?.optJSONObject("highlight")
+                        ?.takeIf { it.optBoolean("enabled", false) }?.optString("color", "")?.ifBlank { null },
+                    dropCapLines = textObj?.optJSONObject("dropCap")
+                        ?.takeIf { it.optBoolean("enabled", false) }?.optInt("lines", 2) ?: 0,
+                    dropCapColorHex = textObj?.optJSONObject("dropCap")?.optString("color", "")?.ifBlank { null },
+                    dropCapMarginRight = textObj?.optJSONObject("dropCap")?.optDouble("marginRight", 8.0)?.toFloat() ?: 8f,
                     textRuns = parseTextRuns(textObj?.optJSONObject("runs"))
                 ),
                 animation = animSpec,

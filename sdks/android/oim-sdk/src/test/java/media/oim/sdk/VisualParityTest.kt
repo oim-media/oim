@@ -82,6 +82,12 @@ class VisualParityTest(private val name: String) {
         // "Animations disabled": let entrances reach their final pose.
         compose.mainClock.advanceTimeBy(30_000)
         compose.waitForIdle()
+        // Image fills decode off the main thread (Dispatchers.Default), which waitForIdle does not wait for.
+        repeat(20) {
+            Thread.sleep(50)
+            compose.mainClock.advanceTimeBy(100)
+            compose.waitForIdle()
+        }
 
         // Draw the content view straight into a bitmap (captureToImage times out under Robolectric).
         val image = Bitmap.createBitmap(WIDTH, height, Bitmap.Config.ARGB_8888)

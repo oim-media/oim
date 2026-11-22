@@ -315,6 +315,8 @@ data class OimLayerStyle(
     val svgViewBox: String? = null,
     /** `mask.mode` of a v2 layer (`window` or `cutout`); null when the layer is not a mask. */
     val maskMode: String? = null,
+    /** `preset` of the layer's first `backdrop` effect (only `duotone` is painted for now). */
+    val backdropPreset: String? = null,
     val flipX: Boolean = false,
     val flipY: Boolean = false,
     val isVisible: Boolean = true,

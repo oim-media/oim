@@ -426,32 +426,36 @@ fun OimPlayerView(
                 }
                 .clipToBounds()
         ) {
-            doc.canvas.gradientFill?.let { grad ->
-                OimGradientBox(gradient = grad, palette = resolvedPalette, modifier = Modifier.fillMaxSize())
-            }
-            doc.canvas.patternFill?.let { pat ->
-                OimPatternCanvas(
-                    pattern = pat,
-                    palette = resolvedPalette,
-                    canvasWidthPx = canvasWidthPx,
-                    naturalWidth = doc.canvas.width,
-                    modifier = Modifier.fillMaxSize()
+            // The canvas under the layers; a backdrop effect paints it again under its box.
+            val paintBackground: @Composable () -> Unit = {
+                doc.canvas.gradientFill?.let { grad ->
+                    OimGradientBox(gradient = grad, palette = resolvedPalette, modifier = Modifier.fillMaxSize())
+                }
+                doc.canvas.patternFill?.let { pat ->
+                    OimPatternCanvas(
+                        pattern = pat,
+                        palette = resolvedPalette,
+                        canvasWidthPx = canvasWidthPx,
+                        naturalWidth = doc.canvas.width,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                Image(
+                    bitmap = imageBitmap,
+                    contentDescription = docDescription.ifBlank { null },
+                    contentScale = ContentScale.FillBounds,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            val bgScale = if (parallaxActive && (effectiveTiltX != 0f || effectiveTiltY != 0f)) 1.04f else 1f
+                            scaleX = bgScale
+                            scaleY = bgScale
+                            translationX = -effectiveTiltX * maxParallaxPx * 0.35f
+                            translationY = -effectiveTiltY * maxParallaxPx * 0.35f
+                        }
                 )
             }
-            Image(
-                bitmap = imageBitmap,
-                contentDescription = docDescription.ifBlank { null },
-                contentScale = ContentScale.FillBounds,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer {
-                        val bgScale = if (parallaxActive && (effectiveTiltX != 0f || effectiveTiltY != 0f)) 1.04f else 1f
-                        scaleX = bgScale
-                        scaleY = bgScale
-                        translationX = -effectiveTiltX * maxParallaxPx * 0.35f
-                        translationY = -effectiveTiltY * maxParallaxPx * 0.35f
-                    }
-            )
+            paintBackground()
 
             val langBlurDp = languageBlurAnim.value.dp
             Box(
@@ -613,7 +617,16 @@ fun OimPlayerView(
                         visibleLayers.take(cut).forEach { paintLayer(it) }
                     }
                 }
-                visibleLayers.drop(cut + 1).forEach { paintLayer(it) }
+                visibleLayers.withIndex().drop(cut + 1).forEach { (i, layer) ->
+                    if (layer.style.backdropPreset == "duotone") {
+                        // A backdrop filters what lies under its box: paint that again, filtered and clipped.
+                        Box(Modifier.fillMaxSize().clip(boxShape(layer, doc.canvas.width, doc.canvas.height)).duotone()) {
+                            paintBackground()
+                            visibleLayers.take(i).forEach { paintLayer(it) }
+                        }
+                    }
+                    paintLayer(layer)
+                }
             }
 
             if (showPixelGrid) {
@@ -2544,4 +2557,32 @@ private fun customFrameShape(paths: List<OimSvgPathItem>, viewBox: String?): Sha
         })
         addPath(path)
     }
+}
+
+private fun boxShape(layer: OimLayer, naturalWidth: Int, naturalHeight: Int) = androidx.compose.foundation.shape.GenericShape { size, _ ->
+    val left = (layer.x / 100.0 * size.width).toFloat()
+    val top = (layer.y / 100.0 * size.height).toFloat()
+    val w = layer.widthDim?.resolvePx(size.width, size.height, naturalWidth, isHorizontal = true) ?: 0f
+    val h = layer.heightDim?.resolvePx(size.width, size.height, naturalHeight, isHorizontal = false) ?: 0f
+    addRect(androidx.compose.ui.geometry.Rect(left, top, left + w, top + h))
+}
+
+/** DUOTONE_COLORS of @oim-media/scene: luminance (0.33 per channel) mapped from shadows to lights, in sRGB. */
+private val DUOTONE_SHADOWS = floatArrayOf(0x1e / 255f, 0x1b / 255f, 0x4b / 255f)
+private val DUOTONE_LIGHTS = floatArrayOf(0xfb / 255f, 0xbf / 255f, 0x24 / 255f)
+
+private fun Modifier.duotone(): Modifier = drawWithContent {
+    // The two-stop table is linear in the grey, so one colour matrix draws the whole filter.
+    val m = FloatArray(20)
+    for (c in 0..2) {
+        val k = (DUOTONE_LIGHTS[c] - DUOTONE_SHADOWS[c]) * 0.33f
+        m[c * 5] = k; m[c * 5 + 1] = k; m[c * 5 + 2] = k; m[c * 5 + 4] = DUOTONE_SHADOWS[c] * 255f
+    }
+    m[18] = 1f
+    val paint = androidx.compose.ui.graphics.Paint().apply {
+        colorFilter = androidx.compose.ui.graphics.ColorFilter.colorMatrix(androidx.compose.ui.graphics.ColorMatrix(m))
+    }
+    drawContext.canvas.saveLayer(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height), paint)
+    drawContent()
+    drawContext.canvas.restore()
 }

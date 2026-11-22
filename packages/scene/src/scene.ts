@@ -11,6 +11,7 @@ import { applyCorners } from "./blocks/corners.js";
 import { effectsToStyle } from "./blocks/effects.js";
 import { applyFills, pictureNode } from "./blocks/fills.js";
 import { applyGeometry, strokeInset } from "./blocks/geometry.js";
+import { liftShadow } from "./blocks/shadow-lift.js";
 import { defineGrade, defineGrain, defsOf } from "./blocks/grain.js";
 import { lottieData, playLottie, type LottieRun } from "./blocks/lottie.js";
 import { duotoneFilter } from "./blocks/duotone.js";
@@ -122,6 +123,8 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
   const inLanguage = (layer: Layer) => !layer.languages || layer.languages.some((l) => sameLanguage(l, lang));
 
   /** The effects the scene paints (blur, shadow, glow, backdrop); grain, texture and duotone wait for their own painter (see coverage). */
+  // The layer's own filter, kept apart: liftShadow may move it to a wrapper.
+  const effectFilter = new WeakMap<HTMLElement, string>();
   const applyEffects = (el: HTMLElement, layer: Layer) => {
     const style = effectsToStyle(layer.effects, {
       isText: layer.type === "text",
@@ -130,6 +133,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
       colorCss: (color) => colors.css(color),
     });
     el.style.filter = style.filter;
+    effectFilter.set(el, style.filter);
     el.style.textShadow = style.textShadow;
     el.style.backdropFilter = style.backdropFilter ?? "";
     if (style.defs.some((def) => def.kind === "duotone")) {
@@ -196,6 +200,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     const figure = has("fills", "geometry", "strokes");
     const outline = layer.type === "shape" ? (figure ? applyGeometry(el, layer, { colors }) : geometryOutline(layer.geometry, layer.box, strokeInset(layer, colors))) : geometryOutline(undefined);
     if (has("effects", "geometry")) el.style.clipPath = filterClip(layer, outline);
+    if (layer.type === "shape" && (figure || has("effects"))) liftShadow(el, effectFilter.get(el) ?? "");
     if (has("corners", "geometry")) applyCorners(el, layer, !!outline.round);
     if (has("strokes", "geometry", "fills")) applyStrokes(el, layer, { colors, isText, vector: !!outline.silhouette || !!el.querySelector(":scope > svg[data-oim-figure]"), rounded: !!outline.round || [layer.corners ?? 0].flat().some((c) => c > 0) });
     // A window mask paints a frame around its outline instead of its own box; a cutout is not painted yet.
@@ -371,7 +376,7 @@ export function mount(container: HTMLElement, document: OimDocument, _options: S
     bindAnimations(el, layer);
     // only groups have children, and a group is always sized
     for (const child of layer.children ?? []) place(child, el, layer.box as Frame);
-    parent.appendChild(el);
+    parent.appendChild(el.parentElement?.hasAttribute("data-oim-shadow-lift") ? el.parentElement : el);
   };
   // A cutout clips the layers before it in its parent (the canvas or its group), in that parent's own units.
   const place = (layer: Layer, parent: HTMLElement, frame: Frame) => {

@@ -49,6 +49,6 @@
     "goldens": "node tools/render-web-goldens.mjs vectors/golden"
   },
   "devDependencies": {
-    "playwright": "1.65.0"
+    "playwright": "1.65.1"
   }
 }

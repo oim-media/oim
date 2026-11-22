@@ -1208,7 +1208,11 @@ private fun OimLayerNode(
             }
 
             Box(modifier = if (isFullCanvasLayer) Modifier.fillMaxSize() else Modifier.size(width = w, height = h)) {
-                if (shadowColor.alpha > 0f) {
+                // The web's drop-shadow follows painted pixels: a pattern on a clear ground shadows only its figures.
+                // shortcut: that faint per-figure halo is not drawn; draw it from the tile when a file shows it.
+                val seeThroughPattern = fillColor.alpha == 0f && imageFill == null && layer.style.gradientFill == null &&
+                    layer.style.patternFill?.let { parseOimColor(it.bg, palette, Color.Transparent).alpha == 0f } == true
+                if (shadowColor.alpha > 0f && !seeThroughPattern) {
                     renderGeoEffect(shadowColor, shadowBlurDp, shadowDxDp, shadowDyDp)
                 }
                 if (layer.style.glowEnabled && glowColor.alpha > 0f && glowRadiusPx > 0f) {

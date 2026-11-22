@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.vector.PathParser
 import media.oim.sdk.model.OimGradientFill
 import media.oim.sdk.model.OimPatternFill
 import kotlin.math.abs
+import media.oim.sdk.model.OimSvgPathItem
 import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.roundToInt
@@ -269,6 +270,7 @@ internal fun OimPatternCanvas(
     naturalWidth: Int,
     modifier: Modifier = Modifier
 ) {
+    @Suppress("NAME_SHADOWING") val pattern = remember(pattern) { scatteredPresetTile(pattern) }
     val bgColor = resolveOimColorString(pattern.bg, palette, Color.Transparent)
     val fgColor = resolveOimColorString(pattern.colors.firstOrNull(), palette, Color(0x66FFFFFF))
     val secondaryColor = resolveOimColorString(pattern.colors.getOrNull(1), palette, fgColor.copy(alpha = 0.5f))
@@ -479,4 +481,61 @@ internal fun OimPatternCanvas(
             }
         }
     }
+}
+
+/** seededRandom of @oim-media/core patterns.ts. */
+private fun seededRandom(seed: Double): Double {
+    val x = sin(seed) * 10000.0
+    return x - kotlin.math.floor(x)
+}
+
+/** The filled figures of PATTERN_PRESET_SVGS (@oim-media/core patterns.ts), in their 24 x 24 box. */
+private val SCATTER_FIGURES = mapOf(
+    "clouds" to "M17.5 19A5.5 5.5 0 0 0 18 8.02a7.5 7.5 0 0 0-14.93 2.1A5.5 5.5 0 0 0 4.5 21h13a1 1 0 0 0 0-2z",
+    "stars" to "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
+    "heart" to "M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z",
+    "bolt" to "M13 2L3 14h9l-1 8 10-12h-9l1-8z",
+    "leaf" to "M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 3.5 1 8a7 7 0 0 1-9 10z",
+    "drop" to "M12 22a7 7 0 0 0 7-7c0-4.3-7-13-7-13S5 10.7 5 15a7 7 0 0 0 7 7z",
+    "moon" to "M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z",
+    "crown" to "M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z",
+    "dots" to "M6 12a6 6 0 1 0 12 0a6 6 0 1 0-12 0z",
+)
+
+/**
+ * A preset pattern without a drawn tile gets the tile generatePatternSVG draws in
+ * @oim-media/core: 15 figures scattered over a 160-unit tile (dispersion 0.5), each
+ * repeated across the edges. Several colours take turns, as there.
+ * shortcut: stroke presets (grid, waves, stripes, zigzags) and bubbles keep the old drawing; port them when a file needs it.
+ */
+internal fun scatteredPresetTile(pattern: OimPatternFill): OimPatternFill {
+    if (pattern.tilePaths.isNotEmpty()) return pattern
+    val figure = SCATTER_FIGURES[pattern.preset.lowercase()] ?: return pattern
+    val base = 160.0
+    val count = 15
+    val dispersion = 0.5
+    val cols = kotlin.math.ceil(kotlin.math.sqrt(count.toDouble())).toInt()
+    val rows = kotlin.math.ceil(count.toDouble() / cols).toInt()
+    val grid = base / cols
+    val items = mutableListOf<OimSvgPathItem>()
+    for (r in 0 until rows) for (c in 0 until cols) {
+        val idx = r * cols + c
+        if (idx >= count) break
+        val seed = idx * 23.456 + 1.23
+        val x0 = (c * grid + grid / 2 + (seededRandom(seed) - 0.5) * grid * dispersion * 1.5).coerceIn(5.0, base - 5)
+        val y0 = (r * grid + grid / 2 + (seededRandom(seed + 7.4) - 0.5) * grid * dispersion * 1.5).coerceIn(5.0, base - 5)
+        val k = (0.8 + (seededRandom(seed + 13.9) - 0.5) * 0.7 * dispersion) * pattern.scale
+        val rad = Math.toRadians(seededRandom(seed + 19.3) * 360 * dispersion)
+        val (cs, sn) = cos(rad) * k to sin(rad) * k
+        val color = if (pattern.colors.size > 1) pattern.colors[idx % pattern.colors.size] else null
+        for (dx in -1..1) for (dy in -1..1) {
+            val x = x0 + dx * base
+            val y = y0 + dy * base
+            if (x <= -30 || x >= base + 30 || y <= -30 || y >= base + 30) continue
+            // translate(x, y) scale(k) rotate(r) translate(-12, -12), as an SVG matrix [a b c d e f].
+            val m = listOf(cs, sn, -sn, cs, x - 12 * (cs - sn), y - 12 * (sn + cs)).map { it.toFloat() }
+            items += OimSvgPathItem(d = figure, fill = color, transform = m)
+        }
+    }
+    return pattern.copy(tileViewBox = listOf(0f, 0f, 160f, 160f), tilePaths = items)
 }

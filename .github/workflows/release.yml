@@ -202,6 +202,43 @@ jobs:
           cp "$apk" "$dest"
           gh release upload "$tag" "$dest" --clobber
 
+  mobile-android-native:
+    needs: release
+    # GitHub's runner ships the Android SDK; the self-hosted one does not.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+          cache-dependency-path: |
+            sdks/android/**/*.gradle*
+            sdks/android/gradle/libs.versions.toml
+            apps/viewer-android/**/*.gradle*
+      - name: Build signed native Android viewer and upload to Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          export ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/release.jks"
+          printf %s "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$ANDROID_KEYSTORE_PATH"
+          (cd apps/viewer-android && ./gradlew --no-daemon :app:assembleRelease)
+          rm -f "$ANDROID_KEYSTORE_PATH"
+          tag="$RELEASE_TAG"
+          dest="OIM.Viewer_${tag#v}_Native_Android.apk"
+          cp apps/viewer-android/app/build/outputs/apk/release/app-release.apk "$dest"
+          gh release upload "$tag" "$dest" --clobber
+
   desktop-windows-flutter:
     needs: release
     # Self-hosted Windows runner on Josué's PC when WINDOWS_RUNNER is set.

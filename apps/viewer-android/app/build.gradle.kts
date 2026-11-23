@@ -20,8 +20,22 @@ android {
     versionName = "0.1.0"
   }
 
+  // Release signing comes from CI secrets; without them the release build stays unsigned.
+  val keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+  signingConfigs {
+    if (keystorePath != null) {
+      create("release") {
+        storeFile = file(keystorePath)
+        storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+        keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+        keyPassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+      }
+    }
+  }
+
   buildTypes {
     release {
+      if (keystorePath != null) signingConfig = signingConfigs.getByName("release")
       isMinifyEnabled = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }

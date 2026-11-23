@@ -222,16 +222,21 @@ jobs:
             sdks/android/**/*.gradle*
             sdks/android/gradle/libs.versions.toml
             apps/viewer-android/**/*.gradle*
-      # shortcut: debug-signed like viewer-android-v0.1.0; switch to assembleRelease once a signing key exists.
-      - name: Build native Android viewer and upload to Release
+      - name: Build signed native Android viewer and upload to Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
-          (cd apps/viewer-android && ./gradlew --no-daemon :app:assembleDebug)
+          export ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/release.jks"
+          printf %s "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$ANDROID_KEYSTORE_PATH"
+          (cd apps/viewer-android && ./gradlew --no-daemon :app:assembleRelease)
+          rm -f "$ANDROID_KEYSTORE_PATH"
           tag="$RELEASE_TAG"
           dest="OIM.Viewer_${tag#v}_Native_Android.apk"
-          cp apps/viewer-android/app/build/outputs/apk/debug/app-debug.apk "$dest"
+          cp apps/viewer-android/app/build/outputs/apk/release/app-release.apk "$dest"
           gh release upload "$tag" "$dest" --clobber
 
   desktop-windows-flutter:

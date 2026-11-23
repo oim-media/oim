@@ -1,0 +1,36 @@
+# Publishes oim_flutter to pub.dev with trusted publishing (OIDC, no stored token).
+# pub.dev accepts only runs triggered by a tag push, so this cannot live in the manual
+# release.yml. Push a tag oim_flutter-vX.Y.Z (pub.dev admin tag pattern:
+# oim_flutter-v{{version}}) whose sdks/flutter/pubspec.yaml says version X.Y.Z.
+# A version that already exists is refused: versions are never overwritten.
+name: publish-pub
+on:
+  push:
+    tags:
+      - 'oim_flutter-v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Tag matches pubspec version
+        run: |
+          want="${GITHUB_REF_NAME#oim_flutter-v}"
+          have="$(sed -n 's/^version: //p' sdks/flutter/pubspec.yaml)"
+          test "$want" = "$have" || { echo "tag $GITHUB_REF_NAME but pubspec says $have"; exit 1; }
+      # Exchanges the GitHub OIDC token for a pub.dev one (PUB_TOKEN).
+      - uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1.8.1
+      - uses: ./.github/actions/setup-flutter
+      - run: |
+          cd sdks/flutter
+          flutter pub get
+          flutter test
+          flutter pub publish --force

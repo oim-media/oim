@@ -53,7 +53,10 @@ android {
         it.systemProperty("oim.spec.dir", specDir.path)
         // OIM_PARITY=1 turns on VisualParityTest (renders, never compares).
         System.getenv("OIM_PARITY")?.let { v -> it.systemProperty("oim.parity", v) }
-        it.systemProperty("oim.parity.out", layout.buildDirectory.dir("parity/android").get().asFile.path)
+        val parityOut = layout.buildDirectory.dir("parity/android")
+        it.systemProperty("oim.parity.out", parityOut.get().asFile.path)
+        // The renders are an output: a build-cache hit (CI caches ~/.gradle) restores them too.
+        it.outputs.dir(parityOut)
         it.inputs.dir(specDir.resolve("vectors"))
         it.inputs.dir(specDir.resolve("vectors-2"))
         it.inputs.file(specDir.resolve("canonical-cases.json"))

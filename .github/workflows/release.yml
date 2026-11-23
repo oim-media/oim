@@ -202,6 +202,38 @@ jobs:
           cp "$apk" "$dest"
           gh release upload "$tag" "$dest" --clobber
 
+  mobile-android-native:
+    needs: release
+    # GitHub's runner ships the Android SDK; the self-hosted one does not.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+          cache-dependency-path: |
+            sdks/android/**/*.gradle*
+            sdks/android/gradle/libs.versions.toml
+            apps/viewer-android/**/*.gradle*
+      # shortcut: debug-signed like viewer-android-v0.1.0; switch to assembleRelease once a signing key exists.
+      - name: Build native Android viewer and upload to Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          (cd apps/viewer-android && ./gradlew --no-daemon :app:assembleDebug)
+          tag="$RELEASE_TAG"
+          dest="OIM.Viewer_${tag#v}_Native_Android.apk"
+          cp apps/viewer-android/app/build/outputs/apk/debug/app-debug.apk "$dest"
+          gh release upload "$tag" "$dest" --clobber
+
   desktop-windows-flutter:
     needs: release
     # Self-hosted Windows runner on Josué's PC when WINDOWS_RUNNER is set.

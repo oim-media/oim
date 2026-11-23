@@ -1,4 +1,4 @@
-# Publishes the packages to npm (@oim-media/*), pub.dev (oim_flutter) and crates.io
+# Publishes the packages to npm (@oim-media/*) and crates.io
 # (oim-media) with trusted publishing (OIDC, no stored token), and builds + attaches
 # the Windows desktop viewer installers (.exe / .msi) and the Android Flutter APK to the GitHub Release when
 # a tag vX.Y.Z is pushed (or when triggered via workflow_dispatch).
@@ -7,7 +7,7 @@
 name: release
 # Manual only, since 1.33.0: a pushed tag publishes nothing. Run it from Actions,
 # naming an existing tag and ticking what to publish. pub.dev accepts only tag-push
-# runs, so the Flutter SDK is paused until 2.0 restores that trigger.
+# runs, so oim_flutter publishes from publish-pub.yml (tag oim_flutter-vX.Y.Z).
 on:
   workflow_dispatch:
     inputs:
@@ -82,26 +82,6 @@ jobs:
             done
             echo "missing @oim-media/$p@$v"; exit 1
           done
-
-  publish-pub:
-    if: false  # paused: pub.dev trusted publishing needs a tag-push run
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ inputs.tag }}
-      # Exchanges the GitHub OIDC token for a pub.dev one (PUB_TOKEN).
-      - uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1.8.1
-      - uses: ./.github/actions/setup-flutter
-      - run: |
-          cd sdks/flutter
-          flutter pub get
-          flutter test
-          flutter pub publish --force
 
   publish-crates:
     if: inputs.crates

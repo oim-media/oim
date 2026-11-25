@@ -33,7 +33,7 @@ void _collectFamilies(Object? node, Set<String> into) {
 Future<void> _loadSystemFonts(Iterable<File> vectors) async {
   final families = <String>{'sans-serif', 'serif'};
   for (final v in vectors) {
-    _collectFamilies(extractOIM(v.readAsBytesSync()).metadata, families);
+    _collectFamilies(normalizeV2Metadata(extractOIM(v.readAsBytesSync()).metadata), families);
   }
   for (final family in families) {
     final first = family.split(',').first.trim().replaceAll(RegExp('["\']'), '');
@@ -63,6 +63,12 @@ void main() {
   for (final v in vectors) {
     final name = p.basename(v.path).replaceAll('.oim.png', '');
     testWidgets('parity render $name', (tester) async {
+      final goldenDir = Directory(p.join(spec, 'golden'));
+      if (goldenDir.existsSync() && !File(p.join(goldenDir.path, '$name.web.png')).existsSync()) {
+        Directory(out).createSync(recursive: true);
+        File(p.join(out, '$name.skipped')).writeAsStringSync('["no web golden yet"]');
+        return;
+      }
       debugDisableShadows = false;
       final bytes = File(v.path).readAsBytesSync();
       // Same size rule as the web goldens: 800 wide, height from the vector's PNG header.

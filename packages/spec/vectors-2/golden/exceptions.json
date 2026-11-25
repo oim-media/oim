@@ -2,5 +2,12 @@
   "android": {
     "artistic-text": "Android SDK paints artistic text without its gradient fill and with another extrusion (0.1.0).",
     "generative-fill": "Android SDK does not paint the generative fill yet (0.1.0)."
+  },
+  "flutter": {
+    "duotone": "Flutter SDK does not paint the duotone backdrop yet (2.0 parity).",
+    "filter-shape": "Flutter SDK does not clip a filter to its shape yet (2.0 parity).",
+    "generative-fill": "Flutter SDK does not paint the generative fill yet (2.0 parity).",
+    "mask-frame-fill": "Flutter SDK does not paint the mask frame fill yet (2.0 parity).",
+    "text-decorations": "Flutter SDK does not paint text marks, highlight, drop cap or decoration yet (2.0 parity)."
   }
 }

@@ -204,6 +204,11 @@ bool hasEffectsStack(Map<String, dynamic> style) => style['effects'] is List && 
 /// `style.effects` on a text layer, as the web paints it (ImageEngine, unified effects stack):
 /// `drop-shadow` is one text-shadow and `glow` two (blur radius*0.4, then radius). `blur` is in
 /// [layerEffects]; `texture` is not drawn yet.
+Color _withEffectOpacity(Color c, dynamic rawOpacity) {
+  if (rawOpacity is! num) return c;
+  return c.withValues(alpha: (c.a * rawOpacity.toDouble().clamp(0.0, 1.0)).clamp(0.0, 1.0));
+}
+
 List<Shadow> textEffectShadows(Map<String, dynamic> style, OimPalette? palette, {double unit = 1}) {
   final effects = style['effects'];
   if (effects is! List) return const [];
@@ -212,8 +217,9 @@ List<Shadow> textEffectShadows(Map<String, dynamic> style, OimPalette? palette, 
   for (final e in effects) {
     if (e is! Map || e['enabled'] == false) continue;
     if (e['type'] == 'drop-shadow') {
-      final c = resolveColor(e['colorRole'] ?? style['shadowColorRole'], e['color'] ?? 'rgba(0, 0, 0, 0.35)', palette);
-      out.add(Shadow(color: c ?? const Color(0x59000000), offset: Offset(n(e['x'], 0).toDouble(), n(e['y'], 4).toDouble()) * unit, blurRadius: n(e['blur'], 12).toDouble() * unit));
+      final base = resolveColor(e['colorRole'] ?? style['shadowColorRole'], e['color'] ?? 'rgba(0, 0, 0, 0.35)', palette) ?? const Color(0x59000000);
+      final c = _withEffectOpacity(base, e['opacity']);
+      out.add(Shadow(color: c, offset: Offset(n(e['x'], 0).toDouble(), n(e['y'], 4).toDouble()) * unit, blurRadius: n(e['blur'], 12).toDouble() * unit));
     } else if (e['type'] == 'glow') {
       final r = (e['radius'] is num && e['radius'] != 0 ? e['radius'] as num : 16).toDouble() * unit;
       final c = resolveColor(e['colorRole'] ?? style['effectColorRole'], e['color'] ?? '#f59e0b', palette) ?? const Color(0xFFF59E0B);
@@ -291,7 +297,8 @@ Widget layerEffects(Widget child, Map<String, dynamic> style, OimPalette? palett
     } else if (isText) {
       continue;
     } else if (type == 'drop-shadow') {
-      final c = resolveColor(e['colorRole'] ?? style['shadowColorRole'], e['color'] ?? 'rgba(0, 0, 0, 0.35)', palette) ?? const Color(0x59000000);
+      final base = resolveColor(e['colorRole'] ?? style['shadowColorRole'], e['color'] ?? 'rgba(0, 0, 0, 0.35)', palette) ?? const Color(0x59000000);
+      final c = _withEffectOpacity(base, e['opacity']);
       w = cast(w, c, Offset(n(e['x'], 0).toDouble(), n(e['y'], 4).toDouble()) * unit, n(e['blur'], 12).toDouble() * unit);
     } else if (type == 'glow') {
       final r = (e['radius'] is num && e['radius'] != 0 ? e['radius'] as num : 16).toDouble() * unit;

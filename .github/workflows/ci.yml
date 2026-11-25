@@ -125,8 +125,8 @@ jobs:
         run: |
           cd sdks/flutter
           flutter pub get
-          OIM_PARITY=1 flutter test test/visual_parity_test.dart
-          node ../../packages/spec/tools/parity.mjs build/parity/flutter --renderer flutter --out "$RUNNER_TEMP/parity/diff/flutter"
+          OIM_PARITY=1 OIM_VECTORS=../../packages/spec/vectors-2 flutter test test/visual_parity_test.dart
+          node ../../packages/spec/tools/parity.mjs build/parity/flutter --renderer flutter --golden-dir ../../packages/spec/vectors-2/golden --vectors-dir ../../packages/spec/vectors-2 --out "$RUNNER_TEMP/parity/diff/flutter"
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

@@ -6,8 +6,13 @@
 package media.oim.sdk.ui
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas as AndroidCanvas
 import android.graphics.Matrix as AndroidMatrix
+import android.graphics.Paint as AndroidPaint
+import android.graphics.Path as AndroidPath
+import android.graphics.RectF
 import android.graphics.Typeface
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -96,6 +101,7 @@ import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Canvas as ComposeCanvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
@@ -104,18 +110,23 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -125,12 +136,15 @@ import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -157,6 +171,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import androidx.compose.ui.layout.onSizeChanged
@@ -509,10 +524,12 @@ fun OimPlayerView(
                                 scaleFactor = scaleFactor
                             )
                             val rawBlurPx = (layer.style.blurRadiusPx + kfState.b).coerceAtLeast(0f)
+                            val layerBlurSigmaPx = if (rawBlurPx > 0.2f) rawBlurPx * scaleFactor else 0f
                             val layerBlurDp = if (rawBlurPx > 0.2f) {
                                 // CSS blur(): the length is the standard deviation.
-                                with(density) { cssSigmaToBlurRadius(rawBlurPx * scaleFactor).toDp() }
+                                with(density) { cssSigmaToBlurRadius(layerBlurSigmaPx).toDp() }
                             } else 0.dp
+                            val handlesBlurInternally = isLayerBlurHandledInternally(layer)
 
                             val paintLayerInstance: @Composable (Float, Boolean, Boolean) -> Unit = { copyOffsetX, mirrorCopy, dropShadow ->
                                 OimAnchoredLayerBox(
@@ -526,7 +543,7 @@ fun OimPlayerView(
                                     Box(
                                         modifier = Modifier
                                             .then(
-                                                if (layerBlurDp > 0.2.dp) {
+                                                if (layerBlurDp > 0.2.dp && !handlesBlurInternally) {
                                                     Modifier.blur(radius = layerBlurDp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
                                                 } else Modifier
                                             )
@@ -560,7 +577,8 @@ fun OimPlayerView(
                                             showDebugOutline = showPixelGrid,
                                             playTrigger = layerPlayCount,
                                             onTap = { dispatchSlotInteraction(layer) },
-                                            dropShadow = dropShadow
+                                            dropShadow = dropShadow,
+                                            layerBlurSigmaPx = layerBlurSigmaPx
                                         )
                                     }
                                 }
@@ -933,7 +951,8 @@ private fun OimLayerNode(
     playTrigger: Int,
     onTap: () -> Unit,
     /** false: paint without the drop shadow (a loop's second pass, see the motion loop). */
-    dropShadow: Boolean = true
+    dropShadow: Boolean = true,
+    layerBlurSigmaPx: Float = 0f
 ) {
     val density = LocalDensity.current
     val fontSizePx = remember(canvasWidthPx, layer.style.fontSizeDim, layer.style.fontSizeRatio) {
@@ -989,7 +1008,8 @@ private fun OimLayerNode(
         Color.Transparent
     }
     // CSS drop-shadow: the blur length is twice the standard deviation.
-    val shadowBlurDp = with(density) { cssSigmaToBlurRadius(layer.style.shadowBlur.coerceAtLeast(0f) / 2f * scaleFactor).toDp() }
+    val shadowBlurSigmaPx = layer.style.shadowBlur.coerceAtLeast(0f) / 2f * scaleFactor
+    val shadowBlurDp = with(density) { cssSigmaToBlurRadius(shadowBlurSigmaPx).toDp() }
     val shadowDxDp = with(density) { (layer.style.shadowOffsetX * scaleFactor).toDp() }
     val shadowDyDp = with(density) { (layer.style.shadowOffsetY * scaleFactor).toDp() }
 
@@ -1003,8 +1023,10 @@ private fun OimLayerNode(
         Color.Transparent
     }
     val glowRadiusPx = layer.style.glowRadiusPx.coerceAtLeast(0f)
-    val glowOuterBlurDp = with(density) { (glowRadiusPx * 0.7f * scaleFactor).toDp() }
-    val glowInnerBlurDp = with(density) { (glowRadiusPx * 0.3f * scaleFactor).toDp() }
+    val glowOuterSigmaPx = glowRadiusPx * 0.7f * scaleFactor
+    val glowInnerSigmaPx = glowRadiusPx * 0.3f * scaleFactor
+    val glowOuterBlurDp = with(density) { glowOuterSigmaPx.toDp() }
+    val glowInnerBlurDp = with(density) { glowInnerSigmaPx.toDp() }
 
     val famLower = layer.style.fontFamily?.trim()?.lowercase().orEmpty()
     val fontFamily = OimFontLoader.findBestFont(embeddedFonts, layer.style.fontFamily, layer.style.fontWeight) ?: when {
@@ -1175,22 +1197,15 @@ private fun OimLayerNode(
             val fillColorFilter = remember(imageFill?.filters, layer.style.filter) {
                 buildComposeColorFilter(imageFill?.filters ?: layer.style.filter)
             }
-            val fillOwnBlurDp = ((imageFill?.filters?.blurPx ?: 0f) * scaleFactor).let { px ->
-                if (px > 0.2f) with(density) { px.toDp() } else 0.dp
-            }
+            val fillOwnBlurSigmaPx = (imageFill?.filters?.blurPx ?: 0f) * scaleFactor
             val hasFilledBody = fillColor.alpha > 0f || imageFill != null ||
                 layer.style.patternFill != null || layer.style.gradientFill != null
 
-            val renderGeoEffect: @Composable (Color, Dp, Dp, Dp) -> Unit = { effColor, blurDp, dxDp, dyDp ->
+            val renderGeoEffect: @Composable (Color, Float, Dp, Dp) -> Unit = { effColor, blurSigmaPx, dxDp, dyDp ->
                 Canvas(
                     modifier = Modifier
                         .fillMaxSize()
                         .offset(x = dxDp, y = dyDp)
-                        .then(
-                            if (blurDp > 0.2.dp) {
-                                Modifier.blur(radius = blurDp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
-                            } else Modifier
-                        )
                 ) {
                     if (layer.style.svgPaths.isNotEmpty()) {
                         drawGeoShape(
@@ -1204,7 +1219,8 @@ private fun OimLayerNode(
                             strokeWidthPx = strokePx,
                             cornerRadiusPx = resolvedCornerPx,
                             cornerRadiiPx = cornerRadiiPx,
-                            tintOverride = effColor
+                            tintOverride = effColor,
+                            blurSigmaPx = blurSigmaPx
                         )
                     } else {
                         val isStrokeOnly = geoKindStr.equals("line", ignoreCase = true) || !hasFilledBody
@@ -1219,7 +1235,8 @@ private fun OimLayerNode(
                             strokeColor = if (silhouetteStrokeW > 0f && (borderColor.alpha > 0f || isStrokeOnly)) effColor else Color.Transparent,
                             strokeWidthPx = silhouetteStrokeW,
                             cornerRadiusPx = resolvedCornerPx,
-                            cornerRadiiPx = cornerRadiiPx
+                            cornerRadiiPx = cornerRadiiPx,
+                            blurSigmaPx = blurSigmaPx
                         )
                     }
                 }
@@ -1230,12 +1247,15 @@ private fun OimLayerNode(
                 // shortcut: that faint per-figure halo is not drawn; draw it from the tile when a file shows it.
                 val seeThroughPattern = fillColor.alpha == 0f && imageFill == null && layer.style.gradientFill == null &&
                     layer.style.patternFill?.let { parseOimColor(it.bg, palette, Color.Transparent).alpha == 0f } == true
+                val combinedShadowSigma = if (layerBlurSigmaPx > 0.2f && isLayerBlurHandledInternally(layer)) {
+                    sqrt(shadowBlurSigmaPx * shadowBlurSigmaPx + layerBlurSigmaPx * layerBlurSigmaPx)
+                } else shadowBlurSigmaPx
                 if (shadowColor.alpha > 0f && !seeThroughPattern) {
-                    renderGeoEffect(shadowColor, shadowBlurDp, shadowDxDp, shadowDyDp)
+                    renderGeoEffect(shadowColor, combinedShadowSigma, shadowDxDp, shadowDyDp)
                 }
                 if (layer.style.glowEnabled && glowColor.alpha > 0f && glowRadiusPx > 0f) {
-                    renderGeoEffect(glowColor, glowOuterBlurDp, 0.dp, 0.dp)
-                    renderGeoEffect(glowColor, glowInnerBlurDp, 0.dp, 0.dp)
+                    renderGeoEffect(glowColor, glowOuterSigmaPx, 0.dp, 0.dp)
+                    renderGeoEffect(glowColor, glowInnerSigmaPx, 0.dp, 0.dp)
                 }
 
                 val activeBitmap = fillBitmap
@@ -1258,7 +1278,7 @@ private fun OimLayerNode(
                                 fill = imageFill,
                                 contentDescription = OimCanonicalizerAndVerifier.resolveContent(layer.style.alt, language, defaultLang).text.ifBlank { null },
                                 colorFilter = fillColorFilter,
-                                blurDp = fillOwnBlurDp
+                                blurSigmaPx = fillOwnBlurSigmaPx
                             )
                         }
                         if (strokePx > 0f && borderColor.alpha > 0f) {
@@ -1340,7 +1360,8 @@ private fun OimLayerNode(
                             strokeColor = borderColor,
                             strokeWidthPx = strokePx,
                             cornerRadiusPx = resolvedCornerPx,
-                            cornerRadiiPx = cornerRadiiPx
+                            cornerRadiiPx = cornerRadiiPx,
+                            blurSigmaPx = if (isLayerBlurHandledInternally(layer)) layerBlurSigmaPx else 0f
                         )
                     }
                 }
@@ -1363,9 +1384,7 @@ private fun OimLayerNode(
             val imgColorFilter = remember(effectiveFill.filters, layer.style.filter) {
                 buildComposeColorFilter(effectiveFill.filters ?: layer.style.filter)
             }
-            val imgOwnBlurDp = ((effectiveFill.filters?.blurPx ?: 0f) * scaleFactor).let { px ->
-                if (px > 0.2f) with(density) { px.toDp() } else 0.dp
-            }
+            val imgOwnBlurSigmaPx = (effectiveFill.filters?.blurPx ?: 0f) * scaleFactor
             val sizeMod = run {
                 var m: Modifier = Modifier
                 if (widthDp != null && heightDp != null) m = m.size(widthDp, heightDp)
@@ -1398,7 +1417,7 @@ private fun OimLayerNode(
                                 fill = effectiveFill.copy(opacity = 1f),
                                 contentDescription = null,
                                 colorFilter = ColorFilter.tint(effColor, BlendMode.SrcIn),
-                                blurDp = 0.dp
+                                blurSigmaPx = 0f
                             )
                         }
                     }
@@ -1421,7 +1440,7 @@ private fun OimLayerNode(
                             fill = effectiveFill,
                             contentDescription = OimCanonicalizerAndVerifier.resolveContent(layer.style.alt, language, defaultLang).text.ifBlank { null },
                             colorFilter = imgColorFilter,
-                            blurDp = imgOwnBlurDp
+                            blurSigmaPx = imgOwnBlurSigmaPx
                         )
                     }
                 }
@@ -1553,6 +1572,64 @@ private fun OimLayerNode(
                         .then(if (hasBoxChrome) Modifier.padding(horizontal = 2.dp, vertical = 1.dp) else Modifier)
                 ) {
                     if (resolvedText.isNotEmpty()) {
+                        if (layerBlurSigmaPx > 0.2f && isLayerBlurHandledInternally(layer)) {
+                            val textMeasurer = rememberTextMeasurer()
+                            val layoutDirection = LocalLayoutDirection.current
+                            val fillAnnotated = animatedTextRender.fillText
+                            val boxWidthPx = widthDp?.let { with(density) { it.toPx().roundToInt().coerceAtLeast(1) } }
+                            val maxW = boxWidthPx ?: maxWidthDp?.let { with(density) { it.toPx().roundToInt().coerceAtLeast(1) } } ?: canvasWidthPx.roundToInt().coerceAtLeast(1)
+                            val measureConstraints = if (boxWidthPx != null) {
+                                Constraints(minWidth = boxWidthPx, maxWidth = boxWidthPx)
+                            } else {
+                                Constraints(maxWidth = maxW)
+                            }
+                            val textStyle = TextStyle(
+                                color = textColor,
+                                fontFamily = fontFamily,
+                                fontWeight = fontWeight,
+                                fontStyle = if (layer.style.fontStyleItalic) FontStyle.Italic else FontStyle.Normal,
+                                fontSize = pixelLockedSp,
+                                lineHeight = lineHeightSp,
+                                textAlign = resolvedTextAlign,
+                                platformStyle = PlatformTextStyle(includeFontPadding = false)
+                            )
+                            val layoutResult = remember(fillAnnotated, textStyle, measureConstraints) {
+                                textMeasurer.measure(text = fillAnnotated, style = textStyle, constraints = measureConstraints)
+                            }
+                            val pad = ceil(layerBlurSigmaPx * 3f).toInt().coerceIn(1, 64)
+                            val blurredTextBitmap = remember(layoutResult, textColor, layerBlurSigmaPx, pad, density, layoutDirection) {
+                                val bmpW = (layoutResult.size.width + pad * 2).coerceAtLeast(1)
+                                val bmpH = (layoutResult.size.height + pad * 2).coerceAtLeast(1)
+                                val offscreen = Bitmap.createBitmap(bmpW, bmpH, Bitmap.Config.ARGB_8888)
+                                val imageBmp = offscreen.asImageBitmap()
+                                CanvasDrawScope().draw(
+                                    density = density,
+                                    layoutDirection = layoutDirection,
+                                    canvas = ComposeCanvas(imageBmp),
+                                    size = Size(bmpW.toFloat(), bmpH.toFloat())
+                                ) {
+                                    drawText(
+                                        textLayoutResult = layoutResult,
+                                        color = textColor,
+                                        topLeft = Offset(pad.toFloat(), pad.toFloat())
+                                    )
+                                }
+                                val blurred = blurBitmapGaussian(offscreen, layerBlurSigmaPx)
+                                if (blurred !== offscreen) offscreen.recycle()
+                                blurred.asImageBitmap()
+                            }
+                            Canvas(
+                                modifier = Modifier.size(
+                                    width = with(density) { layoutResult.size.width.toDp() },
+                                    height = with(density) { layoutResult.size.height.toDp() }
+                                )
+                            ) {
+                                drawImage(
+                                    image = blurredTextBitmap,
+                                    topLeft = Offset(-pad.toFloat(), -pad.toFloat())
+                                )
+                            }
+                        } else {
                         val capLetter = resolvedText.first().takeIf { layer.style.dropCapLines > 0 && it.isLetterOrDigit() }
                         val textRender = if (capLetter == null) animatedTextRender else animatedTextRender.copy(
                             fillText = animatedTextRender.fillText.subSequence(1, animatedTextRender.fillText.length),
@@ -1716,6 +1793,7 @@ private fun OimLayerNode(
                                 )
                                 Box(Modifier.weight(1f), contentAlignment = boxContentAlignment) { textBody() }
                             }
+                        }
                         }
                     }
                 }
@@ -1941,7 +2019,7 @@ private fun OimCroppedImage(
     fill: OimImageFill,
     contentDescription: String?,
     colorFilter: ColorFilter?,
-    blurDp: Dp
+    blurSigmaPx: Float = 0f
 ) {
     val semanticMod = if (!contentDescription.isNullOrBlank()) {
         Modifier.semantics { this.contentDescription = contentDescription }
@@ -1951,35 +2029,82 @@ private fun OimCroppedImage(
     val cropYPct = (fill.cropY ?: 50f).coerceIn(0f, 100f)
     val zoom = fill.cropZoom.coerceAtLeast(0.1f)
 
-    Canvas(
-        modifier = semanticMod
-            .fillMaxSize()
-            .then(
-                if (blurDp > 0.2.dp) {
-                    Modifier.blur(radius = blurDp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
-                } else Modifier
-            )
-            .clipToBounds()
-    ) {
+    fun computePlacementRect(width: Float, height: Float): RectF {
         val imgW = bitmap.width.toFloat().coerceAtLeast(1f)
         val imgH = bitmap.height.toFloat().coerceAtLeast(1f)
         val (dw, dh) = when {
             hasCrop -> {
-                val s = maxOf(size.width / imgW, size.height / imgH) * zoom
+                val s = maxOf(width / imgW, height / imgH) * zoom
                 (imgW * s) to (imgH * s)
             }
             fill.fit.equals("contain", ignoreCase = true) || fill.fit.equals("scale-down", ignoreCase = true) -> {
-                val s = minOf(size.width / imgW, size.height / imgH)
+                val s = minOf(width / imgW, height / imgH)
                 (imgW * s) to (imgH * s)
             }
-            fill.fit.equals("fill", ignoreCase = true) -> size.width to size.height
+            fill.fit.equals("fill", ignoreCase = true) -> width to height
             else -> {
-                val s = maxOf(size.width / imgW, size.height / imgH)
+                val s = maxOf(width / imgW, height / imgH)
                 (imgW * s) to (imgH * s)
             }
         }
-        val dx = (size.width - dw) * (cropXPct / 100f)
-        val dy = (size.height - dh) * (cropYPct / 100f)
+        val dx = (width - dw) * (cropXPct / 100f)
+        val dy = (height - dh) * (cropYPct / 100f)
+        return RectF(dx, dy, dx + dw, dy + dh)
+    }
+
+    if (blurSigmaPx > 0.25f) {
+        BoxWithConstraints(modifier = semanticMod.fillMaxSize().clipToBounds()) {
+            val wPx = constraints.maxWidth.coerceAtLeast(1)
+            val hPx = constraints.maxHeight.coerceAtLeast(1)
+            val blurredImage = remember(
+                bitmap,
+                wPx,
+                hPx,
+                blurSigmaPx,
+                cropXPct,
+                cropYPct,
+                zoom,
+                fill.fit,
+                fill.flipX,
+                fill.flipY
+            ) {
+                val dstRect = computePlacementRect(wPx.toFloat(), hPx.toFloat())
+                val offscreen = Bitmap.createBitmap(wPx, hPx, Bitmap.Config.ARGB_8888)
+                val canvas = AndroidCanvas(offscreen)
+                if (fill.flipX || fill.flipY) {
+                    canvas.scale(
+                        if (fill.flipX) -1f else 1f,
+                        if (fill.flipY) -1f else 1f,
+                        wPx / 2f,
+                        hPx / 2f
+                    )
+                }
+                val paint = AndroidPaint(AndroidPaint.ANTI_ALIAS_FLAG or AndroidPaint.FILTER_BITMAP_FLAG)
+                canvas.drawBitmap(
+                    bitmap.asAndroidBitmap(),
+                    null,
+                    dstRect,
+                    paint
+                )
+                val blurred = blurBitmapGaussian(offscreen, blurSigmaPx)
+                if (blurred !== offscreen) offscreen.recycle()
+                blurred.asImageBitmap()
+            }
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                drawImage(
+                    image = blurredImage,
+                    dstOffset = IntOffset.Zero,
+                    dstSize = IntSize(size.width.roundToInt().coerceAtLeast(1), size.height.roundToInt().coerceAtLeast(1)),
+                    alpha = fill.opacity,
+                    colorFilter = colorFilter
+                )
+            }
+        }
+        return
+    }
+
+    Canvas(modifier = semanticMod.fillMaxSize().clipToBounds()) {
+        val dstRect = computePlacementRect(size.width, size.height)
 
         withTransform({
             if (fill.flipX || fill.flipY) {
@@ -1992,8 +2117,8 @@ private fun OimCroppedImage(
         }) {
             drawImage(
                 image = bitmap,
-                dstOffset = IntOffset(dx.roundToInt(), dy.roundToInt()),
-                dstSize = IntSize(dw.roundToInt().coerceAtLeast(1), dh.roundToInt().coerceAtLeast(1)),
+                dstOffset = IntOffset(dstRect.left.roundToInt(), dstRect.top.roundToInt()),
+                dstSize = IntSize(dstRect.width().roundToInt().coerceAtLeast(1), dstRect.height().roundToInt().coerceAtLeast(1)),
                 alpha = fill.opacity,
                 colorFilter = colorFilter
             )
@@ -2017,6 +2142,64 @@ private fun tintAnnotatedTextSilhouette(src: AnnotatedString, tint: Color): Anno
     }
 }
 
+private fun isLayerBlurHandledInternally(layer: OimLayer): Boolean {
+    if (layer.kind == OimLayerKind.GEO &&
+        layer.style.imageFill == null &&
+        layer.style.patternFill == null &&
+        layer.style.gradientFill == null
+    ) {
+        return true
+    }
+    if (layer.kind == OimLayerKind.TEXT &&
+        layer.style.artistic == null &&
+        layer.style.textMarks.isEmpty() &&
+        layer.style.dropCapLines <= 0 &&
+        layer.style.blockHighlightHex.isNullOrBlank() &&
+        (layer.style.backgroundColorHex.isBlank() || layer.style.backgroundColorHex.equals("#00000000", ignoreCase = true)) &&
+        layer.style.borderWidthRatio <= 0f &&
+        layer.style.textAnimationType.isNullOrBlank() &&
+        !layer.style.shadowEnabled &&
+        !layer.style.glowEnabled
+    ) {
+        return true
+    }
+    return false
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawAndroidBlurredPath(
+    path: AndroidPath,
+    fillColor: Color,
+    strokeColor: Color,
+    strokeWidthPx: Float,
+    blurSigmaPx: Float,
+    cap: AndroidPaint.Cap = AndroidPaint.Cap.BUTT,
+    join: AndroidPaint.Join = AndroidPaint.Join.MITER
+) {
+    val mask = createCssBlurMaskFilter(blurSigmaPx)
+    drawIntoCanvas { composeCanvas ->
+        val native = composeCanvas.nativeCanvas
+        if (fillColor != Color.Transparent) {
+            val fillPaint = AndroidPaint(AndroidPaint.ANTI_ALIAS_FLAG).apply {
+                style = AndroidPaint.Style.FILL
+                color = fillColor.toArgb()
+                maskFilter = mask
+            }
+            native.drawPath(path, fillPaint)
+        }
+        if (strokeColor != Color.Transparent && strokeWidthPx > 0f) {
+            val strokePaint = AndroidPaint(AndroidPaint.ANTI_ALIAS_FLAG).apply {
+                style = AndroidPaint.Style.STROKE
+                strokeWidth = strokeWidthPx
+                strokeCap = cap
+                strokeJoin = join
+                color = strokeColor.toArgb()
+                maskFilter = mask
+            }
+            native.drawPath(path, strokePaint)
+        }
+    }
+}
+
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGeoShape(
     geoShape: String,
     svgPath: String?,
@@ -2028,7 +2211,8 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGeoShape(
     strokeWidthPx: Float,
     cornerRadiusPx: Float,
     cornerRadiiPx: FloatArray? = null,
-    tintOverride: Color? = null
+    tintOverride: Color? = null,
+    blurSigmaPx: Float = 0f
 ) {
     val vbParts = svgViewBox?.trim()?.split(Regex("[\\s,]+"))?.mapNotNull { it.toFloatOrNull() }
     val minX = vbParts?.getOrNull(0) ?: 0f
@@ -2093,9 +2277,6 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGeoShape(
             } else {
                 baseFill.copy(alpha = (baseFill.alpha * itemOpacity).coerceIn(0f, 1f))
             }
-            if (resolvedFill.alpha > 0f) {
-                drawPath(parsed, resolvedFill)
-            }
             val resolvedStroke = if (tintOverride != null) {
                 if (baseStroke.alpha > 0f) {
                     tintOverride.copy(alpha = (tintOverride.alpha * itemOpacity).coerceIn(0f, 1f))
@@ -2109,22 +2290,47 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGeoShape(
             val det = matrixVals[0] * matrixVals[4] - matrixVals[1] * matrixVals[3]
             val itemScale = sqrt(abs(det)).coerceAtLeast(0.01f)
             val pathStrokePx = (item.strokeWidth ?: 1f) * itemScale
-            if (resolvedStroke.alpha > 0f && pathStrokePx > 0f) {
-                val cap = when (item.cap?.lowercase()) {
-                    "round" -> StrokeCap.Round
-                    "square" -> StrokeCap.Square
-                    else -> StrokeCap.Butt
+            if (blurSigmaPx > 0.1f) {
+                val androidCap = when (item.cap?.lowercase()) {
+                    "round" -> AndroidPaint.Cap.ROUND
+                    "square" -> AndroidPaint.Cap.SQUARE
+                    else -> AndroidPaint.Cap.BUTT
                 }
-                val join = when (item.join?.lowercase()) {
-                    "round" -> StrokeJoin.Round
-                    "bevel" -> StrokeJoin.Bevel
-                    else -> StrokeJoin.Miter
+                val androidJoin = when (item.join?.lowercase()) {
+                    "round" -> AndroidPaint.Join.ROUND
+                    "bevel" -> AndroidPaint.Join.BEVEL
+                    else -> AndroidPaint.Join.MITER
                 }
-                drawPath(
-                    path = parsed,
-                    color = resolvedStroke,
-                    style = Stroke(width = pathStrokePx, cap = cap, join = join)
+                drawAndroidBlurredPath(
+                    path = androidPath,
+                    fillColor = resolvedFill,
+                    strokeColor = resolvedStroke,
+                    strokeWidthPx = pathStrokePx,
+                    blurSigmaPx = blurSigmaPx,
+                    cap = androidCap,
+                    join = androidJoin
                 )
+            } else {
+                if (resolvedFill.alpha > 0f) {
+                    drawPath(parsed, resolvedFill)
+                }
+                if (resolvedStroke.alpha > 0f && pathStrokePx > 0f) {
+                    val cap = when (item.cap?.lowercase()) {
+                        "round" -> StrokeCap.Round
+                        "square" -> StrokeCap.Square
+                        else -> StrokeCap.Butt
+                    }
+                    val join = when (item.join?.lowercase()) {
+                        "round" -> StrokeJoin.Round
+                        "bevel" -> StrokeJoin.Bevel
+                        else -> StrokeJoin.Miter
+                    }
+                    drawPath(
+                        path = parsed,
+                        color = resolvedStroke,
+                        style = Stroke(width = pathStrokePx, cap = cap, join = join)
+                    )
+                }
             }
         }
         return
@@ -2139,13 +2345,77 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGeoShape(
                 setTranslate(-minX, -minY)
                 postScale(size.width / vbW, size.height / vbH)
             }
-            parsed.asAndroidPath().transform(androidMatrix)
-            if (fillColor != Color.Transparent) drawPath(parsed, fillColor)
-            if (strokeColor != Color.Transparent && strokeWidthPx > 0f) {
-                drawPath(parsed, strokeColor, style = Stroke(width = strokeWidthPx))
+            val androidPath = parsed.asAndroidPath().apply { transform(androidMatrix) }
+            if (blurSigmaPx > 0.1f) {
+                drawAndroidBlurredPath(androidPath, fillColor, strokeColor, strokeWidthPx, blurSigmaPx)
+            } else {
+                if (fillColor != Color.Transparent) drawPath(parsed, fillColor)
+                if (strokeColor != Color.Transparent && strokeWidthPx > 0f) {
+                    drawPath(parsed, strokeColor, style = Stroke(width = strokeWidthPx))
+                }
             }
             return
         }
+    }
+
+    if (blurSigmaPx > 0.1f) {
+        val path = when (geoShape.lowercase()) {
+            "circle" -> AndroidPath().apply {
+                addOval(RectF(0f, 0f, size.width, size.height), AndroidPath.Direction.CW)
+            }
+            "pill" -> {
+                val r = minOf(size.width, size.height) / 2f
+                AndroidPath().apply {
+                    addRoundRect(RectF(0f, 0f, size.width, size.height), r, r, AndroidPath.Direction.CW)
+                }
+            }
+            "triangle" -> AndroidPath().apply {
+                moveTo(size.width / 2f, 0f)
+                lineTo(size.width, size.height)
+                lineTo(0f, size.height)
+                close()
+            }
+            "diamond" -> AndroidPath().apply {
+                moveTo(size.width / 2f, 0f)
+                lineTo(size.width, size.height / 2f)
+                lineTo(size.width / 2f, size.height)
+                lineTo(0f, size.height / 2f)
+                close()
+            }
+            "pentagon" -> buildRegularPolygonPath(5, size.width, size.height).asAndroidPath()
+            "hexagon" -> buildRegularPolygonPath(6, size.width, size.height).asAndroidPath()
+            "octagon" -> buildRegularPolygonPath(8, size.width, size.height).asAndroidPath()
+            "star" -> buildStarPath(5, size.width, size.height).asAndroidPath()
+            "line" -> AndroidPath().apply {
+                moveTo(0f, size.height / 2f)
+                lineTo(size.width, size.height / 2f)
+            }
+            else -> AndroidPath().apply {
+                if (cornerRadiiPx != null && cornerRadiiPx.size == 4 && cornerRadiiPx.any { abs(it - cornerRadiiPx[0]) > 0.1f }) {
+                    addRoundRect(
+                        RectF(0f, 0f, size.width, size.height),
+                        floatArrayOf(
+                            cornerRadiiPx[0], cornerRadiiPx[0],
+                            cornerRadiiPx[1], cornerRadiiPx[1],
+                            cornerRadiiPx[2], cornerRadiiPx[2],
+                            cornerRadiiPx[3], cornerRadiiPx[3]
+                        ),
+                        AndroidPath.Direction.CW
+                    )
+                } else {
+                    addRoundRect(RectF(0f, 0f, size.width, size.height), cornerRadiusPx, cornerRadiusPx, AndroidPath.Direction.CW)
+                }
+            }
+        }
+        if (geoShape.equals("line", ignoreCase = true)) {
+            val lineColor = strokeColor.takeIf { it.alpha > 0f } ?: fillColor
+            if (lineColor.alpha > 0f) {
+                drawAndroidBlurredPath(path, Color.Transparent, lineColor, strokeWidthPx.coerceAtLeast(1f), blurSigmaPx)
+            }
+        } else {
+            drawAndroidBlurredPath(path, fillColor, strokeColor, strokeWidthPx, blurSigmaPx)
+        }
+        return
     }
 
     when (geoShape.lowercase()) {

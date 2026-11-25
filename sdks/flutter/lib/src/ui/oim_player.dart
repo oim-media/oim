@@ -518,11 +518,14 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
       groupWrapper = _applyEffects(groupWrapper, style, unit: _unit);
 
       final opacity = _opacityOf(style);
-      if (opacity < 1.0) {
+      // style.blendMode was retired in 1.12.0: readers draw the layer as normal (as the web does).
+      // OIM 2.0 layers carry their canonical blend mode on `style.v2Blend`.
+      final v2Blend = blendModeOf(style['v2Blend']);
+      if (v2Blend != null) {
+        groupWrapper = _BlendMask(mode: v2Blend, opacity: opacity.clamp(0.0, 1.0), child: groupWrapper);
+      } else if (opacity < 1.0) {
         groupWrapper = Opacity(opacity: opacity.clamp(0.0, 1.0), child: groupWrapper);
       }
-
-      // style.blendMode was retired in 1.12.0: readers draw the layer as normal (as the web does).
 
       // Check if group itself has infinite motion / parallax
       final parallaxCfg = parseInfiniteParallax(raw, style);
@@ -630,11 +633,14 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
 
     slotWidget = _applyEffects(slotWidget, style, mediaFilter: type == 'image', palette: activePalette, isText: type == 'text' || type == 'artistic-text', unit: _unit);
 
-    if (opacity < 1.0) {
+    // style.blendMode was retired in 1.12.0: readers draw the layer as normal (as the web does).
+    // OIM 2.0 layers carry their canonical blend mode on `style.v2Blend`.
+    final v2Blend = blendModeOf(style['v2Blend']);
+    if (v2Blend != null) {
+      slotWidget = _BlendMask(mode: v2Blend, opacity: opacity.clamp(0.0, 1.0), child: slotWidget);
+    } else if (opacity < 1.0) {
       slotWidget = Opacity(opacity: opacity.clamp(0.0, 1.0), child: slotWidget);
     }
-
-    // style.blendMode was retired in 1.12.0: readers draw the layer as normal (as the web does).
 
     // Infinite parallax check
     final parallaxCfg = parseInfiniteParallax(
@@ -1238,21 +1244,24 @@ class _RenderGrain extends RenderProxyBox {
 }
 
 class _BlendMask extends SingleChildRenderObjectWidget {
-  const _BlendMask({required this.mode, super.child});
+  const _BlendMask({required this.mode, this.opacity = 1.0, super.child});
 
   final BlendMode mode;
+  final double opacity;
 
   @override
-  RenderObject createRenderObject(BuildContext context) => _RenderBlendMask(mode);
+  RenderObject createRenderObject(BuildContext context) => _RenderBlendMask(mode, opacity);
 
   @override
   void updateRenderObject(BuildContext context, _RenderBlendMask renderObject) {
-    renderObject.mode = mode;
+    renderObject
+      ..mode = mode
+      ..opacity = opacity;
   }
 }
 
 class _RenderBlendMask extends RenderProxyBox {
-  _RenderBlendMask(this._mode);
+  _RenderBlendMask(this._mode, this._opacity);
 
   BlendMode _mode;
   set mode(BlendMode value) {
@@ -1261,9 +1270,20 @@ class _RenderBlendMask extends RenderProxyBox {
     markNeedsPaint();
   }
 
+  double _opacity;
+  set opacity(double value) {
+    if (value == _opacity) return;
+    _opacity = value;
+    markNeedsPaint();
+  }
+
   @override
   void paint(PaintingContext context, Offset offset) {
-    context.canvas.saveLayer(offset & size, Paint()..blendMode = _mode);
+    final paint = Paint()..blendMode = _mode;
+    if (_opacity < 1.0) {
+      paint.color = Color.fromRGBO(0, 0, 0, _opacity.clamp(0.0, 1.0));
+    }
+    context.canvas.saveLayer(offset & size, paint);
     super.paint(context, offset);
     context.canvas.restore();
   }

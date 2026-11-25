@@ -35,6 +35,101 @@ void main() {
     }
   });
 
+  test('v2 adapter maps blend, artistic strokes/gradient, pattern roles, shadows, and presets', () {
+    final normalized = normalizeV2Metadata({
+      'oim': '2.0.0-draft.1',
+      'canvas': {'width': 800, 'height': 600},
+      'variables': {
+        'defaults': {'palette': 'dark'},
+        'values': {
+          'accent': {'dark': '#a3e635', 'light': '#4d7c0f'},
+          'surface': {'dark': '#18181b', 'light': '#fafafa'},
+        },
+      },
+      'layers': [
+        {
+          'id': 'background-pattern-slot',
+          'type': 'shape',
+          'box': {'x': 0, 'y': 0, 'width': 800, 'height': 600},
+          'geometry': {'kind': 'rect'},
+          'fills': [
+            {
+              'kind': 'pattern',
+              'pattern': {
+                'preset': 'dots',
+                'bg': {'var': 'surface', 'fallback': '#18181b'},
+                'colors': [
+                  {'var': 'accent', 'fallback': '#a3e635'}
+                ],
+              },
+            },
+          ],
+        },
+        {
+          'id': 'blend-card',
+          'type': 'shape',
+          'blend': 'multiply',
+          'box': {'x': 40, 'y': 40, 'width': 200, 'height': 200},
+          'geometry': {'kind': 'preset', 'name': 'star'},
+          'effects': [
+            {'kind': 'shadow', 'x': 0, 'y': 8, 'blur': 15, 'opacity': 0.4, 'color': '#000000'},
+          ],
+        },
+        {
+          'id': 'star-cut',
+          'type': 'shape',
+          'box': {'x': 250, 'y': 150, 'width': 300, 'height': 300},
+          'geometry': {'kind': 'preset', 'name': 'star'},
+          'mask': {'mode': 'cutout'},
+        },
+        {
+          'id': 'title',
+          'type': 'text',
+          'box': {'x': 0, 'y': 0, 'width': 400, 'height': 120},
+          'fills': [
+            {'kind': 'gradient', 'preset': 'sunset-gold'},
+            {'kind': 'color', 'value': '#fde047'},
+          ],
+          'strokes': [
+            {'align': 'outside', 'width': 4, 'paint': {'kind': 'color', 'value': '#1e1b4b'}},
+            {'align': 'inside', 'width': 1, 'paint': {'kind': 'color', 'value': '#ffffff'}},
+          ],
+          'text': {
+            'content': {'es': 'Hola'},
+            'artistic': {'preset': 'retro-wave-3d'},
+          },
+        },
+      ],
+    });
+    final slots = (normalized['slots'] as List).cast<Map<String, dynamic>>();
+    final bg = slots.firstWhere((s) => s['id'] == 'background-pattern-slot');
+    expect(bg['is_background_pattern'], isTrue);
+    expect(bg['style']['backgroundType'], 'pattern');
+    expect(bg['style']['fillPatternBgColorRole'], 'surface');
+    expect(bg['style']['fillPatternColorRole'], 'accent');
+    expect(bg['style']['fillPatternColors'], ['#a3e635']);
+
+    final card = slots.firstWhere((s) => s['id'] == 'blend-card');
+    expect(card['style']['v2Blend'], 'multiply');
+    expect(card['style']['svgPath'], isNotNull);
+    expect(card['style']['svgViewBox'], '0 0 100 100');
+    expect(card['style']['geoShape'], isNull);
+    final effect = (card['style']['effects'] as List).first as Map;
+    expect(effect['opacity'], 0.4);
+    expect(effect['enabled'], isTrue);
+
+    final title = slots.firstWhere((s) => s['id'] == 'title');
+    final mask = slots.firstWhere((s) => s['id'] == 'star-cut');
+    expect(mask['type'], 'mask');
+    expect(mask['style']['maskSvgPath'], startsWith('M50 -3.33'));
+    expect(title['style']['textGradientType'], 'sunset-gold');
+    expect(title['style']['fillColor'], '#fde047');
+    expect(title['style']['outerStrokeColor'], '#1e1b4b');
+    expect(title['style']['outerStrokeWidth'], 4);
+    expect(title['style']['innerStrokeColor'], '#ffffff');
+    expect(title['style']['innerStrokeWidth'], 1);
+  });
+
   for (final sample in const ['basic-text', 'artistic-text', 'filter-effects', 'crop', 'flip']) {
     testWidgets('OimPlayer renders 2.0 vector $sample without error', (tester) async {
       final file = File(p.join(v2Dir.path, '$sample.oim.png'));

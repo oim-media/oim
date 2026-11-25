@@ -34,7 +34,7 @@ const PACKAGES = join(DIR, "..", "..");
  * code packages (compiled or bundled into `dist/`) and the spec documents.
  */
 function publishedSources(): { name: string; text: string }[] {
-  const roots = ["core/src", "player-oim/src", "player-ovm/src", "spec"].map((r) => join(PACKAGES, r));
+  const roots = ["core/src", "player-oim/src", "spec"].map((r) => join(PACKAGES, r));
   return roots.flatMap((root) =>
     (readdirSync(root, { recursive: true }) as string[])
       .filter((f) => /\.(ts|js|md)$/.test(f) && !/\.test\.ts$/.test(f) && !f.includes("node_modules"))
@@ -231,9 +231,7 @@ const SUPERFICIE = [
   "svgSilhouetteMaskCss",
   // schema.ts — shape of the metadata, derivable from any .oim.
   "MAX_SLOTS",
-  "OIMOrOVMMetadata",
   "OimMetadataSchema",
-  "OvmMetadataSchema",
   "grainConfigSchema",
   "contentSchema",
   "interactionSchema",

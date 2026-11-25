@@ -501,7 +501,7 @@ OimPlayerElement._initPlayer = function (this: any) {
     }
 
     if (mediaType === 'video') {
-      console.warn('[OimPlayer] Video media detected. Video support has been migrated to <ovm-player> from @oim-media/player-ovm. Falling back to ImageEngine.');
+      console.warn('[OimPlayer] Video media detected; <oim-player> only renders images. Falling back to ImageEngine.');
     }
     
     self._engine = new ImageEngine(self, self._oimOptions);

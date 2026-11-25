@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import {
-  OimMetadataSchema, OvmMetadataSchema, slotSchema, keyframeSchema, styleSchema,
+  OimMetadataSchema, slotSchema, keyframeSchema, styleSchema,
   interactiveStateSchema, slotStatesSchema, stateActionSchema, MAX_SLOTS,
 } from './schema';
 
@@ -101,25 +101,6 @@ describe('OimMetadataSchema', () => {
       capabilities_required: ['vector_parallax'],
     });
     expect(result.success).toBe(true);
-  });
-});
-
-describe('OvmMetadataSchema', () => {
-  it('accepts valid OVM metadata', () => {
-    const result = OvmMetadataSchema.safeParse({
-      ovm_version: '1.0',
-      metadata: { fps: 30, resolution: [1920, 1080] },
-      slots: [{ id: 'subtitle', content: { es: 'Subtítulo' } }],
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it('rejects fps out of range', () => {
-    const result = OvmMetadataSchema.safeParse({
-      slots: [],
-      metadata: { fps: 200 },
-    });
-    expect(result.success).toBe(false);
   });
 });
 
@@ -354,8 +335,6 @@ describe("the slot cap", () => {
     const withN = (n: number) => ({ slots: Array.from({ length: n }, slot) });
     expect(OimMetadataSchema.safeParse(withN(150)).success).toBe(true);
     expect(OimMetadataSchema.safeParse(withN(151)).success).toBe(false);
-    expect(OvmMetadataSchema.safeParse(withN(150)).success).toBe(true);
-    expect(OvmMetadataSchema.safeParse(withN(151)).success).toBe(false);
   });
 
   /**
@@ -375,8 +354,6 @@ describe("the slot cap", () => {
       const withN = (n: number) => ({ slots: [], [campo]: Array.from({ length: n }, slot) });
       expect(OimMetadataSchema.safeParse(withN(150)).success).toBe(true);
       expect(OimMetadataSchema.safeParse(withN(151)).success).toBe(false);
-      expect(OvmMetadataSchema.safeParse(withN(150)).success).toBe(true);
-      expect(OvmMetadataSchema.safeParse(withN(151)).success).toBe(false);
     }
   );
 

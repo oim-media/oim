@@ -9,7 +9,7 @@ BINARY_SPEC.md      Binary layout of the PNG container, compression and the imag
 CANONICAL_SPEC_2.md Canonical specification of OIM 2.0 (the current format): container, document, security, signing.
 SPEC_2.md           2.0 rendering rules (box, strokes, text, opacity and blend).
 CANONICAL_SPEC.md   Canonical specification of 1.x (legacy, no longer painted): metadata and the bytes a signature covers.
-schema/             oim.schema.json and ovm.schema.json: JSON Schema, generated from @oim-media/core.
+schema/             oim.schema.json: JSON Schema for 1.x, generated from @oim-media/core.
 keys.json           Public keys every player embeds (kid, jwk and key dates). Public parts only.
 marks-cases.json    Known-answer cases for text marks, shared with the backend's validator tests.
 canonical-cases.json  Known-answer case for the canonical form, checked by the TypeScript, Rust and Dart implementations.

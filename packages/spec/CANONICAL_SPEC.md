@@ -14,8 +14,6 @@
 
 The **`.oim`** format defines a multi-platform interactive image specification. The metadata layer (historically called `oimdata` or `oimdata.json`, injected into the `OIM_Data` chunk of the PNG container) uses a **strongly typed, serialisable canonical language**.
 
-> **Note on OVM (`.ovm`):** The interactive video format (`ovm.schema.json` and `@oim-media/player-ovm`) is currently a **reserved placeholder pending specification**. The normative specification below governs **OIM (`.oim`)**.
-
 ### Canonical Design Principles
 
 1. **Total independence from web engines (native platforms):**

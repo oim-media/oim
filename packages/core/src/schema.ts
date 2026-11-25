@@ -5,9 +5,9 @@
  */
 
 /**
- * OIM/OVM Metadata Schema — Zod validation
+ * OIM Metadata Schema — Zod validation
  *
- * Validates the structure of .ovmdata / .oim metadata JSON
+ * Validates the structure of `.oim` metadata JSON
  * before it reaches the render layer. Rejects tampered or
  * malformed metadata at the demuxer boundary.
  *
@@ -868,54 +868,5 @@ export const OimMetadataSchema = z.object({
   timestamp: z.string().datetime({ offset: true }).optional(), // ISO timestamp of package creation
 }).passthrough();
 
-// Top-level metadata for OVM (video)
-export const OvmMetadataSchema = z.object({
-  ovm_version: z.string().optional(),
-  version: z.string().optional(),
-  ovm_id: z.string().max(128).optional(),      // Unique tracking ID for document re-editing
-  image_hash: z.string().max(64).optional(),    // SHA-256 hash of original video/track
-  immutable_lock: z.boolean().optional(),      // Flag to seal the file from future edits
-  // Retired with `allow_external_urls` in 1.1.0. Their ONLY readers -- the
-  // backend's signing routes -- sit behind `if allow_external_urls`, a key the
-  // contract no longer declares, so the gate cannot fire for a conforming
-  // file. They stay declared, and marked, because the backend still honours
-  // them if a file carries the retired key: deleting them from the contract
-  // would make it lie in the other direction.
-  redirect_membership_verified: z.boolean().meta({
-    deprecated: true,
-    description: "Retired in 1.1.0 with allow_external_urls. A new reader must not write it.",
-  }).optional(),
-  terms_accepted: z.boolean().meta({
-    deprecated: true,
-    description: "Retired in 1.1.0 with allow_external_urls. A new reader must not write it.",
-  }).optional(),
-  allowed_domains: z.array(z.string().max(253)).optional(), // Allowed domains for hybrid locking
-  metadata: z.object({
-    fps: z.number().min(1).max(120).optional(),
-    resolution: z.tuple([z.number(), z.number()]).optional(),
-  }).optional(),
-  zones: z.array(zoneSchema).optional(),       // Catalog of bounding box zones
-  slots: z.array(slotSchema).max(MAX_SLOTS),
-  // The three fields carry the SAME slots, which is why all three are bounded.
-  // `elements` is not legacy: the player reads `slots || elements` and the backend
-  // counts `elements` first. Bounding only `slots` left the contract promising a
-  // cap that an equivalent field did not meet.
-  elements: z.array(slotSchema).max(MAX_SLOTS).meta({ deprecated: true, description: "Retired in 1.12.0 (contract audit, 10 Oct 2026): slots is the one name; readers still accept it." }).optional(),
-  layers: z.array(slotSchema).max(MAX_SLOTS).meta({ deprecated: true, description: "Retired in 1.12.0 (contract audit, 10 Oct 2026): slots is the one name; readers still accept it." }).optional(),
-  capabilities: z.array(z.enum(["vector_parallax", "infinite_parallax", "text_marks", "image_fill", "media_filters", "frame_shapes"])).optional(),
-  capabilities_required: z.array(z.enum(["vector_parallax", "infinite_parallax", "text_marks", "image_fill", "media_filters", "frame_shapes"])).optional(),
-  signature: z.string().optional(),            // Cryptographic ECDSA signature
-  key_version: z.string().optional(),          // Cryptographic key version used
-  signed_at: z.string().datetime({ offset: true }).optional(),
-  // `{ offset: true }` because the backend writes `2026-06-12T20:38:40.713579+00:00`
-  // -Python's isoformat-, not the form with `Z` that Zod requires by default. The
-  // FOUR production .oim files that were tested all failed here.
-  timestamp: z.string().datetime({ offset: true }).optional(), // ISO timestamp of package creation
-}).passthrough();
-
-// Union type for demuxer boundary
-export const OIMOrOVMMetadata = z.union([OimMetadataSchema, OvmMetadataSchema]);
-
 export type OIMMetadata = z.infer<typeof OimMetadataSchema>;
-export type OVMMetadata = z.infer<typeof OvmMetadataSchema>;
 export type Slot = z.infer<typeof slotSchema>;

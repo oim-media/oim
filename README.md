@@ -26,7 +26,6 @@ translations travel inside it. There is a live demo at [oim.media](https://oim.m
 |---|---|
 | [`@oim-media/core`](packages/core/README.md) | Contract schema, binary reader, canonical form and the render rules shared by every player. |
 | [`@oim-media/player-oim`](packages/player-oim/README.md) | `<oim-player>` web component for `.oim` images. |
-| [`@oim-media/player-ovm`](packages/player-ovm/README.md) | Experimental `.ovm` interactive video prototype; not published until tested with real videos. |
 | [`@oim-media/spec`](packages/spec/README.md) | Language-neutral contract: JSON Schema, binary and canonical specifications, conformance vectors and the public player keys. |
 | [`@oim-media/viewer-desktop`](apps/viewer-desktop/README.md) | Native desktop viewer (Windows, macOS, Linux) built with Tauri v2, `@oim-media/player-oim`, and `@oim-media/core`. |
 | [`oim_flutter`](sdks/flutter/README.md) | Native Dart/Flutter SDK: reads, verifies offline and renders `.oim` files with the `OimPlayer` widget. |
@@ -54,7 +53,7 @@ This is a pnpm workspace; use pnpm only.
 
 ```bash
 pnpm install
-pnpm build         # core, player-oim, player-ovm and viewer-desktop
+pnpm build         # core, player-oim, scene and viewer-desktop
 pnpm test          # unit tests of core, player-oim and viewer-desktop
 pnpm typecheck     # the typecheck scripts of core, player-oim and viewer-desktop
 pnpm conformance   # the conformance vectors in packages/spec/vectors
@@ -71,7 +70,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and [CHANGELOG.md](CHANG
 
 ## Versioning
 
-The four packages, both viewers and the Rust and Flutter SDKs are released
+The three packages, both viewers and the Rust and Flutter SDKs are released
 together under one version, and a release tag
 (`vX.Y.Z`) names it. That version must equal the format version, `CONTRACT_VERSION`
 in `packages/core/src/compatibility.ts`. See the [spec](packages/spec/README.md#versioning).

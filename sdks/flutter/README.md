@@ -51,7 +51,7 @@ carry is reported instead of fetched. Files written with the legacy Spanish
 flutter test
 ```
 
-`test/conformance_test.dart` runs the conformance vectors in `packages/spec/vectors-2` and `packages/spec/vectors`.
+`test/conformance_test.dart` runs every vector in `packages/spec/vectors`.
 Set `OIM_RENDER_OUT=<dir>` to have `test/render_snapshot_test.dart` write a PNG
 of each rendered vector.
 

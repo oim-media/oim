@@ -641,9 +641,6 @@ object OimBinaryCodec {
             patternFill = canvasPattern
         )
 
-        val defaultLang = root.optString("defaultLanguage")
-            .ifBlank { root.optString("default_language") }
-            .ifBlank { OimContract.DEFAULT_LANGUAGE }
         val langArray = root.optJSONArray("lang") ?: root.optJSONArray("languages")
         val languages = mutableListOf<String>()
         if (langArray != null) {
@@ -652,6 +649,10 @@ object OimBinaryCodec {
                 if (l.isNotBlank() && l !in languages && l != "*") languages.add(l)
             }
         }
+        val defaultLang = root.optString("defaultLanguage")
+            .ifBlank { root.optString("default_language") }
+            .ifBlank { languages.firstOrNull().orEmpty() }
+            .ifBlank { OimContract.DEFAULT_LANGUAGE }
 
         // Named palettes (1.20.0 `palettes` or 2.0 `variables.modes.palette`)
         val palettesObj = root.optJSONObject("palettes")
@@ -1450,7 +1451,7 @@ object OimBinaryCodec {
         val parsedV2Anims = parseV2AnimationsList(rawType, combinedAnimations)
         val animSpec = parsedV2Anims.animSpec
 
-        val textColorHex = if (kind == OimLayerKind.TEXT) primaryFillColor ?: "#F8FAFC" else "#F8FAFC"
+        val textColorHex = if (kind == OimLayerKind.TEXT) primaryFillColor ?: "#000000" else "#F8FAFC"
         val shapeFillHex = if (kind == OimLayerKind.GEO) primaryFillColor ?: "#00000000" else "#00000000"
 
         outLayers.add(

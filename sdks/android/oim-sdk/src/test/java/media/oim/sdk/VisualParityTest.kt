@@ -71,7 +71,7 @@ class VisualParityTest(private val name: String) {
             Box(Modifier.size(WIDTH.dp, height.dp).background(Color.White)) {
                 OimPlayerView(
                     asset = asset,
-                    language = "en",
+                    language = asset.document?.defaultLanguage ?: "en",
                     modifier = Modifier.size(WIDTH.dp, height.dp),
                     parallaxEnabled = false,
                     cornerRadius = 0.dp,

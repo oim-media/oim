@@ -22,3 +22,4 @@ export 'src/ui/localized_content.dart';
 export 'src/ui/lottie_slot.dart';
 export 'src/ui/oim_player.dart';
 export 'src/ui/svg_path.dart';
+export 'src/v2/v2_adapter.dart';

@@ -33,6 +33,7 @@ import 'masks.dart';
 import 'patterns.dart';
 import 'text_animation.dart';
 import 'text_effects.dart';
+import '../v2/v2_adapter.dart';
 
 /// Interactive native Flutter widget to render OIM files.
 class OimPlayer extends StatefulWidget {
@@ -72,6 +73,7 @@ class OimPlayer extends StatefulWidget {
 
 class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
   OimExtractionResult? _extractionResult;
+  Map<String, dynamic>? _renderMetadata;
   Object? _error;
 
   // What the file's actions changed, keyed by slot id (web: the slot elements' inline state).
@@ -104,7 +106,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
   }
 
   void _switchLanguage(String next) {
-    final slots = (_extractionResult?.metadata['slots'] as List<dynamic>?) ?? const [];
+    final slots = (_renderMetadata?['slots'] as List<dynamic>?) ?? const [];
     // Same image in both languages: a blur would suggest a change that did not happen.
     // shortcut: compares content only, not per-language textRuns or styles; extend if those start to differ alone.
     final changed = {
@@ -153,19 +155,22 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
   void _parseOim() {
     try {
       final res = extractOIM(widget.bytes);
+      final renderMeta = normalizeV2Metadata(res.metadata);
       setState(() {
-        _resetInteraction(res.metadata);
+        _resetInteraction(renderMeta);
         _extractionResult = res;
+        _renderMetadata = renderMeta;
         _error = null;
       });
       // Text repaints in the embedded fonts once FontLoader has them.
-      loadEmbeddedFonts(res.metadata['fonts'] as List<dynamic>?).then((_) {
+      loadEmbeddedFonts(renderMeta['fonts'] as List<dynamic>?).then((_) {
         if (mounted) setState(() {});
       });
     } catch (e) {
       setState(() {
         _error = e;
         _extractionResult = null;
+        _renderMetadata = null;
       });
     }
   }
@@ -232,11 +237,12 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
     }
 
     final res = _extractionResult;
-    if (res == null) {
+    final meta = _renderMetadata;
+    if (res == null || meta == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final canvas = res.metadata['canvas'] as Map<String, dynamic>?;
+    final canvas = meta['canvas'] as Map<String, dynamic>?;
     final naturalWidth = (canvas?['natural_width'] as num?)?.toDouble() ?? 800.0;
     final naturalHeight = (canvas?['natural_height'] as num?)?.toDouble() ?? 600.0;
     final aspectRatio = naturalWidth / naturalHeight;
@@ -245,7 +251,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
 
     // Dynamic color resolution
     final activePalette = !widget.allowDynamicColors ? null : resolvePalette(
-      res.metadata,
+      meta,
       requested: widget.palette,
       prefersDark: widget.prefersDark ?? (Theme.of(context).brightness == Brightness.dark),
     );
@@ -306,13 +312,13 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
                           ),
                         ),
                       ..._buildSlots(
-                        res.metadata,
+                        meta,
                         currentLang,
                         activePalette,
                         containerWidth,
                         containerHeight,
                       ),
-                      if (textureEffectOf(res.metadata) case final t?)
+                      if (textureEffectOf(meta) case final t?)
                         Positioned.fill(
                           child: IgnorePointer(
                             child: _Texture(effect: t, unit: _unit, ink: false, overlay: true, canvas: true, child: const SizedBox.expand()),

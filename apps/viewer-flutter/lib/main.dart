@@ -42,7 +42,10 @@ void main(List<String> args) {
 }
 
 class OimViewerApp extends StatelessWidget {
-  const OimViewerApp({super.key});
+  const OimViewerApp({super.key, this.initialBytes, this.initialFileName});
+
+  final Uint8List? initialBytes;
+  final String? initialFileName;
 
   @override
   Widget build(BuildContext context) {
@@ -54,13 +57,19 @@ class OimViewerApp extends StatelessWidget {
         colorScheme:
             const ColorScheme.dark(primary: Colors.white, surface: _bg),
       ),
-      home: const OimViewerScreen(),
+      home: OimViewerScreen(
+        initialBytes: initialBytes,
+        initialFileName: initialFileName,
+      ),
     );
   }
 }
 
 class OimViewerScreen extends StatefulWidget {
-  const OimViewerScreen({super.key});
+  const OimViewerScreen({super.key, this.initialBytes, this.initialFileName});
+
+  final Uint8List? initialBytes;
+  final String? initialFileName;
 
   @override
   State<OimViewerScreen> createState() => _OimViewerScreenState();
@@ -70,17 +79,23 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
   @override
   void initState() {
     super.initState();
-    final path = _initialPath;
-    if (path != null) {
-      File(path)
-          .readAsBytes()
-          .then((b) => _load(b, fileNameOf(path)))
-          .catchError((Object e) {
-        if (mounted) {
-          setState(() =>
-              _error = t('No se pudo abrir $path', 'Could not open $path'));
-        }
-      });
+    final initialBytes = widget.initialBytes;
+    if (initialBytes != null) {
+      _load(initialBytes, widget.initialFileName ?? 'artwork.oim.png',
+          notify: false);
+    } else {
+      final path = _initialPath;
+      if (path != null) {
+        File(path)
+            .readAsBytes()
+            .then((b) => _load(b, fileNameOf(path)))
+            .catchError((Object e) {
+          if (mounted) {
+            setState(() =>
+                _error = t('No se pudo abrir $path', 'Could not open $path'));
+          }
+        });
+      }
     }
     if (_bench) {
       WidgetsBinding.instance
@@ -90,6 +105,7 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
 
   Uint8List? _bytes;
   OimExtractionResult? _result;
+  Map<String, dynamic>? _normalizedMeta;
   OimSecurityStatus? _status;
   String _fileName = 'OIM Viewer';
   String _language = '';
@@ -127,7 +143,7 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
     ));
   }
 
-  Map<String, dynamic>? get _meta => _result?.metadata;
+  Map<String, dynamic>? get _meta => _normalizedMeta;
 
   List<String> get _palettes {
     final meta = _meta;
@@ -177,30 +193,50 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
     _load(bytes, file.name);
   }
 
-  void _load(Uint8List bytes, String name) {
+  void _load(Uint8List bytes, String name, {bool notify = true}) {
+    void update(VoidCallback fn) {
+      if (notify) {
+        setState(fn);
+      } else {
+        fn();
+      }
+    }
+
     try {
       final result = extractOIM(bytes);
       final status = verifyOim(result);
       if (isRefused(status)) {
         // An altered file is not shown: neither its image nor its layers.
-        setState(() => _error = t(
+        update(() => _error = t(
             'Archivo alterado (${_badgeFor(status).text}): no se muestra.',
             'File altered (${_badgeFor(status).text}): not shown.'));
         return;
       }
-      final langs = (result.metadata['languages'] as List?)
-              ?.map((e) => e.toString())
-              .toList() ??
-          const <String>[];
-      final pals = (result.metadata['palettes'] as Map?)
+      final meta = normalizeV2Metadata(result.metadata);
+      final langs = <String>[
+        ...?((meta['languages'] as List?)?.map((e) => e.toString())),
+      ];
+      if (langs.isEmpty) {
+        for (final slot in (meta['slots'] as List? ?? const [])) {
+          final content = slot is Map ? slot['content'] : null;
+          if (content is Map) {
+            for (final k in content.keys) {
+              final key = k.toString();
+              if (key != '*' && !langs.contains(key)) langs.add(key);
+            }
+          }
+        }
+      }
+      final pals = (meta['palettes'] as Map?)
               ?.keys
               .map((e) => e.toString())
               .toList() ??
           const <String>[];
-      final defaultPal = result.metadata['defaultPalette']?.toString();
-      setState(() {
+      final defaultPal = meta['defaultPalette']?.toString();
+      update(() {
         _bytes = bytes;
         _result = result;
+        _normalizedMeta = meta;
         _status = status;
         _fileName = name;
         _language = langs.isNotEmpty ? langs.first : '';
@@ -210,7 +246,7 @@ class _OimViewerScreenState extends State<OimViewerScreen> {
         _error = null;
       });
     } catch (e) {
-      setState(() => _error = t('No se pudo leer el archivo OIM: $e',
+      update(() => _error = t('No se pudo leer el archivo OIM: $e',
           'Could not read the OIM file: $e'));
     }
   }
@@ -536,7 +572,7 @@ class _TopBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          Flexible(
+          Expanded(
             child: Text(
               hasFile ? _compactTitle(fileName, 18) : 'OIM Viewer',
               overflow: TextOverflow.ellipsis,
@@ -546,7 +582,7 @@ class _TopBar extends StatelessWidget {
                   color: _textSoft),
             ),
           ),
-          const Spacer(),
+          const SizedBox(width: 8),
           if (sizeLabel != null && !compact) ...[
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
@@ -830,9 +866,12 @@ class _InspectorDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final slots = (meta['slots'] as List? ?? const []);
     final canvas = meta['canvas'] as Map?;
-    final w = canvas?['natural_width'];
-    final h = canvas?['natural_height'];
-    final dims = (w != null && h != null) ? '$w × $h px' : 'Responsive';
+    final w = canvas?['natural_width'] ?? canvas?['width'];
+    final h = canvas?['natural_height'] ?? canvas?['height'];
+    String fmtDim(Object n) =>
+        n is num && n == n.roundToDouble() ? '${n.round()}' : '$n';
+    final dims =
+        (w != null && h != null) ? '${fmtDim(w)} × ${fmtDim(h)} px' : 'Responsive';
     final badge = _badgeFor(status);
     final reedit = '${meta['reedit'] ?? ''}';
     final reeditLabel = reedit == 'public'

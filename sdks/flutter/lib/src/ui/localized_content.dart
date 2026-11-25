@@ -35,10 +35,22 @@ String resolveContent(Object? content, String lang) {
 /// The languages of a file's texts, lower-case and sorted (the web player's `languages`).
 List<String> oimLanguages(Map<String, dynamic> metadata) {
   final out = <String>{};
+  void collectLayers(List<dynamic>? layers) {
+    for (final l in layers ?? const []) {
+      if (l is! Map) continue;
+      final t = l['text'];
+      if (t is Map && t['content'] is Map) {
+        out.addAll((t['content'] as Map).keys.map((k) => k.toString().toLowerCase()).where((k) => k != '*'));
+      }
+      if (l['children'] is List) collectLayers(l['children'] as List);
+    }
+  }
+
   for (final s in (metadata['slots'] as List?) ?? const []) {
     final c = s is Map ? s['content'] : null;
     if (c is Map) out.addAll(c.keys.map((k) => k.toString().toLowerCase()).where((k) => k != '*'));
   }
+  collectLayers(metadata['layers'] as List?);
   return out.toList()..sort();
 }
 

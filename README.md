@@ -27,6 +27,7 @@ translations travel inside it. There is a live demo at [oim.media](https://oim.m
 | [`@oim-media/core`](packages/core/README.md) | Contract schema, binary reader, canonical form and the render rules shared by every player. |
 | [`@oim-media/player-oim`](packages/player-oim/README.md) | `<oim-player>` web component for `.oim` images. |
 | [`@oim-media/spec`](packages/spec/README.md) | Language-neutral contract: JSON Schema, binary and canonical specifications, conformance vectors and the public player keys. |
+| [`@oim-media/cli`](packages/cli/README.md) | Command-line tool (`oim`) to inspect, verify, extract, pack and upgrade `.oim` files to 2.0. |
 | [`@oim-media/viewer-desktop`](apps/viewer-desktop/README.md) | Native desktop viewer (Windows, macOS, Linux) built with Tauri v2, `@oim-media/player-oim`, and `@oim-media/core`. |
 | [`oim_flutter`](sdks/flutter/README.md) | Native Dart/Flutter SDK: reads, verifies offline and renders `.oim` files with the `OimPlayer` widget. |
 | [`oim-media` (Rust)](sdks/rust/README.md) | Rust crate (`oim` library): reads, verifies offline and interprets `.oim` files. No renderer. |
@@ -53,9 +54,9 @@ This is a pnpm workspace; use pnpm only.
 
 ```bash
 pnpm install
-pnpm build         # core, player-oim, scene and viewer-desktop
-pnpm test          # unit tests of core, player-oim and viewer-desktop
-pnpm typecheck     # the typecheck scripts of core, player-oim and viewer-desktop
+pnpm build         # core, player-oim, scene, cli and viewer-desktop
+pnpm test          # unit tests of core, player-oim, scene, cli and viewer-desktop
+pnpm typecheck     # the typecheck scripts of all workspace packages and viewer-desktop
 pnpm conformance   # the conformance vectors in packages/spec/vectors
 pnpm test:tools    # the release and packaging scripts in tools/
 pnpm check:licenses

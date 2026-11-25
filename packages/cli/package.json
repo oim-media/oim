@@ -1,0 +1,41 @@
+{
+  "name": "@oim-media/cli",
+  "license": "Apache-2.0",
+  "version": "1.36.6",
+  "private": true,
+  "description": "Herramienta oficial de línea de comandos para el ecosistema OIM",
+  "type": "module",
+  "bin": {
+    "oim": "./dist/bin/oim.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@oim-media/core": "workspace:1.36.6",
+    "commander": "^15.1.0",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@oim-media/spec": "workspace:1.36.6",
+    "@types/node": "^24.12.4",
+    "typescript": "~6.0.3",
+    "vitest": "^4.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oim-media/oim.git",
+    "directory": "packages/cli"
+  }
+}

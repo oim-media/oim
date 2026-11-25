@@ -28,29 +28,29 @@ function buildMockPng(type: string, data: Uint8Array): Uint8Array {
 
 describe('@oim-media/cli core modules', () => {
   it('pack and extract roundtrip preserves metadata and computes imageHash', async () => {
-    // 1. Crear un PNG mínimo con IHDR e IDAT
+    // 1. Create a minimal PNG with IHDR and IDAT
     const ihdr = new Uint8Array([0, 0, 0, 1, 0, 0, 0, 1, 8, 2, 0, 0, 0]);
     const mockImage = buildMockPng('IHDR', ihdr);
 
     const metadata = {
       version: '1.6.0',
       oim_id: 'test-doc-123',
-      name: 'Cartel de Prueba',
+      name: 'Test Poster',
       slots: [
         {
           id: 'title-slot',
           type: 'text',
-          name: 'Título',
+          name: 'Title',
           content: { es: 'Hola Mundo', en: 'Hello World' },
         },
       ],
     };
 
-    // 2. Empaquetar
+    // 2. Package
     const packed = await insertOimChunk(mockImage.buffer as ArrayBuffer, metadata);
     expect(packed.length).toBeGreaterThan(mockImage.length);
 
-    // 3. Extraer
+    // 3. Extract
     const blob = new Blob([packed], { type: 'image/png' });
     const extracted = await extractOIM(blob);
 

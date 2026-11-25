@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// CRC32 para chunks PNG (polinomio estándar IEEE 802.3)
+// CRC32 for PNG chunks (standard IEEE 802.3 polynomial)
 const crcTable: Int32Array = (() => {
   const t = new Int32Array(256);
   for (let i = 0; i < 256; i++) {
@@ -26,8 +26,8 @@ export function crc32(bytes: Uint8Array): number {
 }
 
 /**
- * Crea el chunk de metadatos OIM: un `zTXt` estándar (keyword 'OIM_Data' + 0x00 +
- * método 0 + flujo zlib). Binario, sin base64: el mismo contenedor que escribe el backend.
+ * Builds the OIM metadata chunk: a standard `zTXt` chunk (keyword 'OIM_Data' + 0x00 +
+ * method 0 + zlib stream). Binary, without base64: the same container the backend writes.
  */
 export async function createOimPngChunk(metadata: any): Promise<Uint8Array> {
   const cs = new CompressionStream('deflate');
@@ -55,7 +55,7 @@ export async function createOimPngChunk(metadata: any): Promise<Uint8Array> {
 }
 
 /**
- * Inyecta un chunk de metadatos OIM en un búfer PNG inmediatamente después del chunk IHDR.
+ * Inserts an OIM metadata chunk into a PNG buffer immediately after the IHDR chunk.
  */
 export async function insertOimChunk(
   pngBuffer: ArrayBuffer,
@@ -77,7 +77,7 @@ export async function insertOimChunk(
     );
     const totalChunkSize = 12 + length;
 
-    // Saltar cualquier chunk OIM existente para evitar duplicados
+    // Skip any existing OIM chunk to avoid duplicates
     if (typeStr === 'tEXt' || typeStr === 'zTXt' || typeStr === 'iTXt') {
       const dataBytes = new Uint8Array(pngBuffer, typeOffset + 4, length);
       const nullIdx = dataBytes.indexOf(0);

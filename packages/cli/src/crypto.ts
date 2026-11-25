@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Claves públicas canónicas del ecosistema OIM para validación offline
+// Canonical public keys of the OIM ecosystem for offline validation
 export const EMBEDDED_KEYS: Record<string, JsonWebKey> = {
   v1: {
     kty: 'EC',
@@ -21,7 +21,7 @@ import { serializeCanonical } from '@oim-media/core';
 export { serializeCanonical };
 
 /**
- * Valida la firma criptográfica ECDSA P-256 de los metadatos OIM.
+ * Validates the ECDSA P-256 cryptographic signature of OIM metadata.
  */
 export async function verifySignature(metadata: any): Promise<boolean> {
   if (!metadata || typeof metadata !== 'object') return false;

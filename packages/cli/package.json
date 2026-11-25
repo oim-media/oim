@@ -3,7 +3,7 @@
   "license": "Apache-2.0",
   "version": "1.36.6",
   "private": true,
-  "description": "Herramienta oficial de línea de comandos para el ecosistema OIM",
+  "description": "Official command-line tool (oim) for inspecting, verifying, extracting, packing, and upgrading .oim.png files",
   "type": "module",
   "bin": {
     "oim": "./dist/bin/oim.js"

@@ -84,12 +84,11 @@ embedded keys (see [`@oim-media/spec`](../spec/README.md#embedded-player-keys)).
 - `OIM_BACKEND_URL_DEFAULT`, `OIM_ENDPOINTS`, `OIM_PACKAGE_FIELDS`,
   `resolveBackendUrl(override?)`, `oimEndpoint(name, backendUrl?)`.
 
-## The 2.0 draft (`@oim-media/core/v2`)
+## Format 2.0 (`@oim-media/core/v2`)
 
-An experimental entry for the next version of the document. The published format is still the one
-above; no player reads 2.0 yet and its shape can change.
+Format **2.0** is the active `.oim` image format (the only one painted by players since `1.35.0`). `OimMetadataSchema` at the package root remains for legacy `1.x` files, `upgrade()`, and experimental `.ovm` video.
 
-2.0 keeps what a file can express and reorganises how it is written: five layer types (`text`,
+2.0 keeps what a file can express and organises how it is written: five layer types (`text`,
 `shape`, `image`, `lottie`, `group`) instead of fifteen, and one block per idea (`fills`, `strokes`,
 `effects`, `text`, `geometry`, `mask`, `animations`, `interactions`) that is the same in every layer
 that admits it. An absent field is its default.

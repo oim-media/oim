@@ -14,10 +14,9 @@ const read = (p) => readFileSync(fileURLToPath(new URL(`../${p}`, import.meta.ur
 describe("package versions follow the contract", () => {
   it("versions match the contract", () => {
     const contract = /CONTRACT_VERSION = "([\d.]+)"/.exec(read("packages/core/src/compatibility.ts"))[1];
-    for (const p of ["core", "player-oim", "player-ovm", "spec"]) {
+    for (const p of ["core", "player-oim", "spec"]) {
       const j = JSON.parse(read(`packages/${p}/package.json`));
-      // player-ovm is experimental: it follows the version but is not published.
-      expect([j.name, j.version, j.private ?? false]).toEqual([`@oim-media/${p}`, contract, p === "player-ovm"]);
+      expect([j.name, j.version, j.private ?? false]).toEqual([`@oim-media/${p}`, contract, false]);
     }
     const viewerPkg = JSON.parse(read("apps/viewer-desktop/package.json"));
     const tauriConf = JSON.parse(read("apps/viewer-desktop/src-tauri/tauri.conf.json"));

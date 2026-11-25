@@ -1,12 +1,14 @@
-# oim (Rust)
+# oim-media (Rust)
 
-Read, verify and interpret `.oim` files from Rust. No network, no renderer:
+Read, verify and interpret `.oim` files from Rust (crate `oim-media`, library module `oim`). No network, no renderer:
 the public keys are embedded, and packaging or signing is the CLI's job.
 
 ```toml
 [dependencies]
-oim-media = { git = "https://github.com/oim-media/oim" }
+oim-media = "1.36"
 ```
+
+Or install with `cargo add oim-media`.
 
 ```rust
 use std::time::SystemTime;
@@ -17,8 +19,10 @@ let status = oim::verify(&file, SystemTime::now());
 if oim::is_refused(status) {
     return Err("altered file".into());
 }
-for slot in file.metadata["slots"].as_array().into_iter().flatten() {
-    println!("{}", oim::resolve_content(&slot["content"], oim::DEFAULT_LANGUAGE));
+for layer in file.metadata["layers"].as_array().into_iter().flatten() {
+    if let Some(content) = layer.get("text").and_then(|t| t.get("content")) {
+        println!("{}", oim::resolve_content(content, oim::DEFAULT_LANGUAGE));
+    }
 }
 ```
 

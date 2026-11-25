@@ -30,7 +30,7 @@ translations travel inside it. There is a live demo at [oim.media](https://oim.m
 | [`@oim-media/spec`](packages/spec/README.md) | Language-neutral contract: JSON Schema, binary and canonical specifications, conformance vectors and the public player keys. |
 | [`@oim-media/viewer-desktop`](apps/viewer-desktop/README.md) | Native desktop viewer (Windows, macOS, Linux) built with Tauri v2, `@oim-media/player-oim`, and `@oim-media/core`. |
 | [`oim_flutter`](sdks/flutter/README.md) | Native Dart/Flutter SDK: reads, verifies offline and renders `.oim` files with the `OimPlayer` widget. |
-| [`oim` (Rust)](sdks/rust/README.md) | Rust crate: reads, verifies offline and interprets `.oim` files. No renderer. |
+| [`oim-media` (Rust)](sdks/rust/README.md) | Rust crate (`oim` library): reads, verifies offline and interprets `.oim` files. No renderer. |
 | [`viewer-flutter`](apps/viewer-flutter/README.md) | Native viewer for Android, iOS and Windows built on `oim_flutter`. |
 | [`oim-sdk` (Android)](sdks/android/README.md) | Native Kotlin/Jetpack Compose SDK: reads, verifies, caches and renders `.oim` files with `OimAsyncPlayer`. |
 | [`viewer-android`](apps/viewer-android/README.md) | Sample Android viewer built on the Android SDK: library gallery, full-screen viewer, device-language files. |

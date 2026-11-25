@@ -25,12 +25,12 @@ const isSigned = (file: string) => {
 };
 const files = readdirSync(VECTORS).filter((f) => f.endsWith('.oim.png') && isSigned(f));
 
-describe('oim verify contra los vectores de conformidad', () => {
-  it('hay vectores que comprobar', () => {
+describe('oim verify against conformance vectors', () => {
+  it('has conformance vectors to verify', () => {
     expect(files.length).toBeGreaterThanOrEqual(20);
   });
 
-  it.each(files)('acepta la firma real de %s', async (file) => {
+  it.each(files)('accepts real signature of %s', async (file) => {
     const result: any = await extractOIM(new Blob([readFileSync(join(VECTORS, file))]));
     expect(await verifySignature(result?.metadata ?? result)).toBe(true);
   });

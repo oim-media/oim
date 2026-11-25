@@ -16,54 +16,54 @@ const program = new Command();
 
 program
   .name('oim')
-  .description('Herramienta oficial de línea de comandos para el ecosistema OIM')
-  .version('1.0.0');
+  .description('Official command-line tool for the OIM ecosystem')
+  .version('1.36.6');
 
 program
   .command('inspect')
-  .description('Inspecciona los metadatos interactivos, capas, fuentes y firma de un archivo OIM')
-  .argument('<archivo>', 'Ruta al archivo .oim o .png')
+  .description('Inspect interactive metadata, layers, fonts, and signature of an OIM file')
+  .argument('<file>', 'Path to the .oim or .png file')
   .action(async (file: string) => {
     await inspectCommand(file);
   });
 
 program
   .command('verify')
-  .description('Valida la integridad del archivo contra el esquema Zod y verifica la firma criptográfica')
-  .argument('<archivo>', 'Ruta al archivo .oim o .png')
-  .option('--json', 'Devuelve el resultado en formato JSON estructurado')
+  .description('Validate file integrity against the schema and verify its cryptographic signature')
+  .argument('<file>', 'Path to the .oim or .png file')
+  .option('--json', 'Output result in structured JSON format')
   .action(async (file: string, options: { json?: boolean }) => {
     await verifyCommand(file, options);
   });
 
 program
   .command('extract')
-  .description('Separa la imagen base limpia del JSON de metadatos interactivos')
-  .argument('<archivo>', 'Ruta al archivo .oim o .png')
-  .option('-i, --out-image <path>', 'Ruta de salida para la imagen PNG base')
-  .option('-m, --out-meta <path>', 'Ruta de salida para el JSON de metadatos')
+  .description('Separate the clean base PNG image from the interactive metadata JSON')
+  .argument('<file>', 'Path to the .oim or .png file')
+  .option('-i, --out-image <path>', 'Output path for the base PNG image')
+  .option('-m, --out-meta <path>', 'Output path for the metadata JSON')
   .action(async (file: string, options: { outImage?: string; outMeta?: string }) => {
     await extractCommand(file, options);
   });
 
 program
   .command('pack')
-  .description('Empaqueta una imagen base PNG con metadatos interactivos en un archivo .oim.png')
-  .argument('<imagen>', 'Ruta a la imagen base PNG')
-  .requiredOption('-m, --meta <json>', 'Ruta al archivo de metadatos JSON')
-  .option('-o, --output <path>', 'Ruta del archivo de salida empaquetado')
-  .option('--sign', 'Empaqueta y firma vía POST /v1/oim/package (requiere clave API Enterprise)')
-  .option('--api-key <key>', 'Clave API Enterprise para X-API-Key (o variable OIM_API_KEY)')
-  .option('--endpoint <url>', 'URL del endpoint de empaquetado/firma')
+  .description('Package a base PNG image with interactive metadata into an .oim.png file')
+  .argument('<image>', 'Path to the base PNG image')
+  .requiredOption('-m, --meta <json>', 'Path to the metadata JSON file')
+  .option('-o, --output <path>', 'Output path for the packaged file')
+  .option('--sign', 'Package and sign via POST /v1/oim/package (requires Enterprise API key)')
+  .option('--api-key <key>', 'Enterprise API key for X-API-Key (or OIM_API_KEY env var)')
+  .option('--endpoint <url>', 'Packaging/signing service endpoint URL')
   .action(async (image: string, options: any) => {
     await packCommand(image, options);
   });
 
 program
   .command('upgrade')
-  .description('Convierte un archivo OIM 1.x a 2.0 (queda sin firmar)')
-  .argument('<archivo>', 'Ruta al archivo .oim.png')
-  .option('-o, --output <path>', 'Ruta del archivo 2.0 de salida')
+  .description('Upgrade an OIM 1.x file to Format 2.0 (unsigned)')
+  .argument('<file>', 'Path to the .oim.png file')
+  .option('-o, --output <path>', 'Output path for the 2.0 file')
   .action(async (file: string, options: { output?: string }) => {
     await upgradeCommand(file, options);
   });

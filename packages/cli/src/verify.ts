@@ -19,19 +19,19 @@ export async function verifyBytes(fileBytes: Uint8Array): Promise<{ metadata: an
   const blob = new Blob([fileBytes as BlobPart], { type: 'image/png' });
   const { metadata, imageHash } = await extractOIM(blob);
   const issues: string[] = [];
-  if (!metadata) return { metadata, imageHash, issues: ['No contiene chunk de metadatos OIM'] };
+  if (!metadata) return { metadata, imageHash, issues: ['No OIM metadata chunk found'] };
 
   const parseResult = (isV2(metadata) ? documentSchema : OimMetadataSchema).safeParse(metadata);
   if (!parseResult.success) {
     parseResult.error.issues.forEach((iss) => {
-      issues.push(`Esquema: ${iss.path.join('.') || 'root'}: ${iss.message}`);
+      issues.push(`Schema: ${iss.path.join('.') || 'root'}: ${iss.message}`);
     });
   }
   if (metadata.image_hash && metadata.image_hash !== imageHash) {
-    issues.push(`Píxeles alterados: el hash de la imagen (${imageHash}) no coincide con el sello (${metadata.image_hash})`);
+    issues.push(`Tampered pixels: image hash (${imageHash}) does not match seal (${metadata.image_hash})`);
   }
   if (metadata.signature && metadata.key_version && !(await verifySignature(metadata))) {
-    issues.push('Firma criptográfica inválida: los metadatos fueron alterados tras la firma');
+    issues.push('Invalid cryptographic signature: metadata was modified after signing');
   }
   return { metadata, imageHash, issues };
 }
@@ -41,7 +41,7 @@ export async function verifyCommand(filePath: string, options: VerifyOptions): P
     if (options.json) {
       console.log(JSON.stringify({ valid: false, error: 'File not found', path: filePath }));
     } else {
-      console.error(pc.red(`Error: No se encontró el archivo "${filePath}".`));
+      console.error(pc.red(`Error: File "${filePath}" not found.`));
     }
     process.exit(1);
   }
@@ -62,9 +62,9 @@ export async function verifyCommand(filePath: string, options: VerifyOptions): P
       }, null, 2));
     } else {
       if (isValid) {
-        console.log(pc.green(`✔ ${filePath} es un archivo OIM íntegro y válido.`));
+        console.log(pc.green(`✔ ${filePath} is a valid and intact OIM file.`));
       } else {
-        console.error(pc.red(`✖ Falló la verificación de ${filePath}:`));
+        console.error(pc.red(`✖ Verification failed for ${filePath}:`));
         issues.forEach((iss) => {
           console.error(pc.yellow(`  • ${iss}`));
         });
@@ -78,7 +78,7 @@ export async function verifyCommand(filePath: string, options: VerifyOptions): P
     if (options.json) {
       console.log(JSON.stringify({ valid: false, error: err.message, path: filePath }));
     } else {
-      console.error(pc.red(`Error durante la verificación: ${err.message}`));
+      console.error(pc.red(`Error during verification: ${err.message}`));
     }
     process.exit(1);
   }

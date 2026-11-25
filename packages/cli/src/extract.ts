@@ -15,7 +15,7 @@ export interface ExtractOptions {
 
 export async function extractCommand(filePath: string, options: ExtractOptions): Promise<void> {
   if (!existsSync(filePath)) {
-    console.error(pc.red(`Error: No se encontró el archivo "${filePath}".`));
+    console.error(pc.red(`Error: File "${filePath}" not found.`));
     process.exit(1);
   }
 
@@ -25,7 +25,7 @@ export async function extractCommand(filePath: string, options: ExtractOptions):
     const { image, metadata } = await extractOIM(blob);
 
     if (!metadata) {
-      console.error(pc.yellow('Aviso: El archivo no contiene metadatos OIM para extraer.'));
+      console.error(pc.yellow('Warning: The file contains no OIM metadata to extract.'));
       process.exit(1);
     }
 
@@ -33,16 +33,16 @@ export async function extractCommand(filePath: string, options: ExtractOptions):
     const outImgPath = options.outImage || `${baseName}.base.png`;
     const outMetaPath = options.outMeta || `${baseName}.meta.json`;
 
-    // Guardar imagen base limpia (sin chunks OIM)
+    // Save clean base image (without OIM chunks)
     const imgBuffer = Buffer.from(await image.arrayBuffer());
     writeFileSync(outImgPath, imgBuffer);
-    console.log(pc.green(`✔ Imagen base extraída: ${outImgPath}`));
+    console.log(pc.green(`✔ Base image extracted: ${outImgPath}`));
 
-    // Guardar JSON de metadatos formateado
+    // Save formatted metadata JSON
     writeFileSync(outMetaPath, JSON.stringify(metadata, null, 2), 'utf-8');
-    console.log(pc.green(`✔ Metadatos extraídos:  ${outMetaPath}`));
+    console.log(pc.green(`✔ Metadata extracted:   ${outMetaPath}`));
   } catch (err: any) {
-    console.error(pc.red(`Error al extraer componentes: ${err.message}`));
+    console.error(pc.red(`Error extracting components: ${err.message}`));
     process.exit(1);
   }
 }

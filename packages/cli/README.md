@@ -1,20 +1,20 @@
 # @oim-media/cli
 
-Herramienta oficial de línea de comandos (`oim`) para inspeccionar, verificar, extraer, empaquetar y actualizar archivos `.oim.png`.
+Official command-line tool (`oim`) to inspect, verify, extract, pack, and upgrade `.oim.png` files.
 
-## Comandos
+## Commands
 
 ```bash
-oim inspect <archivo>                  # Inspecciona capas, idiomas, fuentes y firma
-oim verify <archivo> [--json]          # Valida esquema Zod y firma ECDSA P-256
-oim extract <archivo> [-i png] [-m json] # Separa imagen base y metadatos
-oim pack <imagen> -m <json> [-o out]   # Empaqueta (opcionalmente --sign --api-key ...)
-oim upgrade <archivo> [-o out]         # Convierte archivo 1.x a formato 2.0 (sin firmar)
+oim inspect <file>                       # Inspects layers, languages, fonts, and signature
+oim verify <file> [--json]               # Validates schema (Zod) and ECDSA P-256 signature
+oim extract <file> [-i png] [-m json]    # Separates the base PNG image and metadata JSON
+oim pack <image> -m <json> [-o out]      # Packages PNG + metadata (optionally --sign --api-key ...)
+oim upgrade <file> [-o out]              # Upgrades a 1.x file to Format 2.0 (unsigned)
 ```
 
-## Desarrollo
+## Development
 
-Desde la raíz del monorepo (`pnpm` exclusivamente):
+From the repository root (`pnpm` only):
 
 ```bash
 pnpm --filter @oim-media/cli build

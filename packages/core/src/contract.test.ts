@@ -34,7 +34,6 @@ import { z } from "zod";
 import { CONTRACT_VERSION, minVersionFor, BASE_CONTRACT_VERSION } from "./compatibility";
 import {
   OimMetadataSchema,
-  OvmMetadataSchema,
   slotSchema,
   styleSchema,
   contentSchema,
@@ -182,11 +181,6 @@ describe("the contract in JSON Schema", () => {
   it("oim.schema.json is up to date with schema.ts", async () => {
     await expect(comoFichero(contractOf(OimMetadataSchema, "oim", "OIM document metadata")))
       .toMatchFileSnapshot("../../spec/schema/oim.schema.json");
-  });
-
-  it("ovm.schema.json is up to date with schema.ts", async () => {
-    await expect(comoFichero(contractOf(OvmMetadataSchema, "ovm", "OVM document metadata")))
-      .toMatchFileSnapshot("../../spec/schema/ovm.schema.json");
   });
 });
 

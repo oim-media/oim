@@ -6,7 +6,7 @@
 
 /**
  * Binary packing, unpacking, compression (deflate), and base64 logic.
- * Handles extracting and embedding metadata chunks in PNG and OVM files.
+ * Handles extracting and embedding metadata chunks in PNG files.
  */
 
 const MAX_DECOMPRESSED_METADATA_BYTES = 10 * 1024 * 1024; // 10MB (matches the backend limit in utils.py)
@@ -275,9 +275,9 @@ export async function fetchMetadataTail(src: string, tailBytes = 65536): Promise
   const text = new TextDecoder().decode(bytes);
   const len = text.length;
 
-  function hasOvmSig(t: string, start: number) {
+  function hasOimSig(t: string, start: number) {
     const head = t.substring(start, Math.min(start + 80, t.length));
-    return head.indexOf('ovm_version') !== -1 || head.indexOf('slots') !== -1;
+    return head.indexOf('slots') !== -1;
   }
 
   function findClosing(t: string, start: number) {
@@ -296,7 +296,7 @@ export async function fetchMetadataTail(src: string, tailBytes = 65536): Promise
 
   for (let i = 0; i < len; i++) {
     if (text[i] !== '{') continue;
-    if (!hasOvmSig(text, i)) continue;
+    if (!hasOimSig(text, i)) continue;
     const json = findClosing(text, i);
     if (!json) continue;
     try { return JSON.parse(json); } catch (_) {}

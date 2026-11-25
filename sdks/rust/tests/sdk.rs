@@ -14,6 +14,10 @@ fn vectors_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../packages/spec/vectors")
 }
 
+fn vectors_v2_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../packages/spec/vectors-2")
+}
+
 fn vectors() -> Vec<(String, Vec<u8>, Value)> {
     let mut out: Vec<_> = fs::read_dir(vectors_dir())
         .unwrap()
@@ -30,8 +34,26 @@ fn vectors() -> Vec<(String, Vec<u8>, Value)> {
     out
 }
 
+fn vectors_v2() -> Vec<(String, Vec<u8>)> {
+    let mut out: Vec<_> = fs::read_dir(vectors_v2_dir())
+        .unwrap()
+        .filter_map(|e| {
+            let name = e.unwrap().file_name().into_string().unwrap();
+            let stem = name.strip_suffix(".oim.png")?.to_owned();
+            let png = fs::read(vectors_v2_dir().join(&name)).unwrap();
+            Some((stem, png))
+        })
+        .collect();
+    out.sort_by(|a, b| a.0.cmp(&b.0));
+    out
+}
+
 fn vector(name: &str) -> Vec<u8> {
     fs::read(vectors_dir().join(format!("{name}.oim.png"))).unwrap()
+}
+
+fn vector_v2(name: &str) -> Vec<u8> {
+    fs::read(vectors_v2_dir().join(format!("{name}.oim.png"))).unwrap()
 }
 
 /// Rewrites the chunks of a PNG, recomputing nothing but what the edit needs.
@@ -71,7 +93,11 @@ fn ztxt(meta: &Value) -> (Vec<u8>, Vec<u8>) {
 
 /// The vector with its OIM chunk replaced by `meta`.
 fn with_metadata(name: &str, meta: &Value) -> Vec<u8> {
-    let mut cs: Vec<_> = chunks(&vector(name))
+    with_metadata_bytes(&vector(name), meta)
+}
+
+fn with_metadata_bytes(source: &[u8], meta: &Value) -> Vec<u8> {
+    let mut cs: Vec<_> = chunks(source)
         .into_iter()
         .filter(|(k, d)| !(k.ends_with(b"TXt") && d.starts_with(b"OIM_")))
         .collect();
@@ -112,6 +138,60 @@ fn every_vector_extracts_and_verifies() {
 fn reedit_english_vector_is_public() {
     let e = extract(&vector("reedit-english")).unwrap();
     assert_eq!(reedit_permission(&e.metadata), ReeditPermission::Public);
+}
+
+// --- conformance (2.0) ---
+
+#[test]
+fn every_v2_vector_extracts_and_verifies() {
+    let all = vectors_v2();
+    assert!(all.len() >= 40, "found {} v2 vectors", all.len());
+    for (name, png) in all {
+        let e = extract(&png).unwrap_or_else(|err| panic!("v2 {name}: {err}"));
+        let oim_ver = e.metadata["oim"].as_str().unwrap_or("");
+        assert!(
+            oim_ver.starts_with("2."),
+            "v2 {name}: unexpected oim={oim_ver}"
+        );
+        assert!(
+            e.metadata["layers"].as_array().is_some(),
+            "v2 {name}: missing layers"
+        );
+        assert!(
+            e.metadata["canvas"]["width"].as_f64().unwrap_or(0.0) > 0.0,
+            "v2 {name}: missing canvas.width"
+        );
+        let want = if e.metadata.get("image_hash_alg").is_none() {
+            SecurityStatus::ImageUnsealed
+        } else if e.metadata.get("reedit").and_then(Value::as_str) == Some("public") {
+            SecurityStatus::VerifiedAuthorless
+        } else {
+            SecurityStatus::Verified
+        };
+        assert_eq!(verify(&e, SystemTime::now()), want, "v2 {name}");
+    }
+}
+
+#[test]
+fn v2_changed_image_is_a_mismatch() {
+    let mut cs = chunks(&vector_v2("basic-text"));
+    let idat = cs.iter_mut().find(|(k, _)| k == b"IDAT").unwrap();
+    idat.1[0] ^= 1;
+    let png = build(&cs);
+    assert_eq!(status(&png), SecurityStatus::ImageMismatch);
+    assert!(is_refused(SecurityStatus::ImageMismatch));
+}
+
+#[test]
+fn v2_changed_signed_layer_is_invalid() {
+    let base = vector_v2("basic-text");
+    let mut meta = extract(&base).unwrap().metadata;
+    meta["layers"][0]["id"] = json!("tampered");
+    assert_eq!(
+        status(&with_metadata_bytes(&base, &meta)),
+        SecurityStatus::InvalidSignature
+    );
+    assert!(is_refused(SecurityStatus::InvalidSignature));
 }
 
 // --- tampering ---

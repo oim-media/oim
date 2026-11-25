@@ -149,8 +149,14 @@ fn every_v2_vector_extracts_and_verifies() {
     for (name, png) in all {
         let e = extract(&png).unwrap_or_else(|err| panic!("v2 {name}: {err}"));
         let oim_ver = e.metadata["oim"].as_str().unwrap_or("");
-        assert!(oim_ver.starts_with("2."), "v2 {name}: unexpected oim={oim_ver}");
-        assert!(e.metadata["layers"].as_array().is_some(), "v2 {name}: missing layers");
+        assert!(
+            oim_ver.starts_with("2."),
+            "v2 {name}: unexpected oim={oim_ver}"
+        );
+        assert!(
+            e.metadata["layers"].as_array().is_some(),
+            "v2 {name}: missing layers"
+        );
         assert!(
             e.metadata["canvas"]["width"].as_f64().unwrap_or(0.0) > 0.0,
             "v2 {name}: missing canvas.width"

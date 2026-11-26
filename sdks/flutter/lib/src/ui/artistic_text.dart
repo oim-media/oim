@@ -63,18 +63,23 @@ String shadeHexColor(String color, double percent) {
 
 /// `calculate3DExtrusionLayers` of the core, deepest first.
 List<({double dx, double dy, String color, double opacity})> extrusionLayers(double depth, double angle, String color, bool shading) {
-  final steps = depth.clamp(0, 60).round();
-  if (steps == 0) return const [];
+  final clamped = depth.clamp(0.0, 200.0);
+  if (clamped == 0) return const [];
+  final steps = clamped <= 60 ? math.max(1, clamped.round()) : 60;
   final rad = angle * math.pi / 180;
   double r1(double v) => (v * 10).roundToDouble() / 10;
   return [
-    for (var i = steps; i >= 1; i--)
-      (
-        dx: r1(math.cos(rad) * i) + 0.0,
-        dy: r1(math.sin(rad) * i) + 0.0,
-        color: shading ? shadeHexColor(color, 1 - (i / steps) * 0.5) : color,
-        opacity: 1.0,
-      ),
+    for (var i = steps; i >= 1; i--) ...[
+      () {
+        final dist = clamped <= 60 ? i.toDouble() : (clamped * i) / steps;
+        return (
+          dx: r1(math.cos(rad) * dist) + 0.0,
+          dy: r1(math.sin(rad) * dist) + 0.0,
+          color: shading ? shadeHexColor(color, 1 - (i / steps) * 0.5) : color,
+          opacity: 1.0,
+        );
+      }(),
+    ],
   ];
 }
 

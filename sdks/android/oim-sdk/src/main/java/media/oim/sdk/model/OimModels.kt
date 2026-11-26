@@ -288,8 +288,16 @@ data class OimImageFill(
 
 data class OimArtisticStyle(
     val curveAmount: Float = 0f,
+    val curveType: String = "arc",
     val extrusionColorHex: String? = null,
-    val extrusionDepthPx: Float = 0f
+    val extrusionDepthPx: Float = 0f,
+    val extrusionAngleDeg: Float = 45f,
+    val extrusionShading: Boolean = true,
+    val outerStrokeColorHex: String? = null,
+    val outerStrokeWidthPx: Float = 0f,
+    val innerStrokeColorHex: String? = null,
+    val innerStrokeWidthPx: Float = 0f,
+    val textGradientType: String? = null
 )
 
 data class OimLayerStyle(

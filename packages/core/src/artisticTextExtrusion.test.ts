@@ -59,4 +59,15 @@ describe("calculate3DExtrusionLayers", () => {
   it("with depth 0 there are no layers", () => {
     expect(calculate3DExtrusionLayers(0, 45)).toEqual([]);
   });
+
+  it("stretches above 60px up to 200px with at most 60 layers", () => {
+    const stretched = calculate3DExtrusionLayers(120, 0, "#111827", false);
+    expect(stretched).toHaveLength(60);
+    expect(stretched[0].dx).toBe(120);
+    expect(stretched[stretched.length - 1].dx).toBe(2);
+
+    const clamped = calculate3DExtrusionLayers(300, 90, "#111827", false);
+    expect(clamped).toHaveLength(60);
+    expect(clamped[0].dy).toBe(200);
+  });
 });

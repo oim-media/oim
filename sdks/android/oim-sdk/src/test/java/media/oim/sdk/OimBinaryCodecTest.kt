@@ -330,12 +330,18 @@ class OimBinaryCodecTest {
                   "id": "hero_title",
                   "type": "text",
                   "box": { "x": 80, "y": 175, "width": 920, "height": 190 },
-                  "fills": [{ "kind": "color", "value": "#fdf0d5" }],
-                  "strokes": [{ "paint": { "kind": "color", "value": "#1d3557" }, "width": 3 }],
+                  "fills": [{ "kind": "gradient", "preset": "sunset-gold", "stops": [] }],
+                  "strokes": [
+                    { "paint": { "kind": "color", "value": "#1d3557" }, "width": 3, "align": "outside" },
+                    { "paint": { "kind": "color", "value": "#ffffff" }, "width": 1.5, "align": "inside" }
+                  ],
                   "text": {
                     "content": { "es": "SOLARIS GROOVE" },
                     "font": { "family": "Righteous", "size": 82 },
-                    "artistic": { "curve": { "amount": 24, "type": "arc" }, "extrusion": { "color": "#e76f51", "depth": 16 } }
+                    "artistic": {
+                      "curve": { "amount": 24, "type": "arc" },
+                      "extrusion": { "color": "#e76f51", "depth": 16, "angle": 60, "shading": false }
+                    }
                   }
                 }
               ]
@@ -361,8 +367,16 @@ class OimBinaryCodecTest {
         val heroTitle = doc.layers[2]
         assertEquals(media.oim.sdk.model.OimTextAlign.CENTER, heroTitle.style.textAlign)
         assertNotNull(heroTitle.style.artistic)
+        assertEquals("arc", heroTitle.style.artistic?.curveType)
         assertEquals("#e76f51", heroTitle.style.artistic?.extrusionColorHex)
         assertEquals(16f, heroTitle.style.artistic?.extrusionDepthPx ?: -1f, 0.01f)
+        assertEquals(60f, heroTitle.style.artistic?.extrusionAngleDeg ?: -1f, 0.01f)
+        assertFalse(heroTitle.style.artistic?.extrusionShading ?: true)
+        assertEquals("#1d3557", heroTitle.style.artistic?.outerStrokeColorHex)
+        assertEquals(3f, heroTitle.style.artistic?.outerStrokeWidthPx ?: -1f, 0.01f)
+        assertEquals("#ffffff", heroTitle.style.artistic?.innerStrokeColorHex)
+        assertEquals(1.5f, heroTitle.style.artistic?.innerStrokeWidthPx ?: -1f, 0.01f)
+        assertEquals("sunset-gold", heroTitle.style.artistic?.textGradientType)
     }
 
     @Test

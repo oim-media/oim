@@ -1009,6 +1009,21 @@ object OimBinaryCodec {
         val states = parseSlotStates(styleObj?.optJSONObject("states"))
         val reveal = parseReveal(revealObj)
         val textRuns = parseTextRuns(styleObj?.optJSONObject("textRuns"))
+        val artistic = if (kind == OimLayerKind.ARTISTIC_TEXT || styleObj?.has("artisticPreset") == true || styleObj?.has("extrusionDepth") == true) {
+            OimArtisticStyle(
+                curveAmount = styleObj?.optDouble("curveAmount", 0.0)?.takeIf { !it.isNaN() }?.toFloat() ?: 0f,
+                curveType = styleObj?.optString("curveType", "arc")?.ifBlank { "arc" } ?: "arc",
+                extrusionColorHex = styleObj?.optString("extrusionColor", "")?.ifBlank { null },
+                extrusionDepthPx = styleObj?.optDouble("extrusionDepth", 0.0)?.takeIf { !it.isNaN() }?.toFloat() ?: 0f,
+                extrusionAngleDeg = styleObj?.optDouble("extrusionAngle", 45.0)?.takeIf { !it.isNaN() }?.toFloat() ?: 45f,
+                extrusionShading = styleObj?.optBoolean("extrusionShading", true) ?: true,
+                outerStrokeColorHex = styleObj?.optString("outerStrokeColor", "")?.ifBlank { null },
+                outerStrokeWidthPx = styleObj?.optDouble("outerStrokeWidth", 0.0)?.takeIf { !it.isNaN() }?.toFloat() ?: 0f,
+                innerStrokeColorHex = styleObj?.optString("innerStrokeColor", "")?.ifBlank { null },
+                innerStrokeWidthPx = styleObj?.optDouble("innerStrokeWidth", 0.0)?.takeIf { !it.isNaN() }?.toFloat() ?: 0f,
+                textGradientType = styleObj?.optString("textGradientType", "")?.ifBlank { null }
+            )
+        } else null
 
         return OimLayer(
             id = lObj.optString("id", "slot_$index"),
@@ -1055,6 +1070,7 @@ object OimBinaryCodec {
                 geoShape = styleObj?.optString("geoShape", "")?.ifBlank { null },
                 svgPath = styleObj?.optString("svgPath", "")?.ifBlank { null },
                 svgViewBox = styleObj?.optString("svgViewBox", "")?.ifBlank { null },
+                artistic = artistic,
                 flipX = styleObj?.optBoolean("flipX", false) ?: false,
                 flipY = styleObj?.optBoolean("flipY", false) ?: false,
                 isVisible = styleObj?.optBoolean("isVisible", true) ?: true,
@@ -1346,10 +1362,43 @@ object OimBinaryCodec {
         val artistic = if (artisticObj != null) {
             val curveObj = artisticObj.optJSONObject("curve")
             val extObj = artisticObj.optJSONObject("extrusion")
+            var outerStrokeColorHex: String? = null
+            var outerStrokeWidthPx = 0f
+            var innerStrokeColorHex: String? = null
+            var innerStrokeWidthPx = 0f
+            if (strokesArr != null) {
+                for (si in 0 until strokesArr.length()) {
+                    val sObj = strokesArr.optJSONObject(si) ?: continue
+                    val align = sObj.optString("align", "").lowercase()
+                    val sWidth = sObj.opt("width")?.let { resolveV2Number(it, varDefaults) }?.toFloat() ?: 0f
+                    val sColor = sObj.opt("paint")?.let { extractV2PaintColorWithRole(it, resources, varDefaults)?.first }
+                    if (align == "outside" && outerStrokeWidthPx == 0f) {
+                        outerStrokeColorHex = sColor
+                        outerStrokeWidthPx = sWidth
+                    } else if (align == "inside" && innerStrokeWidthPx == 0f) {
+                        innerStrokeColorHex = sColor
+                        innerStrokeWidthPx = sWidth
+                    }
+                }
+            }
+            var textGradientPreset: String? = null
+            val firstFill = fillsArr?.optJSONObject(0)
+                ?.let { if (it.has("ref")) resources?.optJSONObject(it.optString("ref")) else it }
+            if (firstFill?.optString("kind").equals("gradient", ignoreCase = true)) {
+                textGradientPreset = firstFill?.optString("preset", "")?.ifBlank { null }
+            }
             OimArtisticStyle(
                 curveAmount = curveObj?.optDouble("amount", 0.0)?.takeIf { !it.isNaN() }?.toFloat() ?: 0f,
-                extrusionColorHex = extObj?.optString("color", "")?.ifBlank { null },
-                extrusionDepthPx = extObj?.optDouble("depth", 0.0)?.takeIf { !it.isNaN() }?.toFloat() ?: 0f
+                curveType = curveObj?.optString("type", "arc")?.ifBlank { "arc" } ?: "arc",
+                extrusionColorHex = resolveV2String(extObj?.opt("color"), varDefaults)?.ifBlank { null },
+                extrusionDepthPx = extObj?.optDouble("depth", 0.0)?.takeIf { !it.isNaN() }?.toFloat() ?: 0f,
+                extrusionAngleDeg = extObj?.optDouble("angle", 45.0)?.takeIf { !it.isNaN() }?.toFloat() ?: 45f,
+                extrusionShading = extObj?.optBoolean("shading", true) ?: true,
+                outerStrokeColorHex = outerStrokeColorHex,
+                outerStrokeWidthPx = outerStrokeWidthPx,
+                innerStrokeColorHex = innerStrokeColorHex,
+                innerStrokeWidthPx = innerStrokeWidthPx,
+                textGradientType = textGradientPreset
             )
         } else null
 
@@ -1451,7 +1500,9 @@ object OimBinaryCodec {
         val parsedV2Anims = parseV2AnimationsList(rawType, combinedAnimations)
         val animSpec = parsedV2Anims.animSpec
 
-        val textColorHex = if (kind == OimLayerKind.TEXT) primaryFillColor ?: "#000000" else "#F8FAFC"
+        val textColorHex = if (kind == OimLayerKind.TEXT || kind == OimLayerKind.ARTISTIC_TEXT) {
+            primaryFillColor ?: (if (artistic != null) "#FBBF24" else "#000000")
+        } else "#F8FAFC"
         val shapeFillHex = if (kind == OimLayerKind.GEO) primaryFillColor ?: "#00000000" else "#00000000"
 
         outLayers.add(

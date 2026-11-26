@@ -49,10 +49,7 @@ that survives the language.
 
 ## Who is the authority today
 
-Today the source of truth is still `packages/core/src/schema.ts`: the JSON in
-`schema/` is **generated** from that Zod schema, and a test fails if someone
-edits the Zod without regenerating. This is deliberate — a generated contract
-cannot drift from its implementation, which is exactly the failure this closes.
+Today the source of truth is `packages/core/src/v2/schema.ts` for Format 2.0 (and `packages/core/src/schema.ts` for legacy 1.x): the JSON in `schema/` is **generated** from those Zod schemas, and a test fails if someone edits the Zod without regenerating. This is deliberate — a generated contract cannot drift from its implementation, which is exactly the failure this closes.
 
 Other implementations now exist in this repository: the Rust crate and the
 Flutter SDK read the same files. They are held to the generated JSON Schema, the

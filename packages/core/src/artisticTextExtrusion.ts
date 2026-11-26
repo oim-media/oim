@@ -47,7 +47,8 @@ export function shadeHexColor(color: string, percent: number): string {
 /**
  * The extrusion layers, deepest first, so they paint back to front.
  *
- * Depth is clamped to 0-60 and each layer is one px further along the angle.
+ * Depth is clamped to 0-200. Up to 60px each layer sits 1px apart along the
+ * angle; above 60px we cap at 60 evenly spaced steps reaching `clampedDepth`.
  * With shading, deeper layers are lighter and the ones next to the face are
  * darker, which reads as a shadow cast by the face.
  */
@@ -57,20 +58,21 @@ export function calculate3DExtrusionLayers(
   baseColor: string = "#111827",
   shading: boolean = true
 ): ExtrusionStep[] {
-  const clampedDepth = Math.max(0, Math.min(60, depth));
+  const clampedDepth = Math.max(0, Math.min(200, depth));
   if (clampedDepth === 0) return [];
 
   const rad = (angleDegrees * Math.PI) / 180;
   const cos = Math.cos(rad);
   const sin = Math.sin(rad);
 
-  const steps = Math.max(1, Math.round(clampedDepth));
+  const steps = clampedDepth <= 60 ? Math.max(1, Math.round(clampedDepth)) : 60;
   const layers: ExtrusionStep[] = [];
 
   for (let i = steps; i >= 1; i--) {
     const t = i / steps;
-    const dx = Math.round(cos * i * 10) / 10;
-    const dy = Math.round(sin * i * 10) / 10;
+    const dist = clampedDepth <= 60 ? i : (clampedDepth * i) / steps;
+    const dx = Math.round(cos * dist * 10) / 10;
+    const dy = Math.round(sin * dist * 10) / 10;
     const color = shading ? shadeHexColor(baseColor, 1 - t * 0.5) : baseColor;
     layers.push({ dx, dy, color, opacity: 1 });
   }

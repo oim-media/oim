@@ -1676,7 +1676,89 @@ private fun OimLayerNode(
                                 renderTextSilhouette(glowColor, glowInnerBlurDp, 0.dp, 0.dp)
                             }
                         }
-                        if (extColor.alpha > 0f && extDepthPx > 0.5f) {
+                        if (artistic != null) {
+                            val extSteps = computeAndroidExtrusionLayers(
+                                depth = artistic.extrusionDepthPx,
+                                angleDegrees = artistic.extrusionAngleDeg,
+                                baseColor = if (extColor.alpha > 0f) extColor else Color(0xFF111827),
+                                shading = artistic.extrusionShading
+                            )
+                            val extStrokePx = (if (artistic.outerStrokeWidthPx > 0f) artistic.outerStrokeWidthPx else 1f) * scaleFactor
+                            val extStrokeStyle = TextStyle(
+                                drawStyle = Stroke(width = extStrokePx, join = StrokeJoin.Round),
+                                platformStyle = PlatformTextStyle(includeFontPadding = false)
+                            )
+                            for (step in extSteps) {
+                                val stepDxDp = with(density) { (step.dx * scaleFactor).toDp() }
+                                val stepDyDp = with(density) { (step.dy * scaleFactor).toDp() }
+                                Text(
+                                    text = plainOrBaseAnnotated,
+                                    fontFamily = fontFamily,
+                                    fontWeight = fontWeight,
+                                    fontStyle = if (layer.style.fontStyleItalic) FontStyle.Italic else FontStyle.Normal,
+                                    fontSize = pixelLockedSp,
+                                    lineHeight = lineHeightSp,
+                                    style = baseTextStyle,
+                                    color = step.color,
+                                    modifier = textBandlessMod.offset(x = stepDxDp, y = stepDyDp),
+                                    textAlign = resolvedTextAlign
+                                )
+                                Text(
+                                    text = plainOrBaseAnnotated,
+                                    fontFamily = fontFamily,
+                                    fontWeight = fontWeight,
+                                    fontStyle = if (layer.style.fontStyleItalic) FontStyle.Italic else FontStyle.Normal,
+                                    fontSize = pixelLockedSp,
+                                    lineHeight = lineHeightSp,
+                                    style = extStrokeStyle,
+                                    color = step.color,
+                                    modifier = textBandlessMod.offset(x = stepDxDp, y = stepDyDp),
+                                    textAlign = resolvedTextAlign
+                                )
+                            }
+                            val outerColor = artistic.outerStrokeColorHex?.let {
+                                parseOimColor(it, palette, Color.Transparent)
+                            } ?: borderColor
+                            if (artistic.outerStrokeWidthPx > 0f && outerColor.alpha > 0f) {
+                                Text(
+                                    text = plainOrBaseAnnotated,
+                                    fontFamily = fontFamily,
+                                    fontWeight = fontWeight,
+                                    fontStyle = if (layer.style.fontStyleItalic) FontStyle.Italic else FontStyle.Normal,
+                                    fontSize = pixelLockedSp,
+                                    lineHeight = lineHeightSp,
+                                    style = TextStyle(
+                                        drawStyle = Stroke(width = artistic.outerStrokeWidthPx * 2f * scaleFactor, join = StrokeJoin.Round),
+                                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+                                    ),
+                                    color = outerColor,
+                                    modifier = textBandlessMod,
+                                    textAlign = resolvedTextAlign
+                                )
+                            }
+                            if (artistic.innerStrokeWidthPx > 0f) {
+                                val innerColor = artistic.innerStrokeColorHex?.let {
+                                    parseOimColor(it, palette, Color.White)
+                                } ?: Color.White
+                                if (innerColor.alpha > 0f) {
+                                    Text(
+                                        text = plainOrBaseAnnotated,
+                                        fontFamily = fontFamily,
+                                        fontWeight = fontWeight,
+                                        fontStyle = if (layer.style.fontStyleItalic) FontStyle.Italic else FontStyle.Normal,
+                                        fontSize = pixelLockedSp,
+                                        lineHeight = lineHeightSp,
+                                        style = TextStyle(
+                                            drawStyle = Stroke(width = artistic.innerStrokeWidthPx * scaleFactor, join = StrokeJoin.Round),
+                                            platformStyle = PlatformTextStyle(includeFontPadding = false)
+                                        ),
+                                        color = innerColor,
+                                        modifier = textBandlessMod,
+                                        textAlign = resolvedTextAlign
+                                    )
+                                }
+                            }
+                        } else if (extColor.alpha > 0f && extDepthPx > 0.5f) {
                             val steps = 5
                             for (step in steps downTo 1) {
                                 val d = with(density) { ((extDepthPx * step) / steps).toDp() }
@@ -1713,7 +1795,7 @@ private fun OimLayerNode(
                                 )
                             }
                         }
-                        if (glyphStrokePx > 0f && borderColor.alpha > 0f) {
+                        if (artistic == null && glyphStrokePx > 0f && borderColor.alpha > 0f) {
                             Text(
                                 text = textRender.strokeText,
                                 fontFamily = fontFamily,
@@ -1727,6 +1809,8 @@ private fun OimLayerNode(
                                 textAlign = resolvedTextAlign
                             )
                         }
+                        val faceBrush = artistic?.textGradientType?.let { artisticFaceBrush(it) }
+                        val frontStyle = if (faceBrush != null) baseTextStyle.copy(brush = faceBrush) else baseTextStyle
                         Text(
                             text = fillAnnotated,
                             fontFamily = fontFamily,
@@ -1734,8 +1818,8 @@ private fun OimLayerNode(
                             fontStyle = if (layer.style.fontStyleItalic) FontStyle.Italic else FontStyle.Normal,
                             fontSize = pixelLockedSp,
                             lineHeight = lineHeightSp,
-                            style = baseTextStyle,
-                            color = textColor,
+                            style = frontStyle,
+                            color = if (faceBrush != null) Color.Unspecified else textColor,
                             // shortcut: the band sits under the fill only, so it covers a glyph stroke's outer half; paint it first if strokes need it.
                             modifier = textWidthMod.markHighlights(fillAnnotated, { fillLayout }, scaleFactor),
                             onTextLayout = { fillLayout = it },
@@ -3030,4 +3114,66 @@ internal fun documentLanguage(languages: List<String>, reader: String): String {
         ?: languages.firstOrNull { main(it) == main(reader) }
         ?: languages.firstOrNull()
         ?: reader
+}
+
+internal data class AndroidExtrusionStep(
+    val dx: Float,
+    val dy: Float,
+    val color: Color
+)
+
+/** Darkens a Compose color toward black by `percent` (matching `shadeHexColor` in @oim-media/core). */
+private fun shadeExtrusionColor(base: Color, percent: Float): Color {
+    val factor = (1f - percent).coerceIn(0f, 1f)
+    return Color(
+        red = (base.red * factor).coerceIn(0f, 1f),
+        green = (base.green * factor).coerceIn(0f, 1f),
+        blue = (base.blue * factor).coerceIn(0f, 1f),
+        alpha = base.alpha
+    )
+}
+
+/** `calculate3DExtrusionLayers` of @oim-media/core: clamped 0..200, max 60 steps, deepest first. */
+internal fun computeAndroidExtrusionLayers(
+    depth: Float,
+    angleDegrees: Float,
+    baseColor: Color,
+    shading: Boolean
+): List<AndroidExtrusionStep> {
+    val clamped = depth.coerceIn(0f, 200f)
+    if (clamped <= 0f) return emptyList()
+    val steps = if (clamped <= 60f) kotlin.math.round(clamped).toInt().coerceAtLeast(1) else 60
+    val rad = angleDegrees * kotlin.math.PI / 180.0
+    val cos = kotlin.math.cos(rad)
+    val sin = kotlin.math.sin(rad)
+    return buildList(steps) {
+        for (i in steps downTo 1) {
+            val t = i.toFloat() / steps.toFloat()
+            val dist = if (clamped <= 60f) i.toDouble() else (clamped.toDouble() * i.toDouble()) / steps.toDouble()
+            val dx = (kotlin.math.round(cos * dist * 10.0) / 10.0).toFloat()
+            val dy = (kotlin.math.round(sin * dist * 10.0) / 10.0).toFloat()
+            val color = if (shading) shadeExtrusionColor(baseColor, 1f - t * 0.5f) else baseColor
+            add(AndroidExtrusionStep(dx = dx, dy = dy, color = color))
+        }
+    }
+}
+
+private fun artisticFaceBrush(textGradientType: String?): Brush? = when (textGradientType) {
+    "sunset-gold" -> Brush.verticalGradient(
+        0.0f to Color(0xFFFDE047),
+        0.5f to Color(0xFFF97316),
+        1.0f to Color(0xFFBE185D)
+    )
+    "metallic-chrome" -> Brush.verticalGradient(
+        0.0f to Color(0xFFFFFFFF),
+        0.35f to Color(0xFFE2E8F0),
+        0.50f to Color(0xFF64748B),
+        0.51f to Color(0xFF0F172A),
+        0.75f to Color(0xFF94A3B8),
+        1.0f to Color(0xFFFFFFFF)
+    )
+    "neon-glow" -> Brush.horizontalGradient(
+        colors = listOf(Color(0xFF67E8F9), Color(0xFFA5F3FC))
+    )
+    else -> null
 }

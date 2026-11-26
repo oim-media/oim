@@ -221,9 +221,7 @@ anyone.
 
 ## Bundle size
 
-`dist/oim-player.js` (the classic-script build) is **59.0 KB gzip** at this release
-(60,443 bytes by Node's default gzip). The test budget is 59 KB. The bundle imports
-`@oim-media/core` by file rather than by package index, which keeps zod out of it.
+`dist/oim-player.js` (the classic-script build) stays under **54 KB gzip** (tested with a 55 KB budget). Lottie, generative fills and pattern tiles are loaded dynamically from `dist/vendor/` only when needed, and the bundle imports `@oim-media/core` by file rather than by package index, which keeps zod out of it.
 
 ## Changed in 1.26.0
 

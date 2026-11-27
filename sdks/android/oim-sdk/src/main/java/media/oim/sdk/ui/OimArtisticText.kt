@@ -192,17 +192,8 @@ internal fun OimArtisticTextCanvas(
                 }
 
                 val clusters = splitGraphemeClusters(lineText)
-                val advances = FloatArray(clusters.size)
-                // measureText of one glyph drops letterSpacing (it is trimmed at the run's ends): add it between glyphs.
-                val spacing = paint.letterSpacing * paint.textSize
-                var totalW = 0f
-                for (i in clusters.indices) {
-                    val w = paint.measureText(clusters[i])
-                    advances[i] = w
-                    totalW += w + if (i < clusters.lastIndex) spacing else 0f
-                }
-
-                var dist = pathLength / 2f - totalW / 2f
+                val advances = FloatArray(clusters.size) { paint.measureText(clusters[it]) }
+                val centers = curvedGlyphCenters(advances, paint.letterSpacing * paint.textSize, pathLength)
                 val area = RectF()
                 val pos = FloatArray(2)
                 val tan = FloatArray(2)
@@ -210,8 +201,7 @@ internal fun OimArtisticTextCanvas(
                 for (i in clusters.indices) {
                     val g = clusters[i]
                     val w = advances[i]
-                    val mid = (dist + w / 2f).coerceIn(0f, pathLength)
-                    dist += w + spacing
+                    val mid = centers[i]
                     if (pathMeasure.getPosTan(mid, pos, tan)) {
                         val angleDeg = Math.toDegrees(atan2(tan[1].toDouble(), tan[0].toDouble())).toFloat()
                         nativeCanvas.save()
@@ -285,5 +275,20 @@ internal fun OimArtisticTextCanvas(
 
             nativeCanvas.restoreToCount(canvasSave)
         }
+    }
+}
+
+/**
+ * Where each glyph's centre falls along a curve of [pathLength], the line centred on it.
+ * [spacing] (px) goes between glyphs: measureText of one glyph drops letterSpacing, which
+ * Android trims at a run's ends, so it is added back here.
+ */
+internal fun curvedGlyphCenters(widths: FloatArray, spacing: Float, pathLength: Float): FloatArray {
+    val total = widths.sum() + spacing * (widths.size - 1).coerceAtLeast(0)
+    var dist = pathLength / 2f - total / 2f
+    return FloatArray(widths.size) { i ->
+        val mid = (dist + widths[i] / 2f).coerceIn(0f, pathLength)
+        dist += widths[i] + spacing
+        mid
     }
 }

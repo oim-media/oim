@@ -606,7 +606,12 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
       // Web: a rectangle's stroke is a CSS border on a content-box element, so the box grows by
       // it on every side, keeps its vertical centre and is anchored horizontally by textAlign.
       final b = _rectBorderWidth(style, activePalette, containerWidth, containerHeight);
-      if (b > 0 && slotWidth != null && slotHeight != null) {
+      if (b > 0 && slotWidth != null && slotHeight != null && style['strokeCentered'] == true) {
+        left -= b / 2;
+        top -= b / 2;
+        slotWidth += b;
+        slotHeight += b;
+      } else if (b > 0 && slotWidth != null && slotHeight != null) {
         final align = (style['textAlign'] ?? raw['align'])?.toString() ?? 'left';
         left -= align == 'center' ? b : align == 'right' ? 2 * b : 0;
         top -= b;

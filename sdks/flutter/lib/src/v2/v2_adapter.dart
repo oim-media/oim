@@ -628,6 +628,8 @@ void _applyStrokes(dynamic rawStrokes, Map<String, dynamic> style, Map<String, d
   if (rawStrokes is! List || rawStrokes.isEmpty || rawStrokes.first is! Map) return;
   final s = (rawStrokes.first as Map).cast<String, dynamic>();
   if (s['width'] is num) style['strokeWidth'] = s['width'];
+  // v2 strokes sit centred on the outline, half inside and half outside (the editor and web player).
+  style['strokeCentered'] = true;
   if (s['style'] != null) style['strokeStyle'] = s['style'];
   final paint = s['paint'];
   if (paint is Map && paint['kind'] == 'color') {

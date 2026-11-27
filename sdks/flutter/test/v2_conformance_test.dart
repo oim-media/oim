@@ -193,4 +193,22 @@ void main() {
     expect(backdropFilterOf(style, 1), isNotNull);
     expect(backdropFilterOf(const {}, 1), isNull);
   });
+
+  test('a v2 rectangle stroke is centred on its outline, and arrows use the core path', () {
+    final n = normalizeV2Metadata({
+      'oim': '2.0.0',
+      'canvas': {'width': 1200, 'height': 900},
+      'layers': [
+        {
+          'id': 'r', 'type': 'shape', 'geometry': {'kind': 'rect'},
+          'box': {'x': 340, 'y': 200, 'width': 220, 'height': 80},
+          'strokes': [{'paint': {'kind': 'color', 'value': '#ffffff'}, 'width': 6}],
+        },
+        {'id': 'a', 'type': 'shape', 'geometry': {'kind': 'preset', 'name': 'arrow'}, 'box': {'x': 0, 'y': 0, 'width': 140, 'height': 60}},
+      ],
+    });
+    final slots = (n['slots'] as List).cast<Map<String, dynamic>>();
+    expect((slots.firstWhere((s) => s['id'] == 'r')['style'] as Map)['strokeCentered'], true);
+    expect((slots.firstWhere((s) => s['id'] == 'a')['style'] as Map)['svgPath'], startsWith('M0 33.33'));
+  });
 }

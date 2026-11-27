@@ -2477,7 +2477,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGeoShape(
             } else {
                 if (fillColor != Color.Transparent) drawPath(parsed, fillColor)
                 if (strokeColor != Color.Transparent && strokeWidthPx > 0f) {
-                    drawPath(parsed, strokeColor, style = Stroke(width = strokeWidthPx))
+                    clipRect { drawPath(parsed, strokeColor, style = Stroke(width = strokeWidthPx)) }
                 }
             }
             return
@@ -2491,7 +2491,8 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGeoShape(
             drawAndroidBlurredPath(preset.asAndroidPath(), fillColor, strokeColor, strokeWidthPx, blurSigmaPx)
         } else {
             if (fillColor != Color.Transparent) drawPath(preset, fillColor)
-            if (strokeColor != Color.Transparent && strokeWidthPx > 0f) drawPath(preset, strokeColor, style = Stroke(strokeWidthPx))
+            // The web draws it in an <svg> the size of its box, which clips the stroke's miter points.
+            if (strokeColor != Color.Transparent && strokeWidthPx > 0f) clipRect { drawPath(preset, strokeColor, style = Stroke(strokeWidthPx)) }
         }
         return
     }

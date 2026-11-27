@@ -906,6 +906,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
           borderWidth: borderWidth,
           isDashed: isDashed,
           isDotted: isDotted,
+          strokeJoin: style['strokeJoin'] == 'round' ? StrokeJoin.round : style['strokeJoin'] == 'bevel' ? StrokeJoin.bevel : StrokeJoin.miter,
         ),
       );
 

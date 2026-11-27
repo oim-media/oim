@@ -451,6 +451,7 @@ void _applyPathStroke(dynamic rawGeo, dynamic box, Map<String, dynamic> style) {
   final boxW = box is Map && box['width'] is num ? (box['width'] as num).toDouble() : vbW;
   style['strokeColor'] = stroke;
   style['strokeWidth'] = width * boxW / vbW;
+  if (p['join'] is String) style['strokeJoin'] = p['join'];
 }
 
 void _applyGeometry(dynamic rawGeo, Map<String, dynamic> style, {bool isMask = false}) {

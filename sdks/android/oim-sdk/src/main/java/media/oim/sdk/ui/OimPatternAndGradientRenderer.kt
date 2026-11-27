@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asAndroidPath
@@ -220,46 +221,49 @@ internal fun resolveOimColorString(
     }
 }
 
+/** The gradient as a brush sized to whatever it paints: a box, or the glyphs of a text. */
+internal fun oimGradientBrush(gradient: OimGradientFill, palette: Map<String, String>): Brush? {
+    val stops = gradient.stops.mapIndexed { idx, stop ->
+        val pos = stop.position ?: if (gradient.stops.size > 1) idx.toFloat() / (gradient.stops.size - 1) else 0f
+        val c = resolveOimColorString(stop.color, palette, Color.Transparent)
+        pos.coerceIn(0f, 1f) to c
+    }
+    if (stops.isEmpty()) return null
+    val colorStops = if (stops.size == 1) arrayOf(0f to stops[0].second, 1f to stops[0].second) else stops.toTypedArray()
+    return object : ShaderBrush() {
+        override fun createShader(size: Size): Shader {
+            val brush = if (gradient.type == "radial") {
+                Brush.radialGradient(
+                    colorStops = colorStops,
+                    center = Offset(size.width / 2f, size.height / 2f),
+                    radius = maxOf(size.width, size.height) * 0.7f
+                )
+            } else {
+                val rad = Math.toRadians((gradient.angleDeg - 90f).toDouble())
+                val dx = cos(rad).toFloat()
+                val dy = sin(rad).toFloat()
+                val halfLen = (kotlin.math.abs(size.width * dx) + kotlin.math.abs(size.height * dy)) / 2f
+                val cx = size.width / 2f
+                val cy = size.height / 2f
+                Brush.linearGradient(
+                    colorStops = colorStops,
+                    start = Offset(cx - dx * halfLen, cy - dy * halfLen),
+                    end = Offset(cx + dx * halfLen, cy + dy * halfLen)
+                )
+            }
+            return (brush as ShaderBrush).createShader(size)
+        }
+    }
+}
+
 @Composable
 internal fun OimGradientBox(
     gradient: OimGradientFill,
     palette: Map<String, String>,
     modifier: Modifier = Modifier
 ) {
-    val stops = gradient.stops.mapIndexed { idx, stop ->
-        val pos = stop.position ?: if (gradient.stops.size > 1) idx.toFloat() / (gradient.stops.size - 1) else 0f
-        val c = resolveOimColorString(stop.color, palette, Color.Transparent)
-        pos.coerceIn(0f, 1f) to c
-    }
-    if (stops.isEmpty()) return
-
-    Canvas(modifier = modifier) {
-        val colorStops = if (stops.size == 1) {
-            arrayOf(0f to stops[0].second, 1f to stops[0].second)
-        } else {
-            stops.toTypedArray()
-        }
-        val brush = if (gradient.type == "radial") {
-            Brush.radialGradient(
-                colorStops = colorStops,
-                center = Offset(size.width / 2f, size.height / 2f),
-                radius = maxOf(size.width, size.height) * 0.7f
-            )
-        } else {
-            val rad = Math.toRadians((gradient.angleDeg - 90f).toDouble())
-            val dx = cos(rad).toFloat()
-            val dy = sin(rad).toFloat()
-            val halfLen = (kotlin.math.abs(size.width * dx) + kotlin.math.abs(size.height * dy)) / 2f
-            val cx = size.width / 2f
-            val cy = size.height / 2f
-            Brush.linearGradient(
-                colorStops = colorStops,
-                start = Offset(cx - dx * halfLen, cy - dy * halfLen),
-                end = Offset(cx + dx * halfLen, cy + dy * halfLen)
-            )
-        }
-        drawRect(brush = brush)
-    }
+    val brush = oimGradientBrush(gradient, palette) ?: return
+    Canvas(modifier = modifier) { drawRect(brush = brush) }
 }
 
 @Composable

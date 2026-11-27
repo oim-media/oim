@@ -1741,6 +1741,9 @@ private fun OimLayerNode(
                         val fillAnnotated = textRender.fillText
                         val glitchState = animatedTextRender.glitchState
                         val baseTextStyle = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                        val textGradientBrush = remember(layer.style.gradientFill, palette) {
+                            layer.style.gradientFill?.let { oimGradientBrush(it, palette) }
+                        }
                         val strokeTextStyle = TextStyle(
                             drawStyle = Stroke(width = glyphStrokePx * 2f, join = StrokeJoin.Round),
                             platformStyle = PlatformTextStyle(includeFontPadding = false)
@@ -1833,8 +1836,9 @@ private fun OimLayerNode(
                             fontStyle = if (layer.style.fontStyleItalic) FontStyle.Italic else FontStyle.Normal,
                             fontSize = pixelLockedSp,
                             lineHeight = lineHeightSp,
-                            style = baseTextStyle,
-                            color = textColor,
+                            // A gradient fill paints the glyphs; `color` must stay unset or it overrides the brush.
+                            style = textGradientBrush?.let { baseTextStyle.copy(brush = it) } ?: baseTextStyle,
+                            color = if (textGradientBrush != null) Color.Unspecified else textColor,
                             // shortcut: the band sits under the fill only, so it covers a glyph stroke's outer half; paint it first if strokes need it.
                             modifier = textWidthMod.markHighlights(fillAnnotated, { fillLayout }, scaleFactor),
                             onTextLayout = { fillLayout = it },

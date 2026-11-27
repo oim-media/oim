@@ -446,6 +446,15 @@ fun OimPlayerView(
                         modifier = Modifier.fillMaxSize()
                     )
                 }
+                doc.canvas.generativeFill?.let { gen ->
+                    OimGenerativeFillCanvas(
+                        fill = gen,
+                        boxWidthPx = doc.canvas.width.toFloat(),
+                        boxHeightPx = doc.canvas.height.toFloat(),
+                        palette = resolvedPalette,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
                 // A 2.0 poster is not part of the picture: the layers draw everything (ImageEngine's _posterFade).
                 if (doc.pngIsBase) Image(
                     bitmap = imageBitmap,
@@ -1222,7 +1231,7 @@ private fun OimLayerNode(
             }
             val fillOwnBlurSigmaPx = (imageFill?.filters?.blurPx ?: 0f) * scaleFactor
             val hasFilledBody = fillColor.alpha > 0f || imageFill != null ||
-                layer.style.patternFill != null || layer.style.gradientFill != null
+                layer.style.patternFill != null || layer.style.gradientFill != null || layer.style.generativeFill != null
 
             val renderGeoEffect: @Composable (Color, Float, Dp, Dp) -> Unit = { effColor, blurSigmaPx, dxDp, dyDp ->
                 Canvas(
@@ -1321,7 +1330,21 @@ private fun OimLayerNode(
                             }
                         }
                     }
-                } else if (layer.style.patternFill != null || layer.style.gradientFill != null) {
+                } else if (layer.style.patternFill != null || layer.style.gradientFill != null || layer.style.generativeFill != null) {
+                    val natW = naturalWidth.coerceAtLeast(1)
+                    val natH = naturalHeight.coerceAtLeast(1)
+                    val boxWCanvasPx = when (val wd = layer.widthDim) {
+                        is media.oim.sdk.model.OimDimension.Px -> wd.value.toFloat()
+                        is media.oim.sdk.model.OimDimension.Cqw -> ((wd.value / 100.0) * natW).toFloat()
+                        is media.oim.sdk.model.OimDimension.Percent -> ((wd.value / 100.0) * natW).toFloat()
+                        null -> layer.width?.let { ((it / 100.0) * natW).toFloat() } ?: 400f
+                    }.coerceAtLeast(1f)
+                    val boxHCanvasPx = when (val hd = layer.heightDim) {
+                        is media.oim.sdk.model.OimDimension.Px -> hd.value.toFloat()
+                        is media.oim.sdk.model.OimDimension.Cqw -> ((hd.value / 100.0) * natW).toFloat()
+                        is media.oim.sdk.model.OimDimension.Percent -> ((hd.value / 100.0) * natH).toFloat()
+                        null -> layer.height?.let { ((it / 100.0) * natH).toFloat() } ?: 300f
+                    }.coerceAtLeast(1f)
                     Box(
                         modifier = semanticsMod
                             .fillMaxSize()
@@ -1344,6 +1367,15 @@ private fun OimLayerNode(
                                     palette = palette,
                                     canvasWidthPx = canvasWidthPx,
                                     naturalWidth = naturalWidth,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                            layer.style.generativeFill?.let { gen ->
+                                OimGenerativeFillCanvas(
+                                    fill = gen,
+                                    boxWidthPx = boxWCanvasPx,
+                                    boxHeightPx = boxHCanvasPx,
+                                    palette = palette,
                                     modifier = Modifier.fillMaxSize()
                                 )
                             }
@@ -2213,7 +2245,8 @@ private fun isLayerBlurHandledInternally(layer: OimLayer): Boolean {
     if (layer.kind == OimLayerKind.GEO &&
         layer.style.imageFill == null &&
         layer.style.patternFill == null &&
-        layer.style.gradientFill == null
+        layer.style.gradientFill == null &&
+        layer.style.generativeFill == null
     ) {
         return true
     }
@@ -2844,7 +2877,7 @@ private fun resolveSlotColor(
     return parseOimColor(rawValue, palette, fallback)
 }
 
-private fun parseOimColor(raw: String?, palette: Map<String, String>, fallback: Color): Color =
+internal fun parseOimColor(raw: String?, palette: Map<String, String>, fallback: Color): Color =
     resolveOimColorString(raw, palette, fallback)
 
 @Composable

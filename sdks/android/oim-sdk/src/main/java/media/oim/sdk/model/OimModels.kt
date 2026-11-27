@@ -154,12 +154,24 @@ data class OimMotionLoop(
     val mirror: Boolean = true
 )
 
+data class OimGenerativeFill(
+    val generatorId: String = "stacked-waves",
+    val seed: Int = 42,
+    val params: Map<String, Any> = emptyMap(),
+    val colorMode: String = "monochrome",
+    val colorStops: List<String> = listOf("#3b82f6", "#0f172a"),
+    val colorDirection: String = "forward",
+    val backgroundColorHex: String? = null,
+    val backgroundVisible: Boolean = true
+)
+
 data class OimCanvasSpec(
     val width: Int,
     val height: Int,
     val backgroundColorHex: String = "#0E1015",
     val gradientFill: OimGradientFill? = null,
-    val patternFill: OimPatternFill? = null
+    val patternFill: OimPatternFill? = null,
+    val generativeFill: OimGenerativeFill? = null
 ) {
     val naturalWidth: Int get() = width
     val naturalHeight: Int get() = height
@@ -359,6 +371,7 @@ data class OimLayerStyle(
     val fillGradient: String? = null,
     val gradientFill: OimGradientFill? = null,
     val patternFill: OimPatternFill? = null,
+    val generativeFill: OimGenerativeFill? = null,
     val blurRadiusPx: Float = 0f,
     val filter: OimFilterSpec? = null,
     val imageFill: OimImageFill? = null,

@@ -56,6 +56,7 @@ enum class OimLayerKind {
     CALLOUT,
     VECTOR_FRAME,
     MASK,
+    LOTTIE,
     CONTAINER,
     OTHER
 }
@@ -421,7 +422,10 @@ data class OimLayer(
     val states: OimSlotStates? = null,
     val reveal: OimReveal? = null,
     val accentColorHex: String = "#F59E0B",
-    val motionLoop: OimMotionLoop? = null
+    val motionLoop: OimMotionLoop? = null,
+    /** A Lottie layer: its JSON text or a URL (v2 `lottie.src`), and whether it repeats. */
+    val lottieSrc: String? = null,
+    val lottieLoop: Boolean = true
 )
 
 data class OimSecurityBlock(

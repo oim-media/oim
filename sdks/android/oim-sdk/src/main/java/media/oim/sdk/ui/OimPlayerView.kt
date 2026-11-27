@@ -24,6 +24,10 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -1524,6 +1528,19 @@ private fun OimLayerNode(
                     onTextLayout = { buttonLayout = it },
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                         .markHighlights(animatedTextRender.fillText, { buttonLayout }, scaleFactor)
+                )
+            }
+        }
+
+        OimLayerKind.LOTTIE -> {
+            val src = layer.lottieSrc
+            if (src != null && widthDp != null && heightDp != null) {
+                val spec = if (src.trimStart().startsWith("{")) LottieCompositionSpec.JsonString(remember(src) { forwardPolystars(src) }) else LottieCompositionSpec.Url(src)
+                val composition by rememberLottieComposition(spec)
+                LottieAnimation(
+                    composition = composition,
+                    iterations = if (layer.lottieLoop) LottieConstants.IterateForever else 1,
+                    modifier = semanticsMod.size(widthDp, heightDp).testTag("oim_layer_${layer.id}")
                 )
             }
         }

@@ -955,6 +955,7 @@ object OimBinaryCodec {
             "text" -> OimLayerKind.TEXT
             "shape" -> OimLayerKind.GEO
             "image" -> OimLayerKind.IMAGE
+            "lottie" -> OimLayerKind.LOTTIE
             else -> OimLayerKind.OTHER
         }
 
@@ -1274,6 +1275,8 @@ object OimBinaryCodec {
                 parallaxDepth = 0.0,
                 slotLanguages = slotLangs,
                 content = contentMap,
+                lottieSrc = lObj.optJSONObject("lottie")?.optString("src")?.ifBlank { null },
+                lottieLoop = lObj.optJSONObject("lottie")?.optBoolean("loop", true) ?: true,
                 style = OimLayerStyle(
                     fontSizeRatio = fontSizeRatio,
                     fontSizeDim = fontSizeDim,

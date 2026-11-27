@@ -677,6 +677,12 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
       }
     }
 
+    final backdrop = backdropFilterOf(style, _unit);
+    if (backdrop != null) {
+      // A backdrop filters what lies under the layer's box (web backdrop-filter), then the layer paints on top.
+      slotWidget = ClipRect(child: BackdropFilter(filter: backdrop, child: slotWidget));
+    }
+
     return Positioned(
       left: left,
       top: top,

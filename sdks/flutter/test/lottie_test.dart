@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 /**
  * @license
  * Copyright (c) 2026 Xue Studios LLC
@@ -154,6 +155,15 @@ void main() {
       expect(items[0]['d'], 1);
       expect(items[0]['nm'], 'star');
       expect(items[1]['d'], 3);
+    });
+
+    test('rounded star handles get lottie-web length, static and keyframed', () {
+      const json = '{"shapes":[{"ty":"sr","sy":1,"d":1,"pt":{"a":1,"k":[{"t":0,"s":[3]},{"t":9,"s":[8]}]},'
+          '"os":{"a":0,"k":100},"is":{"a":1,"k":[{"t":0,"s":[60]}]}}]}';
+      final sr = ((jsonDecode(LottieSlot.forwardPolystars(json)) as Map)['shapes'] as List)[0] as Map;
+      const f = math.pi / 16 / 0.47829;
+      expect(sr['os']['k'], closeTo(100 * f, 1e-9));
+      expect(sr['is']['k'][0]['s'][0], closeTo(60 * f, 1e-9));
     });
 
     test('a Lottie without stars comes back as the same string', () {

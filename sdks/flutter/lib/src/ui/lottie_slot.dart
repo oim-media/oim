@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import 'dart:math' as math;
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -119,9 +120,20 @@ class LottieSlot extends StatelessWidget {
       if (node is List) {
         node.forEach(walk);
       } else if (node is Map) {
-        if (node['ty'] == 'sr' && node['d'] == 3) {
-          node['d'] = 1;
-          changed = true;
+        if (node['ty'] == 'sr') {
+          if (node['d'] == 3) {
+            node['d'] = 1;
+            changed = true;
+          }
+          // lottie-web sizes a rounded point's handles 2*PI*r / (4*points); this port uses 0.47829*r
+          // whatever the count, so with 8 points the curve overshoots into notches.
+          final pts = _maxPoints(node['pt']);
+          if (pts > 0 && (node['sy'] ?? 1) == 1) {
+            final f = math.pi / (2 * pts) / 0.47829;
+            _scaleProp(node['is'], f);
+            _scaleProp(node['os'], f);
+            changed = true;
+          }
         }
         node.values.forEach(walk);
       }
@@ -176,5 +188,35 @@ class LottieSlot extends StatelessWidget {
         return const SizedBox.shrink();
       },
     );
+  }
+}
+
+double _maxPoints(Object? prop) {
+  if (prop is! Map) return 0;
+  final k = prop['k'];
+  if (k is num) return k.toDouble();
+  var max = 0.0;
+  if (k is List) {
+    for (final kf in k) {
+      final s = kf is Map ? kf['s'] : null;
+      final n = s is List && s.isNotEmpty && s.first is num ? (s.first as num).toDouble() : (s is num ? s.toDouble() : 0.0);
+      if (n > max) max = n;
+    }
+  }
+  return max;
+}
+
+void _scaleProp(Object? prop, double f) {
+  if (prop is! Map) return;
+  final k = prop['k'];
+  if (k is num) {
+    prop['k'] = k * f;
+  } else if (k is List) {
+    for (final kf in k) {
+      if (kf is! Map) continue;
+      final s = kf['s'];
+      if (s is num) kf['s'] = s * f;
+      if (s is List) kf['s'] = [for (final v in s) v is num ? v * f : v];
+    }
   }
 }

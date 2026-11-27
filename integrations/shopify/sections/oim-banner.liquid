@@ -1,0 +1,47 @@
+{% comment %}
+  @license
+  Copyright (c) 2026 Xue Studios LLC
+  SPDX-License-Identifier: Apache-2.0
+
+  OIM banner: one .oim.png that follows the store language.
+{% endcomment %}
+{%- if section.settings.oim_url != blank -%}
+  <script type="module" src="https://cdn.oim.media/player/v1/oim-player.js" defer></script>
+  <div class="oim-banner page-width" style="max-width: {{ section.settings.max_width }}px; margin: 0 auto;">
+    {%- comment -%} The store language drives the banner; the player falls back to the file's default when it lacks that language. {%- endcomment -%}
+    <oim-player
+      src="{{ section.settings.oim_url | escape }}"
+      lang="{{ localization.language.iso_code | split: '-' | first }}"
+      fit="contain"
+      style="display: block; width: 100%;"
+    ></oim-player>
+  </div>
+{%- elsif request.design_mode -%}
+  <p class="page-width">OIM banner: paste the URL of a .oim.png in the section settings.</p>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "OIM banner",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "url",
+      "id": "oim_url",
+      "label": ".oim.png URL",
+      "info": "Upload the file in Content > Files and paste its link. Use the original file link: resized Shopify images lose the OIM data."
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "label": "Max width",
+      "min": 320,
+      "max": 2000,
+      "step": 20,
+      "unit": "px",
+      "default": 1200
+    }
+  ],
+  "presets": [{ "name": "OIM banner" }]
+}
+{% endschema %}

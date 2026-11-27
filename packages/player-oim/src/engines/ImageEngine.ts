@@ -10,7 +10,6 @@ import { playerString } from '../../../scene/src/runtime/strings.js';
 import { getDeviceProfile } from '../../../scene/src/runtime/device-tier.js';
 import { fileCache, type VerifyResult, type VerifiedFile } from '../render/file-cache.js';
 import { injectStyles } from '../../../scene/src/runtime/styles.js';
-import { normalizeRawSlots } from '../render/normalize-raw-slots.js';
 import { isV2 } from '../../../core/src/v2/upgrade.js';
 import { unsupportedRequired } from '../../../core/src/v2/extensions.js';
 import { hasBaseLayer } from '../../../core/src/v2/base-layer.js';
@@ -359,7 +358,7 @@ export class ImageEngine extends EngineShell {
   async _verifyMainThread(blob: Blob): Promise<VerifyResult> {
     const extracted = await extractOIM(blob);
     if (!extracted.metadata) {
-      return { metadata: { slots: [] }, security: 'no_metadata', announce: false };
+      return { metadata: { layers: [] }, security: 'no_metadata', announce: false };
     }
     const errs = validateOimMetadata(extracted.metadata);
     if (errs.length > 0) {
@@ -375,10 +374,8 @@ export class ImageEngine extends EngineShell {
     }
     let metadata: any;
     let announce = false;
-    if (!isSigValid) {
-      metadata = { slots: [] };
-    } else if (status === 'unsigned' || status === 'expired_key') {
-      metadata = { slots: [], elements: [], layers: [] };
+    if (!isSigValid || status === 'unsigned' || status === 'expired_key') {
+      metadata = { layers: [] };
     } else {
       // First, before normalizing anything: announce what is not understood.
       //
@@ -392,8 +389,6 @@ export class ImageEngine extends EngineShell {
       // revoked, nothing is rendered, and discussing capabilities there would
       // distract from the real issue.
       announce = true;
-      // Normalize the Python backend format AFTER signature validation (mutating it before would break the signature check).
-      if (!isV2(extracted.metadata)) normalizeRawSlots(extracted.metadata);
       metadata = extracted.metadata;
     }
     return { metadata, security: status, announce };

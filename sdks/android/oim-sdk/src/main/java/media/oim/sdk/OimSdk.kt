@@ -390,6 +390,8 @@ class OimSdk(
             DecodeOutcome.Err(OimLoadError.CorruptedPayload("DEFLATE", e.message ?: "Error al descomprimir DEFLATE."))
         } catch (e: OimError.MalformedJson) {
             DecodeOutcome.Err(OimLoadError.CorruptedPayload("OIM JSON", e.message ?: "Invalid JSON."))
+        } catch (e: OimError.UnsupportedVersion) {
+            DecodeOutcome.Err(OimLoadError.CorruptedPayload("OIM version", e.message ?: "Unsupported OIM version."))
         } catch (e: Exception) {
             DecodeOutcome.Err(OimLoadError.Unexpected(e.localizedMessage ?: "Unexpected failure decoding the OIM file."))
         }

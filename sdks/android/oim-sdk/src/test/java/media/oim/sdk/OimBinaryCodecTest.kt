@@ -12,6 +12,7 @@ import media.oim.sdk.model.OimAuthor
 import media.oim.sdk.model.OimCanvasSpec
 import media.oim.sdk.model.OimDimension
 import media.oim.sdk.model.OimDocument
+import media.oim.sdk.model.OimError
 import media.oim.sdk.model.OimLayerKind
 import media.oim.sdk.model.OimSecurityBlock
 import media.oim.sdk.model.ReeditPermission
@@ -36,9 +37,15 @@ import java.util.zip.Deflater
 @Config(sdk = [34])
 class OimBinaryCodecTest {
 
+    @Test(expected = OimError.UnsupportedVersion::class)
+    fun decodeConformanceVector_v1_throwsUnsupportedVersion() {
+        val bytes = loadVector("vectors/basic-text.oim.png")
+        OimBinaryCodec.decodeAndVerify(bytes, "basic-text.oim.png", decodeBitmap = false)
+    }
+
     @Test
     fun decodeConformanceVector_basicText_extractsMetadataAndVerifiesSignature() {
-        val bytes = loadVector("vectors/basic-text.oim.png")
+        val bytes = loadVector("vectors-2/basic-text.oim.png")
         val asset = OimBinaryCodec.decodeAndVerify(bytes, "basic-text.oim.png", decodeBitmap = false)
 
         val doc = asset.document
@@ -47,18 +54,19 @@ class OimBinaryCodecTest {
 
         assertEquals(800, doc.canvas.naturalWidth)
         assertEquals(600, doc.canvas.naturalHeight)
+        assertTrue(doc.pngIsBase)
         assertEquals(1, doc.layers.size)
 
-        val slot = doc.layers[0]
-        assertEquals("titulo", slot.id)
-        assertEquals(OimLayerKind.TEXT, slot.kind)
-        assertEquals(10.0, slot.x, 0.001)
-        assertEquals(10.0, slot.y, 0.001)
-        assertEquals("Hello", slot.content["en"])
-        assertEquals("Hola", slot.content["es"])
-        assertEquals(OimDimension.Cqw(50.0), slot.widthDim)
-        assertEquals(OimDimension.Cqw(11.25), slot.heightDim)
-        assertEquals(OimDimension.Cqw(5.0), slot.style.fontSizeDim)
+        val layer = doc.layers[0]
+        assertEquals("titulo", layer.id)
+        assertEquals(OimLayerKind.TEXT, layer.kind)
+        assertEquals(10.0, layer.x, 0.001)
+        assertEquals(10.0, layer.y, 0.001)
+        assertEquals("Hello", layer.content["en"])
+        assertEquals("Hola", layer.content["es"])
+        assertEquals(OimDimension.Px(400.0), layer.widthDim)
+        assertEquals(OimDimension.Px(90.0), layer.heightDim)
+        assertEquals(OimDimension.Px(40.0), layer.style.fontSizeDim)
 
         assertFalse("Real conformance vector must not be refused: ${asset.verification.reason}", asset.verification.isRefused)
         assertTrue("Expected valid ECDSA signature with embedded v1 key", asset.verification.signatureValid)
@@ -67,7 +75,7 @@ class OimBinaryCodecTest {
 
     @Test
     fun decodeConformanceVector_animationPresets_extractsFontsAndPresets() {
-        val bytes = loadVector("vectors/animation-presets.oim.png")
+        val bytes = loadVector("vectors-2/animation-presets.oim.png")
         val asset = OimBinaryCodec.decodeAndVerify(bytes, "animation-presets.oim.png", decodeBitmap = false)
 
         val doc = asset.document!!
@@ -90,7 +98,7 @@ class OimBinaryCodecTest {
 
     @Test
     fun decodeConformanceVector_accessibility_extractsAltAndDecorativeFlags() {
-        val bytes = loadVector("vectors/accessibility.oim.png")
+        val bytes = loadVector("vectors-2/accessibility.oim.png")
         val asset = OimBinaryCodec.decodeAndVerify(bytes, "accessibility.oim.png", decodeBitmap = false)
 
         val doc = asset.document!!

@@ -592,9 +592,10 @@ object OimBinaryCodec {
         val id = root.optString("oim_id")
             .ifBlank { root.optString("id") }
             .ifBlank { "oim-${System.currentTimeMillis() % 10000}" }
-        val contractVersion = root.optString("oim")
+        val rawVersion = root.optString("oim")
             .ifBlank { root.optString("contractVersion") }
-            .ifBlank { root.optString("version", OimContract.CONTRACT_VERSION) }
+            .ifBlank { root.optString("version", "") }
+        val contractVersion = rawVersion.ifBlank { OimContract.CONTRACT_VERSION }
         val minPlayer = root.optString("min_player", "").ifBlank { null }
 
         val titleMap = parseStringMap(root.opt("title") ?: root.opt("name"), fallback = id)
@@ -703,43 +704,29 @@ object OimBinaryCodec {
 
         val parallaxObj = root.optJSONObject("parallax")
 
-        val layersArr = root.optJSONArray("slots")
-            ?: root.optJSONArray("elements")
-            ?: root.optJSONArray("layers")
-            ?: root.optJSONArray("slots_raw")
-            ?: JSONArray()
-
-        val isV2 = contractVersion.startsWith("2.") ||
-            (layersArr.length() > 0 && layersArr.optJSONObject(0)?.has("box") == true)
+        val rawLayersArr = root.optJSONArray("layers")
+        val isV2 = rawVersion.startsWith("2.") ||
+            (rawVersion.isBlank() && rawLayersArr != null && (rawLayersArr.length() == 0 || rawLayersArr.optJSONObject(0)?.has("box") == true))
+        if (!isV2) {
+            throw OimError.UnsupportedVersion(contractVersion)
+        }
+        val layersArr = rawLayersArr ?: JSONArray()
 
         val layers = mutableListOf<OimLayer>()
-        if (isV2) {
-            val resourcesObj = root.optJSONObject("resources")
-            val varDefaults = extractV2VariableDefaults(root.optJSONObject("variables"))
-            for (i in 0 until layersArr.length()) {
-                val lObj = layersArr.optJSONObject(i) ?: continue
-                parseV2LayerJson(
-                    lObj = lObj,
-                    canvasWidth = canvasWidth,
-                    canvasHeight = canvasHeight,
-                    resources = resourcesObj,
-                    varDefaults = varDefaults,
-                    outLayers = layers
-                )
-            }
-        } else {
-            for (i in 0 until layersArr.length()) {
-                val lObj = layersArr.optJSONObject(i) ?: continue
-                val parsedLayer = parseSlotJson(lObj, i, canvasWidth, canvasHeight)
-                layers.add(parsedLayer)
-            }
+        val resourcesObj = root.optJSONObject("resources")
+        val varDefaults = extractV2VariableDefaults(root.optJSONObject("variables"))
+        for (i in 0 until layersArr.length()) {
+            val lObj = layersArr.optJSONObject(i) ?: continue
+            parseV2LayerJson(
+                lObj = lObj,
+                canvasWidth = canvasWidth,
+                canvasHeight = canvasHeight,
+                resources = resourcesObj,
+                varDefaults = varDefaults,
+                outLayers = layers
+            )
         }
-        val hasAnyParallaxDepth = layers.any { kotlin.math.abs(it.parallaxDepth) > 1e-4 }
-        val parallaxEnabledResolved = if (parallaxObj != null && parallaxObj.has("enabled")) {
-            parallaxObj.optBoolean("enabled", false)
-        } else {
-            !isV2 && hasAnyParallaxDepth
-        }
+        val parallaxEnabledResolved = parallaxObj?.optBoolean("enabled", false) ?: false
         val parallax = OimParallaxConfig(
             enabled = parallaxEnabledResolved,
             maxOffsetPercent = parallaxObj?.optDouble("maxOffsetPercent", 2.8)?.toFloat() ?: 2.8f,
@@ -822,286 +809,7 @@ object OimBinaryCodec {
             parallax = parallax,
             layers = layers.sortedBy { it.zIndex },
             security = security,
-            pngIsBase = !isV2 || hasV2BaseLayer(layersArr, root.optJSONObject("resources"))
-        )
-    }
-
-    private fun parseSlotJson(lObj: JSONObject, index: Int, canvasWidth: Int, canvasHeight: Int): OimLayer {
-        val contentMap = parseStringMap(
-            lObj.opt("content") ?: lObj.opt("translations") ?: lObj.opt("c") ?: lObj.opt("text") ?: lObj.opt("label"),
-            fallback = ""
-        )
-        val detailMap = parseStringMap(lObj.opt("detailContent") ?: lObj.opt("detail"), fallback = "")
-        val styleObj = lObj.optJSONObject("style") ?: lObj.optJSONObject("st")
-        val animObj = styleObj?.optJSONObject("animation") ?: lObj.optJSONObject("animation")
-        val revealObj = styleObj?.optJSONObject("reveal")
-
-        val rawType = lObj.optString("type", lObj.optString("kind", "text")).lowercase().trim()
-        val kind = when (rawType) {
-            "text" -> OimLayerKind.TEXT
-            "artistic-text" -> OimLayerKind.ARTISTIC_TEXT
-            "image" -> OimLayerKind.IMAGE
-            "geo", "shape", "draw" -> OimLayerKind.GEO
-            "svg" -> OimLayerKind.VECTOR_FRAME
-            "mask" -> OimLayerKind.MASK
-            "container", "group", "component" -> OimLayerKind.CONTAINER
-            "hotspot", "zone", "pin", "action" -> OimLayerKind.HOTSPOT
-            "badge", "button", "pill", "cta" -> OimLayerKind.BADGE
-            "callout", "card", "tooltip" -> OimLayerKind.CALLOUT
-            "vector_frame" -> OimLayerKind.VECTOR_FRAME
-            else -> OimLayerKind.OTHER
-        }
-
-        // Position: supports `[x, y]` array (core spec), `{x, y}` object, or `x_px` / `y_px`
-        val posAny = lObj.opt("position") ?: lObj.opt("p") ?: lObj.opt("bounds") ?: lObj.opt("rect")
-        val (xVal, yVal) = when (posAny) {
-            is JSONArray -> {
-                val px = posAny.optDouble(0, 0.0)
-                val py = posAny.optDouble(1, 0.0)
-                px to py
-            }
-            is JSONObject -> {
-                parseCoordinate(posAny.opt("x"), 0.0) to parseCoordinate(posAny.opt("y"), 0.0)
-            }
-            else -> {
-                val xPx = lObj.opt("x_px")
-                val yPx = lObj.opt("y_px")
-                val xDirect = if (xPx != null && xPx != JSONObject.NULL) {
-                    (xPx.toString().toDoubleOrNull() ?: 0.0) / canvasWidth.coerceAtLeast(1) * 100.0
-                } else {
-                    parseCoordinate(lObj.opt("x"), 0.0)
-                }
-                val yDirect = if (yPx != null && yPx != JSONObject.NULL) {
-                    (yPx.toString().toDoubleOrNull() ?: 0.0) / canvasHeight.coerceAtLeast(1) * 100.0
-                } else {
-                    parseCoordinate(lObj.opt("y"), 0.0)
-                }
-                xDirect to yDirect
-            }
-        }
-
-        val wRaw = styleObj?.opt("width") ?: lObj.opt("width") ?: lObj.opt("width_px")?.let { "${it}px" }
-        val hRaw = styleObj?.opt("height") ?: lObj.opt("height") ?: lObj.opt("height_px")?.let { "${it}px" }
-        val maxWRaw = styleObj?.opt("maxWidth")
-        val widthDim = parseDimension(wRaw)
-        val heightDim = parseDimension(hRaw)
-        val maxWidthDim = parseDimension(maxWRaw)
-        val widthPct = widthDim?.toPercentOf(canvasWidth, canvasHeight, isHorizontal = true)
-        val heightPct = heightDim?.toPercentOf(canvasWidth, canvasHeight, isHorizontal = false)
-
-        val alignStr = (styleObj?.optString("textAlign", "")
-            ?.ifBlank { lObj.optString("align", "") }
-            ?.ifBlank { styleObj.optString("align", "start") }
-            ?: lObj.optString("align", "start")).uppercase()
-        val align = when (alignStr) {
-            "LEFT", "START" -> OimTextAlign.START
-            "RIGHT", "END" -> OimTextAlign.END
-            "CENTER" -> OimTextAlign.CENTER
-            "JUSTIFY" -> OimTextAlign.JUSTIFY
-            else -> OimTextAlign.START
-        }
-
-        val fontSizeDim = parseDimension(styleObj?.opt("fontSize") ?: lObj.opt("fontSize") ?: styleObj?.opt("cqw"))
-        val fontSizeRatio = parseFontSizeRatio(styleObj, lObj, canvasWidth)
-        val fontFamily = styleObj?.optString("fontFamily", "")?.ifBlank { null }
-
-        // Animation loop / keyframes
-        val loopRaw = animObj?.opt("loop")
-        val animStr = when (loopRaw) {
-            is String -> loopRaw.uppercase()
-            else -> animObj?.optString("kind", animObj.optString("type", "NONE"))?.uppercase() ?: "NONE"
-        }
-        val animKind = when (animStr) {
-            "PULSE" -> OimAnimationKind.PULSE
-            "PULSE_GLOW" -> OimAnimationKind.PULSE_GLOW
-            "FLOAT", "FLOAT_BREATHE" -> OimAnimationKind.FLOAT
-            "BOUNCE" -> OimAnimationKind.BOUNCE
-            "SPIN" -> OimAnimationKind.SPIN
-            "GLOW" -> OimAnimationKind.GLOW
-            "FADE_IN" -> OimAnimationKind.FADE_IN
-            "SLIDE_UP" -> OimAnimationKind.SLIDE_UP
-            else -> OimAnimationKind.NONE
-        }
-        val durationMs = when {
-            animObj?.has("durationMs") == true -> animObj.optInt("durationMs", 650)
-            animObj?.has("duration") == true -> (animObj.optDouble("duration", 1.0) * 1000.0).toInt()
-            else -> 1200
-        }
-        val delayMs = when {
-            animObj?.has("delayMs") == true -> animObj.optInt("delayMs", 0)
-            animObj?.has("delay") == true -> (animObj.optDouble("delay", 0.0) * 1000.0).toInt()
-            else -> 0
-        }
-        val loopBool = when (loopRaw) {
-            is Boolean -> loopRaw
-            is String -> loopRaw.lowercase() != "none" && loopRaw.isNotBlank()
-            else -> animKind != OimAnimationKind.NONE
-        }
-        val keyframes = parseKeyframes(animObj?.optJSONArray("keyframes"))
-        val trigger = animObj?.optString("trigger", "load") ?: "load"
-        val hoverAnim = animObj?.optString("hover", "")?.ifBlank { null }
-
-        // Parallax
-        val slotParallaxObj = lObj.optJSONObject("parallax")
-        val parallaxDepth = when {
-            slotParallaxObj != null && slotParallaxObj.optBoolean("enabled", true) ->
-                slotParallaxObj.optDouble("depth", 0.0)
-            else -> lObj.optDouble("parallaxDepth", lObj.optDouble("depth", 0.0))
-        }
-
-        // Opacity: slot level is 0..1, style.opacity in schema.ts is 0..100
-        val opacity = when {
-            styleObj != null && styleObj.has("opacity") ->
-                (styleObj.optDouble("opacity", 100.0) / 100.0).coerceIn(0.0, 1.0)
-            lObj.has("opacity") -> lObj.optDouble("opacity", 1.0).coerceIn(0.0, 1.0)
-            else -> 1.0
-        }
-        val rotationDeg = styleObj?.optDouble("rotation", Double.NaN)?.takeIf { !it.isNaN() }
-            ?: lObj.optDouble("rotationDeg", lObj.optDouble("rotation", 0.0))
-
-        // Colors: in OIM geo shapes use `fillColor` as shape fill, text uses `fillColor` or `color`
-        val rawColor = styleObj?.optString("textColor", "")
-            ?.ifBlank { styleObj.optString("color", "") }
-            ?.ifBlank { if (kind == OimLayerKind.TEXT || kind == OimLayerKind.ARTISTIC_TEXT) styleObj.optString("fillColor", "") else "" }
-            ?.ifBlank { "#F8FAFC" }
-            ?: "#F8FAFC"
-        val fillColorHex = styleObj?.optString("fillColor", "")?.ifBlank { null }
-        val backgroundColorHex = styleObj?.optString("backgroundColor", "")
-            ?.ifBlank { styleObj.optString("bg", "") }
-            ?.ifBlank { if (kind != OimLayerKind.TEXT && kind != OimLayerKind.ARTISTIC_TEXT) fillColorHex ?: "#00000000" else "#00000000" }
-            ?: "#00000000"
-        val borderColorHex = styleObj?.optString("strokeColor", "")
-            ?.ifBlank { styleObj.optString("borderColor", "#00000000") }
-            ?: "#00000000"
-
-        val strokeWidthPx = styleObj?.optDouble("strokeWidth", Double.NaN)?.takeIf { !it.isNaN() }?.toFloat()
-        val borderWidthRatio = styleObj?.optDouble("borderWidthRatio", 0.0)?.toFloat()
-            ?: (strokeWidthPx?.let { it / canvasWidth.coerceAtLeast(1) } ?: 0f)
-
-        val cornerRadii = parseCornerRadii(styleObj?.opt("borderRadius"))
-        val cornerRadiusRatio = styleObj?.optDouble("cornerRadiusRatio", Double.NaN)?.takeIf { !it.isNaN() }?.toFloat()
-            ?: (cornerRadii?.topStart?.let {
-                when (it) {
-                    is OimDimension.Cqw -> (it.value / 100.0).toFloat()
-                    is OimDimension.Percent -> (it.value / 100.0).toFloat()
-                    is OimDimension.Px -> (it.value / canvasWidth.coerceAtLeast(1)).toFloat()
-                }
-            } ?: 0.014f)
-
-        val lineHeightFactor = when (val lh = styleObj?.opt("lineHeight")) {
-            is Number -> lh.toFloat().coerceIn(0.6f, 3.5f)
-            is String -> lh.trim().toFloatOrNull()?.coerceIn(0.6f, 3.5f)
-            else -> null
-        }
-
-        val altMap = parseStringMap(styleObj?.opt("alt"), fallback = "")
-        val slotLangs = buildList {
-            val arr = lObj.optJSONArray("languages")
-            if (arr != null) {
-                for (j in 0 until arr.length()) {
-                    val code = arr.optString(j)
-                    if (code.isNotBlank()) add(code)
-                }
-            }
-            if (isEmpty()) add("*")
-        }
-
-        val states = parseSlotStates(styleObj?.optJSONObject("states"))
-        val reveal = parseReveal(revealObj)
-        val textRuns = parseTextRuns(styleObj?.optJSONObject("textRuns"))
-        val artistic = if (kind == OimLayerKind.ARTISTIC_TEXT || styleObj?.has("artisticPreset") == true || styleObj?.has("extrusionDepth") == true) {
-            OimArtisticStyle(
-                curveAmount = styleObj?.optDouble("curveAmount", 0.0)?.takeIf { !it.isNaN() }?.toFloat() ?: 0f,
-                curveType = styleObj?.optString("curveType", "arc")?.ifBlank { "arc" } ?: "arc",
-                extrusionColorHex = styleObj?.optString("extrusionColor", "")?.ifBlank { null },
-                extrusionDepthPx = styleObj?.optDouble("extrusionDepth", 0.0)?.takeIf { !it.isNaN() }?.toFloat() ?: 0f,
-                extrusionAngleDeg = styleObj?.optDouble("extrusionAngle", 45.0)?.takeIf { !it.isNaN() }?.toFloat() ?: 45f,
-                extrusionShading = styleObj?.optBoolean("extrusionShading", true) ?: true,
-                outerStrokeColorHex = styleObj?.optString("outerStrokeColor", "")?.ifBlank { null },
-                outerStrokeWidthPx = styleObj?.optDouble("outerStrokeWidth", 0.0)?.takeIf { !it.isNaN() }?.toFloat() ?: 0f,
-                innerStrokeColorHex = styleObj?.optString("innerStrokeColor", "")?.ifBlank { null },
-                innerStrokeWidthPx = styleObj?.optDouble("innerStrokeWidth", 0.0)?.takeIf { !it.isNaN() }?.toFloat() ?: 0f,
-                textGradientType = styleObj?.optString("textGradientType", "")?.ifBlank { null }
-            )
-        } else null
-
-        return OimLayer(
-            id = lObj.optString("id", "slot_$index"),
-            name = lObj.optString("name", "").ifBlank { null },
-            kind = kind,
-            rawType = rawType,
-            zIndex = lObj.optInt("zIndex", lObj.optInt("z_index", index)),
-            x = xVal,
-            y = yVal,
-            width = widthPct,
-            height = heightPct,
-            widthDim = widthDim,
-            heightDim = heightDim,
-            maxWidthDim = maxWidthDim,
-            anchorX = lObj.optDouble("anchorX", 0.0),
-            anchorY = lObj.optDouble("anchorY", 0.0),
-            rotationDeg = rotationDeg,
-            opacity = opacity,
-            parallaxDepth = parallaxDepth,
-            slotLanguages = slotLangs,
-            content = contentMap,
-            detailContent = detailMap,
-            style = OimLayerStyle(
-                fontSizeRatio = fontSizeRatio,
-                fontSizeDim = fontSizeDim,
-                fontFamily = fontFamily,
-                fontWeight = parseFontWeight(styleObj?.opt("fontWeight")),
-                fontStyleItalic = styleObj?.optString("fontStyle", "normal") == "italic",
-                lineHeightFactor = lineHeightFactor,
-                letterSpacingEm = styleObj?.optDouble("letterSpacingEm", 0.0)?.toFloat() ?: 0f,
-                textColorHex = rawColor,
-                colorRole = styleObj?.optString("colorRole", "")?.ifBlank { null },
-                fillColorHex = fillColorHex,
-                fillColorRole = styleObj?.optString("fillColorRole", "")?.ifBlank { null },
-                backgroundColorHex = backgroundColorHex,
-                borderColorHex = borderColorHex,
-                strokeColorRole = styleObj?.optString("strokeColorRole", "")?.ifBlank { null },
-                borderWidthRatio = borderWidthRatio,
-                strokeWidthPx = strokeWidthPx,
-                cornerRadiusRatio = cornerRadiusRatio,
-                cornerRadii = cornerRadii,
-                textAlign = align,
-                monospace = styleObj?.optBoolean("monospace", false) ?: false,
-                geoShape = styleObj?.optString("geoShape", "")?.ifBlank { null },
-                svgPath = styleObj?.optString("svgPath", "")?.ifBlank { null },
-                svgViewBox = styleObj?.optString("svgViewBox", "")?.ifBlank { null },
-                artistic = artistic,
-                flipX = styleObj?.optBoolean("flipX", false) ?: false,
-                flipY = styleObj?.optBoolean("flipY", false) ?: false,
-                isVisible = styleObj?.optBoolean("isVisible", true) ?: true,
-                decorative = styleObj?.optBoolean("decorative", false) ?: false,
-                alt = altMap,
-                textAnimationType = styleObj?.optString("textAnimationType", "")?.ifBlank { null },
-                textAnimationSpeed = styleObj?.optDouble("textAnimationSpeed", Double.NaN)?.takeIf { !it.isNaN() },
-                textAnimationDelay = styleObj?.optDouble("textAnimationDelay", Double.NaN)?.takeIf { !it.isNaN() },
-                shadowEnabled = styleObj?.optBoolean("shadowEnabled", false) ?: false,
-                shadowColorHex = styleObj?.optString("shadowColor", "")?.ifBlank { null },
-                shadowBlur = styleObj?.optDouble("shadowBlur", 0.0)?.toFloat() ?: 0f,
-                shadowOffsetX = styleObj?.optDouble("shadowOffsetX", 0.0)?.toFloat() ?: 0f,
-                shadowOffsetY = styleObj?.optDouble("shadowOffsetY", 4.0)?.toFloat() ?: 4f,
-                shadowOpacity = (styleObj?.optDouble("shadowOpacity", 35.0)?.toFloat() ?: 35f) / 100f,
-                fillGradient = styleObj?.optString("fillGradient", "")?.ifBlank { null },
-                objectFit = styleObj?.optString("objectFit", "")?.ifBlank { null },
-                textRuns = textRuns
-            ),
-            animation = OimAnimationSpec(
-                kind = animKind,
-                hoverKind = hoverAnim,
-                durationMs = durationMs.coerceAtLeast(100),
-                delayMs = delayMs.coerceAtLeast(0),
-                loop = loopBool,
-                keyframes = keyframes,
-                trigger = trigger
-            ),
-            isInteractive = styleObj?.optBoolean("isInteractive", false) ?: (states != null),
-            states = states,
-            reveal = reveal,
-            accentColorHex = lObj.optString("accentColor", "#F59E0B")
+            pngIsBase = hasV2BaseLayer(layersArr, root.optJSONObject("resources"))
         )
     }
 
@@ -2143,86 +1851,6 @@ object OimBinaryCodec {
         }
     }
 
-    private fun parseKeyframes(arr: JSONArray?): List<OimKeyframe> {
-        if (arr == null) return emptyList()
-        return buildList {
-            for (i in 0 until arr.length()) {
-                val obj = arr.optJSONObject(i) ?: continue
-                val easingRaw = obj.opt("e")
-                val easingKw = easingRaw as? String
-                val bezier = (easingRaw as? JSONArray)?.let { bArr ->
-                    if (bArr.length() == 4) {
-                        listOf(bArr.optDouble(0), bArr.optDouble(1), bArr.optDouble(2), bArr.optDouble(3))
-                    } else null
-                }
-                add(
-                    OimKeyframe(
-                        t = obj.optDouble("t", 0.0),
-                        o = if (obj.has("o") && !obj.isNull("o")) obj.optDouble("o") else null,
-                        s = if (obj.has("s") && !obj.isNull("s")) obj.optDouble("s") else null,
-                        r = if (obj.has("r") && !obj.isNull("r")) obj.optDouble("r") else null,
-                        x = if (obj.has("x") && !obj.isNull("x")) obj.optDouble("x") else null,
-                        y = if (obj.has("y") && !obj.isNull("y")) obj.optDouble("y") else null,
-                        b = if (obj.has("b") && !obj.isNull("b")) obj.optDouble("b") else null,
-                        easingKeyword = easingKw,
-                        cubicBezier = bezier
-                    )
-                )
-            }
-        }
-    }
-
-    private fun parseSlotStates(statesObj: JSONObject?): OimSlotStates? {
-        if (statesObj == null) return null
-        fun parseInteractive(obj: JSONObject?): OimInteractiveState? {
-            if (obj == null) return null
-            val actionsArr = obj.optJSONArray("actions")
-            val actions = buildList {
-                if (actionsArr != null) {
-                    for (i in 0 until actionsArr.length()) {
-                        val a = actionsArr.optJSONObject(i) ?: continue
-                        val target = a.optString("target", "")
-                        val type = a.optString("type", "")
-                        if (target.isNotBlank() && type.isNotBlank()) {
-                            add(
-                                OimStateAction(
-                                    target = target,
-                                    type = type,
-                                    value = if (a.has("value") && !a.isNull("value")) a.optString("value") else null
-                                )
-                            )
-                        }
-                    }
-                }
-            }
-            return OimInteractiveState(
-                scale = if (obj.has("scale") && !obj.isNull("scale")) obj.optDouble("scale") else null,
-                rotation = if (obj.has("rotation") && !obj.isNull("rotation")) obj.optDouble("rotation") else null,
-                opacity = if (obj.has("opacity") && !obj.isNull("opacity")) obj.optDouble("opacity") else null,
-                transitionDurationMs = if (obj.has("transitionDuration") && !obj.isNull("transitionDuration")) obj.optInt("transitionDuration") else null,
-                actions = actions
-            )
-        }
-        val hover = parseInteractive(statesObj.optJSONObject("hover"))
-        val active = parseInteractive(statesObj.optJSONObject("active"))
-        return if (hover == null && active == null) null else OimSlotStates(hover = hover, active = active)
-    }
-
-    private fun parseReveal(obj: JSONObject?): OimReveal? {
-        if (obj == null) return null
-        val easingRaw = obj.opt("easing")
-        val easingKw = easingRaw as? String
-        val bezier = (easingRaw as? JSONArray)?.let { bArr ->
-            if (bArr.length() == 4) listOf(bArr.optDouble(0), bArr.optDouble(1), bArr.optDouble(2), bArr.optDouble(3)) else null
-        }
-        return OimReveal(
-            effect = obj.optString("effect", "fade"),
-            durationMs = obj.optInt("duration", 300).coerceIn(0, 2000),
-            easingKeyword = easingKw,
-            cubicBezier = bezier
-        )
-    }
-
     private fun parseTextRuns(obj: JSONObject?): Map<String, OimTextRun> {
         if (obj == null) return emptyMap()
         return buildMap {
@@ -2255,70 +1883,6 @@ object OimBinaryCodec {
         }
     }
 
-    private fun parseDimension(raw: Any?): OimDimension? {
-        return when (raw) {
-            is Number -> OimDimension.Px(raw.toDouble())
-            is String -> {
-                val s = raw.trim().lowercase()
-                if (s.isBlank() || s == "auto") return null
-                when {
-                    s.endsWith("cqw") -> s.removeSuffix("cqw").toDoubleOrNull()?.let { OimDimension.Cqw(it) }
-                    s.endsWith("%") -> s.removeSuffix("%").toDoubleOrNull()?.let { OimDimension.Percent(it) }
-                    s.endsWith("px") -> s.removeSuffix("px").toDoubleOrNull()?.let { OimDimension.Px(it) }
-                    else -> s.toDoubleOrNull()?.let { OimDimension.Px(it) }
-                }
-            }
-            else -> null
-        }
-    }
-
-    private fun parseCornerRadii(raw: Any?): OimCornerRadii? {
-        return when (raw) {
-            is Number -> OimDimension.Px(raw.toDouble()).let { OimCornerRadii(it, it, it, it) }
-            is String -> {
-                val parts = raw.trim().split(Regex("\\s+")).mapNotNull { parseDimension(it) }
-                when (parts.size) {
-                    1 -> OimCornerRadii(parts[0], parts[0], parts[0], parts[0])
-                    2 -> OimCornerRadii(parts[0], parts[1], parts[0], parts[1])
-                    4 -> OimCornerRadii(parts[0], parts[1], parts[2], parts[3])
-                    else -> null
-                }
-            }
-            else -> null
-        }
-    }
-
-    private fun parseCoordinate(raw: Any?, fallback: Double): Double {
-        return when (raw) {
-            is Number -> raw.toDouble()
-            is String -> raw.trim().removeSuffix("%").removeSuffix("cqw").removeSuffix("cqh").toDoubleOrNull() ?: fallback
-            else -> fallback
-        }
-    }
-
-    private fun parseFontSizeRatio(styleObj: JSONObject?, layerObj: JSONObject, canvasWidth: Int): Float {
-        if (styleObj != null && styleObj.has("fontSizeRatio")) {
-            return styleObj.optDouble("fontSizeRatio", 0.032).toFloat()
-        }
-        val rawFontSize = styleObj?.opt("fontSize") ?: layerObj.opt("fontSize") ?: styleObj?.opt("cqw")
-        return when (rawFontSize) {
-            is String -> {
-                val clean = rawFontSize.trim().lowercase()
-                when {
-                    clean.endsWith("cqw") -> (clean.removeSuffix("cqw").toFloatOrNull() ?: 3.2f) / 100f
-                    clean.endsWith("%") -> (clean.removeSuffix("%").toFloatOrNull() ?: 3.2f) / 100f
-                    clean.endsWith("px") -> (clean.removeSuffix("px").toFloatOrNull() ?: 28f) / canvasWidth.coerceAtLeast(1)
-                    else -> (clean.toFloatOrNull() ?: 28f) / canvasWidth.coerceAtLeast(1)
-                }
-            }
-            is Number -> {
-                val num = rawFontSize.toFloat()
-                if (num in 0.005f..0.4f) num else (num / canvasWidth.coerceAtLeast(1)).coerceIn(0.012f, 0.25f)
-            }
-            else -> 0.032f
-        }
-    }
-
     private fun parseFontWeight(raw: Any?): Int {
         return when (raw) {
             is Number -> raw.toInt()
@@ -2341,11 +1905,11 @@ object OimBinaryCodec {
             put("name", doc.title["en"] ?: doc.title.values.firstOrNull() ?: doc.id)
             put("title", JSONObject(doc.title))
             if (doc.description.isNotEmpty()) put("description", JSONObject(doc.description))
-            put("lang", JSONArray(doc.languages))
+            put("languages", JSONArray(doc.languages))
             put("defaultLanguage", doc.defaultLanguage)
             put("canvas", JSONObject().apply {
-                put("natural_width", doc.canvas.width)
-                put("natural_height", doc.canvas.height)
+                put("width", doc.canvas.width)
+                put("height", doc.canvas.height)
                 put("backgroundColor", doc.canvas.backgroundColorHex)
             })
             if (doc.palettes.isNotEmpty()) {
@@ -2361,28 +1925,47 @@ object OimBinaryCodec {
             if (doc.security.signedAtIso != null) put("signed_at", doc.security.signedAtIso)
             if (doc.security.keyId != null) put("key_version", doc.security.keyId)
             if (doc.security.signature != null) put("signature", doc.security.signature)
-            put("slots", JSONArray().apply {
+            put("layers", JSONArray().apply {
                 doc.layers.forEach { layer ->
+                    val wPx = (layer.width ?: 10.0) / 100.0 * doc.canvas.width
+                    val hPx = (layer.height ?: 10.0) / 100.0 * doc.canvas.height
+                    val xPx = layer.x / 100.0 * doc.canvas.width
+                    val yPx = layer.y / 100.0 * doc.canvas.height
                     put(JSONObject().apply {
                         put("id", layer.id)
                         if (layer.name != null) put("name", layer.name)
                         put("type", layer.rawType)
-                        put("position", JSONArray().apply {
-                            put(layer.x)
-                            put(layer.y)
+                        put("box", JSONObject().apply {
+                            put("x", xPx)
+                            put("y", yPx)
+                            put("width", wPx)
+                            put("height", hPx)
+                            if (layer.rotationDeg != 0.0) put("rotation", layer.rotationDeg)
                         })
-                        put("content", JSONObject(layer.content))
-                        if (layer.detailContent.isNotEmpty()) {
-                            put("detailContent", JSONObject(layer.detailContent))
+                        put("fills", JSONArray().apply {
+                            put(JSONObject().apply {
+                                put("kind", "color")
+                                put(
+                                    "value",
+                                    if (layer.kind == OimLayerKind.TEXT || layer.kind == OimLayerKind.ARTISTIC_TEXT) {
+                                        layer.style.textColorHex
+                                    } else {
+                                        layer.style.fillColorHex
+                                    }
+                                )
+                            })
+                        })
+                        if (layer.kind == OimLayerKind.TEXT || layer.kind == OimLayerKind.ARTISTIC_TEXT) {
+                            put("text", JSONObject().apply {
+                                put("content", JSONObject(layer.content))
+                                put("align", layer.style.textAlign.name.lowercase())
+                                put("font", JSONObject().apply {
+                                    if (layer.style.fontFamily != null) put("family", layer.style.fontFamily)
+                                    put("size", (layer.style.fontSizeRatio * doc.canvas.width).toDouble())
+                                    put("weight", layer.style.fontWeight)
+                                })
+                            })
                         }
-                        put("style", JSONObject().apply {
-                            put("fontSize", "${(layer.style.fontSizeRatio * 100f)}cqw")
-                            put("fontWeight", layer.style.fontWeight)
-                            put("color", layer.style.textColorHex)
-                            put("backgroundColor", layer.style.backgroundColorHex)
-                            put("borderColor", layer.style.borderColorHex)
-                            put("textAlign", layer.style.textAlign.name.lowercase())
-                        })
                     })
                 }
             })

@@ -263,6 +263,7 @@ fun OimPlayerView(
     val prefersDark = isSystemInDarkTheme()
     val imageBitmap = remember(asset.bitmap) { asset.bitmap.asImageBitmap() }
     val embeddedFonts = remember(doc.fonts) { OimFontLoader.resolveEmbeddedFonts(context, doc.fonts) }
+    val embeddedTypefaces = remember(doc.fonts) { OimFontLoader.resolveEmbeddedTypefaces(context, doc.fonts) }
     val resolvedPalette = remember(doc.palettes, doc.defaultPalette, selectedPalette, prefersDark) {
         OimCanonicalizerAndVerifier.resolvePalette(
             palettes = doc.palettes,
@@ -573,6 +574,7 @@ fun OimPlayerView(
                                             canvasHeightPx = canvasHeightPx,
                                             fontScaleOverride = density.fontScale,
                                             embeddedFonts = embeddedFonts,
+                                            embeddedTypefaces = embeddedTypefaces,
                                             isSelected = isSelected,
                                             showDebugOutline = showPixelGrid,
                                             playTrigger = layerPlayCount,
@@ -946,6 +948,7 @@ private fun OimLayerNode(
     canvasHeightPx: Float,
     fontScaleOverride: Float,
     embeddedFonts: Map<String, List<Pair<Int, FontFamily>>>,
+    embeddedTypefaces: Map<String, List<Pair<Int, Typeface>>>,
     isSelected: Boolean,
     showDebugOutline: Boolean,
     playTrigger: Int,
@@ -1042,6 +1045,26 @@ private fun OimLayerNode(
         layer.style.fontWeight >= 500 -> FontWeight.Medium
         layer.style.fontWeight <= 300 -> FontWeight.Light
         else -> FontWeight.Normal
+    }
+    val nativeTypeface = remember(embeddedTypefaces, layer.style.fontFamily, layer.style.fontWeight, layer.style.fontStyleItalic, layer.style.monospace) {
+        val embeddedTf = OimFontLoader.findBestTypeface(embeddedTypefaces, layer.style.fontFamily, layer.style.fontWeight)
+        if (embeddedTf != null) {
+            if (layer.style.fontStyleItalic) Typeface.create(embeddedTf, Typeface.ITALIC) else embeddedTf
+        } else {
+            val tfStyle = when {
+                layer.style.fontWeight >= 700 && layer.style.fontStyleItalic -> Typeface.BOLD_ITALIC
+                layer.style.fontWeight >= 700 -> Typeface.BOLD
+                layer.style.fontStyleItalic -> Typeface.ITALIC
+                else -> Typeface.NORMAL
+            }
+            val sysFamily = when {
+                layer.style.monospace || "mono" in famLower || "code" in famLower -> "monospace"
+                "serif" in famLower && "sans" !in famLower -> "serif"
+                "fjalla" in famLower || "oswald" in famLower || "bebas" in famLower || "anton" in famLower || "condensed" in famLower -> "sans-serif-condensed"
+                else -> "sans-serif"
+            }
+            Typeface.create(sysFamily, tfStyle)
+        }
     }
 
     val semanticsMod = if (layer.style.decorative) {
@@ -1572,7 +1595,51 @@ private fun OimLayerNode(
                         .then(if (hasBoxChrome) Modifier.padding(horizontal = 2.dp, vertical = 1.dp) else Modifier)
                 ) {
                     if (resolvedText.isNotEmpty()) {
-                        if (layerBlurSigmaPx > 0.2f && isLayerBlurHandledInternally(layer)) {
+                        if (artistic != null) {
+                            val natW = naturalWidth.coerceAtLeast(1)
+                            val natH = naturalHeight.coerceAtLeast(1)
+                            val boxWCanvasPx = when (val wd = layer.widthDim) {
+                                is media.oim.sdk.model.OimDimension.Px -> wd.value.toFloat()
+                                is media.oim.sdk.model.OimDimension.Cqw -> ((wd.value / 100.0) * natW).toFloat()
+                                is media.oim.sdk.model.OimDimension.Percent -> ((wd.value / 100.0) * natW).toFloat()
+                                null -> layer.width?.let { ((it / 100.0) * natW).toFloat() } ?: 400f
+                            }.coerceAtLeast(1f)
+                            val boxHCanvasPx = when (val hd = layer.heightDim) {
+                                is media.oim.sdk.model.OimDimension.Px -> hd.value.toFloat()
+                                is media.oim.sdk.model.OimDimension.Cqw -> ((hd.value / 100.0) * natW).toFloat()
+                                is media.oim.sdk.model.OimDimension.Percent -> ((hd.value / 100.0) * natH).toFloat()
+                                null -> layer.height?.let { ((it / 100.0) * natH).toFloat() } ?: 120f
+                            }.coerceAtLeast(1f)
+                            val fontSizeCanvasPx = when (val fd = layer.style.fontSizeDim) {
+                                is media.oim.sdk.model.OimDimension.Px -> fd.value.toFloat()
+                                is media.oim.sdk.model.OimDimension.Cqw -> ((fd.value / 100.0) * natW).toFloat()
+                                is media.oim.sdk.model.OimDimension.Percent -> ((fd.value / 100.0) * natW).toFloat()
+                                null -> layer.style.fontSizeRatio * natW
+                            }.coerceAtLeast(8f)
+                            val outerColor = artistic.outerStrokeColorHex?.let {
+                                parseOimColor(it, palette, Color.Transparent)
+                            } ?: borderColor
+                            val innerColor = artistic.innerStrokeColorHex?.let {
+                                parseOimColor(it, palette, Color.White)
+                            } ?: Color.White
+                            val targetW = widthDp ?: with(density) { (boxWCanvasPx * scaleFactor).toDp() }
+                            val targetH = heightDp ?: with(density) { (boxHCanvasPx * scaleFactor).toDp() }
+                            OimArtisticTextCanvas(
+                                text = animatedTextRender.fillText.text,
+                                boxWidthPx = boxWCanvasPx,
+                                boxHeightPx = boxHCanvasPx,
+                                fontSizePx = fontSizeCanvasPx,
+                                lineHeight = layer.style.lineHeightFactor ?: 1.25f,
+                                letterSpacingEm = layer.style.letterSpacingEm,
+                                typeface = nativeTypeface,
+                                fillColor = textColor,
+                                outerStrokeColor = outerColor,
+                                innerStrokeColor = innerColor,
+                                extrusionColor = if (extColor.alpha > 0f) extColor else Color(0xFF111827),
+                                artistic = artistic,
+                                modifier = Modifier.size(targetW, targetH)
+                            )
+                        } else if (layerBlurSigmaPx > 0.2f && isLayerBlurHandledInternally(layer)) {
                             val textMeasurer = rememberTextMeasurer()
                             val layoutDirection = LocalLayoutDirection.current
                             val fillAnnotated = animatedTextRender.fillText
@@ -1676,89 +1743,7 @@ private fun OimLayerNode(
                                 renderTextSilhouette(glowColor, glowInnerBlurDp, 0.dp, 0.dp)
                             }
                         }
-                        if (artistic != null) {
-                            val extSteps = computeAndroidExtrusionLayers(
-                                depth = artistic.extrusionDepthPx,
-                                angleDegrees = artistic.extrusionAngleDeg,
-                                baseColor = if (extColor.alpha > 0f) extColor else Color(0xFF111827),
-                                shading = artistic.extrusionShading
-                            )
-                            val extStrokePx = (if (artistic.outerStrokeWidthPx > 0f) artistic.outerStrokeWidthPx else 1f) * scaleFactor
-                            val extStrokeStyle = TextStyle(
-                                drawStyle = Stroke(width = extStrokePx, join = StrokeJoin.Round),
-                                platformStyle = PlatformTextStyle(includeFontPadding = false)
-                            )
-                            for (step in extSteps) {
-                                val stepDxDp = with(density) { (step.dx * scaleFactor).toDp() }
-                                val stepDyDp = with(density) { (step.dy * scaleFactor).toDp() }
-                                Text(
-                                    text = plainOrBaseAnnotated,
-                                    fontFamily = fontFamily,
-                                    fontWeight = fontWeight,
-                                    fontStyle = if (layer.style.fontStyleItalic) FontStyle.Italic else FontStyle.Normal,
-                                    fontSize = pixelLockedSp,
-                                    lineHeight = lineHeightSp,
-                                    style = baseTextStyle,
-                                    color = step.color,
-                                    modifier = textBandlessMod.offset(x = stepDxDp, y = stepDyDp),
-                                    textAlign = resolvedTextAlign
-                                )
-                                Text(
-                                    text = plainOrBaseAnnotated,
-                                    fontFamily = fontFamily,
-                                    fontWeight = fontWeight,
-                                    fontStyle = if (layer.style.fontStyleItalic) FontStyle.Italic else FontStyle.Normal,
-                                    fontSize = pixelLockedSp,
-                                    lineHeight = lineHeightSp,
-                                    style = extStrokeStyle,
-                                    color = step.color,
-                                    modifier = textBandlessMod.offset(x = stepDxDp, y = stepDyDp),
-                                    textAlign = resolvedTextAlign
-                                )
-                            }
-                            val outerColor = artistic.outerStrokeColorHex?.let {
-                                parseOimColor(it, palette, Color.Transparent)
-                            } ?: borderColor
-                            if (artistic.outerStrokeWidthPx > 0f && outerColor.alpha > 0f) {
-                                Text(
-                                    text = plainOrBaseAnnotated,
-                                    fontFamily = fontFamily,
-                                    fontWeight = fontWeight,
-                                    fontStyle = if (layer.style.fontStyleItalic) FontStyle.Italic else FontStyle.Normal,
-                                    fontSize = pixelLockedSp,
-                                    lineHeight = lineHeightSp,
-                                    style = TextStyle(
-                                        drawStyle = Stroke(width = artistic.outerStrokeWidthPx * 2f * scaleFactor, join = StrokeJoin.Round),
-                                        platformStyle = PlatformTextStyle(includeFontPadding = false)
-                                    ),
-                                    color = outerColor,
-                                    modifier = textBandlessMod,
-                                    textAlign = resolvedTextAlign
-                                )
-                            }
-                            if (artistic.innerStrokeWidthPx > 0f) {
-                                val innerColor = artistic.innerStrokeColorHex?.let {
-                                    parseOimColor(it, palette, Color.White)
-                                } ?: Color.White
-                                if (innerColor.alpha > 0f) {
-                                    Text(
-                                        text = plainOrBaseAnnotated,
-                                        fontFamily = fontFamily,
-                                        fontWeight = fontWeight,
-                                        fontStyle = if (layer.style.fontStyleItalic) FontStyle.Italic else FontStyle.Normal,
-                                        fontSize = pixelLockedSp,
-                                        lineHeight = lineHeightSp,
-                                        style = TextStyle(
-                                            drawStyle = Stroke(width = artistic.innerStrokeWidthPx * scaleFactor, join = StrokeJoin.Round),
-                                            platformStyle = PlatformTextStyle(includeFontPadding = false)
-                                        ),
-                                        color = innerColor,
-                                        modifier = textBandlessMod,
-                                        textAlign = resolvedTextAlign
-                                    )
-                                }
-                            }
-                        } else if (extColor.alpha > 0f && extDepthPx > 0.5f) {
+                        if (extColor.alpha > 0f && extDepthPx > 0.5f) {
                             val steps = 5
                             for (step in steps downTo 1) {
                                 val d = with(density) { ((extDepthPx * step) / steps).toDp() }
@@ -1795,7 +1780,7 @@ private fun OimLayerNode(
                                 )
                             }
                         }
-                        if (artistic == null && glyphStrokePx > 0f && borderColor.alpha > 0f) {
+                        if (glyphStrokePx > 0f && borderColor.alpha > 0f) {
                             Text(
                                 text = textRender.strokeText,
                                 fontFamily = fontFamily,
@@ -1809,8 +1794,6 @@ private fun OimLayerNode(
                                 textAlign = resolvedTextAlign
                             )
                         }
-                        val faceBrush = artistic?.textGradientType?.let { artisticFaceBrush(it) }
-                        val frontStyle = if (faceBrush != null) baseTextStyle.copy(brush = faceBrush) else baseTextStyle
                         Text(
                             text = fillAnnotated,
                             fontFamily = fontFamily,
@@ -1818,8 +1801,8 @@ private fun OimLayerNode(
                             fontStyle = if (layer.style.fontStyleItalic) FontStyle.Italic else FontStyle.Normal,
                             fontSize = pixelLockedSp,
                             lineHeight = lineHeightSp,
-                            style = frontStyle,
-                            color = if (faceBrush != null) Color.Unspecified else textColor,
+                            style = baseTextStyle,
+                            color = textColor,
                             // shortcut: the band sits under the fill only, so it covers a glyph stroke's outer half; paint it first if strokes need it.
                             modifier = textWidthMod.markHighlights(fillAnnotated, { fillLayout }, scaleFactor),
                             onTextLayout = { fillLayout = it },
@@ -3156,24 +3139,4 @@ internal fun computeAndroidExtrusionLayers(
             add(AndroidExtrusionStep(dx = dx, dy = dy, color = color))
         }
     }
-}
-
-private fun artisticFaceBrush(textGradientType: String?): Brush? = when (textGradientType) {
-    "sunset-gold" -> Brush.verticalGradient(
-        0.0f to Color(0xFFFDE047),
-        0.5f to Color(0xFFF97316),
-        1.0f to Color(0xFFBE185D)
-    )
-    "metallic-chrome" -> Brush.verticalGradient(
-        0.0f to Color(0xFFFFFFFF),
-        0.35f to Color(0xFFE2E8F0),
-        0.50f to Color(0xFF64748B),
-        0.51f to Color(0xFF0F172A),
-        0.75f to Color(0xFF94A3B8),
-        1.0f to Color(0xFFFFFFFF)
-    )
-    "neon-glow" -> Brush.horizontalGradient(
-        colors = listOf(Color(0xFF67E8F9), Color(0xFFA5F3FC))
-    )
-    else -> null
 }

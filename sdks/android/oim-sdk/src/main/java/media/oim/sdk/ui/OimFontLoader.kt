@@ -33,6 +33,7 @@ internal object OimFontLoader {
     private const val SFNT_DIR_ENTRY_SIZE = 16
 
     private val loadedTypefaces = ConcurrentHashMap<String, FontFamily>()
+    private val loadedNativeTypefaces = ConcurrentHashMap<String, Typeface>()
 
     fun resolveEmbeddedFonts(
         context: Context,
@@ -51,6 +52,23 @@ internal object OimFontLoader {
         return result
     }
 
+    fun resolveEmbeddedTypefaces(
+        context: Context,
+        fonts: List<OimEmbeddedFont>
+    ): Map<String, List<Pair<Int, Typeface>>> {
+        if (fonts.isEmpty()) return emptyMap()
+        val result = linkedMapOf<String, MutableList<Pair<Int, Typeface>>>()
+        fonts.forEach { font ->
+            val familyKey = font.family.trim().lowercase()
+            if (familyKey.isEmpty()) return@forEach
+            val resolved = loadSingleTypeface(context, font)
+            if (resolved != null) {
+                result.getOrPut(familyKey) { mutableListOf() }.add(font.weight to resolved)
+            }
+        }
+        return result
+    }
+
     fun findBestFont(
         fonts: Map<String, List<Pair<Int, FontFamily>>>,
         family: String?,
@@ -61,13 +79,34 @@ internal object OimFontLoader {
         return candidates.minByOrNull { (w, _) -> abs(w - requestedWeight) }?.second
     }
 
+    fun findBestTypeface(
+        fonts: Map<String, List<Pair<Int, Typeface>>>,
+        family: String?,
+        requestedWeight: Int
+    ): Typeface? {
+        val key = family?.trim()?.lowercase()?.takeIf { it.isNotEmpty() } ?: return null
+        val candidates = fonts[key] ?: return null
+        return candidates.minByOrNull { (w, _) -> abs(w - requestedWeight) }?.second
+    }
+
     private fun loadSingleFont(context: Context, font: OimEmbeddedFont): FontFamily? {
+        val rawB64 = font.dataBase64?.takeIf { it.isNotBlank() } ?: return null
+        val key = sha256Hex("sfnt2|${font.family}|${font.weight}|${font.style}|$rawB64").take(24)
+        loadedTypefaces[key]?.let { return it }
+
+        val typeface = loadSingleTypeface(context, font) ?: return null
+        val fontFamily = FontFamily(typeface)
+        loadedTypefaces[key] = fontFamily
+        return fontFamily
+    }
+
+    private fun loadSingleTypeface(context: Context, font: OimEmbeddedFont): Typeface? {
         val rawB64 = font.dataBase64?.takeIf { it.isNotBlank() } ?: return null
         val format = font.format.trim().lowercase()
         if (format != "woff" && format != "woff2" && format != "ttf" && format != "otf") return null
 
         val key = sha256Hex("sfnt2|${font.family}|${font.weight}|${font.style}|$rawB64").take(24)
-        loadedTypefaces[key]?.let { return it }
+        loadedNativeTypefaces[key]?.let { return it }
 
         return runCatching {
             val rawBytes = Base64Codec.decode(rawB64)
@@ -83,9 +122,8 @@ internal object OimFontLoader {
                 outFile.writeBytes(sfntBytes)
             }
             val typeface = Typeface.createFromFile(outFile)
-            val fontFamily = FontFamily(typeface)
-            loadedTypefaces[key] = fontFamily
-            fontFamily
+            loadedNativeTypefaces[key] = typeface
+            typeface
         }.getOrNull()
     }
 

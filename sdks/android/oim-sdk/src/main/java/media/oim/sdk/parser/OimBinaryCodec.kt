@@ -22,6 +22,7 @@ import media.oim.sdk.model.OimDocument
 import media.oim.sdk.model.OimEmbeddedFont
 import media.oim.sdk.model.OimError
 import media.oim.sdk.model.OimFilterSpec
+import media.oim.sdk.model.OimGenerativeFill
 import media.oim.sdk.model.OimGradientFill
 import media.oim.sdk.model.OimGradientStop
 import media.oim.sdk.model.OimImageFill
@@ -633,13 +634,15 @@ object OimBinaryCodec {
             ?: "#0E1015"
         val canvasGradient = parseV2GradientFill(canvasFillsArr, v2ResourcesObj, v2VarDefaults)
         val canvasPattern = parseV2PatternFill(canvasFillsArr, v2ResourcesObj, v2VarDefaults)
+        val canvasGenerative = parseV2GenerativeFill(canvasFillsArr, v2ResourcesObj, v2VarDefaults)
 
         val canvas = OimCanvasSpec(
             width = canvasWidth,
             height = canvasHeight,
             backgroundColorHex = canvasBgHex,
             gradientFill = canvasGradient,
-            patternFill = canvasPattern
+            patternFill = canvasPattern,
+            generativeFill = canvasGenerative
         )
 
         val langArray = root.optJSONArray("lang") ?: root.optJSONArray("languages")
@@ -934,6 +937,7 @@ object OimBinaryCodec {
         val (primaryFillColor, fillColorRole) = extractV2PrimaryPaintColorWithRole(fillsArr, resources, varDefaults)
         val gradientFill = parseV2GradientFill(fillsArr, resources, varDefaults)
         val patternFill = parseV2PatternFill(fillsArr, resources, varDefaults)
+        val generativeFill = parseV2GenerativeFill(fillsArr, resources, varDefaults)
         val imageFill: OimImageFill? = run {
             var found: OimImageFill? = null
             if (fillsArr != null) {
@@ -1285,6 +1289,7 @@ object OimBinaryCodec {
                     glowRadiusPx = glowRadiusPx,
                     gradientFill = gradientFill,
                     patternFill = patternFill,
+                    generativeFill = generativeFill,
                     blurRadiusPx = blurRadiusPx,
                     filter = layerFilterSpec,
                     imageFill = effectiveImageFill,
@@ -1816,6 +1821,64 @@ object OimBinaryCodec {
                     tilePaths = tilePaths
                 )
             }
+        }
+        return null
+    }
+
+    private fun parseV2GenerativeFill(
+        fillsArr: JSONArray?,
+        resources: JSONObject?,
+        varDefaults: Map<String, Any>
+    ): OimGenerativeFill? {
+        if (fillsArr == null) return null
+        for (i in 0 until fillsArr.length()) {
+            var obj = fillsArr.optJSONObject(i) ?: continue
+            if (obj.has("ref")) {
+                obj = resources?.optJSONObject(obj.optString("ref")) ?: continue
+            }
+            if (!obj.optString("kind").equals("generative", ignoreCase = true)) continue
+            val genObj = obj.optJSONObject("generative") ?: obj
+            val generatorId = genObj.optString("generatorId", "stacked-waves").ifBlank { "stacked-waves" }
+            val seed = if (genObj.has("seed") && !genObj.isNull("seed")) genObj.optInt("seed", 42) else 42
+            val paramsObj = genObj.optJSONObject("params")
+            val params = buildMap<String, Any> {
+                if (paramsObj != null) {
+                    val keys = paramsObj.keys()
+                    while (keys.hasNext()) {
+                        val k = keys.next()
+                        val v = paramsObj.opt(k)
+                        if (v != null && v != JSONObject.NULL) put(k, v)
+                    }
+                }
+            }
+            val colorsObj = genObj.optJSONObject("colors")
+            val colorMode = colorsObj?.optString("mode", "monochrome")?.ifBlank { "monochrome" } ?: "monochrome"
+            val colorDirection = colorsObj?.optString("direction", "forward")?.ifBlank { "forward" } ?: "forward"
+            val stopsArr = colorsObj?.optJSONArray("stops")
+            val stops = buildList {
+                if (stopsArr != null) {
+                    for (j in 0 until stopsArr.length()) {
+                        val resolved = resolveV2String(stopsArr.opt(j), varDefaults)?.ifBlank { null }
+                        if (resolved != null) add(resolved)
+                    }
+                }
+                if (isEmpty()) {
+                    add("#3b82f6")
+                    add("#0f172a")
+                }
+            }
+            val bgColor = resolveV2String(colorsObj?.opt("background"), varDefaults)?.ifBlank { null }
+            val bgVisible = colorsObj?.optBoolean("backgroundVisible", true) ?: true
+            return OimGenerativeFill(
+                generatorId = generatorId,
+                seed = seed,
+                params = params,
+                colorMode = colorMode,
+                colorStops = stops,
+                colorDirection = colorDirection,
+                backgroundColorHex = bgColor,
+                backgroundVisible = bgVisible
+            )
         }
         return null
     }

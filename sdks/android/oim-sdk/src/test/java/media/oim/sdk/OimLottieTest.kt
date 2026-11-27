@@ -23,4 +23,13 @@ class OimLottieTest {
         assertEquals(1, it.getJSONObject(0).getInt("d"))
         assertEquals(3, it.getJSONObject(1).getInt("d"))
     }
+
+    @Test
+    fun roundedStarHandlesFollowLottieWeb() {
+        val src = """{"shapes":[{"ty":"sr","sy":1,"d":1,"pt":{"a":0,"k":8},"os":{"a":0,"k":100},"is":{"a":0,"k":60}}]}"""
+        val sr = JSONObject(forwardPolystars(src)).getJSONArray("shapes").getJSONObject(0)
+        val f = Math.PI / 16 / 0.47829
+        assertEquals(100 * f, sr.getJSONObject("os").getDouble("k"), 1e-6)
+        assertEquals(60 * f, sr.getJSONObject("is").getDouble("k"), 1e-6)
+    }
 }

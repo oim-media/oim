@@ -655,12 +655,16 @@ fun OimPlayerView(
                 visibleLayers.withIndex().drop(cut + 1).forEach { (i, layer) ->
                     val backdrop = layer.style.backdropPreset
                     val backdropMatrix = remember(backdrop) { backdrop?.let { if (it == "duotone") duotoneMatrix() else FILTER_PRESET_CSS[it]?.let(::cssFilterMatrix) } }
-                    if (backdropMatrix != null) {
+                    val backdropBlurPx = (layer.style.backdropBlur * canvasWidthPx / doc.canvas.width.coerceAtLeast(1)).toFloat()
+                    if (backdropMatrix != null || backdropBlurPx > 0f) {
                         val backdropShape = remember(layer, doc.canvas.width, doc.canvas.height) { boxShape(layer, doc.canvas.width, doc.canvas.height) }
-                        // A backdrop filters what lies under its figure: paint that again, filtered and clipped.
-                        Box(Modifier.fillMaxSize().clip(backdropShape).colorMatrixLayer(backdropMatrix)) {
-                            paintBackground()
-                            visibleLayers.take(i).forEach { paintLayer(it) }
+                        val density = LocalDensity.current
+                        // A backdrop filters what lies under its figure: paint that again, blurred, filtered and clipped.
+                        Box(Modifier.fillMaxSize().clip(backdropShape).then(backdropMatrix?.let { Modifier.colorMatrixLayer(it) } ?: Modifier)) {
+                            Box(Modifier.fillMaxSize().then(if (backdropBlurPx > 0f) Modifier.blur(with(density) { backdropBlurPx.toDp() }, BlurredEdgeTreatment.Unbounded) else Modifier)) {
+                                paintBackground()
+                                visibleLayers.take(i).forEach { paintLayer(it) }
+                            }
                         }
                     }
                     val blend = layer.style.blendMode?.let { CSS_BLEND_MODES[it] }

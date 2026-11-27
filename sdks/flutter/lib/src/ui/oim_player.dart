@@ -577,6 +577,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
     final opacity = _opacityOf(style);
 
     Widget slotWidget;
+    var effectStyle = style;
 
     if (type == 'text') {
       slotWidget =
@@ -602,6 +603,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
       if (drawing != null) slotWidget = ClipPath(clipper: GeoShapeClipper(drawing: drawing), child: slotWidget);
     } else if (type == 'geo' || type == 'shape' || type == 'container') { // web: container is geo-like
       slotWidget = _buildGeoSlot(style, activePalette, slotWidth ?? 100, slotHeight ?? 100, containerWidth, containerHeight);
+      if (_blurInPaint(style)) effectStyle = withoutBlurEffects(style);
       // Web: a rectangle's stroke is a CSS border on a content-box element, so the box grows by
       // it on every side, keeps its vertical centre and is anchored horizontally by textAlign.
       final b = _rectBorderWidth(style, activePalette, containerWidth, containerHeight);
@@ -645,7 +647,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
       );
     }
 
-    slotWidget = _applyEffects(slotWidget, style, mediaFilter: type == 'image', palette: activePalette, isText: type == 'text' || type == 'artistic-text', unit: _unit);
+    slotWidget = _applyEffects(slotWidget, effectStyle, mediaFilter: type == 'image', palette: activePalette, isText: type == 'text' || type == 'artistic-text', unit: _unit);
 
     // style.blendMode was retired in 1.12.0: readers draw the layer as normal (as the web does).
     // OIM 2.0 layers carry their canonical blend mode on `style.v2Blend`.
@@ -848,6 +850,14 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
     return _strokeWidth(style, cw, ch);
   }
 
+  /// A plain-coloured vector shape takes its `blur` effects in its paint (see [GeoShapePainter.blurSigma]).
+  bool _blurInPaint(Map<String, dynamic> style) {
+    if (effectsBlur(style) <= 0 || const {'gradient', 'pattern', 'image'}.contains(style['fillType'])) return false;
+    final shapeName = style['drawing']?.toString() ?? style['geoDrawing']?.toString() ?? style['shape']?.toString();
+    final svgPath = style['svgPath']?.toString() ?? style['path']?.toString();
+    return (shapeName != null ? geoShapes[shapeName] : shapeDrawing(style['geoShape'])) != null || (svgPath != null && svgPath.isNotEmpty);
+  }
+
   Widget _buildGeoSlot(
     Map<String, dynamic> style,
     OimPalette? activePalette,
@@ -900,6 +910,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
           borderWidth: borderWidth,
           isDashed: isDashed,
           isDotted: isDotted,
+          blurSigma: _blurInPaint(style) ? effectsBlur(style) * _unit : 0,
         ),
       );
 

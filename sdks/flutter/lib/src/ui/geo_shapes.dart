@@ -265,6 +265,8 @@ class GeoShapePainter extends CustomPainter {
   final double borderWidth;
   final bool isDashed;
   final bool isDotted;
+  /// A `blur` effect drawn by the paint itself; Impeller turns a blurred layer of a disc into a diamond.
+  final double blurSigma;
 
   const GeoShapePainter({
     this.drawing,
@@ -275,6 +277,7 @@ class GeoShapePainter extends CustomPainter {
     this.borderWidth = 0.0,
     this.isDashed = false,
     this.isDotted = false,
+    this.blurSigma = 0,
   });
 
   @override
@@ -293,6 +296,7 @@ class GeoShapePainter extends CustomPainter {
       final fillPaint = Paint()
         ..color = fillColor!
         ..style = PaintingStyle.fill;
+      if (blurSigma > 0) fillPaint.maskFilter = MaskFilter.blur(BlurStyle.normal, blurSigma);
       canvas.drawPath(path, fillPaint);
     }
 
@@ -303,6 +307,7 @@ class GeoShapePainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = borderWidth
         ..strokeCap = isDotted ? StrokeCap.round : StrokeCap.butt;
+      if (blurSigma > 0) strokePaint.maskFilter = MaskFilter.blur(BlurStyle.normal, blurSigma);
 
       if (isDashed || isDotted) {
         final dash = isDotted ? borderWidth : borderWidth * 3;
@@ -328,6 +333,7 @@ class GeoShapePainter extends CustomPainter {
       oldDelegate.drawing != drawing ||
       oldDelegate.svgPath != svgPath ||
       oldDelegate.fillColor != fillColor ||
+      oldDelegate.blurSigma != blurSigma ||
       oldDelegate.borderColor != borderColor ||
       oldDelegate.borderWidth != borderWidth ||
       oldDelegate.isDashed != isDashed ||

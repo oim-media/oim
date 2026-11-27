@@ -1,11 +1,19 @@
 // Copyright (c) 2026 Xue Studios LLC
 // SPDX-License-Identifier: Apache-2.0
 
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oim_flutter/oim_flutter.dart';
 import 'package:path/path.dart' as p;
+
+Uint8List _oim(Map<String, dynamic> meta) {
+  final body = [...latin1.encode('OIM_Data'), 0, ...ZLibEncoder(raw: true).convert(utf8.encode(jsonEncode(meta)))];
+  final len = ByteData(4)..setUint32(0, body.length);
+  return Uint8List.fromList([137, 80, 78, 71, 13, 10, 26, 10, ...len.buffer.asUint8List(), ...latin1.encode('tEXt'), ...body, 0, 0, 0, 0]);
+}
 
 void main() {
   final v2Dir = Directory(p.normalize(p.join(Directory.current.path, '..', '..', 'packages', 'spec', 'vectors-2')));
@@ -176,5 +184,36 @@ void main() {
     final icon = slots.firstWhere((s) => s['id'] == 'i')['style'] as Map;
     expect(icon['strokeColor'], '#ffffff');
     expect(icon['strokeWidth'], 10);
+  });
+
+  test('a blurred ellipse blurs in its paint, not as a layer', () {
+    final n = normalizeV2Metadata({
+      'oim': '2.0.0-draft.1',
+      'canvas': {'width': 1200, 'height': 900},
+      'layers': [
+        {'id': 'e', 'type': 'shape', 'geometry': {'kind': 'ellipse'}, 'fills': [{'kind': 'color', 'value': '#f59e0b'}],
+         'box': {'x': 0, 'y': 0, 'width': 110, 'height': 110}, 'effects': [{'kind': 'blur', 'radius': 12}]},
+      ],
+    });
+    final style = ((n['slots'] as List).first as Map)['style'] as Map<String, dynamic>;
+    expect(effectsBlur(style), 12);
+    expect(effectsBlur(withoutBlurEffects(style)), 0);
+  });
+
+  testWidgets('the blurred ellipse is painted with a blurring paint', (tester) async {
+    final n = normalizeV2Metadata({
+      'oim': '2.0.0-draft.1',
+      'canvas': {'width': 1200, 'height': 900},
+      'layers': [
+        {'id': 'e', 'type': 'shape', 'geometry': {'kind': 'ellipse'}, 'fills': [{'kind': 'color', 'value': '#f59e0b'}],
+         'box': {'x': 0, 'y': 0, 'width': 110, 'height': 110}, 'effects': [{'kind': 'blur', 'radius': 12}]},
+      ],
+    });
+    await tester.pumpWidget(MaterialApp(home: SizedBox(width: 1200, height: 900, child: OimPlayer(bytes: _oim(n), showBaseImage: false))));
+    await tester.pump();
+    final geo = find.byWidgetPredicate((w) => w is CustomPaint && w.painter is GeoShapePainter);
+    expect((tester.widget<CustomPaint>(geo).painter as GeoShapePainter).blurSigma, greaterThan(0));
+    // Not also blurred as a layer (Impeller draws that as a diamond): only the canvas-wide language blur wraps it.
+    expect(find.ancestor(of: geo, matching: find.byType(ImageFiltered)), findsOneWidget);
   });
 }

@@ -145,4 +145,19 @@ void main() {
       expect(find.byType(Lottie), findsNothing);
     });
   });
+
+  group('LottieSlot.forwardPolystars', () {
+    test('a reversed star (d: 3) is drawn forward, everything else is untouched', () {
+      const json = '{"layers":[{"shapes":[{"ty":"gr","it":[{"ty":"sr","d":3,"nm":"star"},{"ty":"sh","d":3}]}]}]}';
+      final out = jsonDecode(LottieSlot.forwardPolystars(json)) as Map;
+      final items = ((out['layers'] as List)[0]['shapes'] as List)[0]['it'] as List;
+      expect(items[0]['d'], 1);
+      expect(items[0]['nm'], 'star');
+      expect(items[1]['d'], 3);
+    });
+
+    test('a Lottie without stars comes back as the same string', () {
+      expect(LottieSlot.forwardPolystars(sampleLottieJson), same(sampleLottieJson));
+    });
+  });
 }

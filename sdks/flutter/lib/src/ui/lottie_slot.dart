@@ -103,6 +103,34 @@ class LottieSlot extends StatelessWidget {
     return null;
   }
 
+  /// Turns reversed polystars (`d: 3`) forward. The lottie package bends the
+  /// rounded corners of a reversed star the wrong way, so its points break.
+  /// shortcut: forward winding moves a trim path's start; harmless without `tm`, fix upstream if one breaks.
+  static String forwardPolystars(String json) {
+    if (!json.contains('"sr"')) return json;
+    final Object? root;
+    try {
+      root = jsonDecode(json);
+    } catch (_) {
+      return json;
+    }
+    var changed = false;
+    void walk(Object? node) {
+      if (node is List) {
+        node.forEach(walk);
+      } else if (node is Map) {
+        if (node['ty'] == 'sr' && node['d'] == 3) {
+          node['d'] = 1;
+          changed = true;
+        }
+        node.values.forEach(walk);
+      }
+    }
+
+    walk(root);
+    return changed ? jsonEncode(root) : json;
+  }
+
   /// Maps CSS object-fit to Flutter BoxFit.
   static BoxFit resolveBoxFit(dynamic rawFit) {
     if (rawFit is! String) return BoxFit.contain;
@@ -134,7 +162,7 @@ class LottieSlot extends StatelessWidget {
 
     final fit = resolveBoxFit(style['objectFit']);
     final shouldAnimate = !disableAnimations;
-    final bytes = Uint8List.fromList(utf8.encode(lottieString));
+    final bytes = Uint8List.fromList(utf8.encode(forwardPolystars(lottieString)));
 
     return Lottie.memory(
       bytes,

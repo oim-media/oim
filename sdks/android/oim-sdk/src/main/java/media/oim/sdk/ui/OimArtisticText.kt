@@ -193,11 +193,13 @@ internal fun OimArtisticTextCanvas(
 
                 val clusters = splitGraphemeClusters(lineText)
                 val advances = FloatArray(clusters.size)
+                // measureText of one glyph drops letterSpacing (it is trimmed at the run's ends): add it between glyphs.
+                val spacing = paint.letterSpacing * paint.textSize
                 var totalW = 0f
                 for (i in clusters.indices) {
                     val w = paint.measureText(clusters[i])
                     advances[i] = w
-                    totalW += w
+                    totalW += w + if (i < clusters.lastIndex) spacing else 0f
                 }
 
                 var dist = pathLength / 2f - totalW / 2f
@@ -209,7 +211,7 @@ internal fun OimArtisticTextCanvas(
                     val g = clusters[i]
                     val w = advances[i]
                     val mid = (dist + w / 2f).coerceIn(0f, pathLength)
-                    dist += w
+                    dist += w + spacing
                     if (pathMeasure.getPosTan(mid, pos, tan)) {
                         val angleDeg = Math.toDegrees(atan2(tan[1].toDouble(), tan[0].toDouble())).toFloat()
                         nativeCanvas.save()

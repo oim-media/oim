@@ -299,6 +299,22 @@ class OimBinaryCodecTest {
     }
 
     @Test
+    fun parseDocumentJson_v2BackdropKeepsItsBlur() {
+        val v2Json = org.json.JSONObject(
+            """
+            {
+              "oim": "2.0.0", "canvas": { "width": 1200, "height": 900 }, "languages": ["es"],
+              "layers": [{ "id": "b", "type": "shape", "geometry": { "kind": "rect" }, "box": { "x": 0, "y": 0, "width": 10, "height": 10 },
+                           "effects": [{ "kind": "backdrop", "preset": "grayscale", "blur": 4 }] }]
+            }
+            """.trimIndent()
+        )
+        val b = OimBinaryCodec.parseDocumentJson(v2Json).layers.single()
+        assertEquals("grayscale", b.style.backdropPreset)
+        assertEquals(4.0, b.style.backdropBlur, 0.0)
+    }
+
+    @Test
     fun parseDocumentJson_v2MultiPathSvgAndCornersArePreserved() {
         val v2Json = org.json.JSONObject(
             """

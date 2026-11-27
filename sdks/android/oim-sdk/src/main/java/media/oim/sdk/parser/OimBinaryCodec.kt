@@ -1307,6 +1307,10 @@ object OimBinaryCodec {
                         (0 until fx.length()).mapNotNull { fx.optJSONObject(it) }
                             .firstOrNull { it.optString("kind") == "backdrop" }?.optString("preset")?.ifBlank { null }
                     },
+                    backdropBlur = lObj.optJSONArray("effects")?.let { fx ->
+                        (0 until fx.length()).mapNotNull { fx.optJSONObject(it) }
+                            .firstOrNull { it.optString("kind") == "backdrop" }?.optDouble("blur", 0.0)
+                    } ?: 0.0,
                     flipX = box?.optBoolean("flipX", false) ?: false,
                     flipY = box?.optBoolean("flipY", false) ?: false,
                     isVisible = lObj.optBoolean("visible", true),

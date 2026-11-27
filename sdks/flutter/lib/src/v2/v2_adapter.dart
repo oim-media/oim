@@ -387,6 +387,8 @@ bool _appendLayer(
 
 /// Canonical `@oim-media/core` `presetPath(name, 100, 100)` SVG strings in a `0..100` box.
 const Map<String, String> _v2PresetPaths = {
+  'arrow': 'M0 33.33L61.11 33.33L61.11 0L100 50L61.11 100L61.11 66.67L0 66.67Z',
+  'blob': 'M49.9 0C81.09 0 102.3 18.75 99.8 50C97.31 81.25 81.09 100 49.9 100C18.71 100 0 81.25 0 50C0 18.75 18.71 0 49.9 0Z',
   'circle': 'M0 50A50 50 0 1 1 100 50A50 50 0 1 1 0 50Z',
   'star': 'M50 0L62 38.71L100 38.71L69 61.29L80 100L50 76.34L20 100L31 61.29L0 38.71L38 38.71Z',
   'cloud': 'M17.61 100C-3.25 100 -6.94 60.86 13.92 54.05C4.11 23.41 29.88 9.8 42.15 26.82C45.83 -7.22 78.96 -10.62 82.64 26.82C104.73 23.41 105.95 67.66 85.09 71.07C85.09 88.09 82.64 100 70.37 100Z',
@@ -541,6 +543,9 @@ void _applyFills(
         if (fill['flipY'] == true) style['fillImageFlipY'] = true;
         if (fill['filters'] is Map) _applyMediaFilters(fill['filters'] as Map, style);
       }
+    } else if (kind == 'generative' && fill['generative'] is Map) {
+      style['fillType'] = 'generative';
+      style['fillGenerative'] = fill['generative'];
     } else if (kind == 'pattern' && fill['pattern'] is Map) {
       final pat = (fill['pattern'] as Map).cast<String, dynamic>();
       style['fillType'] = 'pattern';

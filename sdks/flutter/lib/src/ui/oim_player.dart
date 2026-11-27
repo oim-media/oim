@@ -14,6 +14,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../binary/oim_extractor.dart';
 import 'embedded_fonts.dart';
 import 'color_util.dart';
+import 'generative_fill.dart';
 import 'dynamic_colors.dart';
 import 'effects.dart';
 import 'geo_shapes.dart';
@@ -868,6 +869,8 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
     if (style['fillType'] == 'gradient') {
       final g = parseCssGradient(style['fillGradient'], Size(slotWidth, slotHeight));
       if (g != null) fillLayer = DecoratedBox(decoration: BoxDecoration(gradient: g));
+    } else if (style['fillType'] == 'generative' && style['fillGenerative'] is Map) {
+      fillLayer = CustomPaint(painter: GenerativeFillPainter(style['fillGenerative'] as Map, _unit));
     } else if (style['fillType'] == 'pattern' && style['fillPatternType'] != null) {
       fillLayer = OimPatternFill(style: style, palette: activePalette, unit: _unit, disableAnimations: widget.disableAnimations);
     } else if (style['fillType'] == 'image' && style['fillImage'] is String && (style['fillImage'] as String).trim().startsWith('data:image/')) {

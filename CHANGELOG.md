@@ -5,10 +5,12 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
-- android: 2.0 files paint their layers instead of the poster PNG; image fills given as `{ref}` resolve.
-- android: embedded WOFF2 fonts decode (most editor files embed them), so text no longer falls back to the system font.
-- android: motion loops run at the web's speed (a lap is the layer's width at `speedPxSec`, no 120 s cap) and their copies meet without a seam.
-- android: full-screen pinch zoom (`OimZoomState`, `oimZoomGestures`), the canvas colour zooms with the layers, and `OimAsyncPlayer` takes a `placeholder`.
+## 1.36.7
+
+- core, flutter, android: stretch 3D artistic text extrusion up to 200 px (1 px per step up to 60 px, capped at 60 evenly spaced steps above 60 px).
+- android: full 3D artistic text parity (angle, progressive shading, outside/inside strokes, face gradients `sunset-gold`/`metallic-chrome`/`neon-glow`), 2.0 layers, embedded WOFF2 fonts, Gaussian blur, zoom state, and parity motion loops.
+- flutter: closed 2.0 visual parity gaps and gated CI on `vectors-2`.
+- cli: moved `@oim-media/cli` into `oim-open` with English documentation, help output, and messages.
 - viewer-android: opens files in the device's language (Spanish or English), on the blurred thumbnail, without the menu blur.
 
 ## 1.36.6

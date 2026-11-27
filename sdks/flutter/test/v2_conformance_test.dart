@@ -150,4 +150,31 @@ void main() {
       expect(find.byType(OimPlayer), findsOneWidget);
     });
   }
+
+  test('a rotated group pivots on its box centre; an icon path keeps its own stroke', () {
+    final n = normalizeV2Metadata({
+      'oim': '2.0.0-draft.1',
+      'canvas': {'width': 1200, 'height': 900},
+      'layers': [
+        {
+          'id': 'g', 'type': 'group',
+          'box': {'x': 680, 'y': 360, 'width': 140, 'height': 160, 'rotation': 270},
+          'children': [
+            {'id': 'a', 'type': 'shape', 'geometry': {'kind': 'rect'}, 'box': {'x': 680, 'y': 360, 'width': 140, 'height': 60}},
+          ],
+        },
+        {
+          'id': 'i', 'type': 'shape',
+          'geometry': {'kind': 'paths', 'viewBox': [0, 0, 24, 24], 'paths': [{'d': 'M0 0L24 24', 'stroke': '#ffffff', 'strokeWidth': 2}]},
+          'box': {'x': 0, 'y': 0, 'width': 120, 'height': 120},
+        },
+      ],
+    });
+    final slots = (n['slots'] as List).cast<Map<String, dynamic>>();
+    final g = slots.firstWhere((s) => s['id'] == 'g')['style'] as Map;
+    expect(g['rotationPivot'], [750 / 1200 * 100, 440 / 900 * 100]);
+    final icon = slots.firstWhere((s) => s['id'] == 'i')['style'] as Map;
+    expect(icon['strokeColor'], '#ffffff');
+    expect(icon['strokeWidth'], 10);
+  });
 }

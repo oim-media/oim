@@ -515,7 +515,21 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
         children: childrenWidgets,
       );
 
-      groupWrapper = _applyEffects(groupWrapper, style, unit: _unit);
+      final pivot = style['rotationPivot'];
+      final groupTurn = (style['rotation'] as num?)?.toDouble() ?? 0;
+      if (pivot is List && pivot.length == 2 && groupTurn != 0) {
+        groupWrapper = _applyEffects(groupWrapper, {...style}..remove('rotation'), unit: _unit);
+        groupWrapper = Transform.rotate(
+          angle: groupTurn * math.pi / 180.0,
+          origin: Offset(
+            (pivot[0] as num).toDouble() / 100 * containerWidth - containerWidth / 2,
+            (pivot[1] as num).toDouble() / 100 * containerHeight - containerHeight / 2,
+          ),
+          child: groupWrapper,
+        );
+      } else {
+        groupWrapper = _applyEffects(groupWrapper, style, unit: _unit);
+      }
 
       final opacity = _opacityOf(style);
       // style.blendMode was retired in 1.12.0: readers draw the layer as normal (as the web does).

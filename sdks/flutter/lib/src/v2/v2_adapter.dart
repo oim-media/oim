@@ -249,6 +249,10 @@ bool _appendLayer(
 
   if (rawType == 'group') {
     slot['type'] = 'group';
+    // The group widget fills the canvas, so its rotation needs the box centre as pivot (web: around the box).
+    if (wPx != null && hPx != null) {
+      style['rotationPivot'] = [(xPx + wPx / 2) / canvasW * 100.0, (yPx + hPx / 2) / canvasH * 100.0];
+    }
     slot['style'] = style;
     slots.add(slot);
     var foundBase = false;
@@ -358,6 +362,7 @@ bool _appendLayer(
     _applyGeometry(layer['geometry'], style);
     _applyFills(layer['fills'], style, resources, varDefaults, isText: false);
     _applyStrokes(layer['strokes'], style, varDefaults);
+    _applyPathStroke(layer['geometry'], layer['box'], style);
     if (id == 'background-pattern-slot' && style['fillType'] == 'pattern') {
       slot['is_background_pattern'] = true;
       style['backgroundType'] = 'pattern';
@@ -428,6 +433,24 @@ void _setPresetPath(String name, Map<String, dynamic> style, {bool isMask = fals
   } else {
     style['geoShape'] = name;
   }
+}
+
+/// A path that carries its own stroke (an icon: `fill` none, `stroke` set) shows it when the
+/// layer has no visible stroke of its own. Its width is in viewBox units, so it scales with the box.
+void _applyPathStroke(dynamic rawGeo, dynamic box, Map<String, dynamic> style) {
+  if (rawGeo is! Map || rawGeo['kind'] != 'paths') return;
+  final paths = rawGeo['paths'];
+  if (paths is! List || paths.isEmpty || paths.first is! Map) return;
+  final p = paths.first as Map;
+  final stroke = p['stroke']?.toString();
+  final width = p['strokeWidth'];
+  final own = style['strokeWidth'];
+  if (stroke == null || stroke == 'none' || width is! num || (own is num && own > 0)) return;
+  final vb = rawGeo['viewBox'];
+  final vbW = vb is List && vb.length == 4 && vb[2] is num && (vb[2] as num) > 0 ? (vb[2] as num).toDouble() : 100.0;
+  final boxW = box is Map && box['width'] is num ? (box['width'] as num).toDouble() : vbW;
+  style['strokeColor'] = stroke;
+  style['strokeWidth'] = width * boxW / vbW;
 }
 
 void _applyGeometry(dynamic rawGeo, Map<String, dynamic> style, {bool isMask = false}) {

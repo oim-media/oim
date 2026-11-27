@@ -661,7 +661,7 @@ fun OimPlayerView(
                         val density = LocalDensity.current
                         // A backdrop filters what lies under its figure: paint that again, blurred, filtered and clipped.
                         Box(Modifier.fillMaxSize().clip(backdropShape).then(backdropMatrix?.let { Modifier.colorMatrixLayer(it) } ?: Modifier)) {
-                            Box(Modifier.fillMaxSize().then(if (backdropBlurPx > 0f) Modifier.blur(with(density) { backdropBlurPx.toDp() }, BlurredEdgeTreatment.Unbounded) else Modifier)) {
+                            Box(Modifier.fillMaxSize().then(if (backdropBlurPx > 0f) Modifier.blur(with(density) { cssSigmaToBlurRadius(backdropBlurPx).toDp() }, BlurredEdgeTreatment.Unbounded) else Modifier)) {
                                 paintBackground()
                                 visibleLayers.take(i).forEach { paintLayer(it) }
                             }

@@ -5,6 +5,11 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+## 1.36.8
+
+- android: native Canvas rendering for curved (`arc`/`wave`) and straight artistic text with 3D extrusion, outside/inside strokes, and gradient face presets (`artistic-text` passes golden parity without exception).
+- android, player-oim: drop remaining OIM v1 (`1.x`) parsing/serialization and dead `slots_raw` normalization (`OimError.UnsupportedVersion` on Android).
+
 ## 1.36.7
 
 - core, flutter, android: stretch 3D artistic text extrusion up to 200 px (1 px per step up to 60 px, capped at 60 evenly spaced steps above 60 px).

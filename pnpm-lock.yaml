@@ -54,7 +54,7 @@ importers:
   packages/cli:
     dependencies:
       '@oim-media/core':
-        specifier: workspace:1.36.7
+        specifier: workspace:1.36.8
         version: link:../core
       commander:
         specifier: ^15.1.0
@@ -64,7 +64,7 @@ importers:
         version: 1.1.1
     devDependencies:
       '@oim-media/spec':
-        specifier: workspace:1.36.7
+        specifier: workspace:1.36.8
         version: link:../spec
       '@types/node':
         specifier: ^24.12.4
@@ -98,7 +98,7 @@ importers:
   packages/player-oim:
     dependencies:
       '@oim-media/core':
-        specifier: workspace:1.36.7
+        specifier: workspace:1.36.8
         version: link:../core
       lottie-web:
         specifier: ^5.12.2
@@ -126,7 +126,7 @@ importers:
   packages/scene:
     dependencies:
       '@oim-media/core':
-        specifier: workspace:1.36.7
+        specifier: workspace:1.36.8
         version: link:../core
       lottie-web:
         specifier: 5.13.0

@@ -43,7 +43,8 @@
  * the format can change without the player being touched. Tying both numbers
  * together would make an internal fix look like a format break.
  */
-export const CONTRACT_VERSION = "1.36.7";
+export const CONTRACT_VERSION = "1.36.8";
+// 1.36.8: no format change; Android curved artistic text Canvas parity and OIM v1 removal in Android/player-oim.
 // 1.36.7: no format change; 200px 3D artistic text extrusion and Android/Flutter 2.0 parity.
 // 1.36.4: no format change; a figure's stroke scales with the figure.
 // 1.36.5: no format change; a paused Lottie rests on its middle frame.

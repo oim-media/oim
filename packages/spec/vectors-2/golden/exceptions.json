@@ -1,6 +1,5 @@
 {
   "android": {
-    "artistic-text": "Android SDK paints artistic text without its gradient fill and with another extrusion (0.1.0).",
     "generative-fill": "Android SDK does not paint the generative fill yet (0.1.0)."
   },
   "flutter": {

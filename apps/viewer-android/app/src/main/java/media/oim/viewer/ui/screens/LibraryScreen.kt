@@ -601,7 +601,9 @@ private fun GalleryMediaTile(
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
-    val ratio = remember(item.aspectRatio) { parseAspectRatio(item.aspectRatio) }
+    val rawRatio = remember(item.aspectRatio) { parseRawAspectRatio(item.aspectRatio) }
+    val ratio = rawRatio.coerceIn(0.62f, 2.2f)
+    val imageScale = if (rawRatio > 2.2f || rawRatio < 0.62f) ContentScale.Fit else ContentScale.Crop
     val imageUrl = item.thumbnailUrl ?: item.oimUrl
     val imageRequest = remember(imageUrl, item.id) {
         ImageRequest.Builder(context)
@@ -626,7 +628,7 @@ private fun GalleryMediaTile(
         SubcomposeAsyncImage(
             model = imageRequest,
             contentDescription = item.title,
-            contentScale = ContentScale.Crop,
+            contentScale = imageScale,
             modifier = Modifier.fillMaxSize(),
             loading = {
                 Box(
@@ -649,14 +651,14 @@ private fun GalleryMediaTile(
     }
 }
 
-private fun parseAspectRatio(raw: String?): Float {
+private fun parseRawAspectRatio(raw: String?): Float {
     if (raw.isNullOrBlank()) return 1f
     val parts = raw.trim().split('/', ':')
     if (parts.size == 2) {
         val w = parts[0].trim().toFloatOrNull()
         val h = parts[1].trim().toFloatOrNull()
         if (w != null && h != null && h > 0f) {
-            return (w / h).coerceIn(0.62f, 1.85f)
+            return w / h
         }
     }
     return 1f

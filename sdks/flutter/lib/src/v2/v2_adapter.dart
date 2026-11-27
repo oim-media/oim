@@ -667,6 +667,9 @@ void _applyEffects(List effects, Map<String, dynamic> style, Map<String, dynamic
         if (_resolveColorValue(item['color'], varDefaults) != null) 'color': _resolveColorValue(item['color'], varDefaults),
         if (_resolveColorRole(item['color']) != null) 'colorRole': _resolveColorRole(item['color']),
       });
+    } else if (kind == 'backdrop') {
+      if (item['preset'] != null) style['backdropPreset'] = item['preset'];
+      if (item['blur'] is num) style['backdropBlur'] = item['blur'];
     } else if (kind == 'blur') {
       out.add({'type': 'blur', 'radius': item['radius'] ?? item['blur'] ?? 8});
     } else if (kind == 'color-grade') {

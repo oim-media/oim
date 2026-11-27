@@ -326,3 +326,14 @@ List<double>? colorGradeFlutterMatrix(String preset, double intensity) {
       }(),
   ];
 }
+
+/// The layer's `backdrop` effect as one filter: its blur first, then its preset's colours. Null when it has neither.
+ui.ImageFilter? backdropFilterOf(Map<String, dynamic> style, double unit) {
+  final sigma = ((style['backdropBlur'] as num?)?.toDouble() ?? 0) * unit;
+  final preset = style['backdropPreset']?.toString();
+  final matrix = preset == null ? null : parseCssFilter(filterPresetCss[preset])?.matrix;
+  final blur = sigma > 0 ? ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma) : null;
+  if (matrix == null) return blur;
+  final color = ColorFilter.matrix(matrix);
+  return blur == null ? color : ui.ImageFilter.compose(outer: color, inner: blur);
+}

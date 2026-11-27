@@ -177,4 +177,20 @@ void main() {
     expect(icon['strokeColor'], '#ffffff');
     expect(icon['strokeWidth'], 10);
   });
+
+  test('a backdrop effect becomes one filter of blur then preset', () {
+    final n = normalizeV2Metadata({
+      'oim': '2.0.0-draft.1',
+      'canvas': {'width': 1200, 'height': 900},
+      'layers': [
+        {'id': 'b', 'type': 'shape', 'geometry': {'kind': 'rect'}, 'box': {'x': 0, 'y': 0, 'width': 10, 'height': 10},
+         'effects': [{'kind': 'backdrop', 'preset': 'grayscale', 'blur': 4}]},
+      ],
+    });
+    final style = ((n['slots'] as List).first as Map)['style'] as Map<String, dynamic>;
+    expect(style['backdropPreset'], 'grayscale');
+    expect(style['backdropBlur'], 4);
+    expect(backdropFilterOf(style, 1), isNotNull);
+    expect(backdropFilterOf(const {}, 1), isNull);
+  });
 }

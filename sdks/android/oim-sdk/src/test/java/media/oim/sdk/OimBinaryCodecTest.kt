@@ -261,6 +261,27 @@ class OimBinaryCodecTest {
     }
 
     @Test
+    fun parseDocumentJson_v2RotatedGroupTurnsItsChildrenAroundItsCentre() {
+        val v2Json = org.json.JSONObject(
+            """
+            {
+              "oim": "2.0.0", "canvas": { "width": 1200, "height": 900 }, "languages": ["es"],
+              "layers": [{
+                "id": "g", "type": "group", "box": { "x": 680, "y": 360, "width": 140, "height": 160, "rotation": 270 },
+                "children": [{ "id": "arrow", "type": "shape", "geometry": { "kind": "preset", "name": "arrow" },
+                               "box": { "x": 680, "y": 360, "width": 140, "height": 60 } }]
+              }]
+            }
+            """.trimIndent()
+        )
+        val arrow = OimBinaryCodec.parseDocumentJson(v2Json).layers.single()
+        // Centre (750, 390) turned 270 degrees around the group's centre (750, 440) lands on (700, 440).
+        assertEquals(630.0 / 1200.0 * 100.0, arrow.x, 0.01)
+        assertEquals(410.0 / 900.0 * 100.0, arrow.y, 0.01)
+        assertEquals(270.0, arrow.rotationDeg, 0.001)
+    }
+
+    @Test
     fun parseDocumentJson_v2MultiPathSvgAndCornersArePreserved() {
         val v2Json = org.json.JSONObject(
             """

@@ -1662,7 +1662,8 @@ private fun OimLayerNode(
                                 boxHeightPx = boxHCanvasPx,
                                 fontSizePx = fontSizeCanvasPx,
                                 lineHeight = layer.style.lineHeightFactor ?: 1.25f,
-                                letterSpacingEm = layer.style.letterSpacingEm,
+                                // v2 letterSpacing is in design px (despite the field name); Paint wants em.
+                                letterSpacingEm = layer.style.letterSpacingEm / fontSizeCanvasPx,
                                 typeface = nativeTypeface,
                                 fillColor = textColor,
                                 outerStrokeColor = outerColor,
@@ -2460,6 +2461,18 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGeoShape(
             }
             return
         }
+    }
+
+    // The core catalogue first, as the clip shape does (CANONICAL: presetPath): a name missing
+    // from the list below (burst, arrow, heart...) used to fall through to a rectangle.
+    presetSilhouette(geoShape.lowercase(), size.width, size.height)?.let { preset ->
+        if (blurSigmaPx > 0.1f) {
+            drawAndroidBlurredPath(preset.asAndroidPath(), fillColor, strokeColor, strokeWidthPx, blurSigmaPx)
+        } else {
+            if (fillColor != Color.Transparent) drawPath(preset, fillColor)
+            if (strokeColor != Color.Transparent && strokeWidthPx > 0f) drawPath(preset, strokeColor, style = Stroke(strokeWidthPx))
+        }
+        return
     }
 
     if (blurSigmaPx > 0.1f) {

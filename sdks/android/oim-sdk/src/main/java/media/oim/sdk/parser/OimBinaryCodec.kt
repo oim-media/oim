@@ -841,6 +841,40 @@ object OimBinaryCodec {
         return out
     }
 
+    /**
+     * Children are flattened with root-canvas boxes, so a group's rotation has to be carried into
+     * them: each child turns around the group's centre and adds the group's angle to its own
+     * (the web rotates the group wrapper, which does the same).
+     */
+    private fun rotateGroupChildren(
+        out: MutableList<OimLayer>, from: Int, box: JSONObject?,
+        groupX: Double, groupY: Double, canvasWidth: Int, canvasHeight: Int
+    ) {
+        val deg = box?.optDouble("rotation", 0.0)?.takeIf { !it.isNaN() } ?: 0.0
+        if (deg % 360.0 == 0.0 || from >= out.size) return
+        val cw = canvasWidth.coerceAtLeast(1).toDouble()
+        val ch = canvasHeight.coerceAtLeast(1).toDouble()
+        val gcx = groupX + box!!.optDouble("width", 0.0) / 2.0
+        val gcy = groupY + box.optDouble("height", 0.0) / 2.0
+        val rad = Math.toRadians(deg)
+        val cos = kotlin.math.cos(rad)
+        val sin = kotlin.math.sin(rad)
+        for (i in from until out.size) {
+            val l = out[i]
+            val w = (l.widthDim as? OimDimension.Px)?.value ?: 0.0
+            val h = (l.heightDim as? OimDimension.Px)?.value ?: 0.0
+            val cx = l.x / 100.0 * cw - l.anchorX * w + w / 2.0
+            val cy = l.y / 100.0 * ch - l.anchorY * h + h / 2.0
+            val nx = gcx + (cx - gcx) * cos - (cy - gcy) * sin
+            val ny = gcy + (cx - gcx) * sin + (cy - gcy) * cos
+            out[i] = l.copy(
+                x = (nx - w / 2.0 + l.anchorX * w) / cw * 100.0,
+                y = (ny - h / 2.0 + l.anchorY * h) / ch * 100.0,
+                rotationDeg = l.rotationDeg + deg
+            )
+        }
+    }
+
     private fun parseV2LayerJson(
         lObj: JSONObject,
         canvasWidth: Int,
@@ -870,6 +904,7 @@ object OimBinaryCodec {
         val effectiveOpacity = (inheritedOpacity * lObj.optDouble("opacity", 1.0)).coerceIn(0.0, 1.0)
 
         if (rawType == "group") {
+            val firstChild = outLayers.size
             val children = lObj.optJSONArray("children")
             if (children != null) {
                 for (i in 0 until children.length()) {
@@ -886,6 +921,7 @@ object OimBinaryCodec {
                     )
                 }
             }
+            rotateGroupChildren(outLayers, firstChild, box, absX, absY, canvasWidth, canvasHeight)
             return
         }
 

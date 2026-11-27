@@ -282,6 +282,23 @@ class OimBinaryCodecTest {
     }
 
     @Test
+    fun parseDocumentJson_v2LottieLayerKeepsItsSource() {
+        val v2Json = org.json.JSONObject(
+            """
+            {
+              "oim": "2.0.0", "canvas": { "width": 1200, "height": 900 }, "languages": ["es"],
+              "layers": [{ "id": "l", "type": "lottie", "box": { "x": 920, "y": 320, "width": 260, "height": 260 },
+                           "lottie": { "src": "{\"v\":\"5\"}", "loop": false } }]
+            }
+            """.trimIndent()
+        )
+        val l = OimBinaryCodec.parseDocumentJson(v2Json).layers.single()
+        assertEquals(OimLayerKind.LOTTIE, l.kind)
+        assertEquals("{\"v\":\"5\"}", l.lottieSrc)
+        assertEquals(false, l.lottieLoop)
+    }
+
+    @Test
     fun parseDocumentJson_v2MultiPathSvgAndCornersArePreserved() {
         val v2Json = org.json.JSONObject(
             """

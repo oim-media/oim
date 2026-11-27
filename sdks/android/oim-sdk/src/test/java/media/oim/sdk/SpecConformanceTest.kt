@@ -6,6 +6,7 @@
 package media.oim.sdk
 
 import media.oim.sdk.crypto.OimCanonicalizerAndVerifier
+import media.oim.sdk.model.OimError
 import media.oim.sdk.parser.OimBinaryCodec
 import org.json.JSONArray
 import org.json.JSONObject
@@ -43,40 +44,15 @@ class SpecConformanceTest {
 
     @Test
     fun allSpecVectorsArePresent() {
-        assertEquals(48, vectors("vectors").size)
         assertEquals(48, vectors("vectors-2").size)
     }
 
     @Test
-    fun v1Vectors_verifyAndMatchTheirExpectedJson() = checkAll(vectors("vectors")) { file ->
-        val asset = OimBinaryCodec.decodeAndVerify(file.readBytes(), file.name, decodeBitmap = false)
-        val doc = checkNotNull(asset.document) { "not parsed" }
-        check(!asset.verification.isRefused) { "refused: ${asset.verification.reason}" }
-        check(asset.verification.signatureValid) { "signature invalid: ${asset.verification.reason}" }
-
-        val expected = JSONObject(File(file.path.replace(".oim.png", ".expected.json")).readText())
-        val canvas = expected.getJSONObject("canvas")
-        check(doc.canvas.naturalWidth == canvas.getInt("natural_width")) { "natural_width ${doc.canvas.naturalWidth}" }
-        check(doc.canvas.naturalHeight == canvas.getInt("natural_height")) { "natural_height ${doc.canvas.naturalHeight}" }
-
-        val slots = expected.getJSONArray("slots")
-        val ids = (0 until slots.length()).map { slots.getJSONObject(it).getString("id") }
-        val byId = doc.layers.associateBy { it.id }
-        val missing = ids.filter { it !in byId }
-        check(missing.isEmpty()) { "slots missing: $missing" }
-        for (i in 0 until slots.length()) {
-            val s = slots.getJSONObject(i)
-            val layer = byId.getValue(s.getString("id"))
-            val pos = s.getJSONArray("position")
-            check(Math.abs(layer.x - pos.getDouble(0)) < 1e-3 && Math.abs(layer.y - pos.getDouble(1)) < 1e-3) {
-                "${layer.id} position (${layer.x}, ${layer.y}) != $pos"
-            }
-            val content = s.optJSONObject("content") ?: continue
-            for (lang in content.keys()) {
-                val want = content.opt(lang) as? String ?: continue
-                check(layer.content[lang] == want) { "${layer.id} content[$lang] '${layer.content[lang]}' != '$want'" }
-            }
-        }
+    fun v1Vectors_areRejectedAsUnsupportedVersion() = checkAll(vectors("vectors")) { file ->
+        val err = runCatching {
+            OimBinaryCodec.decodeAndVerify(file.readBytes(), file.name, decodeBitmap = false)
+        }.exceptionOrNull()
+        check(err is OimError.UnsupportedVersion) { "expected UnsupportedVersion, got $err" }
     }
 
     @Test

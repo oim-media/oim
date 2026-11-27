@@ -11,7 +11,7 @@ import android.graphics.Bitmap
  * Core contract constants mirroring `@oim-media/core`.
  */
 object OimContract {
-    const val CONTRACT_VERSION = "1.27.0"
+    const val CONTRACT_VERSION = "2.0.0-draft.1"
     const val DEFAULT_LANGUAGE = "en"
     const val PRIMARY_CHUNK_KEYWORD = "OIM_Data"
     const val IMAGE_HASH_ALG_SHA256_IDAT = "sha256-idat"
@@ -518,4 +518,5 @@ sealed class OimError(message: String) : Exception(message) {
     class MissingOimPayload : OimError("No OIM metadata chunk found (tEXt/zTXt/iTXt/oIMd).")
     class DecompressionFailed(cause: String) : OimError("Could not decompress the OIM payload: $cause")
     class MalformedJson(cause: String) : OimError("Invalid or incomplete OIM JSON: $cause")
+    class UnsupportedVersion(version: String) : OimError("OIM $version files are not supported; only OIM 2.x documents are supported.")
 }

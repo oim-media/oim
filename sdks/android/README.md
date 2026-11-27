@@ -1,6 +1,6 @@
 # Native Android OIM SDK (`:oim-sdk` · `media.oim.sdk`)
 
-A native Kotlin, Jetpack Compose and C++17 (Android NDK) framework to browse **OIM (Object Interactive Media)** catalogs, verify ECDSA P-256 signatures and `sha256-idat` fingerprints, and render `.oim` / `.oim.png` documents (v1 and v2 `2.0.0-draft.1`) with parity against `@oim-media/player-oim` and `oim_flutter`.
+A native Kotlin, Jetpack Compose and C++17 (Android NDK) framework to browse **OIM (Object Interactive Media)** catalogs, verify ECDSA P-256 signatures and `sha256-idat` fingerprints, and render `.oim` / `.oim.png` documents (OIM 2.x / `2.0.0-draft.1`) with parity against `@oim-media/player-oim` and `oim_flutter`.
 
 ---
 
@@ -18,7 +18,7 @@ A native Kotlin, Jetpack Compose and C++17 (Android NDK) framework to browse **O
 3. **Binary parser and NDK ([`OimBinaryCodec.kt`](oim-sdk/src/main/java/media/oim/sdk/parser/OimBinaryCodec.kt), [`OimNativeBridge.kt`](oim-sdk/src/main/java/media/oim/sdk/ndk/OimNativeBridge.kt), [`oim-sdk/src/main/cpp/`](oim-sdk/src/main/cpp/))**
    - Zero-copy C++17 PNG scanner (`oim_png_scanner.hpp` + `oim_ndk_engine.cpp`), optionally built as `liboim_native.so` (`-O3`, `-march=armv8-a+crc` on `arm64-v8a`), with a transparent Kotlin fallback.
    - `decodeAndVerify(pngBytes, label)`: extracts the `OIM_Data` chunk (`tEXt`, `zTXt`, `iTXt`, `oIMd`; *last chunk wins*), inflates raw DEFLATE (RFC 1951) / zlib and runs the cryptographic verification.
-   - `parseDocumentJson(...)` / `serializeDocumentToJson(...)`: parses schema v1 (`slots`) and v2 (`layers`; `groups` flattened to root-canvas coordinates; `palettes`; `variables`; color/gradient/pattern/image `fills`; `strokes`; `shadow`/`glow`/`blur`/`filter` `effects`; `geometry` with `paths` and `corners`; `motion.loop`; `parallax` off unless declared; `animations` / `tracks`; `text.marks` / `runs` / `artistic`; and `states`).
+   - `parseDocumentJson(...)` / `serializeDocumentToJson(...)`: parses OIM 2.x (`layers`; `groups` flattened to root-canvas coordinates; `palettes`; `variables`; color/gradient/pattern/image `fills`; `strokes`; `shadow`/`glow`/`blur`/`filter` `effects`; `geometry` with `paths` and `corners`; `motion.loop`; `parallax` off unless declared; `animations` / `tracks`; `text.marks` / `runs` / `artistic`; and `states`), and rejects legacy v1 payloads with `OimError.UnsupportedVersion`.
    - Extra utilities: `computeIdatSha256Hash(...)`, `encodeSignedOimPng(...)`, `createTamperedCopy(...)`.
 
 4. **Cryptographic verification and resolution ([`OimCanonicalizerAndVerifier.kt`](oim-sdk/src/main/java/media/oim/sdk/crypto/OimCanonicalizerAndVerifier.kt))**
@@ -115,11 +115,11 @@ To build with the C++17 native library (`liboim_native.so`) when the Android NDK
 ## Conformance, tests and references
 
 - **Unit suites**:
-  - [`SpecConformanceTest.kt`](oim-sdk/src/test/java/media/oim/sdk/SpecConformanceTest.kt): every `@oim-media/spec` vector. The 48 v1 vectors must verify and match their `.expected.json` (canvas, slot ids, positions, content); the 48 v2 vectors must decode and verify; `canonical-cases.json` must produce the exact canonical bytes and flag every out-of-range number.
+  - [`SpecConformanceTest.kt`](oim-sdk/src/test/java/media/oim/sdk/SpecConformanceTest.kt): every `@oim-media/spec` vector. The 48 v2 vectors must decode and verify; legacy v1 vectors must be rejected with `OimError.UnsupportedVersion`; `canonical-cases.json` must produce the exact canonical bytes and flag every out-of-range number.
   - [`OimBinaryCodecTest.kt`](oim-sdk/src/test/java/media/oim/sdk/OimBinaryCodecTest.kt): detailed decoding of selected vectors, v2 schema, animations, `pattern.tile` and `glow`/`shadow` effects.
   - [`OimCanonicalizerTest.kt`](oim-sdk/src/test/java/media/oim/sdk/OimCanonicalizerTest.kt): canonical JSON rules, multilingual fallback, palettes and keyframe sampling.
   - App suites in [`app/src/test/java/com/example/`](../../apps/viewer-android/app/src/test/java/media/oim/viewer/): `OimSdkUnitTest`, `OimCacheAndResilienceTest`.
-- **Conformance files**: read in place from [`packages/spec`](../../packages/spec) (`vectors/`, `vectors-2/`, `canonical-cases.json`); `oim-sdk/build.gradle.kts` passes the path to the tests, so there are no copies to keep in sync.
+- **Conformance files**: read in place from [`packages/spec`](../../packages/spec) (`vectors-2/`, legacy `vectors/`, `canonical-cases.json`); `oim-sdk/build.gradle.kts` passes the path to the tests, so there are no copies to keep in sync.
 - **External references**:
   - OIM documentation: https://oim.media/docs/
   - OIM repository: https://github.com/oim-media/oim

@@ -2877,7 +2877,7 @@ private fun resolveSlotColor(
     return parseOimColor(rawValue, palette, fallback)
 }
 
-private fun parseOimColor(raw: String?, palette: Map<String, String>, fallback: Color): Color =
+internal fun parseOimColor(raw: String?, palette: Map<String, String>, fallback: Color): Color =
     resolveOimColorString(raw, palette, fallback)
 
 @Composable

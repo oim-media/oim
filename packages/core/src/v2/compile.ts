@@ -187,7 +187,9 @@ export function compileRaw(request: CompileInput, opts: { round?: boolean } = {}
     if (!setsText) {
       delete style.maxWidth;
       delete style.textAlign;
-    } else if (truthy(s.is_auto_width)) style.maxWidth = "none";
+    // An auto-width text grows with its words: its cap is the canvas. "none" read as no width at all,
+    // and a player then capped the text at 80 % of the canvas, wrapping a word its box was made to hold.
+    } else if (truthy(s.is_auto_width)) style.maxWidth = cqw(100);
     else if (!("maxWidth" in style)) style.maxWidth = cqw(scaleWidth * 1.1);
 
     const fontSize = typeof s.font_size_px === "number" ? s.font_size_px : undefined;

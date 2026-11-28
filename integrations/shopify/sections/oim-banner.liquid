@@ -14,7 +14,10 @@
       lang="{{ localization.language.iso_code | split: '-' | first }}"
       fit="contain"
       style="display: block; width: 100%;"
-    ></oim-player>
+    >
+      {%- comment -%} Painted from the HTML before the player script arrives, so the banner is the page's LCP at image speed. The player's shadow root hides it once it composes; crossorigin matches the player's fetch, so the PNG downloads once. {%- endcomment -%}
+      <img src="{{ section.settings.oim_url | escape }}" crossorigin="anonymous" alt="" fetchpriority="high" style="display: block; width: 100%; height: auto;">
+    </oim-player>
   </div>
 {%- elsif request.design_mode -%}
   <p class="page-width">OIM banner: paste the URL of a .oim.png in the section settings.</p>

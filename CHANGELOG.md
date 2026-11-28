@@ -5,6 +5,10 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+## 1.36.10
+
+- core: a rotated box keeps a position off the canvas when compiled, so a vertical label at the edge lands where its design put it.
+
 ## 1.36.9
 
 - core: an auto-width text compiles to `maxWidth: 100cqw` instead of `"none"`, so players no longer wrap it at 80 % of the canvas.

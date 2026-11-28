@@ -139,6 +139,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextMotion
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontFamily
@@ -1712,7 +1713,7 @@ private fun OimLayerNode(
                                 fontSize = pixelLockedSp,
                                 lineHeight = lineHeightSp,
                                 textAlign = resolvedTextAlign,
-                                platformStyle = PlatformTextStyle(includeFontPadding = false)
+                                platformStyle = PlatformTextStyle(includeFontPadding = false), textMotion = TextMotion.Animated
                             )
                             val layoutResult = remember(fillAnnotated, textStyle, measureConstraints) {
                                 textMeasurer.measure(text = fillAnnotated, style = textStyle, constraints = measureConstraints)
@@ -1762,13 +1763,13 @@ private fun OimLayerNode(
                         val plainOrBaseAnnotated = textRender.plainText
                         val fillAnnotated = textRender.fillText
                         val glitchState = animatedTextRender.glitchState
-                        val baseTextStyle = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                        val baseTextStyle = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false), textMotion = TextMotion.Animated)
                         val textGradientBrush = remember(layer.style.gradientFill, palette) {
                             layer.style.gradientFill?.let { oimGradientBrush(it, palette) }
                         }
                         val strokeTextStyle = TextStyle(
                             drawStyle = Stroke(width = glyphStrokePx * 2f, join = StrokeJoin.Round),
-                            platformStyle = PlatformTextStyle(includeFontPadding = false)
+                            platformStyle = PlatformTextStyle(includeFontPadding = false), textMotion = TextMotion.Animated
                         )
                         val renderTextSilhouette: @Composable (Color, Dp, Dp, Dp) -> Unit = { effColor, blurDp, dxDp, dyDp ->
                             Text(
@@ -1905,7 +1906,7 @@ private fun OimLayerNode(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = pixelLockedSp * capScale,
                                     lineHeight = pixelLockedSp * capScale * 0.85f,
-                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)),
+                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false), textMotion = TextMotion.Animated),
                                     color = layer.style.dropCapColorHex?.let { parseOimColor(it, palette, textColor) } ?: textColor,
                                     modifier = Modifier
                                         .padding(end = with(density) { (layer.style.dropCapMarginRight * scaleFactor).toDp() })

@@ -166,7 +166,7 @@ internal fun OimArtisticTextCanvas(
         val extStrokePx = if (artistic.outerStrokeWidthPx > 0f) artistic.outerStrokeWidthPx else 1f
         val resolvedLines = artisticTextLines(text, fontSizePx, lineHeight)
 
-        fun makePaint(): Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        fun makePaint(): Paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG or Paint.LINEAR_TEXT_FLAG).apply {
             textSize = fontSizePx
             this.typeface = typeface
             textAlign = Paint.Align.LEFT

@@ -231,11 +231,14 @@ export function compileRaw(request: CompileInput, opts: { round?: boolean } = {}
       style[type === "text" ? "textShadow" : "boxShadow"] = parts.join(", ");
     }
 
-    // The position is clamped to the canvas, as the backend always did (a separate decision if that should go).
+    // The position is clamped to the canvas, as the backend always did, except for a turned box: before its
+    // turn it may stand off the canvas (a vertical label at the edge), and clamping moved its outline.
+    const turned = num(style.rotation ?? (s.style as Json | undefined)?.rotation) % 360 !== 0;
+    const inCanvas = (v: number) => (turned ? v : Math.max(0, Math.min(100, v)));
     const slot: Json = {
       id: s.id,
       type,
-      position: [rnd(Math.max(0, Math.min(100, pct(num(s.x_px))))), rnd(Math.max(0, Math.min(100, (num(s.y_px) / h) * 100)))],
+      position: [rnd(inCanvas(pct(num(s.x_px)))), rnd(inCanvas((num(s.y_px) / h) * 100))],
       style,
     };
     if (truthy(s.content)) slot.content = own(s.content);

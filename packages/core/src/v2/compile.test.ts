@@ -136,6 +136,14 @@ describe("compileRaw reads undefined as absent, like the JSON the backend receiv
     const doc = rawToDocument({ ...input, slots_raw: [slot] }).document as any;
     expect(doc.layers.find((l: any) => l.text)?.text.maxWidth).toBe(800);
   });
+  it("a turned box keeps a position off the canvas; an upright one is clamped", () => {
+    const label = { id: "v", type: "text", x_px: -56, y_px: 262, width_px: 204, height_px: 20, style: { rotation: 270 } };
+    const flat = { id: "f", type: "text", x_px: -56, y_px: 262, width_px: 204, height_px: 20 };
+    const out = compileRaw({ ...input, slots_raw: [label, flat] }, { round: true });
+    expect((out.slots as any[]).map((s) => s.position[0])).toEqual([-7, 0]);
+    const doc = rawToDocument({ ...input, slots_raw: [label] }).document as any;
+    expect(doc.layers.find((l: any) => l.text)?.box.x).toBeCloseTo(-56);
+  });
   it("an undefined alias does not stop the long name from being read", () => {
     const slot = { id: "t", type: "text", x_px: undefined, x: 400, width_px: 10, height_px: 10 };
     const out = compileRaw({ ...input, slots_raw: [slot] }, { round: true });

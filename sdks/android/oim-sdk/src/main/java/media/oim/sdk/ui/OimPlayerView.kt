@@ -139,6 +139,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import android.animation.ValueAnimator
 import androidx.compose.ui.text.style.TextMotion
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.drawText
@@ -1542,11 +1543,21 @@ private fun OimLayerNode(
             if (src != null && widthDp != null && heightDp != null) {
                 val spec = if (src.trimStart().startsWith("{")) LottieCompositionSpec.JsonString(remember(src) { forwardPolystars(src) }) else LottieCompositionSpec.Url(src)
                 val composition by rememberLottieComposition(spec)
-                LottieAnimation(
-                    composition = composition,
-                    iterations = if (layer.lottieLoop) LottieConstants.IterateForever else 1,
-                    modifier = semanticsMod.size(widthDp, heightDp).testTag("oim_layer_${layer.id}")
-                )
+                // With the system's animations off, rest on the middle frame like the web (frame 0
+                // is empty in most Lotties, and lottie-compose would otherwise jump to the empty end).
+                if (ValueAnimator.areAnimatorsEnabled()) {
+                    LottieAnimation(
+                        composition = composition,
+                        iterations = if (layer.lottieLoop) LottieConstants.IterateForever else 1,
+                        modifier = semanticsMod.size(widthDp, heightDp).testTag("oim_layer_${layer.id}")
+                    )
+                } else {
+                    LottieAnimation(
+                        composition = composition,
+                        progress = { lottieStillProgress(composition) },
+                        modifier = semanticsMod.size(widthDp, heightDp).testTag("oim_layer_${layer.id}")
+                    )
+                }
             }
         }
 

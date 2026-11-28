@@ -32,4 +32,13 @@ class OimLottieTest {
         assertEquals(100 * f, sr.getJSONObject("os").getDouble("k"), 1e-6)
         assertEquals(60 * f, sr.getJSONObject("is").getDouble("k"), 1e-6)
     }
+
+    @Test
+    fun stillFrameIsTheWebsMiddleFrame() {
+        val json = """{"v":"5.7.0","fr":30,"ip":0,"op":90,"w":10,"h":10,"layers":[]}"""
+        val composition = com.airbnb.lottie.LottieCompositionFactory.fromJsonStringSync(json, null).value
+        // lottie-web rests on floor((90 - 1) / 2) = frame 44 of 90.
+        assertEquals(44f, lottieStillProgress(composition) * composition!!.durationFrames, 1e-3f)
+        assertEquals(0.5f, lottieStillProgress(null), 0f)
+    }
 }

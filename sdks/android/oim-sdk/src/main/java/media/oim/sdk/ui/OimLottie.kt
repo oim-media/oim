@@ -65,3 +65,10 @@ private fun scaleProp(prop: JSONObject?, f: Double) {
         }
     }
 }
+
+/** The web's still frame, floor((total - 1) / 2), as lottie-compose progress. */
+internal fun lottieStillProgress(composition: com.airbnb.lottie.LottieComposition?): Float {
+    val total = composition?.durationFrames ?: return 0.5f
+    if (total <= 1f) return 0f
+    return kotlin.math.floor((total - 1f) / 2f) / total
+}

@@ -139,6 +139,8 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import android.animation.ValueAnimator
+import androidx.compose.ui.text.style.TextMotion
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontFamily
@@ -1541,11 +1543,21 @@ private fun OimLayerNode(
             if (src != null && widthDp != null && heightDp != null) {
                 val spec = if (src.trimStart().startsWith("{")) LottieCompositionSpec.JsonString(remember(src) { forwardPolystars(src) }) else LottieCompositionSpec.Url(src)
                 val composition by rememberLottieComposition(spec)
-                LottieAnimation(
-                    composition = composition,
-                    iterations = if (layer.lottieLoop) LottieConstants.IterateForever else 1,
-                    modifier = semanticsMod.size(widthDp, heightDp).testTag("oim_layer_${layer.id}")
-                )
+                // With the system's animations off, rest on the middle frame like the web (frame 0
+                // is empty in most Lotties, and lottie-compose would otherwise jump to the empty end).
+                if (ValueAnimator.areAnimatorsEnabled()) {
+                    LottieAnimation(
+                        composition = composition,
+                        iterations = if (layer.lottieLoop) LottieConstants.IterateForever else 1,
+                        modifier = semanticsMod.size(widthDp, heightDp).testTag("oim_layer_${layer.id}")
+                    )
+                } else {
+                    LottieAnimation(
+                        composition = composition,
+                        progress = { lottieStillProgress(composition) },
+                        modifier = semanticsMod.size(widthDp, heightDp).testTag("oim_layer_${layer.id}")
+                    )
+                }
             }
         }
 
@@ -1712,7 +1724,7 @@ private fun OimLayerNode(
                                 fontSize = pixelLockedSp,
                                 lineHeight = lineHeightSp,
                                 textAlign = resolvedTextAlign,
-                                platformStyle = PlatformTextStyle(includeFontPadding = false)
+                                platformStyle = PlatformTextStyle(includeFontPadding = false), textMotion = TextMotion.Animated
                             )
                             val layoutResult = remember(fillAnnotated, textStyle, measureConstraints) {
                                 textMeasurer.measure(text = fillAnnotated, style = textStyle, constraints = measureConstraints)
@@ -1762,13 +1774,13 @@ private fun OimLayerNode(
                         val plainOrBaseAnnotated = textRender.plainText
                         val fillAnnotated = textRender.fillText
                         val glitchState = animatedTextRender.glitchState
-                        val baseTextStyle = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+                        val baseTextStyle = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false), textMotion = TextMotion.Animated)
                         val textGradientBrush = remember(layer.style.gradientFill, palette) {
                             layer.style.gradientFill?.let { oimGradientBrush(it, palette) }
                         }
                         val strokeTextStyle = TextStyle(
                             drawStyle = Stroke(width = glyphStrokePx * 2f, join = StrokeJoin.Round),
-                            platformStyle = PlatformTextStyle(includeFontPadding = false)
+                            platformStyle = PlatformTextStyle(includeFontPadding = false), textMotion = TextMotion.Animated
                         )
                         val renderTextSilhouette: @Composable (Color, Dp, Dp, Dp) -> Unit = { effColor, blurDp, dxDp, dyDp ->
                             Text(
@@ -1905,7 +1917,7 @@ private fun OimLayerNode(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = pixelLockedSp * capScale,
                                     lineHeight = pixelLockedSp * capScale * 0.85f,
-                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)),
+                                    style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false), textMotion = TextMotion.Animated),
                                     color = layer.style.dropCapColorHex?.let { parseOimColor(it, palette, textColor) } ?: textColor,
                                     modifier = Modifier
                                         .padding(end = with(density) { (layer.style.dropCapMarginRight * scaleFactor).toDp() })
@@ -2477,7 +2489,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGeoShape(
             } else {
                 if (fillColor != Color.Transparent) drawPath(parsed, fillColor)
                 if (strokeColor != Color.Transparent && strokeWidthPx > 0f) {
-                    drawPath(parsed, strokeColor, style = Stroke(width = strokeWidthPx))
+                    clipRect { drawPath(parsed, strokeColor, style = Stroke(width = strokeWidthPx)) }
                 }
             }
             return
@@ -2491,7 +2503,8 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGeoShape(
             drawAndroidBlurredPath(preset.asAndroidPath(), fillColor, strokeColor, strokeWidthPx, blurSigmaPx)
         } else {
             if (fillColor != Color.Transparent) drawPath(preset, fillColor)
-            if (strokeColor != Color.Transparent && strokeWidthPx > 0f) drawPath(preset, strokeColor, style = Stroke(strokeWidthPx))
+            // The web draws it in an <svg> the size of its box, which clips the stroke's miter points.
+            if (strokeColor != Color.Transparent && strokeWidthPx > 0f) clipRect { drawPath(preset, strokeColor, style = Stroke(strokeWidthPx)) }
         }
         return
     }

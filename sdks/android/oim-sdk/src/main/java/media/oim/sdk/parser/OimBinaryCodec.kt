@@ -1196,6 +1196,9 @@ object OimBinaryCodec {
             }
             svgPaths.addAll(parseV2SvgPathItems(geoObj.optJSONArray("paths")))
             svgPath = svgPaths.firstOrNull()?.d
+            // One path with no colour of its own is the layer's outline, painted with the layer's fills and
+            // strokes like a preset (core geometryOutline); only a drawing of coloured paths paints itself.
+            if (svgPaths.size == 1 && svgPaths[0].fill == null && svgPaths[0].stroke == null) svgPaths.clear()
         }
 
         val cornersAny = lObj.opt("corners")

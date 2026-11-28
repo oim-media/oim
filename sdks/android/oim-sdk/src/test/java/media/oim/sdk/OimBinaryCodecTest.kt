@@ -315,6 +315,30 @@ class OimBinaryCodecTest {
     }
 
     @Test
+    fun parseDocumentJson_v2UncolouredPathIsTheLayersOutline() {
+        val v2Json = org.json.JSONObject(
+            """
+            {
+              "oim": "2.0.0", "canvas": { "width": 1200, "height": 480 }, "languages": ["en"],
+              "layers": [
+                { "id": "glass", "type": "shape", "box": { "x": 0, "y": 0, "width": 300, "height": 420 },
+                  "geometry": { "kind": "paths", "viewBox": [0, 0, 300, 420], "paths": [{ "d": "M 0,0 L 300,420" }] },
+                  "strokes": [{ "paint": { "kind": "color", "value": "#fafafa" }, "width": 3 }] },
+                { "id": "icon", "type": "shape", "box": { "x": 0, "y": 0, "width": 24, "height": 24 },
+                  "geometry": { "kind": "paths", "viewBox": [0, 0, 24, 24], "paths": [{ "d": "M0 0L24 24", "stroke": "#ffffff" }] } }
+              ]
+            }
+            """.trimIndent()
+        )
+        val (glass, icon) = OimBinaryCodec.parseDocumentJson(v2Json).layers
+        // Painted with the layer's own stroke, like a preset (web: core geometryOutline).
+        assertEquals("M 0,0 L 300,420", glass.style.svgPath)
+        assertTrue(glass.style.svgPaths.isEmpty())
+        // A coloured path is a drawing that paints itself.
+        assertEquals(1, icon.style.svgPaths.size)
+    }
+
+    @Test
     fun parseDocumentJson_v2MultiPathSvgAndCornersArePreserved() {
         val v2Json = org.json.JSONObject(
             """

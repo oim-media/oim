@@ -173,11 +173,15 @@ class LottieSlot extends StatelessWidget {
     }
 
     final fit = resolveBoxFit(style['objectFit']);
-    final shouldAnimate = !disableAnimations;
+    // The system's "remove animations" counts too (web: prefers-reduced-motion).
+    final shouldAnimate = !disableAnimations && !(MediaQuery.maybeDisableAnimationsOf(context) ?? false);
     final bytes = Uint8List.fromList(utf8.encode(forwardPolystars(lottieString)));
 
     return Lottie.memory(
       bytes,
+      // Still, it rests on the middle frame like the web: frame 0 is empty in most Lotties.
+      // shortcut: progress 0.5 can be one frame past the web's floor((total-1)/2); exact needs the composition.
+      controller: shouldAnimate ? null : const AlwaysStoppedAnimation(0.5),
       animate: shouldAnimate,
       repeat: shouldAnimate,
       fit: fit,

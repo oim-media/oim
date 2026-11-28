@@ -265,6 +265,10 @@ class GeoShapePainter extends CustomPainter {
   final double borderWidth;
   final bool isDashed;
   final bool isDotted;
+  /// SVG `stroke-linejoin`: an icon's `round` keeps its points from growing miter spikes.
+  final StrokeJoin strokeJoin;
+  /// A `blur` effect drawn by the paint itself; Impeller turns a blurred layer of a disc into a diamond.
+  final double blurSigma;
 
   const GeoShapePainter({
     this.drawing,
@@ -275,10 +279,15 @@ class GeoShapePainter extends CustomPainter {
     this.borderWidth = 0.0,
     this.isDashed = false,
     this.isDotted = false,
+    this.strokeJoin = StrokeJoin.miter,
+    this.blurSigma = 0,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
+    // The web draws the shape in an <svg> the size of its box, which clips what sticks out (stroke points);
+    // a blurred shape keeps its halo, which the web paints outside the box.
+    if (blurSigma == 0) canvas.clipRect(Offset.zero & size);
     final path = buildShapePath(
       drawing: drawing,
       svgPath: svgPath,
@@ -293,6 +302,7 @@ class GeoShapePainter extends CustomPainter {
       final fillPaint = Paint()
         ..color = fillColor!
         ..style = PaintingStyle.fill;
+      if (blurSigma > 0) fillPaint.maskFilter = MaskFilter.blur(BlurStyle.normal, blurSigma);
       canvas.drawPath(path, fillPaint);
     }
 
@@ -302,7 +312,9 @@ class GeoShapePainter extends CustomPainter {
         ..color = borderColor!
         ..style = PaintingStyle.stroke
         ..strokeWidth = borderWidth
-        ..strokeCap = isDotted ? StrokeCap.round : StrokeCap.butt;
+        ..strokeCap = isDotted ? StrokeCap.round : StrokeCap.butt
+        ..strokeJoin = strokeJoin;
+      if (blurSigma > 0) strokePaint.maskFilter = MaskFilter.blur(BlurStyle.normal, blurSigma);
 
       if (isDashed || isDotted) {
         final dash = isDotted ? borderWidth : borderWidth * 3;
@@ -328,6 +340,8 @@ class GeoShapePainter extends CustomPainter {
       oldDelegate.drawing != drawing ||
       oldDelegate.svgPath != svgPath ||
       oldDelegate.fillColor != fillColor ||
+      oldDelegate.strokeJoin != strokeJoin ||
+      oldDelegate.blurSigma != blurSigma ||
       oldDelegate.borderColor != borderColor ||
       oldDelegate.borderWidth != borderWidth ||
       oldDelegate.isDashed != isDashed ||

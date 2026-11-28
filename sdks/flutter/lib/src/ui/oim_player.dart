@@ -14,6 +14,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../binary/oim_extractor.dart';
 import 'embedded_fonts.dart';
 import 'color_util.dart';
+import 'generative_fill.dart';
 import 'dynamic_colors.dart';
 import 'effects.dart';
 import 'geo_shapes.dart';
@@ -577,6 +578,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
     final opacity = _opacityOf(style);
 
     Widget slotWidget;
+    var effectStyle = style;
 
     if (type == 'text') {
       slotWidget =
@@ -602,10 +604,16 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
       if (drawing != null) slotWidget = ClipPath(clipper: GeoShapeClipper(drawing: drawing), child: slotWidget);
     } else if (type == 'geo' || type == 'shape' || type == 'container') { // web: container is geo-like
       slotWidget = _buildGeoSlot(style, activePalette, slotWidth ?? 100, slotHeight ?? 100, containerWidth, containerHeight);
+      if (_blurInPaint(style)) effectStyle = withoutBlurEffects(style);
       // Web: a rectangle's stroke is a CSS border on a content-box element, so the box grows by
       // it on every side, keeps its vertical centre and is anchored horizontally by textAlign.
       final b = _rectBorderWidth(style, activePalette, containerWidth, containerHeight);
-      if (b > 0 && slotWidth != null && slotHeight != null) {
+      if (b > 0 && slotWidth != null && slotHeight != null && style['strokeCentered'] == true) {
+        left -= b / 2;
+        top -= b / 2;
+        slotWidth += b;
+        slotHeight += b;
+      } else if (b > 0 && slotWidth != null && slotHeight != null) {
         final align = (style['textAlign'] ?? raw['align'])?.toString() ?? 'left';
         left -= align == 'center' ? b : align == 'right' ? 2 * b : 0;
         top -= b;
@@ -645,7 +653,7 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
       );
     }
 
-    slotWidget = _applyEffects(slotWidget, style, mediaFilter: type == 'image', palette: activePalette, isText: type == 'text' || type == 'artistic-text', unit: _unit);
+    slotWidget = _applyEffects(slotWidget, effectStyle, mediaFilter: type == 'image', palette: activePalette, isText: type == 'text' || type == 'artistic-text', unit: _unit);
 
     // style.blendMode was retired in 1.12.0: readers draw the layer as normal (as the web does).
     // OIM 2.0 layers carry their canonical blend mode on `style.v2Blend`.
@@ -854,6 +862,14 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
     return _strokeWidth(style, cw, ch);
   }
 
+  /// A plain-coloured vector shape takes its `blur` effects in its paint (see [GeoShapePainter.blurSigma]).
+  bool _blurInPaint(Map<String, dynamic> style) {
+    if (effectsBlur(style) <= 0 || const {'gradient', 'pattern', 'image'}.contains(style['fillType'])) return false;
+    final shapeName = style['drawing']?.toString() ?? style['geoDrawing']?.toString() ?? style['shape']?.toString();
+    final svgPath = style['svgPath']?.toString() ?? style['path']?.toString();
+    return (shapeName != null ? geoShapes[shapeName] : shapeDrawing(style['geoShape'])) != null || (svgPath != null && svgPath.isNotEmpty);
+  }
+
   Widget _buildGeoSlot(
     Map<String, dynamic> style,
     OimPalette? activePalette,
@@ -868,6 +884,8 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
     if (style['fillType'] == 'gradient') {
       final g = parseCssGradient(style['fillGradient'], Size(slotWidth, slotHeight));
       if (g != null) fillLayer = DecoratedBox(decoration: BoxDecoration(gradient: g));
+    } else if (style['fillType'] == 'generative' && style['fillGenerative'] is Map) {
+      fillLayer = CustomPaint(painter: GenerativeFillPainter(style['fillGenerative'] as Map, _unit));
     } else if (style['fillType'] == 'pattern' && style['fillPatternType'] != null) {
       fillLayer = OimPatternFill(style: style, palette: activePalette, unit: _unit, disableAnimations: widget.disableAnimations);
     } else if (style['fillType'] == 'image' && style['fillImage'] is String && (style['fillImage'] as String).trim().startsWith('data:image/')) {
@@ -906,6 +924,8 @@ class _OimPlayerState extends State<OimPlayer> with TickerProviderStateMixin {
           borderWidth: borderWidth,
           isDashed: isDashed,
           isDotted: isDotted,
+          strokeJoin: style['strokeJoin'] == 'round' ? StrokeJoin.round : style['strokeJoin'] == 'bevel' ? StrokeJoin.bevel : StrokeJoin.miter,
+          blurSigma: _blurInPaint(style) ? effectsBlur(style) * _unit : 0,
         ),
       );
 

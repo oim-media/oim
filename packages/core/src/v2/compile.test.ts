@@ -129,6 +129,13 @@ describe("compileRaw reads undefined as absent, like the JSON the backend receiv
     const out = compileRaw({ ...input, slots_raw: [slot] }, { round: true });
     expect((out.slots as any[])[0].style.maxWidth).toBe("27.5cqw");
   });
+  it("an auto-width text is capped by the canvas, not left without a width", () => {
+    const slot = { id: "t", type: "text", width_px: 200, height_px: 40, is_auto_width: true };
+    const out = compileRaw({ ...input, slots_raw: [slot] }, { round: true });
+    expect((out.slots as any[])[0].style.maxWidth).toBe("100.0cqw");
+    const doc = rawToDocument({ ...input, slots_raw: [slot] }).document as any;
+    expect(doc.layers.find((l: any) => l.text)?.text.maxWidth).toBe(800);
+  });
   it("an undefined alias does not stop the long name from being read", () => {
     const slot = { id: "t", type: "text", x_px: undefined, x: 400, width_px: 10, height_px: 10 };
     const out = compileRaw({ ...input, slots_raw: [slot] }, { round: true });

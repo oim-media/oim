@@ -1,7 +1,7 @@
 {
   "name": "@oim-media/cli",
   "license": "Apache-2.0",
-  "version": "1.36.8",
+  "version": "1.36.9",
   "private": true,
   "description": "Official command-line tool (oim) for inspecting, verifying, extracting, packing, and upgrading .oim.png files",
   "type": "module",
@@ -23,12 +23,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@oim-media/core": "workspace:1.36.8",
+    "@oim-media/core": "workspace:1.36.9",
     "commander": "^15.1.0",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
-    "@oim-media/spec": "workspace:1.36.8",
+    "@oim-media/spec": "workspace:1.36.9",
     "@types/node": "^24.12.4",
     "typescript": "~6.0.3",
     "vitest": "^4.1.0"

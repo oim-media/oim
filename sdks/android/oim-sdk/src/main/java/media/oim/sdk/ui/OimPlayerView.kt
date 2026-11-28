@@ -1226,8 +1226,10 @@ private fun OimLayerNode(
             }
             val resolvedCornerPx = cornerRadiiPx?.get(0) ?: (canvasWidthPx * layer.style.cornerRadiusRatio)
             val geoKindStr = layer.style.geoShape ?: "rectangle"
-            val clipShape = remember(layer.style.svgPaths, layer.style.svgViewBox, geoKindStr, shape) {
-                customFrameShape(layer.style.svgPaths, layer.style.svgViewBox) ?: buildGeoClipShape(geoKindStr, shape)
+            val clipShape = remember(layer.style.svgPaths, layer.style.svgPath, layer.style.svgViewBox, geoKindStr, shape) {
+                // An uncoloured single path is parsed as the layer's outline (svgPath only): it still frames the image.
+                val outline = layer.style.svgPaths.ifEmpty { listOfNotNull(layer.style.svgPath?.let { OimSvgPathItem(d = it) }) }
+                customFrameShape(outline, layer.style.svgViewBox) ?: buildGeoClipShape(geoKindStr, shape)
             }
             val imageFill = layer.style.imageFill
             val fillBitmap by produceState<ImageBitmap?>(initialValue = null, key1 = imageFill?.src) {

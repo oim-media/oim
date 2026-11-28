@@ -5,6 +5,13 @@ in `@oim-media/core`). A release tag `vX.Y.Z` publishes all of them.
 
 ## Unreleased
 
+## 1.36.9
+
+- core: an auto-width text compiles to `maxWidth: 100cqw` instead of `"none"`, so players no longer wrap it at 80 % of the canvas.
+- android: an uncoloured path still clips an image fill; curved artistic text drops linear text.
+- native: match the web on shape strokes, generative fills and the arrow preset.
+- shopify: the banner section paints the PNG before the player script loads.
+
 ## 1.36.8
 
 - android: native Canvas rendering for curved (`arc`/`wave`) and straight artistic text with 3D extrusion, outside/inside strokes, and gradient face presets (`artistic-text` passes golden parity without exception).

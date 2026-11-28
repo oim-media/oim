@@ -17,7 +17,7 @@ const program = new Command();
 program
   .name('oim')
   .description('Official command-line tool for the OIM ecosystem')
-  .version('1.36.8');
+  .version('1.36.9');
 
 program
   .command('inspect')

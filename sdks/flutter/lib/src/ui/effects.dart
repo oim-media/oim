@@ -337,3 +337,20 @@ ui.ImageFilter? backdropFilterOf(Map<String, dynamic> style, double unit) {
   final color = ColorFilter.matrix(matrix);
   return blur == null ? color : ui.ImageFilter.compose(outer: color, inner: blur);
 }
+
+/// Sigma of the layer's `blur` effects (CSS blur() is the standard deviation), in design px.
+double effectsBlur(Map<String, dynamic> style) {
+  final fx = style['effects'];
+  if (fx is! List) return 0;
+  var sigma = 0.0;
+  for (final e in fx) {
+    if (e is Map && e['type'] == 'blur' && e['enabled'] != false && e['radius'] is num) sigma += (e['radius'] as num).toDouble();
+  }
+  return sigma;
+}
+
+/// [style] without its `blur` effects, for a layer whose paint already blurs.
+Map<String, dynamic> withoutBlurEffects(Map<String, dynamic> style) => {
+      ...style,
+      'effects': [for (final e in style['effects'] as List) if (!(e is Map && e['type'] == 'blur')) e],
+    };
